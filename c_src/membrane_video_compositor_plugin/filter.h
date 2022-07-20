@@ -4,8 +4,6 @@
 #include <libavutil/opt.h>
 #include <libavutil/parseutils.h>
 #include <stdio.h>
-#include <unifex/payload.h>
-#include <unifex/unifex.h>
 
 typedef struct VFilterState {
     AVFilterContext *buffersink_ctx;
@@ -15,10 +13,9 @@ typedef struct VFilterState {
     int height;
     int pixel_format;
     char *text;
-} State;
+} VState;
 
-int init_filters(const char *filters_descr, State *state);
+int init_filters(const char *filters_descr, VState *state);
 int get_pixel_format(const char *fmt_name);
-void handle_destroy_state(UnifexEnv *env, State *state);
 
 // #include "_generated/filter.h"

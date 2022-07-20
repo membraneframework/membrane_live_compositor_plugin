@@ -12,7 +12,7 @@ int get_pixel_format(const char *fmt_name) {
     return pix_fmt;
 }
 
-int init_filters(const char *filters_descr, State *state) {
+int init_filters(const char *filters_descr, VState *state) {
     char args[512];
     int ret = 0;
     const AVFilter *buffersrc = avfilter_get_by_name("buffer");

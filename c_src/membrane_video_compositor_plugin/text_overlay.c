@@ -82,11 +82,11 @@ static void create_filter_description(char *filter_descr, int len, char *text,
 
 void handle_destroy_state(UnifexEnv *env, State *state) {
     UNIFEX_UNUSED(env);
-    if (state->filter_graph != NULL) {
-        avfilter_graph_free(&state->filter_graph);
+    if (state->vstate.filter_graph != NULL) {
+        avfilter_graph_free(&state->vstate.filter_graph);
     }
-    state->buffersink_ctx = NULL;
-    state->buffersrc_ctx = NULL;
+    state->vstate.buffersink_ctx = NULL;
+    state->vstate.buffersrc_ctx = NULL;
 }
 
 UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payload, State *state) {
@@ -100,14 +100,14 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payload, State *state) {
         goto exit_filter;
     }
 
-    frame->format = state->pixel_format;
-    frame->width = state->width;
-    frame->height = state->height;
+    frame->format = state->vstate.pixel_format;
+    frame->width = state->vstate.width;
+    frame->height = state->vstate.height;
     av_image_fill_arrays(frame->data, frame->linesize, payload->data,
                          frame->format, frame->width, frame->height, 1);
 
     /* feed the filtergraph */
-    if (av_buffersrc_add_frame_flags(state->buffersrc_ctx, frame,
+    if (av_buffersrc_add_frame_flags(state->vstate.buffersrc_ctx, frame,
                                      AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
         res = apply_filter_result_error(env, "error_feeding_filtergraph");
         goto exit_filter;
@@ -115,7 +115,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payload, State *state) {
 
     /* pull filtered frame from the filtergraph - in drawtext filter there
      * should always be 1 frame on output for each frame on input*/
-    ret = av_buffersink_get_frame(state->buffersink_ctx, filtered_frame);
+    ret = av_buffersink_get_frame(state->vstate.buffersink_ctx, filtered_frame);
     if (ret < 0) {
         res = apply_filter_result_error(env, "error_pulling_from_filtergraph");
         goto exit_filter;
@@ -149,17 +149,17 @@ static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
                                         int width, int height) {
     UNIFEX_TERM result;
     State *state = unifex_alloc_state(env);
-    state->width = width;
-    state->height = height;
+    state->vstate.width = width;
+    state->vstate.height = height;
 
     int pix_fmt = get_pixel_format(pixel_format_name);
     if (pix_fmt < 0) {
         result = create_result_error(env, "unsupported_pixel_format");
         goto exit_create;
     }
-    state->pixel_format = pix_fmt;
+    state->vstate.pixel_format = pix_fmt;
 
-    if (init_filters(filter_description, state) < 0) {
+    if (init_filters(filter_description, &state->vstate) < 0) {
         result = create_result_error(env, "error_creating_filters");
         goto exit_create;
     }
