@@ -5,14 +5,21 @@
 #include <libavutil/parseutils.h>
 #include <stdio.h>
 
-typedef struct VFilterState {
-    AVFilterContext *buffersink_ctx;
-    AVFilterContext *buffersrc_ctx;
-    AVFilterGraph *filter_graph;
+typedef struct FilterState {
+    AVFilterContext *inputs[2];
+    AVFilterContext *output;
+    AVFilterGraph *graph;
+} FilterState;
+
+typedef struct VideoState {
     int width;
     int height;
     int pixel_format;
-    char *text;
+} VideoState;
+
+typedef struct {
+    FilterState filter;
+    VideoState videos[2];
 } VState;
 
 int init_filters(const char *filters_descr, VState *state);
