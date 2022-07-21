@@ -1,4 +1,4 @@
-defmodule Membrane.FFmpeg.VideoFilter.BundlexProject do
+defmodule Membrane.VideoFilter.FFmpeg.BundlexProject do
   use Bundlex.Project
 
   def project do
@@ -9,9 +9,9 @@ defmodule Membrane.FFmpeg.VideoFilter.BundlexProject do
 
   defp natives() do
     [
-      text_overlay: [
+      video_compositor: [
         interface: :nif,
-        sources: ["text_overlay.c", "filter.c"],
+        sources: ["video_compositor.c", "filter.c"],
         pkg_configs: ["libavutil", "libavfilter"],
         preprocessor: Unifex
       ]
