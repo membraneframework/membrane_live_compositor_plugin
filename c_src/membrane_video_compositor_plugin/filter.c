@@ -16,16 +16,27 @@ int get_pixel_format(const char *fmt_name) {
     return pix_fmt;
 }
 
-static int init_filters_string(char *filter_descr, int filter_size,
-                               VideoState *videos[], int n_videos) {
+void create_filter_description(char *filter_str, int filter_size, int width,
+                               int height, int pixel_format) {
+    int filter_end = 0;
+    filter_end +=
+        init_filters_string(filter_str + filter_end, filter_size - filter_end,
+                            width, height, pixel_format);
+    filter_end += apply_filters_options_string(filter_str + filter_end,
+                                               filter_size - filter_end);
+    filter_end += finish_filters_string(filter_str + filter_end,
+                                        filter_size - filter_end);
+}
+
+static int init_filters_string(char *filters_str, int filter_size, int width,
+                               int height, int pixel_format) {
     // char filters_str[1024];
     int filter_end = 0;
     for (int i = 0; i < n_videos; ++i) {
-        VideoState video = videos[i];
         snprintf(filters_str + filter_end, filter_size - filter_end,
                  "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
                  "%d [in_%d];\n",
-                 video->width, video->height, video->pixel_format, 1, 1, i + 1);
+                 width, height, pixel_format, 1, 1, i + 1);
     }
     return filter_end;
 }
@@ -53,7 +64,8 @@ static int finish_filters_string(char *filter_str, int filter_size) {
                            "%s", "[out] buffersink");
     return filter_end;
 }
-static int init_filters_inputs(const char *filters_descr, VState *state) {
+
+int init_filters(const char *filters_descr, VState *state) {
     state->filter->graph = avfilter_graph_alloc();
     AVFilterGraph *graph = state->filter->graph;
 

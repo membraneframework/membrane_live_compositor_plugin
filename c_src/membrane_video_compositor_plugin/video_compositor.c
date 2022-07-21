@@ -1,7 +1,5 @@
 #include "video_compositor.h"
 
-static void create_filter_description(char *filter_descr, int len);
-
 static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
                                         const char *filter_description,
                                         const char *pixel_format_name,
@@ -16,12 +14,6 @@ UNIFEX_TERM create(UnifexEnv *env, int width, int height,
     result = create_unifex_filter(env, filter_descr, pixel_format_name, width,
                                   height);
     return result;
-}
-
-static void create_filter_description(char *filter_descr, int len) {
-    // filter_descr += snprintf(filter_descr, len, "drawtext=text=%s", text);
-    filter_descr +=
-        snprintf(filter_descr, len, "overlay=10:main_h-overlay_h-10");
 }
 
 void handle_destroy_state(UnifexEnv *env, State *state) {
