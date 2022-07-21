@@ -2,56 +2,92 @@
 
 static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
                                         const char *filter_description,
-                                        const char *pixel_format_name,
-                                        int width, int height);
+                                        int pixel_format, int width,
+                                        int height);
 
 UNIFEX_TERM create(UnifexEnv *env, int width, int height,
                    char *pixel_format_name) {
     UNIFEX_TERM result;
-    char filter_descr[512];
-    create_filter_description(filter_descr, sizeof filter_descr);
+    char filter_str[512];
+    int pixel_format = get_pixel_format(pixel_format_name);
+    if (pixel_format < 0) {
+        result = create_result_error(env, "unsupported_pixel_format");
+        goto end;
+    }
+    create_filter_description(filter_str, sizeof filter_str, width, height,
+                              pixel_format);
 
-    result = create_unifex_filter(env, filter_descr, pixel_format_name, width,
-                                  height);
+    result = create_unifex_filter(env, filter_str, pixel_format, width, height);
+end:
     return result;
 }
 
-void handle_destroy_state(UnifexEnv *env, State *state) {
-    UNIFEX_UNUSED(env);
-    if (state->vstate.filter_graph != NULL) {
-        avfilter_graph_free(&state->vstate.filter_graph);
+static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
+                                        const char *filter_description,
+                                        int pixel_format, int width,
+                                        int height) {
+    UNIFEX_TERM result;
+
+    State *state = unifex_alloc_state(env);
+    for (int i = 0; i < SIZE(state->vstate.videos); i++) {
+        state->vstate.videos[i].height = height;
+        state->vstate.videos[i].width = width;
+        state->vstate.videos[i].pixel_format = pixel_format;
     }
-    state->vstate.buffersink_ctx = NULL;
-    state->vstate.buffersrc_ctx = NULL;
+
+    if (init_filters(filter_description, &state->vstate) < 0) {
+        result = create_result_error(env, "error_creating_filters");
+        goto exit_create;
+    }
+    result = create_result_ok(env, state);
+
+exit_create:
+    unifex_release_state(env, state);
+    return result;
 }
 
-UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payload, State *state) {
+UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
+                         UnifexPayload *right_payload, State *state) {
     UNIFEX_TERM res;
     int ret = 0;
-    AVFrame *frame = av_frame_alloc();
+    UnifexPayload *payloads[] = {
+        left_payload,
+        right_payload,
+    };
+    AVFrame *frames[] = {av_frame_alloc(), av_frame_alloc()};
     AVFrame *filtered_frame = av_frame_alloc();
 
-    if (!frame || !filtered_frame) {
+    if (!frames[0] || !frames[1] || !filtered_frame) {
         res = apply_filter_result_error(env, "error_allocating_frame");
         goto exit_filter;
     }
 
-    frame->format = state->vstate.pixel_format;
-    frame->width = state->vstate.width;
-    frame->height = state->vstate.height;
-    av_image_fill_arrays(frame->data, frame->linesize, payload->data,
-                         frame->format, frame->width, frame->height, 1);
+    for (int i = 0; i < SIZE(frames); i++) {
+        AVFrame *frame = frames[i];
+        VideoState *video = &state->vstate.videos[i];
+        UnifexPayload *payload = payloads[i];
+        frame->format = video->pixel_format;
+        frame->width = video->width;
+        frame->height = video->height;
+        av_image_fill_arrays(frame->data, frame->linesize, payload->data,
+                             frame->format, frame->width, frame->height, 1);
+    }
 
     /* feed the filtergraph */
-    if (av_buffersrc_add_frame_flags(state->vstate.buffersrc_ctx, frame,
-                                     AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
-        res = apply_filter_result_error(env, "error_feeding_filtergraph");
-        goto exit_filter;
+    FilterState *filter = &state->vstate.filter;
+    for (int i = 0; i < SIZE(filter->inputs); ++i) {
+        AVFilterContext *input = filter->inputs[i];
+        AVFrame *frame = frames[i];
+        if (av_buffersrc_add_frame_flags(input, frame,
+                                         AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
+            res = apply_filter_result_error(env, "error_feeding_filtergraph");
+            goto exit_filter;
+        }
     }
 
     /* pull filtered frame from the filtergraph - in drawtext filter there
      * should always be 1 frame on output for each frame on input*/
-    ret = av_buffersink_get_frame(state->vstate.buffersink_ctx, filtered_frame);
+    ret = av_buffersink_get_frame(filter->output, filtered_frame);
     if (ret < 0) {
         res = apply_filter_result_error(env, "error_pulling_from_filtergraph");
         goto exit_filter;
@@ -74,34 +110,19 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payload, State *state) {
     }
     res = apply_filter_result_ok(env, &payload_frame);
 exit_filter:
-    if (frame != NULL) av_frame_free(&frame);
+    if (frames[0] != NULL) av_frame_free(&frames[0]);
+    if (frames[1] != NULL) av_frame_free(&frames[1]);
     if (filtered_frame != NULL) av_frame_free(&filtered_frame);
     return res;
 }
 
-static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
-                                        const char *filter_description,
-                                        const char *pixel_format_name,
-                                        int width, int height) {
-    UNIFEX_TERM result;
-    State *state = unifex_alloc_state(env);
-    state->vstate.width = width;
-    state->vstate.height = height;
-
-    int pix_fmt = get_pixel_format(pixel_format_name);
-    if (pix_fmt < 0) {
-        result = create_result_error(env, "unsupported_pixel_format");
-        goto exit_create;
+void handle_destroy_state(UnifexEnv *env, State *state) {
+    UNIFEX_UNUSED(env);
+    FilterState *filter = &state->vstate.filter;
+    if (filter->graph != NULL) {
+        avfilter_graph_free(&filter->graph);
     }
-    state->vstate.pixel_format = pix_fmt;
-
-    if (init_filters(filter_description, &state->vstate) < 0) {
-        result = create_result_error(env, "error_creating_filters");
-        goto exit_create;
-    }
-    result = create_result_ok(env, state);
-
-exit_create:
-    unifex_release_state(env, state);
-    return result;
+    filter->inputs[0] = NULL;
+    filter->inputs[1] = NULL;
+    filter->output = NULL;
 }
