@@ -19,7 +19,7 @@ typedef struct VideoState {
     int pixel_format;
 } VideoState;
 
-typedef struct {
+typedef struct VState {
     FilterState filter;
     VideoState videos[2];
 } VState;

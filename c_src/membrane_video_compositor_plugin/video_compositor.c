@@ -50,10 +50,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
                          UnifexPayload *right_payload, State *state) {
     UNIFEX_TERM res;
     int ret = 0;
-    UnifexPayload *payloads[] = {
-        left_payload,
-        right_payload,
-    };
+    UnifexPayload *payloads[] = {left_payload, right_payload};
     AVFrame *frames[] = {av_frame_alloc(), av_frame_alloc()};
     AVFrame *filtered_frame = av_frame_alloc();
 
