@@ -96,7 +96,7 @@ defmodule SimpleComposerDemo.Elements.Composer do
       {{{:value, first_frame_buffer}, rest_of_first_queue},
        {{:value, second_frame_buffer}, rest_of_second_queue}} ->
         {:ok, merged_frame_binary} =
-          merge_frames(first_frame_buffer.payload, second_frame_buffer.payload, state.backend)
+          merge_frames(first_frame_buffer.payload, second_frame_buffer.payload, state)
 
         # packs merged binary into buffer (for encoder)
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
@@ -151,19 +151,17 @@ defmodule SimpleComposerDemo.Elements.Composer do
     end
   end
 
-  defp merge_frames(_first_frame_binary, _second_frame_binary, :ffmpeg) do
+  defp merge_frames(_first_frame_binary, _second_frame_binary, %{backend: :ffmpeg} = state) do
+    {:error, :not_implemented}
+  end
+
+  defp merge_frames(_first_frame_binary, _second_frame_binary, %{backend: :opengl} = _state) do
     # TO DO: implement function, that merge two raw video, 1280x720, I420 encoded frames,
     # into raw video, 1280x720, I420 encoded frame
     {:error, :not_implemented}
   end
 
-  defp merge_frames(_first_frame_binary, _second_frame_binary, :nx) do
-    # TO DO: implement function, that merge two raw video, 1280x720, I420 encoded frames,
-    # into raw video, 1280x720, I420 encoded frame
-    {:error, :not_implemented}
-  end
-
-  defp merge_frames(_first_frame_binary, _second_frame_binary, :opengl) do
+  defp merge_frames(_first_frame_binary, _second_frame_binary, %{backend: :nx} = _state) do
     # TO DO: implement function, that merge two raw video, 1280x720, I420 encoded frames,
     # into raw video, 1280x1440, I420 encoded frame
     {:error, :not_implemented}
