@@ -1,4 +1,4 @@
-defmodule VideoFilter.Helpers do
+defmodule VideoCompositor.Helpers do
   @moduledoc false
   import ExUnit.Assertions
 

@@ -38,10 +38,11 @@ static int init_filters_string(char *filters_str, int filters_size, int width,
     const int n_videos = 2;
     int filter_end = 0;
     for (int i = 0; i < n_videos; ++i) {
-        snprintf(filters_str + filter_end, filters_size - filter_end,
-                 "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
-                 "%d [in_%d];\n",
-                 width, height, pixel_format, 1, 1, i + 1);
+        filter_end +=
+            snprintf(filters_str + filter_end, filters_size - filter_end,
+                     "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
+                     "%d [in_%d];\n",
+                     width, height, pixel_format, 1, 1, i + 1);
     }
     return filter_end;
 }
@@ -55,8 +56,8 @@ static int apply_filters_options_string(char *filters_str, int filters_size) {
     //     "[b]deshake[filt]; "
     //     "[src][filt]overlay=w*(1-t*0.3)[out];\n";
     const char *filter_descr =
-        "[in_1]pad=iw*2:ih[src]; "
-        "[src][in_2]overlay=w[out];\n";
+        "[in_1]pad=iw:ih*2[src]; "
+        "[src][in_2]overlay=0:h[out];\n";
     filter_end += snprintf(filters_str + filter_end, filters_size - filter_end,
                            "%s", filter_descr);
     return filter_end;

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoFilter.FFmpeg.BundlexProject do
+defmodule Membrane.VideoCompositor.BundlexProject do
   use Bundlex.Project
 
   def project do
@@ -13,7 +13,8 @@ defmodule Membrane.VideoFilter.FFmpeg.BundlexProject do
         interface: :nif,
         sources: ["video_compositor.c", "filter.c"],
         pkg_configs: ["libavutil", "libavfilter"],
-        preprocessor: Unifex
+        preprocessor: Unifex,
+        src_base: "ffmpeg_video_compositor"
       ]
     ]
   end
