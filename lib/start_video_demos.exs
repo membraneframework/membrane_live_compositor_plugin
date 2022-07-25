@@ -5,7 +5,7 @@ output_path = "~/membrane_video_compositor/output.h264"
 video_width = 1280
 video_height = 720
 video_framerate = 30
-# one of :ffmpeg, :opengl, :nx
+# implementation is one of: :ffmpeg, :opengl, :nx
 implementation = :nx
 
 options = [
