@@ -113,7 +113,6 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        IO.puts("end")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
       _ ->
