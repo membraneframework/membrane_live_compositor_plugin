@@ -16,7 +16,6 @@ UNIFEX_TERM create(UnifexEnv *env, int width, int height,
     }
     create_filter_description(filter_str, sizeof filter_str, width, height,
                               pixel_format);
-    printf("%s\n", filter_str);
     result = create_unifex_filter(env, filter_str, pixel_format, width, height);
 end:
     return result;

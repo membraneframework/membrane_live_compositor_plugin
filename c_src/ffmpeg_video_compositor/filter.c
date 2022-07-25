@@ -34,7 +34,6 @@ void create_filter_description(char *filter_str, int filters_size, int width,
 
 static int init_filters_string(char *filters_str, int filters_size, int width,
                                int height, int pixel_format) {
-    // char filters_str[1024];
     const int n_videos = 2;
     int filter_end = 0;
     for (int i = 0; i < n_videos; ++i) {
@@ -49,12 +48,6 @@ static int init_filters_string(char *filters_str, int filters_size, int width,
 
 static int apply_filters_options_string(char *filters_str, int filters_size) {
     int filter_end = 0;
-    // const char *filter_descr =
-    //     "[in_1]scale=78:24[a]; "
-    //     "[in_2]scale=38:12[b]; "
-    //     "[a]pad=iw*2:ih[src]; "
-    //     "[b]deshake[filt]; "
-    //     "[src][filt]overlay=w*(1-t*0.3)[out];\n";
     const char *filter_descr =
         "[in_1]pad=iw:ih*2[src]; "
         "[src][in_2]overlay=0:h[out];\n";
@@ -76,7 +69,7 @@ int init_filters(const char *filters_str, VState *state) {
     AVFilterGraph *graph = state->filter.graph;
 
     if (graph == NULL) {
-        printf("Cannot allocate filter graph.");
+        fprintf(stderr, "Cannot allocate filter graph.");
         return -1;
     }
 
@@ -94,13 +87,6 @@ int init_filters(const char *filters_str, VState *state) {
         cs_printAVError("Cannot configure graph.", ret);
         goto end;
     }
-
-    // printf("Num filters: %d\n", graph->nb_filters);
-    // for (int i = 0; i < graph->nb_filters; i++) {
-    //     const AVFilterContext *filter = graph->filters[i];
-    //     printf("Filter [%d]: %s, inputs: %d, outputs: %D\n", i, filter->name,
-    //            filter->nb_inputs, filter->nb_outputs);
-    // }
 
     state->filter.inputs[0] = graph->filters[0];
     state->filter.inputs[1] = graph->filters[1];
