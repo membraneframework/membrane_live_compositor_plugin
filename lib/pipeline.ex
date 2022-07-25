@@ -8,13 +8,10 @@ defmodule Membrane.VideoCompositor.Pipeline do
   # options = [%{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}]
   def handle_init(options) do
     [options | _] = options
-    first_raw_video_path = options.first_raw_video_path
-    second_raw_video_path = options.second_raw_video_path
-    output_path = options.output_path
 
     children = %{
-      first_file: %Membrane.File.Source{location: first_raw_video_path},
-      second_file: %Membrane.File.Source{location: second_raw_video_path},
+      first_file: %Membrane.File.Source{location: options.first_raw_video_path},
+      second_file: %Membrane.File.Source{location: options.second_raw_video_path},
       first_parser: %Membrane.RawVideo.Parser{
         framerate: {options.video_framerate, 1},
         width: options.video_width,
@@ -33,7 +30,8 @@ defmodule Membrane.VideoCompositor.Pipeline do
         video_height: options.video_height
       },
       encoder: Membrane.H264.FFmpeg.Encoder,
-      file_sink: %Membrane.File.Sink{location: output_path}
+      file_sink: %Membrane.File.Sink{location: options.output_path}
+      # sink: %Membrane.VideoCompositor.Sink{location: options.output_path}  TO DO - make sink work XD
     }
 
     links = [
@@ -42,6 +40,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
       link(:first_parser) |> via_in(:first_input) |> to(:video_composer),
       link(:second_parser) |> via_in(:second_input) |> to(:video_composer),
       link(:video_composer) |> to(:encoder) |> to(:file_sink)
+      # link(:video_composer) |> to(:sink)
     ]
 
     {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}

@@ -17,17 +17,18 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.Buffer
 
   def_options implementation: [
-      type: :atom,
-      description: "Implementation type of video composer. One of: :ffmpeg, :opengl, :nx"
-    ],
-    video_width: [
-      type: :int,
-      description: "Width of input videos"
-    ],
-    video_height: [
-      type: :int,
-      description: "Height of input videos"
-    ]
+                type: :atom,
+                description:
+                  "Implementation type of video composer. One of: :ffmpeg, :opengl, :nx"
+              ],
+              video_width: [
+                type: :int,
+                description: "Width of input videos"
+              ],
+              video_height: [
+                type: :int,
+                description: "Height of input videos"
+              ]
 
   def_input_pad(:first_input,
     demand_unit: :buffers,
@@ -46,7 +47,6 @@ defmodule Membrane.VideoCompositor do
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420}
   )
-
 
   @impl true
   def handle_init(options) do
@@ -115,6 +115,7 @@ defmodule Membrane.VideoCompositor do
       {:end_of_the_stream, :end_of_the_stream} ->
         IO.puts("end")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
+
       _ ->
         {:ok, state}
     end
