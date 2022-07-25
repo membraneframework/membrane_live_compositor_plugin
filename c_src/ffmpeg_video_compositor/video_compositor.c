@@ -5,6 +5,15 @@ static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
                                         int pixel_format, int width,
                                         int height);
 
+/**
+ * @brief Initialize the state of the video compositor, create filter graph
+ *
+ * @param env Unifex environment
+ * @param width Width of the videos
+ * @param height Height of the videos
+ * @param pixel_format_name Pixel format of the videos, given in a string
+ * @return UNIFEX_TERM
+ */
 UNIFEX_TERM create(UnifexEnv *env, int width, int height,
                    char *pixel_format_name) {
     UNIFEX_TERM result;
@@ -21,6 +30,17 @@ end:
     return result;
 }
 
+/**
+ * @brief Create a unifex filter object
+ *
+ * @param env Unifex environment
+ * @param filter_description Description of the FFmpeg filter (transformation
+ * graph), given in a string
+ * @param pixel_format Pixel format code of the videos
+ * @param width Width of the videos
+ * @param height Height of the videos
+ * @return UNIFEX_TERM
+ */
 static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
                                         const char *filter_description,
                                         int pixel_format, int width,
@@ -34,7 +54,7 @@ static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
         state->vstate.videos[i].pixel_format = pixel_format;
     }
 
-    if (init_filters(filter_description, &state->vstate) < 0) {
+    if (init_filters(filter_description, &state->vstate.filter) < 0) {
         result = create_result_error(env, "error_creating_filters");
         goto exit_create;
     }
@@ -45,6 +65,16 @@ exit_create:
     return result;
 }
 
+/**
+ * @brief Apply a filter on the given frames (compose them) and stores the
+ * result in the environment.
+ *
+ * @param env Unifex environment
+ * @param left_payload First frame
+ * @param right_payload Second frame
+ * @param state State with the initialised filter
+ * @return UNIFEX_TERM
+ */
 UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
                          UnifexPayload *right_payload, State *state) {
     UNIFEX_TERM res;
@@ -60,7 +90,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
 
     for (int i = 0; i < SIZE(frames); i++) {
         AVFrame *frame = frames[i];
-        VideoState *video = &state->vstate.videos[i];
+        RawVideo *video = &state->vstate.videos[i];
         UnifexPayload *payload = payloads[i];
         frame->format = video->pixel_format;
         frame->width = video->width;
@@ -112,6 +142,12 @@ exit_filter:
     return res;
 }
 
+/**
+ * @brief Clean up the state
+ *
+ * @param env Unifex environment
+ * @param state State
+ */
 void handle_destroy_state(UnifexEnv *env, State *state) {
     UNIFEX_UNUSED(env);
     FilterState *filter = &state->vstate.filter;

@@ -1,27 +1,45 @@
 #include "filter.h"
+/**
+ * @brief Append a header of the filter description to the string (buffer).
+ * Creates two input pads with output pads named [in_1] and [in_2]
+ *
+ * @param filters_str Description destination string (buffer)
+ * @param filters_size Remaining size of the buffer
+ * @param width Width of the videos
+ * @param height Height of the videos
+ * @param pixel_format Pixel format code of the videos
+ * @return Number of characters written to the buffer
+ */
 static int init_filters_string(char *filters_str, int filters_size, int width,
                                int height, int pixel_format);
+
+/**
+ * @brief Append a main filter description (transformation graph) to the string
+ * (buffer)
+ *
+ * @param filters_str Description destination string (buffer)
+ * @param filters_size Remaining size of the buffer
+ * @return Number of characters written to the buffer
+ */
 static int apply_filters_options_string(char *filters_str, int filters_size);
+
+/**
+ * @brief Append a footer filter description to the string
+ * (buffer). Assumes that previous filter description provides one output pad
+ * named [out]
+ *
+ * @param filters_str Description destination string (buffer)
+ * @param filters_size Remaining size of the buffer
+ * @return Number of characters written to the buffer
+ */
 static int finish_filters_string(char *filter_str, int filters_size);
 
 static void cs_printAVError(const char *msg, int returnCode) {
     fprintf(stderr, "%s: %s\n", msg, av_err2str(returnCode));
 }
 
-int get_pixel_format(const char *fmt_name) {
-    int pix_fmt = -1;
-    if (strcmp(fmt_name, "I420") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV420P;
-    } else if (strcmp(fmt_name, "I422") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV422P;
-    } else if (strcmp(fmt_name, "I444") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV444P;
-    }
-    return pix_fmt;
-}
-
-void create_filter_description(char *filter_str, int filters_size, int width,
-                               int height, int pixel_format) {
+int create_filter_description(char *filter_str, int filters_size, int width,
+                              int height, int pixel_format) {
     int filter_end = 0;
     filter_end +=
         init_filters_string(filter_str + filter_end, filters_size - filter_end,
@@ -30,6 +48,7 @@ void create_filter_description(char *filter_str, int filters_size, int width,
                                                filters_size - filter_end);
     filter_end += finish_filters_string(filter_str + filter_end,
                                         filters_size - filter_end);
+    return filter_end;
 }
 
 static int init_filters_string(char *filters_str, int filters_size, int width,
@@ -64,9 +83,9 @@ static int finish_filters_string(char *filters_str, int filters_size) {
     return filter_end;
 }
 
-int init_filters(const char *filters_str, VState *state) {
-    state->filter.graph = avfilter_graph_alloc();
-    AVFilterGraph *graph = state->filter.graph;
+int init_filters(const char *filters_str, FilterState *filter) {
+    filter->graph = avfilter_graph_alloc();
+    AVFilterGraph *graph = filter->graph;
 
     if (graph == NULL) {
         fprintf(stderr, "Cannot allocate filter graph.");
@@ -88,9 +107,9 @@ int init_filters(const char *filters_str, VState *state) {
         goto end;
     }
 
-    state->filter.inputs[0] = graph->filters[0];
-    state->filter.inputs[1] = graph->filters[1];
-    state->filter.output = graph->filters[graph->nb_filters - 1 - 1];
+    filter->inputs[0] = graph->filters[0];
+    filter->inputs[1] = graph->filters[1];
+    filter->output = graph->filters[graph->nb_filters - 1 - 1];
 
 end:
     avfilter_inout_free(&gis);

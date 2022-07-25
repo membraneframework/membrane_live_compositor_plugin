@@ -1,6 +1,8 @@
 {
     "C_Cpp.errorSquiggles": "Disabled",
     "files.associations": {
-        "__locale": "c"
+        "__locale": "c",
+        "filter.h": "c",
+        "raw_video.h": "c"
     }
 }
