@@ -1,12 +1,12 @@
-defmodule TextOverlay.NativeTest do
+defmodule VideoCompositor.FFmpeg.NativeTest do
   use ExUnit.Case, async: true
 
   alias Membrane.VideoCompositor.FFmpeg.Native
-  alias VideoCompositor.Helpers
+  alias VideoCompositor.Test.Utility
 
   @tag :tmp_dir
   test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
-    {in_path, out_path, ref_path} = Helpers.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir)
+    {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir)
     assert {:ok, frame_a} = File.read(in_path)
     assert {:ok, frame_b} = File.read(in_path)
 
@@ -24,12 +24,12 @@ defmodule TextOverlay.NativeTest do
     IO.binwrite(file, out_frame)
     reference_input_path = "../fixtures/1frame.h264" |> Path.expand(__DIR__)
 
-    Helpers.create_ffmpeg_reference(
+    Utility.create_ffmpeg_reference(
       reference_input_path,
       ref_path,
       "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
     )
 
-    Helpers.compare_contents(out_path, ref_path)
+    Utility.compare_contents(out_path, ref_path)
   end
 end

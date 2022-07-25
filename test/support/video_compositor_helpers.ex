@@ -1,4 +1,4 @@
-defmodule VideoCompositor.Helpers do
+defmodule VideoCompositor.Test.Utility do
   @moduledoc false
   import ExUnit.Assertions
 
@@ -20,10 +20,13 @@ defmodule VideoCompositor.Helpers do
         [
           # overrides the output file without asking if it already exists
           "-y",
+          # video input filename
           "-i",
           input_path,
+          # description of the filter (transformation graph)
           "-vf",
           filter_descr,
+          # video output filename
           output_reference_path
         ],
         stderr_to_stdout: true
