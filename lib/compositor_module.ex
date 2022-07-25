@@ -3,7 +3,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   Implement merge_frames(first_frame_binary, second_frame_binary, implementation) function,
   that place first frame above the other and returns binary format of merged frames.
   """
-  import Nx.Defn
 
   def merge_frames(first_frame_binary, second_frame_binary, implementation, frame_width, frame_height) do
     case implementation do
