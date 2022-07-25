@@ -67,6 +67,8 @@ static int init_filters_string(char *filters_str, int filters_size, int width,
 
 static int apply_filters_options_string(char *filters_str, int filters_size) {
     int filter_end = 0;
+    // Temporary main filter description. It creates space for the second video
+    // (pad) and then overlay them on top of each other (overlay)
     const char *filter_descr =
         "[in_1]pad=iw:ih*2[src]; "
         "[src][in_2]overlay=0:h[out];\n";
