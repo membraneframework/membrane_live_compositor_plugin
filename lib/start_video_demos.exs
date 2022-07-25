@@ -1,11 +1,10 @@
-first_raw_video_path = "testsrc.raw"
-second_raw_video_path = "testsrc.raw"
+first_raw_video_path = "~/membrane_video_compositor/testsrc.raw"
+second_raw_video_path = "~/membrane_video_compositor/testsrc.raw"
+output_path = "output.h264"
 
 video_width = 1280
 video_height = 720
 video_framerate = 30
-
-output_path = "output.h264"
 implementation = :nx  # one of :ffmpeg, :opengl, :nx
 
 {:ok, pid} =
