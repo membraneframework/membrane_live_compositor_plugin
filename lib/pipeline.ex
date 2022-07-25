@@ -1,37 +1,33 @@
 defmodule Membrane.VideoCompositor.Pipeline do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
-  Videos spec: framerate 30, resolution: 1280x720, pixel format: I420, encoding: raw video
   """
 
   use Membrane.Pipeline
 
-  # options = %{path_to_first_raw_video, path_to_second_raw_video, output_path, implementation}
+  # options = [%{first_raw_video_path, second_raw_video_path, output_path, video_width,  implementation}]
   def handle_init(options) do
-    # extract videos paths
-    path_to_first_raw_video = options.path_to_first_raw_video
-    path_to_second_raw_video = options.path_to_second_raw_video
+    [options | _] = options
+    first_raw_video_path = options.first_raw_video_path
+    second_raw_video_path = options.second_raw_video_path
     output_path = options.output_path
-    implementation = options.implementation
-
-    _video_composer_options = %{implementation: implementation}
 
     children = %{
-      first_file: %Membrane.File.Source{location: path_to_first_raw_video},
-      second_file: %Membrane.File.Source{location: path_to_second_raw_video},
+      first_file: %Membrane.File.Source{location: first_raw_video_path},
+      second_file: %Membrane.File.Source{location: second_raw_video_path},
       first_parser: %Membrane.RawVideo.Parser{
-        framerate: {30, 1},
-        width: 1280,
-        height: 720,
+        framerate: {options.video_framerate, 1},
+        width: options.video_width,
+        height: options.video_height,
         pixel_format: :I420
       },
       second_parser: %Membrane.RawVideo.Parser{
-        framerate: {30, 1},
-        width: 1280,
-        height: 720,
+        framerate: {options.video_framerate, 1},
+        width: options.video_width,
+        height: options.video_height,
         pixel_format: :I420
       },
-      video_composer: Membrane.VideoCompositor.Compositor,
+      video_composer: Membrane.VideoCompositor,
       encoder: Membrane.H264.FFmpeg.Encoder,
       file_sink: %Membrane.File.Sink{location: output_path}
     }

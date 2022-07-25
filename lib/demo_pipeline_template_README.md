@@ -9,14 +9,7 @@ Something fucks-up in video compositor element and it's too late for me to debug
 ### Overview of pipeline:
 Pipeline starts with two Membrane.File.Source elements, that feed data into two Membrane.RawVideo.Parser-s. Parsers are connected to VideoComposer element, which is responsible for merging recived frames buffers and send them throught in buffers to video encoder or to sink pad.
 
-### Videos specs:
-Video format: raw video
-Resolution: 1280x720
-Framerate: 30
-Pixel format: I420
-
 ### deps:
-
 defp deps do
     [
       {:membrane_core, "~> 0.10.0"},
