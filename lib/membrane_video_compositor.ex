@@ -16,8 +16,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.RawVideo
   alias Membrane.Buffer
 
-  '''
-  def_options implementaition: [
+  def_options implementation: [
       type: :atom,
       description: "Implementation type of video composer. One of: :ffmpeg, :opengl, :nx"
     ],
@@ -29,7 +28,6 @@ defmodule Membrane.VideoCompositor do
       type: :int,
       description: "Height of input videos"
     ]
-  '''
 
   def_input_pad(:first_input,
     demand_unit: :buffers,
@@ -51,13 +49,13 @@ defmodule Membrane.VideoCompositor do
 
 
   @impl true
-  def handle_init(_options) do
+  def handle_init(options) do
     state = %{
       frames_queues: %{first_input: :queue.new(), second_input: :queue.new()},
       streams_state: %{first_input: :playing, second_input: :playing},
-      implementation: :nx,
-      video_width: 1280,
-      video_height: 720
+      implementation: options.implementation,
+      video_width: options.video_width,
+      video_height: options.video_height
     }
 
     {:ok, state}
@@ -79,7 +77,9 @@ defmodule Membrane.VideoCompositor do
           Membrane.VideoCompositor.FrameCompositor.merge_frames(
             first_frame_buffer.payload,
             second_frame_buffer.payload,
-            state.implementation
+            state.implementation,
+            state.video_width,
+            state.video_height
           )
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
@@ -113,8 +113,8 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
+        IO.puts("end")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
-
       _ ->
         {:ok, state}
     end

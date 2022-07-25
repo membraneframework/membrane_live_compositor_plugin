@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   use Membrane.Pipeline
 
-  # options = [%{first_raw_video_path, second_raw_video_path, output_path, video_width,  implementation}]
+  # options = [%{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}]
   def handle_init(options) do
     [options | _] = options
     first_raw_video_path = options.first_raw_video_path
@@ -27,7 +27,11 @@ defmodule Membrane.VideoCompositor.Pipeline do
         height: options.video_height,
         pixel_format: :I420
       },
-      video_composer: Membrane.VideoCompositor,
+      video_composer: %Membrane.VideoCompositor{
+        implementation: options.implementation,
+        video_width: options.video_width,
+        video_height: options.video_height
+      },
       encoder: Membrane.H264.FFmpeg.Encoder,
       file_sink: %Membrane.File.Sink{location: output_path}
     }

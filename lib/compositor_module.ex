@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   """
   import Nx.Defn
 
-  def merge_frames(first_frame_binary, second_frame_binary, implementation) do
+  def merge_frames(first_frame_binary, second_frame_binary, implementation, frame_width, frame_height) do
     case implementation do
       :ffmpeg ->
         {:ok, 'not implemented yet'}
@@ -16,18 +16,16 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
       :nx ->
         first_frame_nxtensor = Nx.from_binary(first_frame_binary, {:u, 8})
         second_frame_nxtensor = Nx.from_binary(second_frame_binary, {:u, 8})
-        merged_frames_nxtensor = merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor)
+        merged_frames_nxtensor = merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor, frame_width, frame_height)
 
         merged_frames_binary = Nx.to_binary(merged_frames_nxtensor)
         {:ok, merged_frames_binary}
     end
   end
 
-  defnp merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor) do
-    {frame_width, frame_height} = {1280, 720}  # TO DO change this to be passed in options
-
-    first_v_value_index = floor_number(frame_width * frame_height * 5 / 4)
-    frame_length = floor_number(frame_width * frame_height * 3 / 2)
+  defp merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor, frame_width, frame_height) do
+    first_v_value_index = floor(frame_width * frame_height * 5 / 4)
+    frame_length = floor(frame_width * frame_height * 3 / 2)
 
     y =
       Nx.concatenate([
@@ -48,9 +46,5 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
       ])
 
     Nx.concatenate([y, u, v])
-  end
-
-  defnp floor_number(value) do
-    transform(value, &floor/1)
   end
 end
