@@ -5,10 +5,8 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   use Membrane.Pipeline
 
-  # options = [%{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}]
+  # options = %{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}
   def handle_init(options) do
-    [options | _] = options
-
     children = %{
       first_file: %Membrane.File.Source{location: options.first_raw_video_path},
       second_file: %Membrane.File.Source{location: options.second_raw_video_path},
@@ -44,9 +42,5 @@ defmodule Membrane.VideoCompositor.Pipeline do
     ]
 
     {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}
-  end
-
-  def handle_element_end_of_stream(_element, _cts, state) do
-    {:ok, state}
   end
 end

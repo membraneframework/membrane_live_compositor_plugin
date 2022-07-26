@@ -15,10 +15,12 @@ defmodule Membrane.VideoCompositor.Sink do
     caps: {RawVideo, pixel_format: :I420}
   )
 
+  @impl true
   def handle_init(options) do
     {:ok, %{location: options.location}}
   end
 
+  @impl true
   def handle_write(:input, buffer, _ctx, state) do
     IO.binwrite(state.location, buffer.payload)
     {:ok, state}

@@ -1,14 +1,14 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
-  Element responsible for placing first recived frame above the other and sending forward
-  buffor with merged frame binary in payload.
+  Element responsible for placing first received frame above the other and sending forward
+  buffer with merged frame binary in payload.
   handle_init: initialize two Erlang :queue-s,
   handle_process:
-    1. puts recived frame and saves it to appropriate queue (based on from with input pad it recived frame)
+    1. puts received frame and saves it to appropriate queue (based on from with input pad it received frame)
     2. checks whether there are elements in both queues, if so it runs
     Membrane.VideoCompositor.FrameCompositor.merge_frames(first_frame_binary, second_frame_binary, implementation) function
     3. wraps binary of merged frame into buffer
-    4. sends forward (to encoder or sink pad) wraped buffer
+    4. sends forward (to encoder or sink pad) wrapped buffer
   handle_caps: handle caps differences between input pads and output pad
   """
 
