@@ -4,7 +4,13 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   that place first frame above the other and returns binary format of merged frames.
   """
 
-  def merge_frames(first_frame_binary, second_frame_binary, implementation, frame_width, frame_height) do
+  def merge_frames(
+        first_frame_binary,
+        second_frame_binary,
+        implementation,
+        frame_width,
+        frame_height
+      ) do
     case implementation do
       :ffmpeg ->
         {:ok, 'not implemented yet'}
@@ -15,7 +21,9 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
       :nx ->
         first_frame_nxtensor = Nx.from_binary(first_frame_binary, {:u, 8})
         second_frame_nxtensor = Nx.from_binary(second_frame_binary, {:u, 8})
-        merged_frames_nxtensor = merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor, frame_width, frame_height)
+
+        merged_frames_nxtensor =
+          merge_frames_nx(first_frame_nxtensor, second_frame_nxtensor, frame_width, frame_height)
 
         merged_frames_binary = Nx.to_binary(merged_frames_nxtensor)
         {:ok, merged_frames_binary}
