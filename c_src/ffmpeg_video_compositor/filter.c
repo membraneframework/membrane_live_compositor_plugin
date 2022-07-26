@@ -25,8 +25,8 @@ static int apply_filters_options_string(char *filters_str, int filters_size);
 
 /**
  * @brief Append a footer filter description to the string
- * (buffer). Assumes that previous filter description provides one output pad
- * named [out]
+ * (buffer). Assumes that the previous filter description provides one output
+ * pad named [out]
  *
  * @param filters_str Description destination string (buffer)
  * @param filters_size Remaining size of the buffer

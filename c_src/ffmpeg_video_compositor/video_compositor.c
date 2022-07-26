@@ -1,12 +1,11 @@
 #include "video_compositor.h"
 
-static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
-                                        const char *filter_description,
-                                        int pixel_format, int width,
-                                        int height);
+static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
+                                      const char *filter_description,
+                                      int pixel_format, int width, int height);
 
 /**
- * @brief Initialize the state of the video compositor, create filter graph
+ * @brief Initializes the state of the video compositor, creates a filter graph
  *
  * @param env Unifex environment
  * @param width Width of the videos
@@ -25,7 +24,7 @@ UNIFEX_TERM create(UnifexEnv *env, int width, int height,
     }
     create_filter_description(filter_str, sizeof filter_str, width, height,
                               pixel_format);
-    result = create_unifex_filter(env, filter_str, pixel_format, width, height);
+    result = init_unifex_filter(env, filter_str, pixel_format, width, height);
 end:
     return result;
 }
@@ -41,10 +40,9 @@ end:
  * @param height Height of the videos
  * @return UNIFEX_TERM
  */
-static UNIFEX_TERM create_unifex_filter(UnifexEnv *env,
-                                        const char *filter_description,
-                                        int pixel_format, int width,
-                                        int height) {
+static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
+                                      const char *filter_description,
+                                      int pixel_format, int width, int height) {
     UNIFEX_TERM result;
 
     State *state = unifex_alloc_state(env);
@@ -72,7 +70,7 @@ exit_create:
  * @param env Unifex environment
  * @param left_payload First frame
  * @param right_payload Second frame
- * @param state State with the initialised filter
+ * @param state State with the initialized filter
  * @return UNIFEX_TERM
  */
 UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
@@ -99,7 +97,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
                              frame->format, frame->width, frame->height, 1);
     }
 
-    /* feed the filtergraph */
+    /* feed the filter graph */
     FilterState *filter = &state->vstate.filter;
     for (int i = 0; i < SIZE(filter->inputs); ++i) {
         AVFilterContext *input = filter->inputs[i];
@@ -111,7 +109,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
         }
     }
 
-    /* pull filtered frame from the filtergraph - in drawtext filter there
+    /* pull the filtered frame from the filter graph
      * should always be 1 frame on output for each frame on input*/
     ret = av_buffersink_get_frame(filter->output, filtered_frame);
     if (ret < 0) {
