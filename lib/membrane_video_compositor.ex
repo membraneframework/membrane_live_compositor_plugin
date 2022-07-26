@@ -87,8 +87,7 @@ defmodule Membrane.VideoCompositor do
         state = %{state | frames_queues: frames_queues}
         {{:ok, buffer: {:output, merged_image_buffer}}, state}
 
-      # one of queues is empty
-      _ ->
+      _one_of_queues_is_empty ->
         {:ok, state}
     end
   end
@@ -116,7 +115,7 @@ defmodule Membrane.VideoCompositor do
         IO.puts("Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
-      _ ->
+      _one_streams_has_not_ended ->
         {:ok, state}
     end
   end
