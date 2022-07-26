@@ -10,8 +10,9 @@
  * @param n_videos Size of the videos array
  * @return int
  */
-static int init_filters_string(char *filters_str, int filters_size,
-                               RawVideo videos[], int n_videos);
+static int append_input_nodes_filters_string(char *filters_str,
+                                             int filters_size,
+                                             RawVideo videos[], int n_videos);
 
 /**
  * @brief Append a main filter description (transformation graph) to the string
@@ -41,7 +42,7 @@ static void cs_printAVError(const char *msg, int returnCode) {
 int init_filter_description(char *filter_str, int filter_size,
                             RawVideo videos[], int n_videos) {
     int filter_end = 0;
-    filter_end += init_filters_string(
+    filter_end += append_input_nodes_filters_string(
         filter_str + filter_end, filter_size - filter_end, videos, n_videos);
     filter_end += apply_filters_options_string(filter_str + filter_end,
                                                filter_size - filter_end);
@@ -50,16 +51,25 @@ int init_filter_description(char *filter_str, int filter_size,
     return filter_end;
 }
 
-static int init_filters_string(char *filters_str, int filters_size,
-                               RawVideo videos[], int n_videos) {
+static int append_input_nodes_filters_string(char *filters_str,
+                                             int filters_size,
+                                             RawVideo videos[], int n_videos) {
     int filter_end = 0;
     for (int i = 0; i < n_videos; ++i) {
         RawVideo *video = &videos[i];
+        const char *video_description_format =
+            "buffer="
+            "video_size=%dx%d"
+            ":pix_fmt=%d"
+            ":time_base=%d/%d"
+            "[in_%d];\n";
+        const int time_base_num = 1;
+        const int time_base_den = 1;
+        const int input_pad_idx = i + 1;
         filter_end += snprintf(
             filters_str + filter_end, filters_size - filter_end,
-            "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
-            "%d [in_%d];\n",
-            video->width, video->height, video->pixel_format, 1, 1, i + 1);
+            video_description_format, video->width, video->height,
+            video->pixel_format, time_base_num, time_base_den, input_pad_idx);
     }
     return filter_end;
 }

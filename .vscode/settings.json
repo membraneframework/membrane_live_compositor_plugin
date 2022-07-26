@@ -4,6 +4,7 @@
         "__locale": "c",
         "filter.h": "c",
         "raw_video.h": "c",
-        "functional": "c"
+        "functional": "c",
+        "locale": "c"
     }
 }
