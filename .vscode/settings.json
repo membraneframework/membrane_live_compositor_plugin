@@ -5,6 +5,14 @@
         "filter.h": "c",
         "raw_video.h": "c",
         "functional": "c",
-        "locale": "c"
+        "locale": "c",
+        "concepts": "c",
+        "ios": "c",
+        "istream": "c",
+        "numeric": "c",
+        "ostream": "c",
+        "random": "c",
+        "*.inc": "c",
+        "video_compositor.h": "c"
     }
 }

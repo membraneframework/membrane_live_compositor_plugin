@@ -2,13 +2,17 @@ module Membrane.VideoCompositor.FFmpeg.Native
 
 state_type "State"
 
+type(
+  raw_video :: %Membrane.VideoCompositor.RawVideo{
+    width: int,
+    height: int,
+    pixel_format_name: atom
+  }
+)
+
 spec init(
-       first_width :: int,
-       first_height :: int,
-       first_pixel_format_name :: atom,
-       second_width :: int,
-       second_height :: int,
-       second_pixel_format_name :: atom
+       first_video :: raw_video,
+       second_video :: raw_video
      ) :: {:ok :: label, state} | {:error :: label, reason :: atom}
 
 spec apply_filter(left_payload :: payload, right_payload :: payload, state) ::
