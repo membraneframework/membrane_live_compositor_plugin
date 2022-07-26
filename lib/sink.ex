@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Sink do
   @moduledoc """
-  Module responsible for writing incomming buffers to location passed in options.
+  Module responsible for writing incoming buffers to location passed in options.
   """
   use Membrane.Sink
   alias Membrane.RawVideo
