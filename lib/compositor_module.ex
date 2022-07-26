@@ -4,6 +4,8 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   that place first frame above the other and returns binary format of merged frames.
   """
 
+  @spec merge_frames(bitstring(), bitstring(), :atom, integer(), integer()) ::
+          {:atom, bitstring()}
   def merge_frames(
         first_frame_binary,
         second_frame_binary,

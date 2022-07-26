@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
   use Membrane.Pipeline
 
   # options = %{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}
+  @impl true
   def handle_init(options) do
     children = %{
       first_file: %Membrane.File.Source{location: options.first_raw_video_path},
