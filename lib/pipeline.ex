@@ -31,7 +31,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
       },
       encoder: Membrane.H264.FFmpeg.Encoder,
       file_sink: %Membrane.File.Sink{location: options.output_path}
-      # sink: %Membrane.VideoCompositor.Sink{location: options.output_path}  TO DO - make sink work XD
+      # sink: %Membrane.VideoCompositor.Sink{location: options.output_path}
     }
 
     links = [

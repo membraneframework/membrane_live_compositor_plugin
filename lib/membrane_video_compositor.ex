@@ -13,8 +13,8 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Filter
-  alias Membrane.RawVideo
   alias Membrane.Buffer
+  alias Membrane.RawVideo
 
   def_options implementation: [
                 type: :atom,
@@ -113,8 +113,8 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
+        IO.puts("Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
-
       _ ->
         {:ok, state}
     end
