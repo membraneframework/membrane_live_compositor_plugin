@@ -27,20 +27,19 @@ typedef struct VState {
  * @param filters_descr String description of the filter graph. This should
  * follow FFmpeg filter documentation.
  * @param filter  Pointer to the filter graph.
- * @return int Return code. Return 0 on success, a negative value on failure.
+ * @return Return code. Return 0 on success, a negative value on failure.
  */
 int init_filters(const char *filters_descr, FilterState *filter);
 
 /**
  * @brief Creates a filter description string in an FFmpeg format and stores it
- * in the given string. The function assumes two input videos.
+ * in the given string.
  *
  * @param filter_str Description destination (buffer)
  * @param filter_size Maximum size of the filter description (buffer size)
- * @param width Width of the videos
- * @param height Height of the videos
- * @param pixel_format Pixel format code of the videos
- * @return Number of characters written to the buffer
+ * @param videos Array of input videos.
+ * @param n_videos Size of the videos array
+ * @return int
  */
-int init_filter_description(char *filter_str, int filter_size, int width,
-                            int height, int pixel_format);
+int init_filter_description(char *filter_str, int filter_size,
+                            RawVideo videos[], int n_videos);

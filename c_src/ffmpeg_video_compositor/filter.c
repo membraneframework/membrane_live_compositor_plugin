@@ -1,17 +1,17 @@
 #include "filter.h"
 /**
  * @brief Append a header of the filter description to the string (buffer).
- * Creates two input pads with output pads named [in_1] and [in_2]
+ * Creates \p n_videos input nodes with output pads named [in_1], [in_2], ..,
+ * [in_ \p n_videos].
  *
  * @param filters_str Description destination string (buffer)
  * @param filters_size Remaining size of the buffer
- * @param width Width of the videos
- * @param height Height of the videos
- * @param pixel_format Pixel format code of the videos
- * @return Number of characters written to the buffer
+ * @param videos Array of input videos.
+ * @param n_videos Size of the videos array
+ * @return int
  */
-static int init_filters_string(char *filters_str, int filters_size, int width,
-                               int height, int pixel_format);
+static int init_filters_string(char *filters_str, int filters_size,
+                               RawVideo videos[], int n_videos);
 
 /**
  * @brief Append a main filter description (transformation graph) to the string
@@ -38,29 +38,28 @@ static void cs_printAVError(const char *msg, int returnCode) {
     fprintf(stderr, "%s: %s\n", msg, av_err2str(returnCode));
 }
 
-int init_filter_description(char *filter_str, int filters_size, int width,
-                            int height, int pixel_format) {
+int init_filter_description(char *filter_str, int filter_size,
+                            RawVideo videos[], int n_videos) {
     int filter_end = 0;
-    filter_end +=
-        init_filters_string(filter_str + filter_end, filters_size - filter_end,
-                            width, height, pixel_format);
+    filter_end += init_filters_string(
+        filter_str + filter_end, filter_size - filter_end, videos, n_videos);
     filter_end += apply_filters_options_string(filter_str + filter_end,
-                                               filters_size - filter_end);
+                                               filter_size - filter_end);
     filter_end += finish_filters_string(filter_str + filter_end,
-                                        filters_size - filter_end);
+                                        filter_size - filter_end);
     return filter_end;
 }
 
-static int init_filters_string(char *filters_str, int filters_size, int width,
-                               int height, int pixel_format) {
-    const int n_videos = 2;
+static int init_filters_string(char *filters_str, int filters_size,
+                               RawVideo videos[], int n_videos) {
     int filter_end = 0;
     for (int i = 0; i < n_videos; ++i) {
-        filter_end +=
-            snprintf(filters_str + filter_end, filters_size - filter_end,
-                     "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
-                     "%d [in_%d];\n",
-                     width, height, pixel_format, 1, 1, i + 1);
+        RawVideo *video = &videos[i];
+        filter_end += snprintf(
+            filters_str + filter_end, filters_size - filter_end,
+            "buffer=video_size=%dx%d:pix_fmt=%d:time_base=%d/"
+            "%d [in_%d];\n",
+            video->width, video->height, video->pixel_format, 1, 1, i + 1);
     }
     return filter_end;
 }

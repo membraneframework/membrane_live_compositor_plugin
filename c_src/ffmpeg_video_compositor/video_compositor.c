@@ -1,56 +1,79 @@
 #include "video_compositor.h"
 
-static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
-                                      const char *filter_description,
-                                      int pixel_format, int width, int height);
-
-/**
- * @brief Initializes the state of the video compositor, creates a filter graph
- *
- * @param env Unifex environment
- * @param width Width of the videos
- * @param height Height of the videos
- * @param pixel_format_name Pixel format of the videos, given in a string
- * @return UNIFEX_TERM
- */
-UNIFEX_TERM init(UnifexEnv *env, int width, int height,
-                 char *pixel_format_name) {
-    UNIFEX_TERM result;
-    char filter_str[512];
-
-    int pixel_format = get_pixel_format(pixel_format_name);
-    if (pixel_format < 0) {
-        result = init_result_error(env, "unsupported_pixel_format");
-        goto end;
-    }
-    init_filter_description(filter_str, sizeof filter_str, width, height,
-                            pixel_format);
-    result = init_unifex_filter(env, filter_str, pixel_format, width, height);
-end:
-    return result;
-}
-
 /**
  * @brief Create a unifex filter object
  *
  * @param env Unifex environment
  * @param filter_description Description of the FFmpeg filter (transformation
  * graph), given in a string
- * @param pixel_format Pixel format code of the videos
- * @param width Width of the videos
- * @param height Height of the videos
+ * @param videos Array of input videos
+ * @param n_videos Size of the videos array
  * @return UNIFEX_TERM
  */
 static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
-                                      int pixel_format, int width, int height) {
+                                      RawVideo videos[], int n_videos);
+
+int init_raw_video(RawVideo *raw_video, int width, int height,
+                   const char *pixel_format_name) {
+    int pixel_format = get_pixel_format(pixel_format_name);
+    if (pixel_format < 0) {
+        return -1;
+    }
+    raw_video->width = width;
+    raw_video->height = height;
+    raw_video->pixel_format = pixel_format;
+    return 0;
+}
+
+/**
+ * @brief Initializes the state of the video compositor and creates a filter
+ * graph. The function assumes two input videos and one output video.
+ *
+ * @param env Unifex environment
+ * @param first_width Width of the first video
+ * @param first_height Height of the first video
+ * @param first_pixel_format_name Pixel format of the first video, given in a
+ * string
+ * @param second_width Width of the second video
+ * @param second_height Height of the second video
+ * @param second_pixel_format_name Pixel format of the second video, given in a
+ * string
+ * @return UNIFEX_TERM
+ */
+UNIFEX_TERM init(UnifexEnv *env, int first_width, int first_height,
+                 char *first_pixel_format_name, int second_width,
+                 int second_height, char *second_pixel_format_name) {
+    UNIFEX_TERM result;
+    char filter_str[512];
+
+    RawVideo videos[2];
+    if (init_raw_video(&videos[0], first_width, first_height,
+                       first_pixel_format_name) < 0) {
+        result = init_result_error(env, "unsupported_pixel_format");
+        goto end;
+    }
+    if (init_raw_video(&videos[1], second_width, second_height,
+                       second_pixel_format_name) < 0) {
+        result = init_result_error(env, "unsupported_pixel_format");
+        goto end;
+    }
+
+    init_filter_description(filter_str, sizeof filter_str, videos,
+                            SIZE(videos));
+    result = init_unifex_filter(env, filter_str, videos, SIZE(videos));
+end:
+    return result;
+}
+
+static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
+                                      const char *filter_description,
+                                      RawVideo videos[], int n_videos) {
     UNIFEX_TERM result;
 
     State *state = unifex_alloc_state(env);
     for (int i = 0; i < SIZE(state->vstate.videos); i++) {
-        state->vstate.videos[i].height = height;
-        state->vstate.videos[i].width = width;
-        state->vstate.videos[i].pixel_format = pixel_format;
+        state->vstate.videos[i] = videos[i];
     }
 
     if (init_filters(filter_description, &state->vstate.filter) < 0) {

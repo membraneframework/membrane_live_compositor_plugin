@@ -14,6 +14,9 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
              Native.init(
                640,
                360,
+               :I420,
+               640,
+               360,
                :I420
              )
 
