@@ -39,6 +39,16 @@ static void cs_printAVError(const char *msg, int returnCode) {
     fprintf(stderr, "%s: %s\n", msg, av_err2str(returnCode));
 }
 
+/**
+ * @brief Creates a filter description string in an FFmpeg format and stores it
+ * in the given string.
+ *
+ * @param filter_str Description destination (buffer)
+ * @param filter_size Maximum size of the filter description (buffer size)
+ * @param videos Array of input videos.
+ * @param n_videos Size of the videos array
+ * @return int
+ */
 int init_filter_description(char *filter_str, int filter_size,
                             RawVideo videos[], int n_videos) {
     int filter_end = 0;
@@ -94,6 +104,15 @@ static int finish_filters_string(char *filters_str, int filters_size) {
     return filter_end;
 }
 
+/**
+ * @brief Creates a filter graph from the string description and stores it in
+ * the given filter.
+ *
+ * @param filters_descr String description of the filter graph. This should
+ * follow FFmpeg filter documentation.
+ * @param filter  Pointer to the filter graph.
+ * @return Return code. Return 0 on success, a negative value on failure.
+ */
 int init_filters(const char *filters_str, FilterState *filter) {
     filter->graph = avfilter_graph_alloc();
     AVFilterGraph *graph = filter->graph;
