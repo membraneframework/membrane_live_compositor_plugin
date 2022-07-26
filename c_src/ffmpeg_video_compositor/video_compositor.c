@@ -19,30 +19,23 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
  * graph. The function assumes two input videos and one output video.
  *
  * @param env Unifex environment
- * @param first_width Width of the first video
- * @param first_height Height of the first video
- * @param first_pixel_format_name Pixel format of the first video, given in a
- * string
- * @param second_width Width of the second video
- * @param second_height Height of the second video
- * @param second_pixel_format_name Pixel format of the second video, given in a
- * string
+ * @param first_video First input video
+ * @param second_video Second input video
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM init(UnifexEnv *env, int first_width, int first_height,
-                 char *first_pixel_format_name, int second_width,
-                 int second_height, char *second_pixel_format_name) {
+UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
+                 raw_video second_video) {
   UNIFEX_TERM result;
   char filter_str[512];
 
   RawVideo videos[2];
-  if (init_raw_video(&videos[0], first_width, first_height,
-                     first_pixel_format_name) < 0) {
+  if (init_raw_video(&videos[0], first_video.width, first_video.height,
+                     first_video.pixel_format_name) < 0) {
     result = init_result_error(env, "unsupported_pixel_format");
     goto end;
   }
-  if (init_raw_video(&videos[1], second_width, second_height,
-                     second_pixel_format_name) < 0) {
+  if (init_raw_video(&videos[1], second_video.width, second_video.height,
+                     second_video.pixel_format_name) < 0) {
     result = init_result_error(env, "unsupported_pixel_format");
     goto end;
   }

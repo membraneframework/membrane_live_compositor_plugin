@@ -3,6 +3,7 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
 
   alias Membrane.VideoCompositor.FFmpeg.Native
   alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.RawVideo
 
   @tag :tmp_dir
   test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
@@ -12,12 +13,16 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
 
     assert {:ok, ref} =
              Native.init(
-               640,
-               360,
-               :I420,
-               640,
-               360,
-               :I420
+               %RawVideo{
+                 width: 640,
+                 height: 360,
+                 pixel_format_name: :I420
+               },
+               %RawVideo{
+                 width: 640,
+                 height: 360,
+                 pixel_format_name: :I420
+               }
              )
 
     assert {:ok, out_frame} = Native.apply_filter(frame_a, frame_b, ref)
