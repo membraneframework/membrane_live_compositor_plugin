@@ -1,9 +1,9 @@
 defmodule VideoCompositor.FFmpeg.NativeTest do
   use ExUnit.Case, async: true
 
+  alias Membrane.RawVideo
   alias Membrane.VideoCompositor.FFmpeg.Native
   alias Membrane.VideoCompositor.Test.Utility
-  alias Membrane.VideoCompositor.RawVideo
 
   @tag :tmp_dir
   test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
@@ -16,12 +16,16 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
                %RawVideo{
                  width: 640,
                  height: 360,
-                 pixel_format_name: :I420
+                 pixel_format: :I420,
+                 framerate: nil,
+                 aligned: nil
                },
                %RawVideo{
                  width: 640,
                  height: 360,
-                 pixel_format_name: :I420
+                 pixel_format: :I420,
+                 framerate: nil,
+                 aligned: nil
                }
              )
 

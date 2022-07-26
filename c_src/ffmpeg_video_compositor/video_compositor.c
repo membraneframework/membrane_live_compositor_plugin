@@ -30,12 +30,12 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
 
   RawVideo videos[2];
   if (init_raw_video(&videos[0], first_video.width, first_video.height,
-                     first_video.pixel_format_name) < 0) {
+                     first_video.pixel_format) < 0) {
     result = init_result_error(env, "unsupported_pixel_format");
     goto end;
   }
   if (init_raw_video(&videos[1], second_video.width, second_video.height,
-                     second_video.pixel_format_name) < 0) {
+                     second_video.pixel_format) < 0) {
     result = init_result_error(env, "unsupported_pixel_format");
     goto end;
   }
