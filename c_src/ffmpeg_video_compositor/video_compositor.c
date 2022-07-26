@@ -14,18 +14,6 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
                                       RawVideo videos[], int n_videos);
 
-int init_raw_video(RawVideo *raw_video, int width, int height,
-                   const char *pixel_format_name) {
-    int pixel_format = get_pixel_format(pixel_format_name);
-    if (pixel_format < 0) {
-        return -1;
-    }
-    raw_video->width = width;
-    raw_video->height = height;
-    raw_video->pixel_format = pixel_format;
-    return 0;
-}
-
 /**
  * @brief Initializes the state of the video compositor and creates a filter
  * graph. The function assumes two input videos and one output video.
