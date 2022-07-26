@@ -62,7 +62,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_process(pad, buffer, _contex, state) do
+  def handle_process(pad, buffer, _context, state) do
     updated_queue = Map.get(state.frames_queues, pad)
     updated_queue = :queue.in(buffer, updated_queue)
     updated_frames_queues = state.frames_queues
