@@ -2,7 +2,7 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
   use ExUnit.Case, async: true
 
   alias Membrane.VideoCompositor.FFmpeg.Native
-  alias VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Test.Utility
 
   @tag :tmp_dir
   test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
