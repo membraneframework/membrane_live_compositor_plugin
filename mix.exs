@@ -42,14 +42,18 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.13.0"},
       {:unifex, "~> 1.0"},
+      {:membrane_caps_video_raw, "~> 0.1.0"},
+      {:mock, "~> 0.3.0"},
       # Testing
-      {:membrane_file_plugin, "~> 0.9", only: :test},
+      {:membrane_file_plugin, "~> 0.12.0", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.18", only: :test},
       {:membrane_raw_video_parser_plugin, "~> 0.8.0", only: :test},
       # Development
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:nx, "~> 0.2"},
+      {:exla, "~> 0.2"}
     ]
   end
 
