@@ -9,15 +9,15 @@
  * @return Pixel format code
  */
 enum AVPixelFormat get_pixel_format(const char *fmt_name) {
-    enum AVPixelFormat pix_fmt = AV_PIX_FMT_NONE;
-    if (strcmp(fmt_name, "I420") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV420P;
-    } else if (strcmp(fmt_name, "I422") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV422P;
-    } else if (strcmp(fmt_name, "I444") == 0) {
-        pix_fmt = AV_PIX_FMT_YUV444P;
-    }
-    return pix_fmt;
+  enum AVPixelFormat pix_fmt = AV_PIX_FMT_NONE;
+  if (strcmp(fmt_name, "I420") == 0) {
+    pix_fmt = AV_PIX_FMT_YUV420P;
+  } else if (strcmp(fmt_name, "I422") == 0) {
+    pix_fmt = AV_PIX_FMT_YUV422P;
+  } else if (strcmp(fmt_name, "I444") == 0) {
+    pix_fmt = AV_PIX_FMT_YUV444P;
+  }
+  return pix_fmt;
 }
 
 /**
@@ -32,12 +32,12 @@ enum AVPixelFormat get_pixel_format(const char *fmt_name) {
  */
 int init_raw_video(RawVideo *raw_video, int width, int height,
                    const char *pixel_format_name) {
-    int pixel_format = get_pixel_format(pixel_format_name);
-    if (pixel_format < 0) {
-        return -1;
-    }
-    raw_video->width = width;
-    raw_video->height = height;
-    raw_video->pixel_format = pixel_format;
-    return 0;
+  int pixel_format = get_pixel_format(pixel_format_name);
+  if (pixel_format < 0) {
+    return -1;
+  }
+  raw_video->width = width;
+  raw_video->height = height;
+  raw_video->pixel_format = pixel_format;
+  return 0;
 }

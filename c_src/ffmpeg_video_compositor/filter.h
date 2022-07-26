@@ -10,14 +10,14 @@
 #define SIZE(x) ((int)(sizeof(x) / sizeof(x[0])))
 
 typedef struct FilterState {
-    AVFilterContext *inputs[2];
-    AVFilterContext *output;
-    AVFilterGraph *graph;
+  AVFilterContext *inputs[2];
+  AVFilterContext *output;
+  AVFilterGraph *graph;
 } FilterState;
 
 typedef struct VState {
-    FilterState filter;
-    RawVideo videos[2];
+  FilterState filter;
+  RawVideo videos[2];
 } VState;
 
 int init_filters(const char *filters_descr, FilterState *filter);

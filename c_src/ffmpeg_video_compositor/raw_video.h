@@ -1,9 +1,9 @@
 #include <libavutil/pixfmt.h>
 
 typedef struct RawVideo {
-    int width;
-    int height;
-    enum AVPixelFormat pixel_format;
+  int width;
+  int height;
+  enum AVPixelFormat pixel_format;
 } RawVideo;
 
 enum AVPixelFormat get_pixel_format(const char *fmt_name);
