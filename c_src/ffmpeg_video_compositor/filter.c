@@ -8,7 +8,7 @@
  * @param filters_size Remaining size of the buffer
  * @param videos Array of input videos.
  * @param n_videos Size of the videos array
- * @return int
+ * @return Number of characters written to the buffer
  */
 static int append_input_nodes_filters_string(char *filters_str,
                                              int filters_size,
@@ -47,7 +47,7 @@ static void cs_printAVError(const char *msg, int returnCode) {
  * @param filter_size Maximum size of the filter description (buffer size)
  * @param videos Array of input videos.
  * @param n_videos Size of the videos array
- * @return int
+ * @return Number of characters written to the buffer
  */
 int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
                            int n_videos) {
