@@ -62,6 +62,16 @@ defmodule Membrane.VideoCompositor do
     {:ok, state}
   end
 
+  alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
+
+  defp init(%{implementation: :ffmpeg} = state) do
+    FFmpeg.init()
+  end
+
+  defp init(state) do
+    state
+  end
+
   @impl true
   def handle_process(pad, buffer, _contex, state) do
     updated_queue = Map.get(state.frames_queues, pad)
