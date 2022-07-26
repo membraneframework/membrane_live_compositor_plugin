@@ -115,6 +115,7 @@ defmodule Membrane.VideoCompositor do
       {:end_of_the_stream, :end_of_the_stream} ->
         IO.puts("Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
+
       _ ->
         {:ok, state}
     end
