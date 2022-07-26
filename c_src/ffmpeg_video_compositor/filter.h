@@ -20,7 +20,7 @@ typedef struct VState {
   RawVideo videos[2];
 } VState;
 
-int init_filters(const char *filters_descr, FilterState *filter);
+int init_filters_graph(const char *filters_descr, FilterState *filter);
 
-int init_filter_description(char *filter_str, int filter_size,
-                            RawVideo videos[], int n_videos);
+int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
+                           int n_videos);

@@ -47,7 +47,7 @@ UNIFEX_TERM init(UnifexEnv *env, int first_width, int first_height,
     goto end;
   }
 
-  init_filter_description(filter_str, sizeof filter_str, videos, SIZE(videos));
+  get_filter_description(filter_str, sizeof filter_str, videos, SIZE(videos));
   result = init_unifex_filter(env, filter_str, videos, SIZE(videos));
 end:
   return result;
@@ -67,7 +67,7 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
     state->vstate.videos[i] = videos[i];
   }
 
-  if (init_filters(filter_description, &state->vstate.filter) < 0) {
+  if (init_filters_graph(filter_description, &state->vstate.filter) < 0) {
     result = init_result_error(env, "error_creating_filters");
     goto exit_create;
   }

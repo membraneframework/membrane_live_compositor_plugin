@@ -49,8 +49,8 @@ static void cs_printAVError(const char *msg, int returnCode) {
  * @param n_videos Size of the videos array
  * @return int
  */
-int init_filter_description(char *filter_str, int filter_size,
-                            RawVideo videos[], int n_videos) {
+int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
+                           int n_videos) {
   int filter_end = 0;
   filter_end += append_input_nodes_filters_string(
       filter_str + filter_end, filter_size - filter_end, videos, n_videos);
@@ -113,7 +113,7 @@ static int finish_filters_string(char *filters_str, int filters_size) {
  * @param filter  Pointer to the filter graph.
  * @return Return code. Return 0 on success, a negative value on failure.
  */
-int init_filters(const char *filters_str, FilterState *filter) {
+int init_filters_graph(const char *filters_str, FilterState *filter) {
   filter->graph = avfilter_graph_alloc();
   AVFilterGraph *graph = filter->graph;
 
