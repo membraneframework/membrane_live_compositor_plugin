@@ -13,17 +13,18 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
  * @param pixel_format_name Pixel format of the videos, given in a string
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM create(UnifexEnv *env, int width, int height,
-                   char *pixel_format_name) {
+UNIFEX_TERM init(UnifexEnv *env, int width, int height,
+                 char *pixel_format_name) {
     UNIFEX_TERM result;
     char filter_str[512];
+
     int pixel_format = get_pixel_format(pixel_format_name);
     if (pixel_format < 0) {
-        result = create_result_error(env, "unsupported_pixel_format");
+        result = init_result_error(env, "unsupported_pixel_format");
         goto end;
     }
-    create_filter_description(filter_str, sizeof filter_str, width, height,
-                              pixel_format);
+    init_filter_description(filter_str, sizeof filter_str, width, height,
+                            pixel_format);
     result = init_unifex_filter(env, filter_str, pixel_format, width, height);
 end:
     return result;
@@ -53,10 +54,10 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
     }
 
     if (init_filters(filter_description, &state->vstate.filter) < 0) {
-        result = create_result_error(env, "error_creating_filters");
+        result = init_result_error(env, "error_creating_filters");
         goto exit_create;
     }
-    result = create_result_ok(env, state);
+    result = init_result_ok(env, state);
 
 exit_create:
     unifex_release_state(env, state);

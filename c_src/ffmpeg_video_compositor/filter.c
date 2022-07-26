@@ -38,8 +38,8 @@ static void cs_printAVError(const char *msg, int returnCode) {
     fprintf(stderr, "%s: %s\n", msg, av_err2str(returnCode));
 }
 
-int create_filter_description(char *filter_str, int filters_size, int width,
-                              int height, int pixel_format) {
+int init_filter_description(char *filter_str, int filters_size, int width,
+                            int height, int pixel_format) {
     int filter_end = 0;
     filter_end +=
         init_filters_string(filter_str + filter_end, filters_size - filter_end,

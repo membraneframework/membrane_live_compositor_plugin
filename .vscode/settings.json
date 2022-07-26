@@ -3,6 +3,7 @@
     "files.associations": {
         "__locale": "c",
         "filter.h": "c",
-        "raw_video.h": "c"
+        "raw_video.h": "c",
+        "functional": "c"
     }
 }

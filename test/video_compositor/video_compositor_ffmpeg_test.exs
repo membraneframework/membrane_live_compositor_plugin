@@ -11,7 +11,7 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
     assert {:ok, frame_b} = File.read(in_path)
 
     assert {:ok, ref} =
-             Native.create(
+             Native.init(
                640,
                360,
                :I420

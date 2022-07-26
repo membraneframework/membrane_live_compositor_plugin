@@ -42,5 +42,5 @@ int init_filters(const char *filters_descr, FilterState *filter);
  * @param pixel_format Pixel format code of the videos
  * @return Number of characters written to the buffer
  */
-int create_filter_description(char *filter_str, int filter_size, int width,
-                              int height, int pixel_format);
+int init_filter_description(char *filter_str, int filter_size, int width,
+                            int height, int pixel_format);
