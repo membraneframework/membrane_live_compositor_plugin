@@ -35,8 +35,14 @@ static int apply_filters_options_string(char *filters_str, int filters_size);
  */
 static int finish_filters_string(char *filter_str, int filters_size);
 
-static void cs_printAVError(const char *msg, int returnCode) {
-  fprintf(stderr, "%s: %s\n", msg, av_err2str(returnCode));
+/**
+ * @brief Print error message to the stderr with formatted error code.
+ *
+ * @param msg
+ * @param error_code
+ */
+static void print_av_error(const char *msg, int error_code) {
+  fprintf(stderr, "%s: %s\n", msg, av_err2str(error_code));
 }
 
 /**
@@ -127,13 +133,13 @@ int init_filters_graph(const char *filters_str, FilterState *filter) {
 
   int ret = avfilter_graph_parse2(graph, filters_str, &gis, &gos);
   if (ret < 0) {
-    cs_printAVError("Cannot parse graph.", ret);
+    print_av_error("Cannot parse graph.", ret);
     goto end;
   }
 
   ret = avfilter_graph_config(graph, NULL);
   if (ret < 0) {
-    cs_printAVError("Cannot configure graph.", ret);
+    print_av_error("Cannot configure graph.", ret);
     goto end;
   }
 
