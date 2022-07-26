@@ -70,8 +70,12 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
                                       RawVideo videos[], int n_videos) {
     UNIFEX_TERM result;
-
     State *state = unifex_alloc_state(env);
+
+    if (SIZE(state->vstate.videos) != n_videos) {
+        result = init_result_error(env, "error_expected_two_input_videos");
+        goto exit_create;
+    }
     for (int i = 0; i < SIZE(state->vstate.videos); i++) {
         state->vstate.videos[i] = videos[i];
     }
