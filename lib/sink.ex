@@ -5,6 +5,11 @@ defmodule Membrane.VideoCompositor.Sink do
   use Membrane.Sink
   alias Membrane.RawVideo
 
+  def_options location: [
+                type: :string,
+                description: "Location of output file"
+              ]
+
   def_input_pad(:input,
     demand_unit: :buffers,
     caps: {RawVideo, pixel_format: :I420}
@@ -15,7 +20,7 @@ defmodule Membrane.VideoCompositor.Sink do
   end
 
   def handle_write(:input, buffer, _ctx, state) do
-    File.write!(state.location, buffer.payload)
+    IO.binwrite(state.location, buffer.payload)
     {:ok, state}
   end
 end
