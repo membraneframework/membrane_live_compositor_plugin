@@ -2,14 +2,6 @@ defmodule Membrane.VideoCompositor do
   @moduledoc """
   Element responsible for placing first received frame above the other and sending forward
   buffer with merged frame binary in payload.
-  handle_init: initialize two Erlang :queue-s,
-  handle_process:
-    1. puts received frame and saves it to appropriate queue (based on from with input pad it received frame)
-    2. checks whether there are elements in both queues, if so it runs
-    Membrane.VideoCompositor.FrameCompositor.merge_frames(first_frame_binary, second_frame_binary, implementation) function
-    3. wraps binary of merged frame into buffer
-    4. sends forward (to encoder or sink pad) wrapped buffer
-  handle_caps: handle caps differences between input pads and output pad
   """
 
   use Membrane.Filter
@@ -18,16 +10,11 @@ defmodule Membrane.VideoCompositor do
 
   def_options implementation: [
                 type: :atom,
-                description:
-                  "Implementation type of video composer. One of: :ffmpeg, :opengl, :nx"
+                description: "Implementation type of video composer."
               ],
-              video_width: [
-                type: :int,
-                description: "Width of input videos"
-              ],
-              video_height: [
-                type: :int,
-                description: "Height of input videos"
+              caps: [
+                type: RawVideo,
+                desciption: "Struct with video width, height, framerate and pixel format."
               ]
 
   def_input_pad(:first_input,
@@ -49,42 +36,48 @@ defmodule Membrane.VideoCompositor do
   )
 
   @impl true
+  @spec handle_init(%{
+          implementation: :ffmpeg | :opengl | :nx,
+          caps: RawVideo
+        }) ::
+          {:ok, map()}
   def handle_init(options) do
     state = %{
-      frames_queues: %{first_input: :queue.new(), second_input: :queue.new()},
+      pads: %{first_input: :queue.new(), second_input: :queue.new()},
       streams_state: %{first_input: :playing, second_input: :playing},
-      implementation: options.implementation,
-      video_width: options.video_width,
-      video_height: options.video_height
+      caps: options.caps,
+      compositor_module: determine_compositor_module(options.implementation)
     }
+
+    {:ok, state_of_init_module} = state.compositor_module.init(state.caps)
+
+    Map.put(state, :state_of_init_module, state_of_init_module)
 
     {:ok, state}
   end
 
   @impl true
   def handle_process(pad, buffer, _context, state) do
-    updated_queue = Map.get(state.frames_queues, pad)
+    updated_queue = Map.get(state.pads, pad)
     updated_queue = :queue.in(buffer, updated_queue)
-    updated_frames_queues = state.frames_queues
-    updated_frames_queues = Map.replace!(updated_frames_queues, pad, updated_queue)
-    state = %{state | frames_queues: updated_frames_queues}
+    updated_pads = state.pads
+    updated_pads = Map.replace!(updated_pads, pad, updated_queue)
+    state = %{state | pads: updated_pads}
 
-    case {:queue.out(state.frames_queues.first_input),
-          :queue.out(state.frames_queues.second_input)} do
+    case {:queue.out(state.pads.first_input), :queue.out(state.pads.second_input)} do
       {{{:value, first_frame_buffer}, rest_of_first_queue},
        {{:value, second_frame_buffer}, rest_of_second_queue}} ->
+        frames_binaries = %{
+          first_frame_binary: first_frame_buffer.payload,
+          second_frame_binary: second_frame_buffer.payload
+        }
+
         {:ok, merged_frame_binary} =
-          Membrane.VideoCompositor.FrameCompositor.merge_frames(
-            first_frame_buffer.payload,
-            second_frame_buffer.payload,
-            state.implementation,
-            state.video_width,
-            state.video_height
-          )
+          state.compositor_module.merge_frames(frames_binaries, state.caps)
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
-        frames_queues = %{first_input: rest_of_first_queue, second_input: rest_of_second_queue}
-        state = %{state | frames_queues: frames_queues}
+        pads = %{first_input: rest_of_first_queue, second_input: rest_of_second_queue}
+        state = %{state | pads: pads}
         {{:ok, buffer: {:output, merged_image_buffer}}, state}
 
       _one_of_queues_is_empty ->
@@ -93,13 +86,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_caps(:first_input, %RawVideo{} = caps, _context, state) do
-    caps = %{caps | height: caps.height * 2}
-    {{:ok, caps: {:output, caps}}, state}
-  end
-
-  @impl true
-  def handle_caps(:second_input, %RawVideo{} = caps, _context, state) do
+  def handle_caps(_pad, %RawVideo{} = caps, _context, state) do
     caps = %{caps | height: caps.height * 2}
     {{:ok, caps: {:output, caps}}, state}
   end
@@ -112,11 +99,29 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        IO.puts("Processing ended")
+        # TO DO change for logger
+        Membrane.Logger.bare_log(:info, "Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
       _one_streams_has_not_ended ->
         {:ok, state}
+    end
+  end
+
+  @spec determine_compositor_module(:ffmpeg | :opengl | :nx) :: module()
+  defp determine_compositor_module(implementation) do
+    case implementation do
+      :ffmpeg ->
+        Membrane.VideoCompositor.FFMPEG
+
+      :opengl ->
+        Membrane.VideoCompositor.OpenGL
+
+      :nx ->
+        Membrane.VideoCompositor.Nx
+
+      _other ->
+        raise "#{implementation} is not available implementation."
     end
   end
 end

@@ -4,42 +4,53 @@ defmodule Membrane.VideoCompositor.Pipeline do
   """
 
   use Membrane.Pipeline
+  alias Membrane.RawVideo
 
-  # options = %{first_raw_video_path, second_raw_video_path, output_path, video_width, video_height, video_framerate, implementation}
   @impl true
+  @spec handle_init(%{
+          paths: %{
+            first_raw_video_path: String.t(),
+            second_raw_video_path: String.t(),
+            output_path: String.t()
+          },
+          caps: RawVideo,
+          implementation: :ffmpeg | :opengl | :nx
+        }) :: {:ok, any(), map()}
   def handle_init(options) do
     children = %{
-      first_file: %Membrane.File.Source{location: options.first_raw_video_path},
-      second_file: %Membrane.File.Source{location: options.second_raw_video_path},
+      first_file: %Membrane.File.Source{location: options.paths.first_raw_video_path},
+      second_file: %Membrane.File.Source{location: options.paths.second_raw_video_path},
       first_parser: %Membrane.RawVideo.Parser{
-        framerate: {options.video_framerate, 1},
-        width: options.video_width,
-        height: options.video_height,
-        pixel_format: :I420
+        framerate: options.caps.framerate,
+        width: options.caps.width,
+        height: options.caps.height,
+        pixel_format: options.caps.pixel_format
       },
       second_parser: %Membrane.RawVideo.Parser{
-        framerate: {options.video_framerate, 1},
-        width: options.video_width,
-        height: options.video_height,
-        pixel_format: :I420
+        framerate: options.caps.framerate,
+        width: options.caps.width,
+        height: options.caps.height,
+        pixel_format: options.caps.pixel_format
       },
       video_composer: %Membrane.VideoCompositor{
         implementation: options.implementation,
-        video_width: options.video_width,
-        video_height: options.video_height
+        caps: options.caps
       },
       encoder: Membrane.H264.FFmpeg.Encoder,
-      file_sink: %Membrane.File.Sink{location: options.output_path}
-      # sink: %Membrane.VideoCompositor.Sink{location: options.output_path}
+      file_sink: %Membrane.File.Sink{location: options.paths.output_path}
     }
 
     links = [
-      link(:first_file) |> to(:first_parser),
-      link(:second_file) |> to(:second_parser),
-      link(:first_parser) |> via_in(:first_input) |> to(:video_composer),
-      link(:second_parser) |> via_in(:second_input) |> to(:video_composer),
-      link(:video_composer) |> to(:encoder) |> to(:file_sink)
-      # link(:video_composer) |> to(:sink)
+      link(:first_file)
+      |> to(:first_parser)
+      |> via_in(:first_input)
+      |> to(:video_composer),
+      link(:second_file)
+      |> to(:second_parser)
+      |> via_in(:second_input)
+      |> to(:video_composer)
+      |> to(:encoder)
+      |> to(:file_sink)
     ]
 
     {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}

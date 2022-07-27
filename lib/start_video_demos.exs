@@ -1,20 +1,24 @@
-first_raw_video_path = "~/membrane_video_compositor/testsrc.raw"
-second_raw_video_path = "~/membrane_video_compositor/testsrc.raw"
-output_path = "~/membrane_video_compositor/output.h264"
+alias Membrane.RawVideo
 
-video_width = 1280
-video_height = 720
-video_framerate = 30
-# implementation is one of: :ffmpeg, :opengl, :nx
+paths = %{
+  first_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
+  second_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
+  output_path: "~/membrane_video_compositor/output.h264"
+}
+
+caps = %RawVideo{
+  aligned: true,
+  framerate: {30, 1},
+  width: 1280,
+  height: 720,
+  pixel_format: :I420
+}
+
 implementation = :nx
 
 options = %{
-  first_raw_video_path: first_raw_video_path,
-  second_raw_video_path: second_raw_video_path,
-  output_path: output_path,
-  video_width: video_width,
-  video_height: video_height,
-  video_framerate: video_framerate,
+  paths: paths,
+  caps: caps,
   implementation: implementation
 }
 

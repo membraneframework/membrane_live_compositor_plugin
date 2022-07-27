@@ -44,11 +44,11 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:membrane_h264_ffmpeg_plugin, "~> 0.21.1"},
       {:mock, "~> 0.3.0"},
+      {:nx, "~> 0.2"},
+      {:exla, "~> 0.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false},
-      {:nx, "~> 0.2"},
-      {:exla, "~> 0.2"}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
