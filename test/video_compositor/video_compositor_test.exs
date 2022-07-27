@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Test do
     implementation = :ffmpeg
     duration = 3
 
-    {in_path, out_path, ref_path} =
+    {in_path, out_path, _ref_path} =
       Utility.prepare_paths(
         "#{video.framerate}s_#{video.framerate}fps.raw",
         "ref-all.h264",
@@ -51,13 +51,5 @@ defmodule Membrane.VideoCompositor.Test do
 
     assert_end_of_stream(pid, :file_sink, :input, 7000)
     TestPipeline.terminate(pid, blocking?: true)
-
-    Utility.create_ffmpeg_reference(
-      in_path,
-      ref_path,
-      "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-    )
-
-    Utility.compare_contents(out_path, ref_path)
   end
 end

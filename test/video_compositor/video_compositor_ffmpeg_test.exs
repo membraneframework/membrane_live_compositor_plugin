@@ -36,12 +36,12 @@ defmodule VideoCompositor.FFmpeg.NativeTest do
     IO.binwrite(file, out_frame)
     reference_input_path = "../fixtures/1frame.h264" |> Path.expand(__DIR__)
 
-    # Utility.create_ffmpeg_reference(
-    #   reference_input_path,
-    #   ref_path,
-    #   "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-    # )
+    Utility.create_ffmpeg_reference(
+      reference_input_path,
+      ref_path,
+      "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
+    )
 
-    # Utility.compare_contents(out_path, ref_path)
+    Utility.compare_contents(out_path, ref_path)
   end
 end
