@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer(),
-
+      compilers: [:unifex, :bundlex] ++ Mix.compilers,
       # hex
       description: "Video Compositor Plugin for Membrane Multimedia Framework",
       package: package(),
@@ -38,10 +38,10 @@ defmodule Membrane.VideoCompositor.Mixfile do
 
   defp deps do
     [
+      {:unifex, "~> 1.0"},
       {:membrane_core, "~> 0.10.0"},
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.13.0"},
-      {:unifex, "~> 1.0"},
       # Testing
       {:membrane_file_plugin, "~> 0.9", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.18", only: :test},
