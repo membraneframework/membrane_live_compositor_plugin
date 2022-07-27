@@ -59,13 +59,36 @@ defmodule Membrane.VideoCompositor do
       video_height: options.video_height
     }
 
+    state = init(state)
+
     {:ok, state}
   end
 
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
 
   defp init(%{implementation: :ffmpeg} = state) do
-    FFmpeg.init()
+    case FFmpeg.init(
+           %RawVideo{
+             width: state.video_width,
+             height: state.video_height,
+             pixel_format: :I420,
+             framerate: nil,
+             aligned: nil
+           },
+           %RawVideo{
+             width: state.video_width,
+             height: state.video_height,
+             pixel_format: :I420,
+             framerate: nil,
+             aligned: nil
+           }
+         ) do
+      {:ok, native_state} ->
+        Map.put(state, :native_state, native_state)
+
+      {:error, reason} ->
+        raise inspect(reason)
+    end
   end
 
   defp init(state) do
@@ -73,7 +96,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_process(pad, buffer, _contex, state) do
+  def handle_process(pad, buffer, _context, state) do
     updated_queue = Map.get(state.frames_queues, pad)
     updated_queue = :queue.in(buffer, updated_queue)
     updated_frames_queues = state.frames_queues
@@ -85,12 +108,10 @@ defmodule Membrane.VideoCompositor do
       {{{:value, first_frame_buffer}, rest_of_first_queue},
        {{:value, second_frame_buffer}, rest_of_second_queue}} ->
         {:ok, merged_frame_binary} =
-          Membrane.VideoCompositor.FrameCompositor.merge_frames(
+          merge_frames(
             first_frame_buffer.payload,
             second_frame_buffer.payload,
-            state.implementation,
-            state.video_width,
-            state.video_height
+            state
           )
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
@@ -102,6 +123,14 @@ defmodule Membrane.VideoCompositor do
       _ ->
         {:ok, state}
     end
+  end
+
+  defp merge_frames(
+         first_frame_buffer,
+         second_frame_buffer,
+         %{implementation: :ffmpeg, native_state: native_state} = _state
+       ) do
+    FFmpeg.apply_filter(first_frame_buffer, second_frame_buffer, native_state)
   end
 
   @impl true
@@ -124,7 +153,6 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        IO.puts("Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
       _ ->
