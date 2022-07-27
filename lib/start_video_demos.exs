@@ -3,7 +3,7 @@ alias Membrane.RawVideo
 paths = %{
   first_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
   second_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
-  output_path: "~/membrane_video_compositor/output.h264"
+  output_path: "~/membrane_video_compositor/output.raw"
 }
 
 caps = %RawVideo{

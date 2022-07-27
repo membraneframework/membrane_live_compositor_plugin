@@ -36,7 +36,6 @@ defmodule Membrane.VideoCompositor.Pipeline do
         implementation: options.implementation,
         caps: options.caps
       },
-      encoder: Membrane.H264.FFmpeg.Encoder,
       file_sink: %Membrane.File.Sink{location: options.paths.output_path}
     }
 
@@ -49,7 +48,6 @@ defmodule Membrane.VideoCompositor.Pipeline do
       |> to(:second_parser)
       |> via_in(:second_input)
       |> to(:video_composer)
-      |> to(:encoder)
       |> to(:file_sink)
     ]
 

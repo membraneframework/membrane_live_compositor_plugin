@@ -1,7 +1,8 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
-  Element responsible for placing first received frame above the other and sending forward
-  buffer with merged frame binary in payload.
+  Element responsible for placing first received frame
+  above the other and sending forward buffer with
+  merged frame binary in payload.
   """
 
   use Membrane.Filter
@@ -99,7 +100,6 @@ defmodule Membrane.VideoCompositor do
 
     case {state.streams_state.first_input, state.streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        # TO DO change for logger
         Membrane.Logger.bare_log(:info, "Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
