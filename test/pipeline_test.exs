@@ -1,8 +1,10 @@
 alias Membrane.RawVideo
 
 paths = %{
-  first_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
-  second_raw_video_path: "~/membrane_video_compositor/testsrc.raw",
+  # first_raw_video_path: "./test/fixtures/input_10s_720p.raw",
+  # second_raw_video_path: "./test/fixtures/input_10s_720p.raw",
+  first_raw_video_path: "~/membrane_video_compositor/input_60s_4k.raw",
+  second_raw_video_path: "~/membrane_video_compositor/input_60s_4k.raw",
   output_path: "~/membrane_video_compositor/output.raw"
 }
 
@@ -26,4 +28,4 @@ options = %{
 
 Membrane.VideoCompositor.Pipeline.play(pid)
 # will be removed with implementation of Membrane Beamchmark
-Process.sleep(100_000)
+Process.sleep(1000_000)

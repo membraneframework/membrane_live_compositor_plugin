@@ -11,11 +11,12 @@ defmodule Membrane.VideoCompositor do
 
   def_options implementation: [
                 type: :atom,
+                spec: :ffmpeg | :opengl | :nx,
                 description: "Implementation type of video composer."
               ],
               caps: [
                 type: RawVideo,
-                desciption: "Struct with video width, height, framerate and pixel format."
+                description: "Struct with video width, height, framerate and pixel format."
               ]
 
   def_input_pad(:first_input,
@@ -58,12 +59,11 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_process(pad, buffer, _context, state) do
-    updated_queue = Map.get(state.pads, pad)
+  def handle_process(pad, buffer, _context, %{pads: pads} = state) do
+    updated_queue = Map.get(pads, pad)
     updated_queue = :queue.in(buffer, updated_queue)
-    updated_pads = state.pads
-    updated_pads = Map.replace!(updated_pads, pad, updated_queue)
-    state = %{state | pads: updated_pads}
+    pads = Map.replace!(pads, pad, updated_queue)
+    state = %{state | pads: pads}
 
     case {:queue.out(state.pads.first_input), :queue.out(state.pads.second_input)} do
       {{{:value, first_frame_buffer}, rest_of_first_queue},
@@ -93,12 +93,11 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_end_of_stream(pad, _context, state) do
-    updated_streams_state = state.streams_state
-    updated_streams_state = Map.replace!(updated_streams_state, pad, :end_of_the_stream)
-    state = %{state | streams_state: updated_streams_state}
+  def handle_end_of_stream(pad, _context, %{streams_state: streams_state} = state) do
+    streams_state = Map.replace!(streams_state, pad, :end_of_the_stream)
+    state = %{state | streams_state: streams_state}
 
-    case {state.streams_state.first_input, state.streams_state.second_input} do
+    case {streams_state.first_input, streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
         Membrane.Logger.bare_log(:info, "Processing ended")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}

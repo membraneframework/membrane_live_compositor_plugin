@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.OpenGL do
   @moduledoc """
-  This module implements video composition in OpenGL using Membrane.VideoCompositor.FrameCompositor behaviour.
+  This module implements video composition in OpenGL.
   """
 
   @behaviour Membrane.VideoCompositor.FrameCompositor

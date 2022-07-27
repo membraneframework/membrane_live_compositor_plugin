@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Nx do
   @moduledoc """
-  This module implements video composition in Nx using Membrane.VideoCompositor.FrameCompositor behaviour.
+  This module implements video composition in Nx.
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 

@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.FFMPEG do
   @moduledoc """
-  This module implements video composition in ffmpeg using Membrane.VideoCompositor.FrameCompositor behaviour.
+  This module implements video composition in ffmpeg.
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
