@@ -11,8 +11,9 @@ defmodule VideoCompositor.OpenGL.NativeTest do
     assert {:ok, frame_a} = File.read(in_path)
     assert {:ok, frame_b} = File.read(in_path)
 
+    IO.puts("preinit")
     assert {:ok, state} = Native.init(640, 360)
-
+    IO.puts("init");
 
     assert {:ok, out_frame} = Native.join_frames(frame_a, frame_b, state)
     assert {:ok, file} = File.open(out_path, [:write])

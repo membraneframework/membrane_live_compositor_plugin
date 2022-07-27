@@ -1,15 +1,16 @@
 #include "Compositor.h"
 
 #include <glad/glad.h>
+#include <iostream>
 
 #include "RectVAO.h"
 #include "Shader.h"
 
-const std::string vertex_code =
+const char *vertex_code =
 #include "shaders/vertex.glsl"
 ;
 
-const std::string fragment_code =
+const char *fragment_code =
 #include "shaders/fragment.glsl"
 ;
 
@@ -38,7 +39,7 @@ Compositor::Compositor(GLsizei width, GLsizei height)
         , m_out_width(width)
         , m_out_height(2 * height)
         {
-
+    std::cout << vertex_code << std::endl;
     auto shader = Shader(vertex_code, fragment_code);
     std::vector<RectVAO> vaos;
     vaos.emplace_back(vertices_top, indices);

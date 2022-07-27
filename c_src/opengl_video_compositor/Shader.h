@@ -9,7 +9,7 @@ public:
     unsigned int m_id;
 
     static Shader from_files(const char *vertexPath, const char *fragmentPath);
-    Shader(const std::string &vertex_code, const std::string &fragment_code);
+    Shader(const char *vertex_code, const char *fragment_code);
 
     void use() const;
 

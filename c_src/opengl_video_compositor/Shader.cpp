@@ -27,12 +27,12 @@ Shader Shader::from_files(const char *vertexPath, const char *fragmentPath) {
         std::cout << "Error while reading shader file" << std::endl;
     }
 
-    return {vertexCode, fragmentCode};
+    return {vertexCode.data(), fragmentCode.data()};
 }
 
-Shader::Shader(const std::string &vertex_code, const std::string &fragment_code) {
-    const char *vertexCodeCStr = vertex_code.c_str();
-    const char *fragmentCodeCStr = fragment_code.c_str();
+Shader::Shader(const char *vertex_code, const char *fragment_code) {
+    const char *vertexCodeCStr = vertex_code;
+    const char *fragmentCodeCStr = fragment_code;
 
     unsigned int vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShaderId, 1, &vertexCodeCStr, nullptr);
