@@ -5,7 +5,6 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   use Membrane.Pipeline
 
-  @impl true
   @doc """
   handle_init(%{
           paths: %{
@@ -17,6 +16,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
           implementation: :ffmpeg | :opengl | :nx
         })
   """
+  @impl true
   def handle_init(options) do
     children = %{
       first_file: %Membrane.File.Source{location: options.paths.first_raw_video_path},
