@@ -82,10 +82,16 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_caps(_pad, %RawVideo{} = caps, _context, state) do
+  def handle_caps(:first_input, %RawVideo{} = caps, _context, state) do
     caps = %{caps | height: caps.height * 2}
     {{:ok, caps: {:output, caps}}, state}
   end
+
+  @impl true
+  def handle_caps(:second_input, %RawVideo{} = _caps, _context, state) do
+    {:ok, state}
+  end
+
 
   @impl true
   def handle_end_of_stream(pad, _context, %{streams_state: streams_state} = state) do
