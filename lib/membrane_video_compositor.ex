@@ -37,12 +37,6 @@ defmodule Membrane.VideoCompositor do
     caps: {RawVideo, pixel_format: :I420}
   )
 
-  @doc """
-  handle_init(%{
-      implementation: :ffmpeg | :opengl | :nx,
-      caps: RawVideo
-  })
-  """
   @impl true
   def handle_init(options) do
     state = %{
@@ -70,8 +64,8 @@ defmodule Membrane.VideoCompositor do
       {{{:value, first_frame_buffer}, rest_of_first_queue},
        {{:value, second_frame_buffer}, rest_of_second_queue}} ->
         frames_binaries = %{
-          first_frame_binary: first_frame_buffer.payload,
-          second_frame_binary: second_frame_buffer.payload
+          first: first_frame_buffer.payload,
+          second: second_frame_buffer.payload
         }
 
         {:ok, merged_frame_binary} =
@@ -95,12 +89,12 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_end_of_stream(pad, _context, %{streams_state: streams_state} = state) do
-    streams_state = Map.replace!(streams_state, pad, :end_of_the_stream)
+    streams_state = Map.put(streams_state, pad, :end_of_the_stream)
     state = %{state | streams_state: streams_state}
 
     case {streams_state.first_input, streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        Membrane.Logger.bare_log(:info, "Processing ended")
+        Membrane.Logger.bare_log(:info, "End of streams")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
       _one_streams_has_not_ended ->
@@ -108,7 +102,7 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec determine_compositor_module(:ffmpeg | :opengl | :nx) :: module()
+  @spec determine_compositor_module(atom()) :: module()
   defp determine_compositor_module(implementation) do
     case implementation do
       :ffmpeg ->

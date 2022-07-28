@@ -6,9 +6,9 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
 
   @callback init(caps :: RawVideo) :: {:ok, any}
   @callback merge_frames(
-              frame_binaries :: %{
-                first_frame_binary: bitstring(),
-                second_frame_binary: bitstring()
+              frames :: %{
+                first: binary(),
+                second: binary()
               },
               caps :: %RawVideo{}
             ) :: {:ok, bitstring()}

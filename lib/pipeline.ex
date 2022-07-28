@@ -18,22 +18,19 @@ defmodule Membrane.VideoCompositor.Pipeline do
   """
   @impl true
   def handle_init(options) do
+    parser = %Membrane.RawVideo.Parser{
+      framerate: options.caps.framerate,
+      width: options.caps.width,
+      height: options.caps.height,
+      pixel_format: options.caps.pixel_format
+    }
+
     children = %{
-      first_file: %Membrane.File.Source{location: options.paths.first_raw_video_path},
-      second_file: %Membrane.File.Source{location: options.paths.second_raw_video_path},
-      first_parser: %Membrane.RawVideo.Parser{
-        framerate: options.caps.framerate,
-        width: options.caps.width,
-        height: options.caps.height,
-        pixel_format: options.caps.pixel_format
-      },
-      second_parser: %Membrane.RawVideo.Parser{
-        framerate: options.caps.framerate,
-        width: options.caps.width,
-        height: options.caps.height,
-        pixel_format: options.caps.pixel_format
-      },
-      video_composer: %Membrane.VideoCompositor{
+      file_src_1: %Membrane.File.Source{location: options.paths.first_raw_video_path},
+      file_src_2: %Membrane.File.Source{location: options.paths.second_raw_video_path},
+      parser_1: parser,
+      parser_2: parser,
+      compositor: %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
       },
@@ -41,14 +38,14 @@ defmodule Membrane.VideoCompositor.Pipeline do
     }
 
     links = [
-      link(:first_file)
-      |> to(:first_parser)
+      link(:file_src_1)
+      |> to(:parser_1)
       |> via_in(:first_input)
-      |> to(:video_composer),
-      link(:second_file)
-      |> to(:second_parser)
+      |> to(:compositor),
+      link(:file_src_2)
+      |> to(:parser_2)
       |> via_in(:second_input)
-      |> to(:video_composer)
+      |> to(:compositor)
       |> to(:file_sink)
     ]
 
