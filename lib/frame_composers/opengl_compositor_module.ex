@@ -6,7 +6,6 @@ defmodule Membrane.VideoCompositor.OpenGL do
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  @spec init(%{frame_width: integer(), frame_height: integer()}) :: {:ok, any()}
   def init(_caps) do
     # placeholder
     {:ok, %{}}
