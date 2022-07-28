@@ -26,4 +26,4 @@ options = %{
 
 Membrane.VideoCompositor.Pipeline.play(pid)
 # will be removed with implementation of Membrane Beamchmark
-Process.sleep(1000_000)
+Process.sleep(1_000_000)
