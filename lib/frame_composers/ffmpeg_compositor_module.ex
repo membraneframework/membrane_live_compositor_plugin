@@ -6,14 +6,12 @@ defmodule Membrane.VideoCompositor.FFMPEG do
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(_caps) do
-    # placeholder
     {:ok, %{}}
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def merge_frames(frames_binaries, _caps) do
-    # placeholder
-    merged_frames_binary = frames_binaries.first_frame_binary
+  def merge_frames(frames, _caps) do
+    merged_frames_binary = frames.first <> frames.second
     {:ok, merged_frames_binary}
   end
 end
