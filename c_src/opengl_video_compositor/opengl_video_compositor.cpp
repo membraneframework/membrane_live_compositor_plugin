@@ -16,10 +16,8 @@ UNIFEX_TERM init(UnifexEnv *env, int width, int height) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    std::cout << "glfw init+hints" << std::endl;
 
     GLFWwindow *window = glfwCreateWindow(1, 1, "", nullptr, nullptr);
-    std::cout << "glfw create window" << std::endl;
     if(window == nullptr) {
         glfwTerminate();
         return init_result_error(env, "cannot_create_window");
@@ -33,7 +31,6 @@ UNIFEX_TERM init(UnifexEnv *env, int width, int height) {
     glfwHideWindow(window);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     state->window = window;
-    std::cout << "window" << std::endl;
     state->compositor = Compositor(width, height);
 
     return init_result_ok(env, state);

@@ -39,7 +39,6 @@ Compositor::Compositor(GLsizei width, GLsizei height)
         , m_out_width(width)
         , m_out_height(2 * height)
         {
-    std::cout << vertex_code << std::endl;
     auto shader = Shader(vertex_code, fragment_code);
     std::vector<RectVAO> vaos;
     vaos.emplace_back(vertices_top, indices);

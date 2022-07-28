@@ -1,8 +1,8 @@
 defmodule VideoCompositor.OpenGL.NativeTest do
   use ExUnit.Case, async: true
 
+  require Unifex.CNode
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.OpenGL.Native
   alias Membrane.VideoCompositor.Test.Utility
 
   @tag :tmp_dir
@@ -11,11 +11,11 @@ defmodule VideoCompositor.OpenGL.NativeTest do
     assert {:ok, frame_a} = File.read(in_path)
     assert {:ok, frame_b} = File.read(in_path)
 
-    IO.puts("preinit")
-    assert {:ok, state} = Native.init(640, 360)
-    IO.puts("init");
+    assert {:ok, cnode} = Unifex.CNode.start_link(:opengl_video_compositor)
 
-    assert {:ok, out_frame} = Native.join_frames(frame_a, frame_b, state)
+    assert :ok = Unifex.CNode.call(cnode, :init, [640, 360])
+
+    assert {:ok, out_frame} = Unifex.CNode.call(cnode, :join_frames, [frame_a, frame_b])
     assert {:ok, file} = File.open(out_path, [:write])
     on_exit(fn -> File.close(file) end)
 

@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.BundlexProject do
           "YUVRenderer.cpp",
           "YUVTexture.cpp",
         ],
-        interface: :nif,
+        interface: :cnode,
         preprocessor: Unifex,
         pkg_configs: ["glfw3"],
         libs: ["pthread"],

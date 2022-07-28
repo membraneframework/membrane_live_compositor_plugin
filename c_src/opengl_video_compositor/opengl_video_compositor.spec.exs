@@ -2,6 +2,8 @@ module Membrane.VideoCompositor.OpenGL.Native
 
 state_type "State"
 
+interface [CNode]
+
 spec init(
   width :: int,
   height :: int
