@@ -7,14 +7,14 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   @doc """
   handle_init(%{
-          paths: %{
-            first_raw_video_path: String.t(),
-            second_raw_video_path: String.t(),
-            output_path: String.t()
-          },
-          caps: RawVideo,
-          implementation: :ffmpeg | :opengl | :nx
-        })
+      paths: %{
+        first_raw_video_path: String.t(),
+        second_raw_video_path: String.t(),
+        output_path: String.t()
+      },
+      caps: RawVideo,
+      implementation: :ffmpeg | :opengl | :nx
+  })
   """
   @impl true
   def handle_init(options) do

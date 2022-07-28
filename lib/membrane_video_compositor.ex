@@ -37,12 +37,13 @@ defmodule Membrane.VideoCompositor do
     caps: {RawVideo, pixel_format: :I420}
   )
 
+  @doc """
+  handle_init(%{
+      implementation: :ffmpeg | :opengl | :nx,
+      caps: RawVideo
+  })
+  """
   @impl true
-  @spec handle_init(%{
-          implementation: :ffmpeg | :opengl | :nx,
-          caps: RawVideo
-        }) ::
-          {:ok, map()}
   def handle_init(options) do
     state = %{
       pads: %{first_input: :queue.new(), second_input: :queue.new()},
