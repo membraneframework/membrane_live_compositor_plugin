@@ -4,10 +4,10 @@ defmodule Membrane.VideoCompositor.Pipeline do
   """
 
   use Membrane.Pipeline
-  alias Membrane.RawVideo
 
   @impl true
-  @spec handle_init(%{
+  @doc """
+  handle_init(%{
           paths: %{
             first_raw_video_path: String.t(),
             second_raw_video_path: String.t(),
@@ -15,7 +15,8 @@ defmodule Membrane.VideoCompositor.Pipeline do
           },
           caps: RawVideo,
           implementation: :ffmpeg | :opengl | :nx
-        }) :: any()
+        })
+  """
   def handle_init(options) do
     children = %{
       first_file: %Membrane.File.Source{location: options.paths.first_raw_video_path},
