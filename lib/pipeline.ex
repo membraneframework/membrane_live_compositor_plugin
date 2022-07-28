@@ -18,21 +18,18 @@ defmodule Membrane.VideoCompositor.Pipeline do
   """
   @impl true
   def handle_init(options) do
+    parser = %Membrane.RawVideo.Parser{
+      framerate: options.caps.framerate,
+      width: options.caps.width,
+      height: options.caps.height,
+      pixel_format: options.caps.pixel_format
+    }
+
     children = %{
       file_src_1: %Membrane.File.Source{location: options.paths.first_raw_video_path},
       file_src_2: %Membrane.File.Source{location: options.paths.second_raw_video_path},
-      parser_1: %Membrane.RawVideo.Parser{
-        framerate: options.caps.framerate,
-        width: options.caps.width,
-        height: options.caps.height,
-        pixel_format: options.caps.pixel_format
-      },
-      parser_2: %Membrane.RawVideo.Parser{
-        framerate: options.caps.framerate,
-        width: options.caps.width,
-        height: options.caps.height,
-        pixel_format: options.caps.pixel_format
-      },
+      parser_1: parser,
+      parser_2: parser,
       compositor: %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
