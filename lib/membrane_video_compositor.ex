@@ -92,7 +92,6 @@ defmodule Membrane.VideoCompositor do
     {:ok, state}
   end
 
-
   @impl true
   def handle_end_of_stream(pad, _context, %{streams_state: streams_state} = state) do
     streams_state = Map.put(streams_state, pad, :end_of_the_stream)
