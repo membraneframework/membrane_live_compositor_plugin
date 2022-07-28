@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
           },
           caps: RawVideo,
           implementation: :ffmpeg | :opengl | :nx
-        }) :: {{:ok, any()}, map()}
+        }) :: any()
   def handle_init(options) do
     children = %{
       first_file: %Membrane.File.Source{location: options.paths.first_raw_video_path},
