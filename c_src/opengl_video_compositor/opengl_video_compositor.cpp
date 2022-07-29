@@ -60,10 +60,14 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) 
 }
 
 UNIFEX_TERM join_frames(UnifexEnv *env,  UnifexPayload *upper, UnifexPayload *lower, State *state) {
-    // FIXME: maybe figure out a better (possibly RAII) way to call this every time we do opengl calls?
-    //        So that you can't just forget to call this and segfault
+    // FIXME: Maybe figure out a better way to call this every time we do OpenGL calls?
+    //        So that you can't just forget to call this and segfault later on an OpenGL call
+    //        Maybe this should even be locked somehow to prevent two threads from calling OpenGL functions simultaneously
     eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, state->context);
-    // FIXME: this is suboptimal, since we allocate a big vector every frame
+    // FIXME: This is suboptimal, since we allocate a big vector every frame
+    //        On the other hand, if we pass a raw pointer instead of a vector 
+    //        we can't ensure the target buffer has enough space allocated 
+    //        from within the `Compositor` instance.
     auto out = std::vector<char>();
     state->compositor->join_frames((char*)upper->data, (char*)lower->data, out);
     UnifexPayload payload;
