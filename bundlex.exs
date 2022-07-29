@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.BundlexProject do
           "RectVAO.cpp",
           "Shader.cpp",
           "YUVRenderer.cpp",
-          "YUVTexture.cpp",
+          "YUVTexture.cpp"
         ],
         interface: :nif,
         preprocessor: Unifex,
@@ -38,7 +38,7 @@ defmodule Membrane.VideoCompositor.BundlexProject do
         language: :cpp,
         src_base: "opengl_video_compositor",
         includes: ["c_src/opengl_video_compositor/include"],
-        lib_dirs: ["."],
+        lib_dirs: ["."]
       ]
     ]
   end
