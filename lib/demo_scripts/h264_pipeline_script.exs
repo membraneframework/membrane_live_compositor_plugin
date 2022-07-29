@@ -23,3 +23,5 @@ options = %{
 }
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(options)
+
+Process.sleep()
