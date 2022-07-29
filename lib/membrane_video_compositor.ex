@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
-  Element responsible for placing first received frame
+  The element responsible for placing the first received frame
   above the other and sending forward buffer with
-  merged frame binary in payload.
+  merged frame binary in the payload.
   """
 
   use Membrane.Filter
@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor do
   def_options implementation: [
                 type: :atom,
                 spec: :ffmpeg | :opengl | :nx,
-                description: "Implementation type of video composer."
+                description: "Implementation of video composer."
               ],
               caps: [
                 type: RawVideo,
@@ -39,16 +39,17 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(options) do
+    compositor_module = determine_compositor_module(options.implementation)
+
+    {:ok, internal_state} = compositor_module.init(options.caps)
+
     state = %{
       pads: %{first_input: :queue.new(), second_input: :queue.new()},
       streams_state: %{first_input: :playing, second_input: :playing},
       caps: options.caps,
-      compositor_module: determine_compositor_module(options.implementation)
+      compositor_module: compositor_module,
+      internal_state: internal_state
     }
-
-    {:ok, state_of_init_module} = state.compositor_module.init(state.caps)
-
-    Map.put(state, :state_of_init_module, state_of_init_module)
 
     {:ok, state}
   end
@@ -68,12 +69,12 @@ defmodule Membrane.VideoCompositor do
           second: second_frame_buffer.payload
         }
 
-        {:ok, merged_frame_binary} =
-          state.compositor_module.merge_frames(frames_binaries, state.caps)
+        {{:ok, merged_frame_binary}, internal_state} =
+          state.compositor_module.merge_frames(frames_binaries, state.internal_state)
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
         pads = %{first_input: rest_of_first_queue, second_input: rest_of_second_queue}
-        state = %{state | pads: pads}
+        state = %{state | pads: pads, internal_state: internal_state}
         {{:ok, buffer: {:output, merged_image_buffer}}, state}
 
       _one_of_queues_is_empty ->
