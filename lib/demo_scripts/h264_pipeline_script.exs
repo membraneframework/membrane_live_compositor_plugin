@@ -23,7 +23,3 @@ options = %{
 }
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(options)
-
-Membrane.VideoCompositor.PipelineH264.play(pid)
-# will be removed with implementation of Membrane Beamchmark
-Process.sleep(1_000_000)
