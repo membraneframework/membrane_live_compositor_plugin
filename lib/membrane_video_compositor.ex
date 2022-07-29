@@ -99,7 +99,6 @@ defmodule Membrane.VideoCompositor do
 
     case {streams_state.first_input, streams_state.second_input} do
       {:end_of_the_stream, :end_of_the_stream} ->
-        Membrane.Logger.bare_log(:info, "End of streams")
         {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
 
       _one_streams_has_not_ended ->
