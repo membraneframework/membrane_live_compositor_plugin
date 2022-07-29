@@ -9,7 +9,6 @@ class Shader : public NonCopyable {
 public:
     GLuint m_id = 0;
 
-    static Shader from_files(const char *vertexPath, const char *fragmentPath);
     Shader(const char *vertex_code, const char *fragment_code);
 
     void use() const;

@@ -5,31 +5,6 @@
 #include <iostream>
 #include <sstream>
 
-Shader Shader::from_files(const char *vertexPath, const char *fragmentPath) {
-    std::string vertexCode;
-    std::string fragmentCode;
-    std::ifstream vFile;
-    std::ifstream fFile;
-
-    try {
-        vFile.open(vertexPath);
-        fFile.open(fragmentPath);
-        std::stringstream vStream, fStream;
-        vStream << vFile.rdbuf();
-        fStream << fFile.rdbuf();
-
-        vFile.close();
-        fFile.close();
-
-        vertexCode = vStream.str();
-        fragmentCode = fStream.str();
-    } catch (std::ifstream::failure e) {
-        std::cout << "Error while reading shader file" << std::endl;
-    }
-
-    return {vertexCode.data(), fragmentCode.data()};
-}
-
 Shader::Shader(const char *vertex_code, const char *fragment_code) {
     const char *vertexCodeCStr = vertex_code;
     const char *fragmentCodeCStr = fragment_code;
