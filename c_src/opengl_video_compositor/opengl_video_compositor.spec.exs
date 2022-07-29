@@ -4,9 +4,17 @@ state_type "State"
 
 interface [NIF]
 
+type(
+  raw_video :: %Membrane.RawVideo{
+    width: int,
+    height: int,
+    pixel_format: atom
+  }
+)
+
 spec init(
-       width :: int,
-       height :: int
+       first_video :: raw_video,
+       second_video :: raw_video
      ) :: {:ok :: label, state} | {:error :: label, reason :: atom}
 
 spec join_frames(upper :: payload, lower :: payload, state) ::

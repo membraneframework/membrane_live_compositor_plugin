@@ -1,11 +1,24 @@
 #include <dlfcn.h>
 #include <iostream>
+#include <string_view>
 #include <vector>
 
 #include "opengl_video_compositor.h"
 
-UNIFEX_TERM init(UnifexEnv *env, int width, int height) {
-    State *state = unifex_alloc_state(env);
+UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) {
+    std::string_view first_format(first_video.pixel_format);
+    std::string_view second_format(second_video.pixel_format);
+    if(
+        first_video.width != second_video.width ||
+        first_video.height != second_video.height ||
+        first_format != second_format
+    ) {
+        return init_result_error(env, "videos_of_different_formats");
+    }
+
+    if(first_format != "I420") {
+        return init_result_error(env, "unsupported_pixel_format");
+    }
 
     dlopen("libEGL.dylib", RTLD_LAZY);
     
@@ -37,7 +50,9 @@ UNIFEX_TERM init(UnifexEnv *env, int width, int height) {
         return init_result_error(env, "cannot_load_glad");
     }
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    state->compositor = new Compositor(width, height);
+
+    State *state = unifex_alloc_state(env);
+    state->compositor = new Compositor(first_video.width, first_video.height);
     state->display = egl_display;
     state->context = context;
 
