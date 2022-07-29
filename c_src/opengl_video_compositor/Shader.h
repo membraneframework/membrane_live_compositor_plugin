@@ -1,12 +1,13 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <string>
 
 #include "NonCopyable.h"
 
 class Shader : public NonCopyable {
 public:
-    unsigned int m_id;
+    GLuint m_id = 0;
 
     static Shader from_files(const char *vertexPath, const char *fragmentPath);
     Shader(const char *vertex_code, const char *fragment_code);
