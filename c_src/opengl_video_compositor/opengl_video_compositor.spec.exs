@@ -2,7 +2,7 @@ module Membrane.VideoCompositor.OpenGL.Native
 
 state_type "State"
 
-interface [CNode]
+interface [NIF]
 
 spec init(
   width :: int,
@@ -12,3 +12,4 @@ spec init(
 spec join_frames(upper :: payload, lower :: payload, state) :: {:ok :: label, payload} | {:error :: label, reason :: atom}
 
 dirty :cpu, init: 2
+dirty :cpu, join_frames: 3
