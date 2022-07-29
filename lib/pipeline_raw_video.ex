@@ -57,5 +57,4 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
     Membrane.Logger.bare_log(:info, "#{pad} send EOS")
     {:ok, state}
   end
-
 end

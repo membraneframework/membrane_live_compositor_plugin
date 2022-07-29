@@ -18,7 +18,6 @@ defmodule Membrane.VideoCompositor.PipelineH264 do
   """
   @impl true
   def handle_init(options) do
-
     children = %{
       file_src_1: %Membrane.File.Source{location: options.paths.first_h264_video_path},
       file_src_2: %Membrane.File.Source{location: options.paths.second_h264_video_path},
