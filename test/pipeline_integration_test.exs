@@ -5,8 +5,8 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   import Membrane.Testing.Assertions
 
-  alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.RawVideo
 
   test "Checks h264 pipeline of 30s 720 videos" do
     in_path = "./test/fixtures/input_30s_720p.h264"
@@ -78,7 +78,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 100_000)
+    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
   end
 end

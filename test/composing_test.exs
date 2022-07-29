@@ -5,8 +5,8 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   import Membrane.Testing.Assertions
 
-  alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.RawVideo
 
   test "Checks composition and raw video pipeline" do
     in_path = "./test/fixtures/input_10s_720p_1fps.raw"
@@ -42,7 +42,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 100_000)
+    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
     assert {:ok, out_video} = File.read(out_path)
