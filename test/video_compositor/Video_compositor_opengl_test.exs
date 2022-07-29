@@ -1,8 +1,8 @@
 defmodule VideoCompositor.OpenGL.NativeTest do
   use ExUnit.Case, async: true
 
-  alias Membrane.VideoCompositor.OpenGL.Native
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.OpenGL.Native
   alias Membrane.VideoCompositor.Test.Utility
 
   @tag :tmp_dir
