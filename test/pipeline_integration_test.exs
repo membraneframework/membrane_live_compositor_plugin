@@ -21,7 +21,6 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     }
 
     implementation = :nx
-    duration = 30
 
     options = %{
       paths: %{
@@ -58,7 +57,6 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     }
 
     implementation = :nx
-    duration = 60
 
     options = %{
       paths: %{

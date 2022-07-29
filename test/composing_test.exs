@@ -22,7 +22,6 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     }
 
     implementation = :nx
-    duration = 10
 
     options = %{
       paths: %{
