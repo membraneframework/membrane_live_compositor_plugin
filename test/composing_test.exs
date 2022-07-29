@@ -5,8 +5,8 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   import Membrane.Testing.Assertions
 
-  alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.RawVideo
+  alias Membrane.Testing.Pipeline, as: TestingPipeline
 
   test "Checks composition and raw video pipeline" do
     in_path = "./test/fixtures/input_10s_720p_1fps.raw"

@@ -5,8 +5,8 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   import Membrane.Testing.Assertions
 
-  alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.RawVideo
+  alias Membrane.Testing.Pipeline, as: TestingPipeline
 
   test "Checks h264 pipeline of 30s 720 videos" do
     in_path = "./test/fixtures/input_30s_720p.h264"
