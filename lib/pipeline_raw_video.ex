@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline do
+defmodule Membrane.VideoCompositor.PipelineRaw do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """
@@ -51,4 +51,11 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
     {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}
   end
+
+  @impl true
+  def handle_element_end_of_stream({pad, _}, _context, state) do
+    Membrane.Logger.bare_log(:info, "#{pad} send EOS")
+    {:ok, state}
+  end
+
 end
