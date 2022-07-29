@@ -49,7 +49,7 @@ defmodule Membrane.VideoCompositor.PipelineH264 do
       |> to(:file_sink)
     ]
 
-    {{:ok, spec: %ParentSpec{children: children, links: links}}, %{}}
+    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
   end
 
   @impl true
