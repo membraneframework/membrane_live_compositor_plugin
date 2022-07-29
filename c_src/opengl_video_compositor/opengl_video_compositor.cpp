@@ -47,7 +47,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) 
     eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
 
     if(!gladLoadGL()) {
-        return init_result_error(env, "cannot_load_glad");
+        return init_result_error(env, "cannot_load_opengl");
     }
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
