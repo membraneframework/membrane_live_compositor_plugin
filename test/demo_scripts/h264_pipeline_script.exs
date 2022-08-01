@@ -1,16 +1,16 @@
 alias Membrane.RawVideo
 
 paths = %{
-  first_h264_video_path: "~/membrane_video_compositor/input_30s_720p.h264",
-  second_h264_video_path: "~/membrane_video_compositor/input_30s_720p.h264",
-  output_path: "~/membrane_video_compositor/output_30s_1280x1440.h264"
+  first_h264_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
+  second_h264_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
+  output_path: "~/membrane_video_compositor/output_120s.h264"
 }
 
 caps = %RawVideo{
   aligned: true,
   framerate: {30, 1},
-  width: 1280,
-  height: 720,
+  width: 3840,
+  height: 2160,
   pixel_format: :I420
 }
 
@@ -24,4 +24,4 @@ options = %{
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(options)
 
-Process.sleep()
+Process.sleep(1_000_000)

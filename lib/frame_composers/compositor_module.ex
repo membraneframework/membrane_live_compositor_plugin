@@ -10,6 +10,12 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
                 first: binary(),
                 second: binary()
               },
-              caps :: %RawVideo{}
+              state :: %{
+                pads: map(),
+                streams_state: map(),
+                caps: RawVideo,
+                compositor_module: :ffmpeg | :opengl | :nx,
+                state_of_init_module: map()
+              }
             ) :: {:ok, bitstring()}
 end

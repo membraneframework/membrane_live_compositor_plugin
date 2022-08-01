@@ -14,26 +14,26 @@ defmodule Membrane.VideoCompositor.Nx do
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def merge_frames(frames, caps) do
+  def merge_frames(frames, state) do
     first_frame_nxtensor = Nx.from_binary(frames.first, {:u, 8})
     second_frame_nxtensor = Nx.from_binary(frames.second, {:u, 8})
 
-    first_v_value_index = floor(caps.width * caps.height * 5 / 4)
-    frame_length = floor(caps.width * caps.height * 3 / 2)
+    first_v_value_index = floor(state.caps.width * state.caps.height * 5 / 4)
+    frame_length = floor(state.caps.width * state.caps.height * 3 / 2)
 
     y =
       Nx.concatenate([
-        first_frame_nxtensor[0..(caps.width * caps.height - 1)],
-        second_frame_nxtensor[0..(caps.width * caps.height - 1)]
+        first_frame_nxtensor[0..(state.caps.width * state.caps.height - 1)],
+        second_frame_nxtensor[0..(state.caps.width * state.caps.height - 1)]
       ])
 
     u =
       Nx.concatenate([
         first_frame_nxtensor[
-          (caps.width * caps.height)..(first_v_value_index - 1)
+          (state.caps.width * state.caps.height)..(first_v_value_index - 1)
         ],
         second_frame_nxtensor[
-          (caps.width * caps.height)..(first_v_value_index - 1)
+          (state.caps.width * state.caps.height)..(first_v_value_index - 1)
         ]
       ])
 

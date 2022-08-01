@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def merge_frames(frames, _caps) do
+  def merge_frames(frames, _state) do
     merged_frames_binary = frames.first <> frames.second
     {:ok, merged_frames_binary}
   end
