@@ -30,13 +30,6 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   end
 
   test "Checks h264 pipeline on 60s 1080p videos" do
-    input_paths = %{
-      first_h264_video_path: "./test/fixtures/input_60s_1080p.h264",
-      second_h264_video_path: "./test/fixtures/input_60s_1080p.h264"
-    }
-
-    output_path = "./test/fixtures/output_60s_1920x2160.h264"
-
     video_caps = %RawVideo{
       width: 1920,
       height: 1080,
@@ -44,6 +37,15 @@ defmodule Membrane.VideoCompositor.PipelineTest do
       pixel_format: :I420,
       aligned: nil
     }
+
+    _duration = 60
+
+    input_paths = %{
+      first_h264_video_path: "./test/fixtures/input_60s_1080p.h264",
+      second_h264_video_path: "./test/fixtures/input_60s_1080p.h264"
+    }
+
+    output_path = "./test/fixtures/output_30s_1280x1440.h264"
 
     implementation = :nx
 

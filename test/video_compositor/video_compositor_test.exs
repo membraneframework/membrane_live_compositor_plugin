@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Test do
   alias Membrane.VideoCompositor.Test.Utility
 
   @tag :tmp_dir
-  test "compose two raw videos using a ffmpeg in the pipeline", %{tmp_dir: tmp_dir} do
+  test "compose two H264 videos using a ffmpeg in the pipeline", %{tmp_dir: tmp_dir} do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
@@ -19,14 +19,8 @@ defmodule Membrane.VideoCompositor.Test do
 
     implementation = :ffmpeg
 
-    {in_path, out_path, _ref_path} =
-      Utility.prepare_paths(
-        "input_30s_720p.h264",
-        "ref-all.h264",
-        tmp_dir
-      )
-
-    # Utility.generate_testing_raw_video(in_path, video, duration)
+    {in_path, _ref_path, out_path} =
+      Utility.prepare_testing_video(video_caps, 30, "h264", tmp_dir)
 
     options = %{
       paths: %{

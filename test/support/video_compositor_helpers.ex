@@ -5,37 +5,66 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   require Membrane.Logger
 
   @doc """
+  Creates a video and prepares filenames for input, returns input, reference and output videos paths.
+  """
+  @spec prepare_testing_video(Membrane.RawVideo, integer(), binary(), binary()) ::
+          {binary(), binary(), binary()}
+  def prepare_testing_video(video_description, duration, extension, tmp_dir) do
+    res = video_description.height
+    file_base = "#{duration}s_#{res}p.#{extension}"
+    input_file_name = "input_#{file_base}"
+    ref_file_name = "ref_#{file_base}"
+
+    {input_file_name, ref_file_name, out_file_name} =
+      prepare_paths(input_file_name, ref_file_name, tmp_dir)
+
+    generate_testing_video(input_file_name, video_description, duration)
+    {input_file_name, ref_file_name, out_file_name}
+  end
+
+  @doc """
   Generate and save a video in the given filename.
   """
-  @spec generate_testing_raw_video(binary(), Membrane.RawVideo, integer()) :: nil | :ok
-  def generate_testing_raw_video(file_name, video_description, duration) do
+  @spec generate_testing_video(binary(), Membrane.RawVideo, integer()) :: nil | :ok
+  def generate_testing_video(file_name, video_description, duration) do
     # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
+    {framerate, _} = video_description.framerate
+
     video_description_str = """
     testsrc=\
     duration=#{duration}\
     :size=#{video_description.width}x#{video_description.height}\
-    :rate=#{video_description.framerate}\
+    :rate=#{framerate}\
     ,format=yuv420p\
     """
+
+    input = [
+      # does not override the output file if it already exists
+      "-y",
+      # virtual input
+      "-f",
+      "lavfi",
+      # video parameters
+      "-i",
+      video_description_str
+    ]
+
+    # enforce raw video format, if needed
+    raw_video =
+      if(String.ends_with?(file_name, ".raw"),
+        do: ["-f", " rawvideo"],
+        else: []
+      )
+
+    output = [
+      # output file name
+      file_name
+    ]
 
     {result, exit_status} =
       System.cmd(
         "ffmpeg",
-        [
-          # does not override the output file if it already exists
-          "-y",
-          # virtual input
-          "-f",
-          "lavfi",
-          # video parameters
-          "-i",
-          video_description_str,
-          # save as raw video
-          "-f",
-          "rawvideo",
-          # output file name
-          file_name
-        ],
+        input ++ raw_video ++ output,
         stderr_to_stdout: true
       )
 
