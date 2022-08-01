@@ -56,6 +56,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) 
     state->display = egl_display;
     state->context = context;
 
+    eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     return init_result_ok(env, state);
 }
 
@@ -74,6 +75,7 @@ UNIFEX_TERM join_frames(UnifexEnv *env,  UnifexPayload *upper, UnifexPayload *lo
     unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, out.size(), &payload);
     memcpy(payload.data, out.data(), out.size());
 
+    eglMakeCurrent(state->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     return join_frames_result_ok(env, &payload);
 }
 
