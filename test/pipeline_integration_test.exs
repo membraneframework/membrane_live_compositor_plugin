@@ -8,11 +8,12 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
 
-  test "Checks h264 pipeline of 30s 720 videos" do
+  test "Checks h264 pipeline on 30s 720 videos" do
     input_paths = %{
       first_h264_video_path: "./test/fixtures/input_30s_720p.h264",
       second_h264_video_path: "./test/fixtures/input_30s_720p.h264"
     }
+
     output_path = "./test/fixtures/output_30s_1280x1440.h264"
 
     video_caps = %RawVideo{
@@ -33,6 +34,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
       first_h264_video_path: "./test/fixtures/input_60s_1080p.h264",
       second_h264_video_path: "./test/fixtures/input_60s_1080p.h264"
     }
+
     output_path = "./test/fixtures/output_60s_1920x2160.h264"
 
     video_caps = %RawVideo{
@@ -60,10 +62,10 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     }
 
     assert {:ok, pid} =
-             TestingPipeline.start_link(%TestingPipeline.Options{
+             TestingPipeline.start_link(
                module: Membrane.VideoCompositor.PipelineH264,
                custom_args: options
-             })
+             )
 
     assert_pipeline_playback_changed(pid, _, :playing)
 

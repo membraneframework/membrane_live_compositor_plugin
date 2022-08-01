@@ -13,6 +13,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
       first_raw_video_path: "./test/fixtures/input_10s_720p_1fps.raw",
       second_raw_video_path: "./test/fixtures/input_10s_720p_1fps.raw"
     }
+
     output_path = "./test/fixtures/output_10s_1280x1440_1fps.raw"
     composed_video_path = "./test/fixtures/composed_video_10s_1280x1440_1fps.raw"
 
@@ -26,10 +27,22 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     implementation = :nx
 
-    test_raw_pipeline_and_composing(input_paths, output_path, composed_video_path, video_caps, implementation)
+    test_raw_pipeline_and_composing(
+      input_paths,
+      output_path,
+      composed_video_path,
+      video_caps,
+      implementation
+    )
   end
 
-  defp test_raw_pipeline_and_composing(input_paths, output_path, composed_video_path, video_caps, implementation) do
+  defp test_raw_pipeline_and_composing(
+         input_paths,
+         output_path,
+         composed_video_path,
+         video_caps,
+         implementation
+       ) do
     options = %{
       paths: %{
         first_raw_video_path: input_paths.first_raw_video_path,
@@ -41,10 +54,10 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     }
 
     assert {:ok, pid} =
-             TestingPipeline.start_link(%TestingPipeline.Options{
+             TestingPipeline.start_link(
                module: Membrane.VideoCompositor.PipelineRaw,
                custom_args: options
-             })
+             )
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
