@@ -19,5 +19,5 @@ private:
     GLuint m_id;
     GLuint m_vertex_buffer_id;
     GLuint m_elements_buffer_id;
-    size_t m_indices_amount;
+    std::size_t m_indices_amount;
 };
