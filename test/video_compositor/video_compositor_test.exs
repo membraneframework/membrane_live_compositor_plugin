@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.Test do
 
     {in_path, out_path, _ref_path} =
       Utility.prepare_paths(
-        "#{video.framerate}s_#{video.framerate}fps.raw",
+        "#{duration}s_#{video.framerate}fps.raw",
         "ref-all.h264",
         tmp_dir
       )
@@ -40,10 +40,10 @@ defmodule Membrane.VideoCompositor.Test do
     }
 
     assert {:ok, pid} =
-             TestPipeline.start_link(%TestPipeline.Options{
+             TestPipeline.start_link(
                module: Membrane.VideoCompositor.Pipeline,
                custom_args: options
-             })
+             )
 
     Membrane.VideoCompositor.Pipeline.play(pid)
 
