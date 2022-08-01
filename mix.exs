@@ -49,11 +49,11 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_h264_ffmpeg_plugin, "~> 0.18"},
       {:membrane_raw_video_parser_plugin, "~> 0.8.0"},
       # Development
+      {:nx, "~> 0.2"},
+      {:exla, "~> 0.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false},
-      {:nx, "~> 0.2"},
-      {:exla, "~> 0.2"}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
