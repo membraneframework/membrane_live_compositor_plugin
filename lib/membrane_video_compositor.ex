@@ -68,7 +68,7 @@ defmodule Membrane.VideoCompositor do
           second: second_frame_buffer.payload
         }
 
-        {:ok, merged_frame_binary} = state.compositor_module.merge_frames(frames_binaries, state)
+        {:ok, merged_frame_binary} = state.compositor_module.merge_frames(frames_binaries, state.state_of_init_module)
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}
         pads = %{first_input: rest_of_first_queue, second_input: rest_of_second_queue}
