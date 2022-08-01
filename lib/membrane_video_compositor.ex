@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor do
 
     {:ok, state_of_init_module} = state.compositor_module.init(state.caps)
 
-    Map.put(state, :state_of_init_module, state_of_init_module)
+    state = Map.put(state, :state_of_init_module, state_of_init_module)
 
     {:ok, state}
   end

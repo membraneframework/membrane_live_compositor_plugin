@@ -9,8 +9,11 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
 
   test "Checks composition and raw video pipeline" do
-    in_path = "./test/fixtures/input_10s_720p_1fps.raw"
-    out_path = "./test/fixtures/output_10s_1280x1440_1fps.raw"
+    input_paths = %{
+      first_raw_video_path: "./test/fixtures/input_10s_720p_1fps.raw",
+      second_raw_video_path: "./test/fixtures/input_10s_720p_1fps.raw"
+    }
+    output_path = "./test/fixtures/output_10s_1280x1440_1fps.raw"
     composed_video_path = "./test/fixtures/composed_video_10s_1280x1440_1fps.raw"
 
     video_caps = %RawVideo{
@@ -23,11 +26,15 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     implementation = :nx
 
+    test_raw_pipeline_and_composing(input_paths, output_path, composed_video_path, video_caps, implementation)
+  end
+
+  defp test_raw_pipeline_and_composing(input_paths, output_path, composed_video_path, video_caps, implementation) do
     options = %{
       paths: %{
-        first_raw_video_path: in_path,
-        second_raw_video_path: in_path,
-        output_path: out_path
+        first_raw_video_path: input_paths.first_raw_video_path,
+        second_raw_video_path: input_paths.second_raw_video_path,
+        output_path: output_path
       },
       caps: video_caps,
       implementation: implementation
@@ -44,7 +51,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    assert {:ok, out_video} = File.read(out_path)
+    assert {:ok, out_video} = File.read(output_path)
     assert {:ok, composed_video} = File.read(composed_video_path)
 
     assert out_video == composed_video
