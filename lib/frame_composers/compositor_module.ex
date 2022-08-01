@@ -10,6 +10,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
                 first: binary(),
                 second: binary()
               },
-              caps :: %RawVideo{}
+              state_of_init_module :: any()
             ) :: {:ok, bitstring()}
 end

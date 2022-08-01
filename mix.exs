@@ -33,8 +33,8 @@ defmodule Membrane.VideoCompositor.Mixfile do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_env), do: ["lib"]
+  defp elixirc_paths(:test), do: ["lib", "test", "test/support"]
+  defp elixirc_paths(_env), do: ["lib", "test"]
 
   defp deps do
     [

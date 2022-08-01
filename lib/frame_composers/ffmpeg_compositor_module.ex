@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def merge_frames(frames, state) do
-    FFmpeg.apply_filter(frames.first, frames.second, state)
+  def merge_frames(frames, state_of_init_module) do
+    FFmpeg.apply_filter(frames.first, frames.second, state_of_init_module)
   end
 end
