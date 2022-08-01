@@ -4,14 +4,21 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
+  alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
+
   @impl Membrane.VideoCompositor.FrameCompositor
-  def init(_caps) do
-    {:ok, %{}}
+  def init(caps) do
+    first_video = caps
+    second_video = caps
+
+    FFmpeg.init(
+      first_video,
+      second_video
+    )
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def merge_frames(frames, _caps) do
-    merged_frames_binary = frames.first <> frames.second
-    {:ok, merged_frames_binary}
+  def merge_frames(frames, state) do
+    FFmpeg.apply_filter(frames.first, frames.second, state)
   end
 end

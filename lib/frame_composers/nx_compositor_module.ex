@@ -9,8 +9,8 @@ defmodule Membrane.VideoCompositor.Nx do
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
   @impl Membrane.VideoCompositor.FrameCompositor
-  def init(_caps) do
-    {:ok, %{}}
+  def init(caps) do
+    {:ok, caps}
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
