@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "opengl_video_compositor.h"
-
+// FIXME: pretty much all egl calls may fail. Currently, this is not checked in any way.
 UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) {
     std::string_view first_format(first_video.pixel_format);
     std::string_view second_format(second_video.pixel_format);
@@ -28,14 +28,14 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) 
 
     EGLint num_configs;
     EGLConfig config;
-    // TODO: figure out what these fields mean and whether those are correct values
+    // These are attributes our context will have, which specify 
+    // what kinds of surfaces it will be able to draw to.
     EGLint config_attributes[] = {
-        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-        EGL_BLUE_SIZE, 8,
-        EGL_GREEN_SIZE, 8,
-        EGL_RED_SIZE, 8,
-        EGL_DEPTH_SIZE, 8,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,      // ofscreen buffers only
+        EGL_BLUE_SIZE, 8,                       // 8 blue bits per pixel    |
+        EGL_GREEN_SIZE, 8,                      // 8 green bits per pixel   | support for RGB24 surfaces
+        EGL_RED_SIZE, 8,                        // 8 red bits per pixel     |
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,    // rendering done with OpenGL
         EGL_NONE,        
     };
 
