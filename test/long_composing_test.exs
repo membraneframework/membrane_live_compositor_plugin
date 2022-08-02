@@ -67,6 +67,6 @@ defmodule Membrane.VideoCompositor.LongComposingTest do
 
     assert out_video == composed_video
 
-    File.rm!(output_path)
+    File.rm(output_path)
   end
 end

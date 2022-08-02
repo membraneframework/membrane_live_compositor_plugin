@@ -70,6 +70,6 @@ defmodule Membrane.VideoCompositor.LongPipelineTest do
     assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    File.rm!(output_path)
+    File.rm(output_path)
   end
 end
