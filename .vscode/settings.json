@@ -1,5 +1,5 @@
 {
-    "C_Cpp.errorSquiggles": "Disabled",
+    "C_Cpp.errorSquiggles": "Enabled",
     "files.associations": {
         "__locale": "c",
         "filter.h": "c",
@@ -13,6 +13,11 @@
         "ostream": "c",
         "random": "c",
         "*.inc": "c",
-        "video_compositor.h": "c"
+        "video_compositor.h": "c",
+        "array": "c",
+        "vector": "c",
+        "string": "c",
+        "string_view": "c",
+        "parseutils.h": "c"
     }
 }

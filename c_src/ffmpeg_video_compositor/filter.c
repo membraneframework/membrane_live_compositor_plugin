@@ -47,16 +47,6 @@ static int apply_filters_options_string(char *filters_str, int filters_size,
  */
 static int finish_filters_string(char *filter_str, int filters_size);
 
-/**
- * @brief Print error message to the stderr with formatted error code.
- *
- * @param msg
- * @param error_code
- */
-void print_av_error(const char *msg, int error_code) {
-  fprintf(stderr, "%s: %s\n", msg, av_err2str(error_code));
-}
-
 Vec2 get_max_dimension(RawVideo videos[], Vec2 positions[], int n_videos) {
   int width = 0, height = 0;
   for (int i = 0; i < n_videos; i++) {
