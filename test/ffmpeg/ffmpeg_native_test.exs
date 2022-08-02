@@ -1,4 +1,4 @@
-defmodule VideoCompositor.FFmpeg.NativeTest do
+defmodule VideoCompositor.FFmpeg.Native.Test do
   use ExUnit.Case, async: true
 
   alias Membrane.RawVideo

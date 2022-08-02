@@ -40,7 +40,11 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
     goto end;
   }
 
-  get_filter_description(filter_str, sizeof filter_str, videos, SIZE(videos));
+  Vec2 positions[2] = {{.x = 0, .y = 0}, {.x = 0, .y = first_video.height}};
+
+  get_filter_description(filter_str, sizeof filter_str, videos, positions,
+                         SIZE(videos));
+  // printf("%s\n", filter_str);
   result = init_unifex_filter(env, filter_str, videos, SIZE(videos));
 end:
   return result;
@@ -60,7 +64,8 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
     state->vstate.videos[i] = videos[i];
   }
 
-  if (init_filters_graph(filter_description, &state->vstate.filter) < 0) {
+  if (init_filters_graph(filter_description, &state->vstate.filter, n_videos) <
+      0) {
     result = init_result_error(env, "error_creating_filters");
     goto exit_create;
   }
@@ -107,7 +112,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
 
   /* feed the filter graph */
   FilterState *filter = &state->vstate.filter;
-  for (int i = 0; i < SIZE(filter->inputs); ++i) {
+  for (unsigned i = 0; i < filter->n_inputs; ++i) {
     AVFilterContext *input = filter->inputs[i];
     AVFrame *frame = frames[i];
     if (av_buffersrc_add_frame_flags(input, frame, AV_BUFFERSRC_FLAG_KEEP_REF) <
@@ -117,10 +122,18 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
     }
   }
 
+  // printf("%s %d %d\n", filter->inputs[0]->name, filter->inputs[0]->nb_inputs,
+  //        filter->inputs[0]->nb_outputs);
+  // printf("%s %d %d\n", filter->inputs[1]->name, filter->inputs[1]->nb_inputs,
+  //        filter->inputs[1]->nb_outputs);
+  // printf("%s %d %d\n", filter->output->name, filter->output->nb_inputs,
+  //        filter->output->nb_outputs);
+
   /* pull the filtered frame from the filter graph
    * should always be 1 frame on output for each frame on input*/
   ret = av_buffersink_get_frame(filter->output, filtered_frame);
   if (ret < 0) {
+    print_av_error("Error pulling from filtergraph", ret);
     res = apply_filter_result_error(env, "error_pulling_from_filtergraph");
     goto exit_filter;
   }
@@ -156,10 +169,5 @@ exit_filter:
 void handle_destroy_state(UnifexEnv *env, State *state) {
   UNIFEX_UNUSED(env);
   FilterState *filter = &state->vstate.filter;
-  if (filter->graph != NULL) {
-    avfilter_graph_free(&filter->graph);
-  }
-  filter->inputs[0] = NULL;
-  filter->inputs[1] = NULL;
-  filter->output = NULL;
+  free_filter_state(filter);
 }

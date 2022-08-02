@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test do
+defmodule Membrane.VideoCompositor.FFmpeg.Pipeline.Test do
   use ExUnit.Case, async: true
 
   import Membrane.Testing.Assertions
@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.Test do
 
     implementation = :ffmpeg
 
-    {in_path, _ref_path, out_path} =
+    {in_path, out_path, _ref_path} =
       Utility.prepare_testing_video(video_caps, 30, "h264", tmp_dir)
 
     options = %{

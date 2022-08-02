@@ -10,7 +10,8 @@
 #define SIZE(x) ((int)(sizeof(x) / sizeof(x[0])))
 
 typedef struct FilterState {
-  AVFilterContext *inputs[2];
+  AVFilterContext **inputs;
+  unsigned n_inputs;
   AVFilterContext *output;
   AVFilterGraph *graph;
 } FilterState;
@@ -20,7 +21,16 @@ typedef struct VState {
   RawVideo videos[2];
 } VState;
 
-int init_filters_graph(const char *filters_descr, FilterState *filter);
+typedef struct Vec2 {
+  int x, y;
+} Vec2;
+
+int init_filters_graph(const char *filters_descr, FilterState *filter,
+                       int n_inputs);
 
 int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
-                           int n_videos);
+                           Vec2 positions[], int n_videos);
+
+void free_filter_state(FilterState *filter);
+
+void print_av_error(const char *msg, int error_code);

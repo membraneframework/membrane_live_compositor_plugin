@@ -15,11 +15,11 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     input_file_name = "input_#{file_base}"
     ref_file_name = "ref_#{file_base}"
 
-    {input_file_name, ref_file_name, out_file_name} =
+    {input_file_name, out_file_name, ref_file_name} =
       prepare_paths(input_file_name, ref_file_name, tmp_dir)
 
     generate_testing_video(input_file_name, video_description, duration)
-    {input_file_name, ref_file_name, out_file_name}
+    {input_file_name, out_file_name, ref_file_name}
   end
 
   @doc """
@@ -76,8 +76,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @spec prepare_paths(binary(), binary(), binary()) :: {binary(), binary(), binary()}
   def prepare_paths(input_file_name, ref_file_name, tmp_dir) do
     in_path = "../fixtures/#{input_file_name}" |> Path.expand(__DIR__)
-    ref_path = Path.join(tmp_dir, ref_file_name)
     out_path = Path.join(tmp_dir, "out-#{ref_file_name}")
+    ref_path = Path.join(tmp_dir, ref_file_name)
     {in_path, out_path, ref_path}
   end
 
