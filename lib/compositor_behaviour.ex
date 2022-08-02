@@ -10,6 +10,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
                 first: binary(),
                 second: binary()
               },
-              state_of_init_module :: any()
+              internal_state :: any()
             ) :: {:ok, merged_frames :: binary(), state :: any()}
 end
