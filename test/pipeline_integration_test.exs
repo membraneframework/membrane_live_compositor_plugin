@@ -1,5 +1,3 @@
-ExUnit.start()
-
 defmodule Membrane.VideoCompositor.PipelineTest do
   use ExUnit.Case
 
