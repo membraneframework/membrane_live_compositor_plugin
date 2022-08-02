@@ -66,7 +66,5 @@ defmodule Membrane.VideoCompositor.LongComposingTest do
     assert {:ok, composed_video} = File.read(composed_video_path)
 
     assert out_video == composed_video
-
-    File.rm(output_path)
   end
 end
