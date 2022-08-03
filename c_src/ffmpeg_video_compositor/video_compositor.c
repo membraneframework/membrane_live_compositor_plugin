@@ -28,7 +28,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
   // raw_video input_videos[] = {first_video, second_video};
   // const unsigned n_input_videos = SIZE(input_videos);
   UNIFEX_TERM result;
-  char filter_str[512];
+  char filter_str[4096];
 
   RawVideo videos[N_MAX_VIDEOS];
   const unsigned n_videos = n_input_videos;

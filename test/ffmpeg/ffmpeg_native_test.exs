@@ -44,7 +44,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       aligned: nil
     }
 
-    n_frames = 5
+    n_frames = 6
     assert compose_n_frames(in_path, out_path, video, n_frames)
   end
 
