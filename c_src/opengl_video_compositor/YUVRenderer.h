@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+
 #include <vector>
 
 #include "BasicFBO.h"
@@ -10,20 +11,21 @@
 #include "YUVTexture.h"
 
 class YUVRenderer : public NonCopyable {
-public:
-    YUVRenderer(GLsizei width, GLsizei height, std::vector<RectVAO> &&vaos, Shader &&shader);
+ public:
+  YUVRenderer(GLsizei width, GLsizei height, std::vector<RectVAO> &&vaos,
+              Shader &&shader);
 
-    void upload_texture(const char *data, bool upper) const;
-    void render_into(std::vector<char> &buffer) const;
-    
-    YUVRenderer(YUVRenderer&&) noexcept = default;
-    YUVRenderer& operator=(YUVRenderer&&) noexcept = default;
-private:
-    GLsizei m_width;
-    GLsizei m_height;
-    std::vector<RectVAO> m_vaos;
-    YUVTexture m_textures[2];
-    BasicFBO m_fbos[3];
-    Shader m_shader;
+  void upload_texture(const char *data, bool upper) const;
+  void render_into(std::vector<char> &buffer) const;
+
+  YUVRenderer(YUVRenderer &&) noexcept = default;
+  YUVRenderer &operator=(YUVRenderer &&) noexcept = default;
+
+ private:
+  GLsizei m_width;
+  GLsizei m_height;
+  std::vector<RectVAO> m_vaos;
+  YUVTexture m_textures[2];
+  BasicFBO m_fbos[3];
+  Shader m_shader;
 };
-
