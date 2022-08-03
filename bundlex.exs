@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor.BundlexProject do
         interface: :nif,
         preprocessor: Unifex,
         pkg_configs: [],
-        libs: ["pthread", "EGL", "GLESv2"],
+        libs: ["EGL", "GLESv2"],
         language: :cpp,
         src_base: "opengl_video_compositor",
         includes: ["c_src/opengl_video_compositor/include"],
