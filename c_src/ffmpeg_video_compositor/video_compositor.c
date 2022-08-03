@@ -42,10 +42,14 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
     }
   }
 
+  Vec2 positions[N_MAX_VIDEOS];
+
+  positions[0] = (Vec2){.x = 0, .y = 0};
+
   RawVideo first_video = videos[0];
-  Vec2 positions[] = {{.x = 0, .y = 0},
-                      {.x = 0, .y = first_video.height},
-                      {.x = 0, .y = first_video.height / 2}};
+  for (int i = 1; i < SIZE(positions); i++) {
+    positions[i] = (Vec2){.x = 0, .y = first_video.height / i};
+  }
 
   get_filter_description(filter_str, sizeof filter_str, videos, positions,
                          n_videos);
