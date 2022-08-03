@@ -23,10 +23,10 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
  * @param second_video Second input video
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
-                 raw_video second_video) {
-  raw_video input_videos[] = {first_video, second_video};
-  const unsigned n_input_videos = SIZE(input_videos);
+UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
+                 unsigned n_input_videos) {
+  // raw_video input_videos[] = {first_video, second_video};
+  // const unsigned n_input_videos = SIZE(input_videos);
   UNIFEX_TERM result;
   char filter_str[512];
 
@@ -42,6 +42,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
     }
   }
 
+  RawVideo first_video = videos[0];
   Vec2 positions[] = {{.x = 0, .y = 0},
                       {.x = 0, .y = first_video.height},
                       {.x = 0, .y = first_video.height / 2}};
@@ -92,14 +93,18 @@ exit_create:
  * @param state State with the initialized filter
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
-                         UnifexPayload *right_payload, State *main_state) {
+UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payloads[],
+                         unsigned n_payloads, State *main_state) {
   UNIFEX_TERM res;
   int ret = 0;
-  UnifexPayload *payloads[] = {left_payload, right_payload, right_payload};
   AVFrame *filtered_frame = av_frame_alloc();
 
   VState *state = &main_state->vstate;
+
+  if (state->n_videos != n_payloads) {
+    res = apply_filter_result_error(env, "error_wrong_number_of_frames");
+    goto exit_filter;
+  }
 
   if (!filtered_frame) {
     res = apply_filter_result_error(env, "error_allocating_frame");

@@ -10,17 +10,16 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   def init(caps) do
     first_video = caps
     second_video = caps
+    videos = [first_video, second_video]
 
-    FFmpeg.init(
-      first_video,
-      second_video
-    )
+    FFmpeg.init(videos)
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def merge_frames(frames, state_of_init_module) do
+    videos = [frames.first, frames.second]
     {:ok, merged_frames_binary} =
-      FFmpeg.apply_filter(frames.first, frames.second, state_of_init_module)
+      FFmpeg.apply_filter(videos, state_of_init_module)
 
     {:ok, merged_frames_binary, state_of_init_module}
   end

@@ -11,25 +11,26 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
     assert {:ok, frame_a} = File.read(in_path)
     assert {:ok, frame_b} = File.read(in_path)
 
-    assert {:ok, ref} =
-             Native.init(
-               %RawVideo{
-                 width: 640,
-                 height: 360,
-                 pixel_format: :I420,
-                 framerate: nil,
-                 aligned: nil
-               },
-               %RawVideo{
-                 width: 640,
-                 height: 360,
-                 pixel_format: :I420,
-                 framerate: nil,
-                 aligned: nil
-               }
-             )
+    videos = [
+      %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: nil,
+        aligned: nil
+      },
+      %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: nil,
+        aligned: nil
+      }
+    ]
 
-    assert {:ok, out_frame} = Native.apply_filter(frame_a, frame_b, ref)
+    assert {:ok, ref} = Native.init(videos)
+    frames = [frame_a, frame_b]
+    assert {:ok, out_frame} = Native.apply_filter(frames, ref)
     assert {:ok, file} = File.open(out_path, [:write])
     on_exit(fn -> File.close(file) end)
 
