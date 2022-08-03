@@ -25,36 +25,32 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
  */
 UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
                  raw_video second_video) {
+  raw_video input_videos[] = {first_video, second_video};
+  const unsigned n_input_videos = SIZE(input_videos);
   UNIFEX_TERM result;
   char filter_str[512];
 
-  RawVideo videos[3];
-  if (init_raw_video(&videos[0], first_video.width, first_video.height,
-                     first_video.pixel_format) < 0) {
-    result = init_result_error(env, "unsupported_pixel_format");
-    goto end;
-  }
-  if (init_raw_video(&videos[1], second_video.width, second_video.height,
-                     second_video.pixel_format) < 0) {
-    result = init_result_error(env, "unsupported_pixel_format");
-    goto end;
-  }
-  if (init_raw_video(&videos[2], second_video.width, second_video.height,
-                     second_video.pixel_format) < 0) {
-    result = init_result_error(env, "unsupported_pixel_format");
-    goto end;
+  RawVideo videos[N_MAX_VIDEOS];
+  const unsigned n_videos = n_input_videos;
+
+  for (unsigned i = 0; i < n_videos; i++) {
+    raw_video input_video = input_videos[i % n_input_videos];
+    if (init_raw_video(&videos[i], input_video.width, input_video.height,
+                       input_video.pixel_format) < 0) {
+      result = init_result_error(env, "unsupported_pixel_format");
+      goto end;
+    }
   }
 
   Vec2 positions[] = {{.x = 0, .y = 0},
                       {.x = 0, .y = first_video.height},
                       {.x = 0, .y = first_video.height / 2}};
 
-  unsigned n_videos = 2;  // SIZE(videos)
-
   get_filter_description(filter_str, sizeof filter_str, videos, positions,
                          n_videos);
   // printf("%s\n", filter_str);
   result = init_unifex_filter(env, filter_str, videos, n_videos);
+
 end:
   return result;
 }
@@ -64,7 +60,7 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       RawVideo videos[], unsigned n_videos) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
-  alloc_vstate(&state->vstate, n_videos + 1);
+  alloc_vstate(&state->vstate, n_videos);
 
   if (state->vstate.n_videos < n_videos) {
     result = init_result_error(env, "error_expected_less_input_videos");
@@ -73,8 +69,6 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
   for (unsigned i = 0; i < state->vstate.n_videos; i++) {
     state->vstate.videos[i] = videos[i];
   }
-
-  state->vstate.n_videos -= 1;
 
   if (init_filters_graph(filter_description, &state->vstate.filter, n_videos) <
       0) {

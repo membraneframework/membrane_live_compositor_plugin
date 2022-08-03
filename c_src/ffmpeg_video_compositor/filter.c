@@ -82,25 +82,33 @@ int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
   return filter_end;
 }
 
+static int get_input_video_description(char *filter_str, int filter_size,
+                                       RawVideo *video, int input_pad_idx) {
+  static const char *video_description_format =
+      "buffer="
+      "video_size=%dx%d"
+      ":pix_fmt=%d"
+      ":time_base=%d/%d"
+      "[in_%d];\n";
+
+  const int time_base_num = 1;
+  const int time_base_den = 1;
+
+  return snprintf(filter_str, filter_size, video_description_format,
+                  video->width, video->height, video->pixel_format,
+                  time_base_num, time_base_den, input_pad_idx);
+}
+
 static int append_input_nodes_filters_string(char *filters_str,
                                              int filters_size,
                                              RawVideo videos[], int n_videos) {
   int filter_end = 0;
   for (int i = 0; i < n_videos; ++i) {
     RawVideo *video = &videos[i];
-    const char *video_description_format =
-        "buffer="
-        "video_size=%dx%d"
-        ":pix_fmt=%d"
-        ":time_base=%d/%d"
-        "[in_%d];\n";
-    const int time_base_num = 1;
-    const int time_base_den = 1;
     const int input_pad_idx = i + 1;
-    filter_end += snprintf(filters_str + filter_end, filters_size - filter_end,
-                           video_description_format, video->width,
-                           video->height, video->pixel_format, time_base_num,
-                           time_base_den, input_pad_idx);
+    filter_end += get_input_video_description(filters_str + filter_end,
+                                              filters_size - filter_end, video,
+                                              input_pad_idx);
   }
   return filter_end;
 }
