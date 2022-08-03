@@ -49,7 +49,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video, raw_video second_video) 
     if(!gladLoadGL()) {
         return init_result_error(env, "cannot_load_opengl");
     }
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     State *state = unifex_alloc_state(env);
     state->compositor = new Compositor(first_video.width, first_video.height);
