@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: {30, 1},
+      framerate: 30,
       pixel_format: :I420,
       aligned: nil
     }
@@ -38,7 +38,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     video_caps = %RawVideo{
       width: 1920,
       height: 1080,
-      framerate: {30, 1},
+      framerate: 30,
       pixel_format: :I420,
       aligned: nil
     }

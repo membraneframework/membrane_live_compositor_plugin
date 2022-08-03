@@ -36,7 +36,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
   for (unsigned i = 0; i < n_videos; i++) {
     raw_video input_video = input_videos[i % n_input_videos];
     if (init_raw_video(&videos[i], input_video.width, input_video.height,
-                       input_video.pixel_format) < 0) {
+                       input_video.framerate, input_video.pixel_format) < 0) {
       result = init_result_error(env, "unsupported_pixel_format");
       goto end;
     }
@@ -53,7 +53,6 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
 
   get_filter_description(filter_str, sizeof filter_str, videos, positions,
                          n_videos);
-  // printf("%s\n", filter_str);
   result = init_unifex_filter(env, filter_str, videos, n_videos);
 
 end:
@@ -138,9 +137,11 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payloads[],
     }
   }
 
-  // printf("%s %d %d\n", filter->inputs[0]->name, filter->inputs[0]->nb_inputs,
+  // printf("%s %d %d\n", filter->inputs[0]->name,
+  // filter->inputs[0]->nb_inputs,
   //        filter->inputs[0]->nb_outputs);
-  // printf("%s %d %d\n", filter->inputs[1]->name, filter->inputs[1]->nb_inputs,
+  // printf("%s %d %d\n", filter->inputs[1]->name,
+  // filter->inputs[1]->nb_inputs,
   //        filter->inputs[1]->nb_outputs);
   // printf("%s %d %d\n", filter->output->name, filter->output->nb_inputs,
   //        filter->output->nb_outputs);

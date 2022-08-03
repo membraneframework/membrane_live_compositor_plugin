@@ -26,11 +26,12 @@ enum AVPixelFormat get_pixel_format(const char *fmt_name) {
  * @param raw_video Destination video
  * @param width Video width
  * @param height Video height
+ * @param framerate Video framerate
  * @param pixel_format_name Pixel format name given in a string. It will be
  * converted into the corresponding enum code
  * @return Return code. Return 0 on success, negative value otherwise
  */
-int init_raw_video(RawVideo *raw_video, int width, int height,
+int init_raw_video(RawVideo *raw_video, int width, int height, int framerate,
                    const char *pixel_format_name) {
   int pixel_format = get_pixel_format(pixel_format_name);
   if (pixel_format < 0) {
@@ -38,6 +39,7 @@ int init_raw_video(RawVideo *raw_video, int width, int height,
   }
   raw_video->width = width;
   raw_video->height = height;
+  raw_video->framerate = framerate;
   raw_video->pixel_format = pixel_format;
   return 0;
 }

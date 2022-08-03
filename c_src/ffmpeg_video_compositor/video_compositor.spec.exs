@@ -6,7 +6,8 @@ type(
   raw_video :: %Membrane.RawVideo{
     width: int,
     height: int,
-    pixel_format: atom
+    pixel_format: atom,
+    framerate: int
   }
 )
 

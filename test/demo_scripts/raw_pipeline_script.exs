@@ -8,7 +8,7 @@ paths = %{
 
 caps = %RawVideo{
   aligned: true,
-  framerate: {1, 1},
+  framerate: 1,
   width: 1280,
   height: 720,
   pixel_format: :I420

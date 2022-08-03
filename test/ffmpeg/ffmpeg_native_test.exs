@@ -13,7 +13,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       width: 640,
       height: 360,
       pixel_format: :I420,
-      framerate: nil,
+      framerate: 1,
       aligned: nil
     }
 
@@ -40,7 +40,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       width: 640,
       height: 360,
       pixel_format: :I420,
-      framerate: nil,
+      framerate: 1,
       aligned: nil
     }
 

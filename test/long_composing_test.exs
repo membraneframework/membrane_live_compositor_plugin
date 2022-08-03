@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.LongComposingTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: {1, 1},
+      framerate: 1,
       pixel_format: :I420,
       aligned: nil
     }
