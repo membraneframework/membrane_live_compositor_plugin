@@ -19,8 +19,10 @@ defmodule Membrane.VideoCompositor.FFmpeg.Pipeline.Test do
 
     implementation = :ffmpeg
 
+    duration = 3
+
     {in_path, out_path, _ref_path} =
-      Utility.prepare_testing_video(video_caps, 30, "h264", tmp_dir)
+      Utility.prepare_testing_video(video_caps, duration, "h264", tmp_dir)
 
     options = %{
       paths: %{
