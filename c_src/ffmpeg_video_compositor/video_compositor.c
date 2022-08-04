@@ -55,11 +55,16 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
 
   Vec2 positions[N_MAX_VIDEOS];
 
-  positions[0] = (Vec2){.x = 0, .y = 0};
+  const RawVideo first_video = videos[0];
+  if (n_input_videos == 2) {
+    positions[0] = (Vec2){.x = 0, .y = 0};
+    positions[1] = (Vec2){.x = 0, .y = first_video.height};
+  } else {
+    positions[0] = (Vec2){.x = 0, .y = 0};
 
-  RawVideo first_video = videos[0];
-  for (int i = 1; i < SIZE(positions); i++) {
-    positions[i] = (Vec2){.x = 0, .y = first_video.height / i};
+    for (int i = 1; i < SIZE(positions); i++) {
+      positions[i] = (Vec2){.x = 0, .y = first_video.height / i};
+    }
   }
 
   get_filter_description(filter_str, sizeof filter_str, videos, positions,
@@ -150,15 +155,6 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payloads[],
       goto exit_filter;
     }
   }
-
-  // printf("%s %d %d\n", filter->inputs[0]->name,
-  // filter->inputs[0]->nb_inputs,
-  //        filter->inputs[0]->nb_outputs);
-  // printf("%s %d %d\n", filter->inputs[1]->name,
-  // filter->inputs[1]->nb_inputs,
-  //        filter->inputs[1]->nb_outputs);
-  // printf("%s %d %d\n", filter->output->name, filter->output->nb_inputs,
-  //        filter->output->nb_outputs);
 
   /* pull the filtered frame from the filter graph
    * should always be 1 frame on output for each frame on input*/

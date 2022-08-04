@@ -12,31 +12,14 @@ defmodule Membrane.VideoCompositor.FFMPEG do
     second_video = caps
     videos = [first_video, second_video]
 
-    {:ok, internal_state} = FFmpeg.init(videos)
-    {:ok, %{state: internal_state, iter: 1, raw_video: second_video}}
+    FFmpeg.init(videos)
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def merge_frames(frames, state_of_init_module) do
-    %{state: internal_state, iter: iter} = state_of_init_module
+    frames = [frames.first, frames.second]
 
-    repeated_frames = Stream.repeatedly(fn -> frames.second end) |> Enum.take(div(iter, 80))
-    frames = [frames.first, frames.second] ++ repeated_frames
-
-    internal_state = if rem(iter, 80) == 0 do
-
-      IO.inspect("RE INIT")
-      raw_videos = for _ <- 1..(div(iter, 80) + 2), do: state_of_init_module.raw_video
-      IO.inspect(length(raw_videos))
-
-      {:ok, new_internal_state} = FFmpeg.init(raw_videos)
-      {:ok, new_internal_state} = FFmpeg.duplicate_metadata(new_internal_state, internal_state)
-      new_internal_state
-    else
-      internal_state
-    end
-
-    {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, internal_state)
-    {:ok, merged_frames_binary, %{state_of_init_module | state: internal_state, iter: iter + 1}}
+    {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, state_of_init_module)
+    {:ok, merged_frames_binary, state_of_init_module}
   end
 end
