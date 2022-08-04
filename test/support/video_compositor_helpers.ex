@@ -75,7 +75,7 @@ defmodule Membrane.VideoCompositor.Test.Utility do
 
   @spec prepare_paths(binary(), binary(), binary()) :: {binary(), binary(), binary()}
   def prepare_paths(input_file_name, ref_file_name, tmp_dir) do
-    in_path = "../fixtures/#{input_file_name}" |> Path.expand(__DIR__)
+    in_path = "../fixtures/native/#{input_file_name}" |> Path.expand(__DIR__)
     out_path = Path.join(tmp_dir, "out-#{ref_file_name}")
     ref_path = Path.join(tmp_dir, ref_file_name)
     {in_path, out_path, ref_path}
