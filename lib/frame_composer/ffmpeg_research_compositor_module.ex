@@ -25,16 +25,16 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
     repeated_frames = Stream.repeatedly(fn -> frames.second end) |> Enum.take(div(iter, 80))
     frames = [frames.first, frames.second] ++ repeated_frames
 
-    internal_state = if rem(iter, 80) == 0 do
+    internal_state =
+      if rem(iter, 80) == 0 do
+        raw_videos = for _ <- 1..(div(iter, 80) + 2), do: state_of_init_module.raw_video
 
-      raw_videos = for _ <- 1..(div(iter, 80) + 2), do: state_of_init_module.raw_video
-
-      {:ok, new_internal_state} = FFmpeg.init(raw_videos)
-      {:ok, new_internal_state} = FFmpeg.duplicate_metadata(new_internal_state, internal_state)
-      new_internal_state
-    else
-      internal_state
-    end
+        {:ok, new_internal_state} = FFmpeg.init(raw_videos)
+        {:ok, new_internal_state} = FFmpeg.duplicate_metadata(new_internal_state, internal_state)
+        new_internal_state
+      else
+        internal_state
+      end
 
     {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, internal_state)
     {:ok, merged_frames_binary, %{state_of_init_module | state: internal_state, iter: iter + 1}}

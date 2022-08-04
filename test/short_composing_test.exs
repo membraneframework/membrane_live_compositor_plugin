@@ -57,7 +57,6 @@ defmodule Membrane.VideoCompositor.ComposingTest do
                custom_args: options
              )
 
-
     assert_pipeline_playback_changed(pid, _, :playing)
 
     assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
