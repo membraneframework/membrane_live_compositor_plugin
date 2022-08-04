@@ -34,18 +34,20 @@ UNIFEX_TERM duplicate_metadata(UnifexEnv *env, State *new_state,
  * @param second_video Second input video
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
-                 unsigned n_input_videos) {
-  // raw_video input_videos[] = {first_video, second_video};
-  // const unsigned n_input_videos = SIZE(input_videos);
+UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[], unsigned n_videos) {
   UNIFEX_TERM result;
+
+  if (n_videos < 2) {
+    result = init_result_error(env, "expected_at_least_two_input_videos");
+    goto end;
+  }
+
   char filter_str[4096];
 
   RawVideo videos[N_MAX_VIDEOS];
-  const unsigned n_videos = n_input_videos;
 
   for (unsigned i = 0; i < n_videos; i++) {
-    raw_video input_video = input_videos[i % n_input_videos];
+    raw_video input_video = input_videos[i % n_videos];
     if (init_raw_video(&videos[i], input_video.width, input_video.height,
                        input_video.framerate, input_video.pixel_format) < 0) {
       result = init_result_error(env, "unsupported_pixel_format");
@@ -56,7 +58,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[],
   Vec2 positions[N_MAX_VIDEOS];
 
   const RawVideo first_video = videos[0];
-  if (n_input_videos == 2) {
+  if (n_videos == 2) {
     positions[0] = (Vec2){.x = 0, .y = 0};
     positions[1] = (Vec2){.x = 0, .y = first_video.height};
   } else {
