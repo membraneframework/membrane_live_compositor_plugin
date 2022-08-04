@@ -197,8 +197,15 @@ int init_filters_graph(const char *filters_str, FilterState *filter,
   //   printf("%s %d %d\n", input->name, input->nb_inputs, input->nb_outputs);
   // }
 
-  for (unsigned i = 0; i < filter->n_inputs; i++) {
-    filter->inputs[i] = graph->filters[i];
+  for (unsigned i = 0, idx = 0; i < graph->nb_filters; i++) {
+    AVFilterContext *filter_ctx = graph->filters[i];
+    if (filter_ctx->nb_inputs == 0) {
+      filter->inputs[idx] = filter_ctx;
+      idx++;
+    }
+    if (idx == filter->n_inputs) {
+      break;
+    }
   }
   for (unsigned i = 0; i < graph->nb_filters; i++) {
     AVFilterContext *output = graph->filters[i];
