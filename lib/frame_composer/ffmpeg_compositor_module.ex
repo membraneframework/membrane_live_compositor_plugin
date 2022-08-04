@@ -29,8 +29,9 @@ defmodule Membrane.VideoCompositor.FFMPEG do
       raw_videos = for _ <- 1..(div(iter, 80) + 2), do: state_of_init_module.raw_video
       IO.inspect(length(raw_videos))
 
-      {:ok, internal_state} = FFmpeg.init(raw_videos)
-      internal_state
+      {:ok, new_internal_state} = FFmpeg.init(raw_videos)
+      {:ok, new_internal_state} = FFmpeg.duplicate_metadata(new_internal_state, internal_state)
+      new_internal_state
     else
       internal_state
     end

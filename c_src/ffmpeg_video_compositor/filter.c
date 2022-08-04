@@ -92,7 +92,7 @@ static int get_input_video_description(char *filter_str, int filter_size,
       "[in_%d];\n";
 
   const int time_base_num = 1;
-  const int time_base_den = 1;
+  const int time_base_den = video->framerate;
 
   return snprintf(filter_str, filter_size, video_description_format,
                   video->width, video->height, video->pixel_format,
@@ -127,8 +127,8 @@ static int apply_filters_options_string(char *filters_str, int filters_size,
   for (int i = 1; i < n_videos; ++i) {
     Vec2 pos = positions[i];
     filter_end += snprintf(filters_str + filter_end, filters_size - filter_end,
-                           "[mid_%d];\n[mid_%d][in_%d] overlay=x=%d:y=%d", i, i,
-                           i + 1, pos.x, pos.y);
+                           "[mid_%d];\n[mid_%d][in_%d] overlay=x=%d + t*6:y=%d",
+                           i, i, i + 1, pos.x, pos.y);
   }
 
   // const char *filter_descr =

@@ -4,6 +4,6 @@
 
 typedef struct VideoCompositorState {
   VState vstate;
-  int n_frames;
+  int last_pts;
 } State;
 #include "_generated/video_compositor.h"

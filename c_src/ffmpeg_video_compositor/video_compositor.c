@@ -14,6 +14,17 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
                                       RawVideo videos[], unsigned n_videos);
 
+UNIFEX_TERM duplicate_metadata(UnifexEnv *env, State *new_state,
+                               State *old_state) {
+  UNIFEX_TERM result;
+
+  new_state->last_pts = old_state->last_pts;
+
+  result = duplicate_metadata_result_ok(env, new_state);
+
+  return result;
+}
+
 /**
  * @brief Initializes the state of the video compositor and creates a filter
  * graph. The function assumes two input videos and one output video.
@@ -65,6 +76,7 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
   alloc_vstate(&state->vstate, n_videos);
+  state->last_pts = 0;
 
   if (state->vstate.n_videos < n_videos) {
     result = init_result_error(env, "error_expected_less_input_videos");
@@ -121,9 +133,11 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payloads[],
     frame->format = video->pixel_format;
     frame->width = video->width;
     frame->height = video->height;
+    frame->pts = main_state->last_pts;
     av_image_fill_arrays(frame->data, frame->linesize, payload->data,
                          frame->format, frame->width, frame->height, 1);
   }
+  main_state->last_pts++;
 
   /* feed the filter graph */
   FilterState *filter = &state->filter;

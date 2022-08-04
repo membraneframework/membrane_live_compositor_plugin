@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @spec generate_testing_video(binary(), Membrane.RawVideo, integer()) :: nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
     # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
-    {framerate, _} = video_description.framerate
+    framerate = video_description.framerate
 
     video_description_str = """
     testsrc=\
