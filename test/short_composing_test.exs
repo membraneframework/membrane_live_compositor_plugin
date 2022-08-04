@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: 1,
+      framerate: {1, 1},
       pixel_format: :I420,
       aligned: nil
     }
@@ -56,6 +56,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
                module: Membrane.VideoCompositor.PipelineRaw,
                custom_args: options
              )
+
 
     assert_pipeline_playback_changed(pid, _, :playing)
 

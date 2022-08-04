@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: 30,
+      framerate: {30, 1},
       pixel_format: :I420,
       aligned: nil
     }
@@ -38,19 +38,10 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     video_caps = %RawVideo{
       width: 1920,
       height: 1080,
-      framerate: 30,
+      framerate: {30, 1},
       pixel_format: :I420,
       aligned: nil
     }
-
-    _duration = 60
-
-    input_paths = %{
-      first_h264_video_path: "./test/fixtures/input_60s_1080p.h264",
-      second_h264_video_path: "./test/fixtures/input_60s_1080p.h264"
-    }
-
-    output_path = "./test/fixtures/output_30s_1280x1440.h264"
 
     implementation = :nx
 

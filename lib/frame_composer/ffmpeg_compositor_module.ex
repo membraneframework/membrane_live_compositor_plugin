@@ -5,12 +5,12 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
-
+  alias Membrane.RawVideo
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(caps) do
-    first_video = caps
-    second_video = caps
-    videos = [first_video, second_video]
+    {num, den} = caps.framerate
+    video = %RawVideo{caps | framerate: div(num, den)}
+    videos = [video, video]
 
     FFmpeg.init(videos)
   end

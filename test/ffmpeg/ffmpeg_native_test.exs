@@ -13,7 +13,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       width: 640,
       height: 360,
       pixel_format: :I420,
-      framerate: 1,
+      framerate: {1, 1},
       aligned: nil
     }
 
@@ -40,7 +40,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       width: 640,
       height: 360,
       pixel_format: :I420,
-      framerate: 1,
+      framerate: {1, 1},
       aligned: nil
     }
 
@@ -51,6 +51,9 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
   defp compose_n_frames(in_path, out_path, video, n_frames) do
     assert frame = File.read!(in_path)
     frames = for _ <- 1..n_frames, do: frame
+
+    {framerate, _} = video.framerate
+    video = %RawVideo{video | framerate: framerate}
     videos = for _ <- 1..n_frames, do: video
 
     assert {:ok, ref} = Native.init(videos)

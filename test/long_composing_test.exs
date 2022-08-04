@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.LongComposingTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
 
+  @tag :long
   test "Checks composition and raw video pipeline on 10s 720p 1fps raw video" do
     input_paths = %{
       first_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
@@ -18,7 +19,7 @@ defmodule Membrane.VideoCompositor.LongComposingTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: 1,
+      framerate: {1, 1},
       pixel_format: :I420,
       aligned: nil
     }

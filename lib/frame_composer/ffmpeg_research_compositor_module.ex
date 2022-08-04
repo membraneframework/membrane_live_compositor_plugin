@@ -5,15 +5,17 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
+  alias Membrane.RawVideo
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(caps) do
-    first_video = caps
-    second_video = caps
-    videos = [first_video, second_video]
+    {num, den} = caps.framerate
+    video = %RawVideo{caps | framerate: div(num, den)}
+
+    videos = [video, video]
 
     {:ok, internal_state} = FFmpeg.init(videos)
-    {:ok, %{state: internal_state, iter: 1, raw_video: second_video}}
+    {:ok, %{state: internal_state, iter: 1, raw_video: video}}
   end
 
   @impl Membrane.VideoCompositor.FrameCompositor

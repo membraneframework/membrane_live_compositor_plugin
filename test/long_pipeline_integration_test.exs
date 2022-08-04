@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.LongPipelineTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
 
+  @tag :long
   test "Checks h264 pipeline on 30s 720p 30fps video" do
     input_paths = %{
       first_h264_video_path: "./test/fixtures/long_videos/input_30s_720p.h264",
@@ -17,7 +18,7 @@ defmodule Membrane.VideoCompositor.LongPipelineTest do
     video_caps = %RawVideo{
       width: 1280,
       height: 720,
-      framerate: 30,
+      framerate: {30, 1},
       pixel_format: :I420,
       aligned: nil
     }
@@ -27,6 +28,7 @@ defmodule Membrane.VideoCompositor.LongPipelineTest do
     test_h264_pipeline(input_paths, output_path, video_caps, implementation)
   end
 
+  @tag :long
   test "Checks h264 pipeline on 60s 1080p 30fps video" do
     input_paths = %{
       first_h264_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
@@ -38,7 +40,7 @@ defmodule Membrane.VideoCompositor.LongPipelineTest do
     video_caps = %RawVideo{
       width: 1920,
       height: 1080,
-      framerate: 30,
+      framerate: {30, 1},
       pixel_format: :I420,
       aligned: nil
     }
