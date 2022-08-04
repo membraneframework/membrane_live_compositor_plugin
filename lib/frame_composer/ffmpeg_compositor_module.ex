@@ -4,8 +4,9 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
+
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(caps) do
     {num, den} = caps.framerate

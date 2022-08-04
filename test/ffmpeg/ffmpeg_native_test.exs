@@ -50,11 +50,11 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
 
   defp compose_n_frames(in_path, out_path, video, n_frames) do
     assert frame = File.read!(in_path)
-    frames = for _ <- 1..n_frames, do: frame
+    frames = for _n <- 1..n_frames, do: frame
 
-    {framerate, _} = video.framerate
+    {framerate, _den} = video.framerate
     video = %RawVideo{video | framerate: framerate}
-    videos = for _ <- 1..n_frames, do: video
+    videos = for _n <- 1..n_frames, do: video
 
     assert {:ok, ref} = Native.init(videos)
     assert {:ok, out_frame} = Native.apply_filter(frames, ref)
