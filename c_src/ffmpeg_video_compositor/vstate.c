@@ -1,5 +1,12 @@
 #include "vstate.h"
 
+/**
+ * @brief Allocates memory for vstate object and initializes it with default
+ * parameters
+ *
+ * @param state Target state pointer
+ * @param n_videos Number of input videos in the filter graph
+ */
 void alloc_vstate(VState *state, unsigned n_videos) {
   state->videos = malloc(n_videos * sizeof(*state->videos));
   state->input_frames = malloc(n_videos * sizeof(*state->input_frames));
@@ -9,6 +16,11 @@ void alloc_vstate(VState *state, unsigned n_videos) {
   }
 }
 
+/**
+ * @brief Free memory for vstate object and sets its members to proper values
+ *
+ * @param state Target state pointer
+ */
 void free_vstate(VState *state) {
   for (unsigned i = 0; i < state->n_videos; i++) {
     av_frame_free(&state->input_frames[i]);

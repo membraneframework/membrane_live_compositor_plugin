@@ -23,5 +23,3 @@ int get_filter_description(char *filter_str, int filter_size, RawVideo videos[],
                            Vec2 positions[], int n_videos);
 
 void free_filter_state(FilterState *filter);
-
-void print_av_error(const char *msg, int error_code);
