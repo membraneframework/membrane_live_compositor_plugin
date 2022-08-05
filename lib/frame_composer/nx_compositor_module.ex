@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Nx do
   This module implements video composition in Nx.
   It receives two frames in binary format,
   concatenate separate yuv components,
-  and merges them together.
+  and merges them.
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
@@ -45,6 +45,6 @@ defmodule Membrane.VideoCompositor.Nx do
     merged_frames_nxtensor = Nx.concatenate([y, u, v])
     merged_frames_binary = Nx.to_binary(merged_frames_nxtensor)
 
-    {:ok, merged_frames_binary, internal_state}
+    {{:ok, merged_frames_binary}, internal_state}
   end
 end

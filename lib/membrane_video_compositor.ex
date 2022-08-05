@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
-  Element responsible for placing first received frame
+  The element responsible for placing the first received frame
   above the other and sending forward buffer with
-  merged frame binary in payload.
+  merged frame binary in the payload.
   """
 
   use Membrane.Filter
@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor do
           second: second_frame_buffer.payload
         }
 
-        {:ok, merged_frame_binary, internal_state} =
+        {{:ok, merged_frame_binary}, internal_state} =
           state.compositor_module.merge_frames(frames_binaries, state.internal_state)
 
         merged_image_buffer = %Buffer{first_frame_buffer | payload: merged_frame_binary}

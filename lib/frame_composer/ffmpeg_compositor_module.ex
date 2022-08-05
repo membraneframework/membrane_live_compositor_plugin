@@ -21,6 +21,6 @@ defmodule Membrane.VideoCompositor.FFMPEG do
     frames = [frames.first, frames.second]
 
     {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, state_of_init_module)
-    {:ok, merged_frames_binary, state_of_init_module}
+    {{:ok, merged_frames_binary}, state_of_init_module}
   end
 end

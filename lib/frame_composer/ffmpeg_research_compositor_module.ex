@@ -37,6 +37,6 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
       end
 
     {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, internal_state)
-    {:ok, merged_frames_binary, %{state_of_init_module | state: internal_state, iter: iter + 1}}
+    {{:ok, merged_frames_binary}, %{state_of_init_module | state: internal_state, iter: iter + 1}}
   end
 end
