@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "glad/glad.h"
+#include "glad/gles2.h"
 
 Shader::Shader(const char *vertex_code, const char *fragment_code) {
   const char *vertexCodeCStr = vertex_code;

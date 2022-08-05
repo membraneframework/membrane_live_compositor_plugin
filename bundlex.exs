@@ -24,7 +24,7 @@ defmodule Membrane.VideoCompositor.BundlexProject do
         sources: [
           "BasicFBO.cpp",
           "Compositor.cpp",
-          "glad.cpp",
+          "gles2.cpp",
           "opengl_video_compositor.cpp",
           "RectVAO.cpp",
           "Shader.cpp",

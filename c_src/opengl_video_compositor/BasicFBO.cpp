@@ -46,7 +46,7 @@ BasicFBO::~BasicFBO() {
 
 void BasicFBO::bind() const {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_id);
-  glDrawBuffer(GL_COLOR_ATTACHMENT0);
+  // glDrawBuffer(GL_COLOR_ATTACHMENT0);
   glViewport(0, 0, m_width, m_height);
 }
 

@@ -6,6 +6,7 @@ defmodule VideoCompositor.OpenGL.NativeTest do
   alias Membrane.VideoCompositor.Test.Utility
 
   @tag :tmp_dir
+  @tag timeout: :infinity
   test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
     {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir)
     assert {:ok, frame_a} = File.read(in_path)
