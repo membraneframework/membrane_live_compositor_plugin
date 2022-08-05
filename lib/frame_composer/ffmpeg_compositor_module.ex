@@ -4,8 +4,8 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.FFmpeg.Native.RawVideo, as: NativeRawVideo
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
+  alias Membrane.VideoCompositor.FFmpeg.Native.RawVideo, as: NativeRawVideo
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(caps) do
