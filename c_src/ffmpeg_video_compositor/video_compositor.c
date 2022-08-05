@@ -49,7 +49,8 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[], unsigned n_videos) {
   for (unsigned i = 0; i < n_videos; i++) {
     raw_video input_video = input_videos[i % n_videos];
     if (init_raw_video(&videos[i], input_video.width, input_video.height,
-                       input_video.framerate, input_video.pixel_format) < 0) {
+                       input_video.framerate_num, input_video.framerate_den,
+                       input_video.pixel_format) < 0) {
       result = init_result_error(env, "unsupported_pixel_format");
       goto end;
     }

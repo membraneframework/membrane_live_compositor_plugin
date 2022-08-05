@@ -3,11 +3,12 @@ module Membrane.VideoCompositor.FFmpeg.Native
 state_type "State"
 
 type(
-  raw_video :: %Membrane.RawVideo{
+  raw_video :: %Membrane.VideoCompositor.FFmpeg.Native.RawVideo{
     width: int,
     height: int,
     pixel_format: atom,
-    framerate: int
+    framerate_num: int,
+    framerate_den: int
   }
 )
 

@@ -137,8 +137,8 @@ static int get_input_video_description(char *filter_str, int filter_size,
       ":time_base=%d/%d"
       "[in_%d];\n";
 
-  const int time_base_num = 1;
-  const int time_base_den = video->framerate;
+  const int time_base_num = video->framerate_den;
+  const int time_base_den = video->framerate_num;
 
   return snprintf(filter_str, filter_size, video_description_format,
                   video->width, video->height, video->pixel_format,
