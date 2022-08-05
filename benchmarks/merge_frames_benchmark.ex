@@ -70,9 +70,9 @@ defmodule MergeFramesBenchmark do
           fn {frames, internal_states} -> Membrane.VideoCompositor.Nx.merge_frames(frames, internal_states.nx) end
       },
       inputs: %{
-        "720p" => {frames_720p, internal_states_720p},
-        "1080p" => {frames_1080p, internal_states_1080p},
-        "4k" => {frames_4k, internal_states_4k}
+        "1. 720p" => {frames_720p, internal_states_720p},
+        "2. 1080p" => {frames_1080p, internal_states_1080p},
+        "3. 4k" => {frames_4k, internal_states_4k}
       },
       time: 30,
       memory_time: 2
