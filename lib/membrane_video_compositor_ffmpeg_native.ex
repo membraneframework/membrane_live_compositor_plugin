@@ -6,7 +6,7 @@ end
 defmodule Membrane.VideoCompositor.FFmpeg.Native.RawVideo do
   @moduledoc """
   Unifex compatible implementation of Membrane.RawVideo struct.
-  It should be used only with native FFmpeg module functions.
+  It should be used only with the native FFmpeg module functions.
   """
 
   @typedoc """
@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.FFmpeg.Native.RawVideo do
   Numerator of number of frames per second. To avoid using tuple type,
   it is described by 2 separate integers number.
   """
-  @type framerate_num_t :: pos_integer
+  @type framerate_num_t :: non_neg_integer
 
   @typedoc """
   Denominator of number of frames per second. To avoid using tuple type,
@@ -47,19 +47,30 @@ defmodule Membrane.VideoCompositor.FFmpeg.Native.RawVideo do
   @enforce_keys [:width, :height, :pixel_format, :framerate_num]
   defstruct width: nil, height: nil, pixel_format: nil, framerate_num: nil, framerate_den: 1
 
+  @supported_pixel_formats [:I420, :I422, :I444]
+
   @doc """
   Creates unifex compatible struct from Membrane.RawVideo struct.
+  It may result in error when RawVideo with not supported pixel format is provided.
   """
-  @spec from_membrane_raw_video(Membrane.RawVideo) :: __MODULE__
-  def from_membrane_raw_video(raw_video) do
+  @spec from_membrane_raw_video(Membrane.RawVideo.t()) ::
+          {:ok, __MODULE__.t()} | {:error, :not_supported_pixel_format}
+
+  def from_membrane_raw_video(%Membrane.RawVideo{pixel_format: format} = raw_video)
+      when format in @supported_pixel_formats do
     {framerate_num, framerate_den} = raw_video.framerate
 
-    %__MODULE__{
-      width: raw_video.width,
-      height: raw_video.height,
-      pixel_format: raw_video.pixel_format,
-      framerate_num: framerate_num,
-      framerate_den: framerate_den
-    }
+    {:ok,
+     %__MODULE__{
+       width: raw_video.width,
+       height: raw_video.height,
+       pixel_format: raw_video.pixel_format,
+       framerate_num: framerate_num,
+       framerate_den: framerate_den
+     }}
+  end
+
+  def from_membrane_raw_video(_raw_video) do
+    {:error, :not_supported_pixel_format}
   end
 end

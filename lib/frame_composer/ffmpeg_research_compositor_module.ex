@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
 
   @impl Membrane.VideoCompositor.FrameCompositor
   def init(caps) do
-    video = NativeRawVideo.from_membrane_raw_video(caps)
+    {:ok, video} = NativeRawVideo.from_membrane_raw_video(caps)
 
     videos = [video, video]
 

@@ -52,7 +52,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
     assert frame = File.read!(in_path)
     frames = for _n <- 1..n_frames, do: frame
 
-    video = Membrane.VideoCompositor.FFmpeg.Native.RawVideo.from_membrane_raw_video(caps)
+    {:ok, video} = Membrane.VideoCompositor.FFmpeg.Native.RawVideo.from_membrane_raw_video(caps)
     videos = for _n <- 1..n_frames, do: video
 
     assert {:ok, ref} = Native.init(videos)
