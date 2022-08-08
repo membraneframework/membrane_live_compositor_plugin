@@ -49,6 +49,13 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         @filter_description
       )
 
+    parser = %Membrane.RawVideo.Parser{
+      framerate: video_caps.framerate,
+      width: video_caps.width,
+      height: video_caps.height,
+      pixel_format: video_caps.pixel_format
+    }
+
     options = %{
       paths: %{
         first_video_path: input_path,
@@ -56,14 +63,15 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         output_path: output_path
       },
       caps: caps,
-      implementation: implementation
+      implementation: implementation,
+      decoder: parser
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
     assert {:ok, out_video} = File.read(output_path)

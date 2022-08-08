@@ -62,14 +62,16 @@ defmodule Membrane.VideoCompositor.PipelineTest do
         output_path: out_file_name
       },
       caps: video_caps,
-      implementation: implementation
+      implementation: implementation,
+      decoder: Membrane.VideoCompositor.Pipeline.H264.InputDecoder,
+      encoder: Membrane.H264.FFmpeg.Encoder
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineH264, custom_args: options)
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
   end
 end

@@ -29,7 +29,7 @@ caps = %RawVideo{
   pixel_format: :I420
 }
 
-parser = Membrane.VideoCompositor.Demo.H264.InputParser
+parser = Membrane.VideoCompositor.Pipeline.H264.InputDecoder
 
 options = %{
   paths: paths,
@@ -40,6 +40,6 @@ options = %{
   sink: sink
 }
 
-{:ok, _pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
+{:ok, _pid} = Membrane.VideoCompositor.Pipeline.Compose.start(options)
 
 Process.sleep(1_000_000)

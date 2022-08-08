@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
+defmodule Membrane.VideoCompositor.Pipeline.Helpers.NoOp do
   use Membrane.Filter
 
   def_input_pad :input, demand_unit: :buffers, caps: :any, demand_mode: :auto
@@ -80,7 +80,7 @@ defmodule Membrane.VideoCompositor.Pipeline.Compose do
   end
 
   defp get_encoder(options) do
-    Map.get(options, :encoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
+    Map.get(options, :encoder) || Membrane.VideoCompositor.Pipeline.Helpers.NoOp
   end
 
   @impl true
