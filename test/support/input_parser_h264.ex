@@ -23,7 +23,6 @@ defmodule Membrane.VideoCompositor.Demo.H264.InputParser do
     ]
 
     spec = %ParentSpec{children: children, links: links}
-    IO.inspect("Siema")
 
     {{:ok, spec: spec}, %{}}
   end
