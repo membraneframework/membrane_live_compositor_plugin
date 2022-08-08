@@ -49,12 +49,12 @@ defmodule Membrane.VideoCompositor.PipelineTemplate do
     {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
   end
 
-  defp get_sink(%{paths: %{output_path: output_path}} = _options) do
-    %Membrane.File.Sink{location: output_path}
+  defp get_sink(%{sink: sink} = _options) when not is_nil(sink) do
+    sink
   end
 
-  defp get_sink(%{sink: sink} = _options) do
-    sink
+  defp get_sink(%{paths: %{output_path: output_path}} = _options) do
+    %Membrane.File.Sink{location: output_path}
   end
 
   @impl true
