@@ -27,23 +27,20 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
   EGLDisplay egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint major, minor;
   eglInitialize(egl_display, &major, &minor);
-  std::cout << "Initialized EGL version " << major << "." << minor << std::endl;
 
   EGLint num_configs;
   EGLConfig config;
-  // These are attributes our context will have, which specify
-  // what kinds of surfaces it will be able to draw to.
+  // These specify what kind of contexts we'll be able to create
   EGLint config_attributes[] = {
-      // EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,    // ofscreen buffers only
-      // EGL_BLUE_SIZE,       8,                  // 8 blue bits per pixel    |
-      // EGL_GREEN_SIZE,      8,                  // 8 green bits per pixel   | support for RGB24 surfaces
-      // EGL_RED_SIZE,        8,                  // 8 red bits per pixel     |
-      EGL_CONFORMANT,      EGL_OPENGL_ES2_BIT,    // rendering done with OpenGL
+      EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,    // ofscreen buffers only
+      EGL_BLUE_SIZE,       8,                  // 8 blue bits per pixel    |
+      EGL_GREEN_SIZE,      8,                  // 8 green bits per pixel   | support for RGB24 surfaces
+      EGL_RED_SIZE,        8,                  // 8 red bits per pixel     |
+      EGL_CONFORMANT,      EGL_OPENGL_ES3_BIT, // rendering done with OpenGL ES
       EGL_NONE,
   };
 
   eglChooseConfig(egl_display, config_attributes, nullptr, 0, &num_configs);
-  std::cout << "Configs amount: " << num_configs << std::endl;
 
   eglChooseConfig(egl_display, config_attributes, &config, 1, &num_configs);
   check_egl_error("choose config");
@@ -51,8 +48,14 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
   eglBindAPI(EGL_OPENGL_ES_API);
   check_egl_error("bind API");
 
+  EGLint context_attributes[] = {
+    EGL_CONTEXT_MAJOR_VERSION, 3,
+    EGL_CONTEXT_MINOR_VERSION, 0,
+    EGL_NONE,
+  };
+
   EGLContext context =
-      eglCreateContext(egl_display, config, EGL_NO_CONTEXT, NULL);
+      eglCreateContext(egl_display, config, EGL_NO_CONTEXT, context_attributes);
   check_egl_error("create context");
   eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
   check_egl_error("make current");
@@ -61,8 +64,7 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
   if (!gladLoadGLES2((GLADloadfunc) eglGetProcAddress)) {
     return init_result_error(env, "cannot_load_opengl");
   }
-  auto v = glGetString(GL_VERSION);
-  std::cout << v << std::endl;
+
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
   State *state = unifex_alloc_state(env);
