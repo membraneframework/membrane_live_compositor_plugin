@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
   use Membrane.Filter
 
-  def_input_pad :input, demand_unit: :buffers, caps: :any
-  def_input_pad :output, demand_unit: :buffers, caps: :any
+  def_input_pad :input, demand_unit: :buffers, caps: :any, demand_mode: :auto
+  def_output_pad :output, demand_unit: :buffers, caps: :any, demand_mode: :auto
 
   @impl true
   def handle_init(_opts) do
@@ -36,15 +36,15 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   """
   @impl true
   def handle_init(options) do
-    parser = options.input_parser
+    decoder = options.decoder
     sink = get_sink(options)
-    encoder = get_decoder(options)
+    encoder = get_encoder(options)
 
     children = %{
       file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
       file_src_2: %Membrane.File.Source{location: options.paths.second_video_path},
-      parser_1: parser,
-      parser_2: parser,
+      decoder_1: decoder,
+      decoder_2: decoder,
       compositor: %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
@@ -53,16 +53,13 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
       sink: sink
     }
 
-    # parser = Membrane.H264.FFmpeg.Parser
-    # decoder = Membrane.H264.FFmpeg.Decoder
-
     links = [
       link(:file_src_1)
-      |> to(:parser_1)
+      |> to(:decoder_1)
       |> via_in(:first_input)
       |> to(:compositor),
       link(:file_src_2)
-      |> to(:parser_2)
+      |> to(:decoder_2)
       |> via_in(:second_input)
       |> to(:compositor),
       link(:compositor)
@@ -81,7 +78,7 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
     %Membrane.File.Sink{location: output_path}
   end
 
-  defp get_decoder(options) do
+  defp get_encoder(options) do
     Map.get(options, :encoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
   end
 
