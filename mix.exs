@@ -52,7 +52,8 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:exla, "~> 0.2"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:membrane_sdl_plugin, "~> 0.14.0", only: :dev}
     ]
   end
 
