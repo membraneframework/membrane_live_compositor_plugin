@@ -6,6 +6,9 @@ paths = %{
   output_path: "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
 }
 
+# sink = Membrane.SDL.Player
+sink = nil
+
 caps = %RawVideo{
   aligned: true,
   framerate: {1, 1},
@@ -27,9 +30,10 @@ options = %{
   paths: paths,
   caps: caps,
   implementation: implementation,
-  input_parser: parser
+  decoder: parser,
+  sink: sink
 }
 
-{:ok, pid} = Membrane.VideoCompositor.PipelineTemplate.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
 
 Process.sleep(1_000_000)
