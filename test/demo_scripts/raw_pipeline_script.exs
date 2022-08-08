@@ -1,13 +1,25 @@
 alias Membrane.RawVideo
 
+implementation =
+  case s = System.get_env("IMPL", "nx") do
+    "nx" -> :nx
+    "ffmpeg" -> :ffmpeg
+    "opengl" -> :opengl
+    _ -> raise "unsupported implementation #{s}"
+  end
+
+sink =
+  case s = System.get_env("SINK", "file") do
+    "file" -> nil
+    "play" -> Membrane.SDL.Player
+    _ -> raise "unsupported sink #{s}"
+  end
+
 paths = %{
   first_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
   second_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
   output_path: "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
 }
-
-# sink = Membrane.SDL.Player
-sink = nil
 
 caps = %RawVideo{
   aligned: true,

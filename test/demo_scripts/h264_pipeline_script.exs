@@ -1,5 +1,20 @@
 alias Membrane.RawVideo
 
+implementation =
+  case s = System.get_env("IMPL", "nx") do
+    "nx" -> :nx
+    "ffmpeg" -> :ffmpeg
+    "opengl" -> :opengl
+    _ -> raise "unsupported implementation #{s}"
+  end
+
+{sink, encoder} =
+  case s = System.get_env("SINK", "file") do
+    "file" -> {nil, Membrane.H264.FFmpeg.Encoder}
+    "play" -> {Membrane.SDL.Player, nil}
+    _ -> raise "unsupported sink #{s}"
+  end
+
 paths = %{
   first_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
   second_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
@@ -14,24 +29,17 @@ caps = %RawVideo{
   pixel_format: :I420
 }
 
-implementation = :nx
-
 parser = Membrane.VideoCompositor.Demo.H264.InputParser
-
-encoder = Membrane.H264.FFmpeg.Encoder
-
-sink = nil
-# sink = Membrane.SDL.Player
 
 options = %{
   paths: paths,
   caps: caps,
   implementation: implementation,
   decoder: parser,
-  sink: sink,
-  encoder: encoder
+  encoder: encoder,
+  sink: sink
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
+{:ok, _pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
 
 Process.sleep(1_000_000)
