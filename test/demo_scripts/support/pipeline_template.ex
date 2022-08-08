@@ -28,6 +28,7 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
         first_video_path: String.t(),
         second_video_path: String.t(),
         decoder: Membrane.Filter.t(),
+        encoder: Membrane.Filter.t(),
         sink: Membrane.Sink.t()
       },
       caps: RawVideo,
