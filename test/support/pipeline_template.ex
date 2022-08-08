@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.PipelineRaw do
+defmodule Membrane.VideoCompositor.PipelineTemplate do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """
@@ -10,7 +10,8 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
       paths: %{
         first_video_path: String.t(),
         second_video_path: String.t(),
-        output_path: String.t()
+        input_parser: Membrane.Filter.t(),
+        sink: Membrane.Sink.t()
       },
       caps: RawVideo,
       implementation: :ffmpeg | :opengl | :nx
@@ -18,12 +19,8 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
   """
   @impl true
   def handle_init(options) do
-    parser = %Membrane.RawVideo.Parser{
-      framerate: options.caps.framerate,
-      width: options.caps.width,
-      height: options.caps.height,
-      pixel_format: options.caps.pixel_format
-    }
+    parser = options.input_parser
+    sink = get_sink(options)
 
     children = %{
       file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
@@ -34,7 +31,7 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
         implementation: options.implementation,
         caps: options.caps
       },
-      file_sink: %Membrane.File.Sink{location: options.paths.output_path}
+      sink: sink
     }
 
     links = [
@@ -46,10 +43,18 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
       |> to(:parser_2)
       |> via_in(:second_input)
       |> to(:compositor)
-      |> to(:file_sink)
+      |> to(:sink)
     ]
 
     {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
+  end
+
+  defp get_sink(%{paths: %{output_path: output_path}} = _options) do
+    %Membrane.File.Sink{location: output_path}
+  end
+
+  defp get_sink(%{sink: sink} = _options) do
+    sink
   end
 
   @impl true
