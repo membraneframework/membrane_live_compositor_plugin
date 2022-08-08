@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
   alias Membrane.VideoCompositor.FFmpeg.Native.RawVideo, as: NativeRawVideo
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def init(caps) do
     {:ok, video} = NativeRawVideo.from_membrane_raw_video(caps)
 
@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.FFMPEG.Research do
     {:ok, %{state: internal_state, iter: 1, raw_video: video}}
   end
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def merge_frames(frames, state_of_init_module) do
     %{state: internal_state, iter: iter} = state_of_init_module
 
