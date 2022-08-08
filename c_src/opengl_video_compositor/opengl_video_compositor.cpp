@@ -106,9 +106,32 @@ void handle_destroy_state(UnifexEnv *env, State *state) {
   delete state->compositor;
 }
 
+#define _EGL_ERROR_CASE(error) \
+  case error: \
+    std::cout << #error << std::endl; \
+    break;
+
 void check_egl_error(const std::string &str) {
   EGLint err;
+
   if((err = eglGetError()) != EGL_SUCCESS) {
-    std::cout << str << " - EGL error: " << std::hex << err << std::dec << std::endl;
+    std::cout << str << " - EGL error: ";
+
+    switch(err) {
+      _EGL_ERROR_CASE(EGL_NOT_INITIALIZED)
+      _EGL_ERROR_CASE(EGL_BAD_ACCESS)
+      _EGL_ERROR_CASE(EGL_BAD_ALLOC)
+      _EGL_ERROR_CASE(EGL_BAD_ATTRIBUTE)
+      _EGL_ERROR_CASE(EGL_BAD_CONTEXT)
+      _EGL_ERROR_CASE(EGL_BAD_CONFIG)
+      _EGL_ERROR_CASE(EGL_BAD_CURRENT_SURFACE)
+      _EGL_ERROR_CASE(EGL_BAD_DISPLAY)
+      _EGL_ERROR_CASE(EGL_BAD_SURFACE)
+      _EGL_ERROR_CASE(EGL_BAD_MATCH)
+      _EGL_ERROR_CASE(EGL_BAD_PARAMETER)
+      _EGL_ERROR_CASE(EGL_BAD_NATIVE_PIXMAP)
+      _EGL_ERROR_CASE(EGL_BAD_NATIVE_WINDOW)
+      _EGL_ERROR_CASE(EGL_CONTEXT_LOST)
+    }
   }
 }
