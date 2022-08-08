@@ -46,6 +46,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_h264_ffmpeg_plugin, "~> 0.21.1"},
       {:membrane_common_c, "~> 0.13.0"},
       {:benchee, "~> 1.1.0"},
+      {:benchee_html, "~> 1.0"},
       {:beamchmark, "~> 1.4.0"},
       {:mock, "~> 0.3.0"},
       {:nx, "~> 0.2"},

@@ -48,24 +48,42 @@ defmodule MergeFramesBenchmark do
       aligned: nil
     }
 
+    {:ok, ffmpeg_internal_state_720p} = Membrane.VideoCompositor.FFMPEG.init(caps_720p)
+    {:ok, ffmpeg_internal_state_1080p} = Membrane.VideoCompositor.FFMPEG.init(caps_1080p)
+    {:ok, ffmpeg_internal_state_4k} = Membrane.VideoCompositor.FFMPEG.init(caps_4k)
+
+    {:ok, opengl_internal_state_720p} = Membrane.VideoCompositor.OpenGL.init(caps_720p)
+    {:ok, opengl_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.init(caps_1080p)
+    {:ok, opengl_internal_state_4k} = Membrane.VideoCompositor.OpenGL.init(caps_4k)
+
     {:ok, nx_internal_state_720p} = Membrane.VideoCompositor.Nx.init(caps_720p)
     {:ok, nx_internal_state_1080p} = Membrane.VideoCompositor.Nx.init(caps_1080p)
     {:ok, nx_internal_state_4k} = Membrane.VideoCompositor.Nx.init(caps_4k)
 
     internal_states_720p = %{
+      ffmpeg: ffmpeg_internal_state_720p,
+      opengl: opengl_internal_state_720p,
       nx: nx_internal_state_720p
     }
 
     internal_states_1080p = %{
+      ffmpeg: ffmpeg_internal_state_1080p,
+      opengl: opengl_internal_state_1080p,
       nx: nx_internal_state_1080p
     }
 
     internal_states_4k = %{
+      ffmpeg: ffmpeg_internal_state_4k,
+      opengl: opengl_internal_state_4k,
       nx: nx_internal_state_4k
     }
 
     Benchee.run(
       %{
+        "Merge two frames to one - FFmpeg" =>
+          fn {frames, internal_states} -> Membrane.VideoCompositor.FFMPEG.merge_frames(frames, internal_states.ffmpeg) end,
+        "Merge two frames to one - OpenGL" =>
+          fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.merge_frames(frames, internal_states.opengl) end,
         "Merge two frames to one - Nx" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.Nx.merge_frames(frames, internal_states.nx) end
       },
@@ -74,8 +92,17 @@ defmodule MergeFramesBenchmark do
         "2. 1080p" => {frames_1080p, internal_states_1080p},
         "3. 4k" => {frames_4k, internal_states_4k}
       },
+      title: "Merge frames benchmark",
+      parallel: 1,
+      warmup: 2,
       time: 30,
-      memory_time: 2
+      memory_time: 2,
+      formatters: [
+        {Benchee.Formatters.HTML, file: "./benchmarks/results/merge_frames_benchmark/merge_frames_benchmark.html"},
+        Benchee.Formatters.Console
+      ]
     )
   end
 end
+
+MergeFramesBenchmark.benchmark()
