@@ -8,7 +8,9 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   describe "Checks h264 nx pipeline on " do
-    test "2s 720p 30fps video" do
+    @describetag :tmp_dir
+
+    test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -19,10 +21,10 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       implementation = :nx
       duration = 2
-      test_h264_pipeline(video_caps, duration, implementation, "short_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
     end
 
-    test "1s 1080p 30fps video" do
+    test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1920,
         height: 1080,
@@ -34,11 +36,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
       implementation = :nx
       duration = 1
 
-      test_h264_pipeline(video_caps, duration, implementation, "short_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
     end
 
     @tag long: true
-    test "30s 720p 30fps video" do
+    test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -51,11 +53,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       duration = 30
 
-      test_h264_pipeline(video_caps, duration, implementation, "long_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
 
     @tag long: true, timeout: 100_000
-    test "60s 1080p 30fps video" do
+    test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1920,
         height: 1080,
@@ -68,12 +70,14 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       duration = 60
 
-      test_h264_pipeline(video_caps, duration, implementation, "long_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
   end
 
   describe "Checks h264 ffmpeg pipeline on " do
-    test "2s 720p 30fps video" do
+    @describetag :tmp_dir
+
+    test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -84,10 +88,10 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       implementation = :ffmpeg
       duration = 2
-      test_h264_pipeline(video_caps, duration, implementation, "short_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
     end
 
-    test "1s 1080p 30fps video" do
+    test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1920,
         height: 1080,
@@ -99,11 +103,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
       implementation = :ffmpeg
       duration = 1
 
-      test_h264_pipeline(video_caps, duration, implementation, "short_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
     end
 
     @tag long: true
-    test "30s 720p 30fps video" do
+    test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -116,11 +120,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       duration = 30
 
-      test_h264_pipeline(video_caps, duration, implementation, "long_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
 
     @tag long: true, timeout: 100_000
-    test "60s 1080p 30fps video" do
+    test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1920,
         height: 1080,
@@ -133,13 +137,13 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       duration = 60
 
-      test_h264_pipeline(video_caps, duration, implementation, "long_videos")
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
   end
 
-  defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name) do
+  defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name, tmp_dir) do
     {input_file_name, out_file_name, _ref_file_name} =
-      TestingUtility.prepare_testing_video(video_caps, duration, "h264", sub_dir_name)
+      TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
     options = %{
       paths: %{
