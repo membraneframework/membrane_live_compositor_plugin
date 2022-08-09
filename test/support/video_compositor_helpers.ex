@@ -61,6 +61,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
       file_name
     ]
 
+    File.mkdir_p!(Path.dirname(file_name))
+
     {result, exit_status} =
       System.cmd(
         "ffmpeg",
