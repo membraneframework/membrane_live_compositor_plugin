@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.FFMPEG.Research do
+defmodule Membrane.VideoCompositor.FFmpeg.Research do
   @moduledoc """
   This module is used for ffmpeg research purposes.
   It dynamically composes several input videos, adding one video every 80 frames.

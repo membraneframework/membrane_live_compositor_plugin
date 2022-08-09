@@ -120,7 +120,7 @@ defmodule Membrane.VideoCompositor do
         Membrane.VideoCompositor.Nx
 
       :ffmpeg_research ->
-        Membrane.VideoCompositor.FFMPEG.Research
+        Membrane.VideoCompositor.FFmpeg.Research
 
       _other ->
         raise "#{implementation} is not available implementation."
