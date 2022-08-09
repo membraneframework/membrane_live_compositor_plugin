@@ -25,7 +25,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
 
       reference_input_path = String.replace_suffix(in_path, "yuv", "h264")
 
-      Utility.create_ffmpeg_reference(
+      Utility.generate_ffmpeg_reference(
         reference_input_path,
         ref_path,
         "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
