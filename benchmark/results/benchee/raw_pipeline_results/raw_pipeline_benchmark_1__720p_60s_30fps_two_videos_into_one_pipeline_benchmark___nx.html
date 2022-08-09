@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Benchee Report</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+    <link rel="stylesheet" type="text/css" href="assets/stylesheets/benchee.css">
+    <link rel="stylesheet" type="text/css" href="assets/fontello/css/fontello.css">
+  
+</head>
+
+  <body>
+
+    <div class="header">
+  <h1>benchee report</h1>
+  
+  <span class="input-label">
+    1. 720p 60s 30fps
+  </span>
+
+
+  <span class="version-note">
+  <a href="javascript:toggleSystemDataInfo();" title="Click to toggle system info">System info</a>
+</span>
+
+</div>
+
+
+    <article id="system-info" class="benchee-systeminfo" >
+  <h3>System info</h3>
+  <ul class="benchee-systeminfo-list">
+    <li>Elixir: 1.13.4</li>
+    <li>Erlang: 25.0.2</li>
+    <li>Operating system: macOS</li>
+    <li>Available memory: 16 GB</li>
+    <li>CPU Information: Intel(R) Core(TM) i5-1038NG7 CPU @ 2.00GHz</li>
+    <li>Number of Available Cores: 8</li>
+  </ul>
+</article>
+
+
+    
+      <article>
+        <h2>
+          <a name="run_time" href="#run_time">Two videos into one pipeline benchmark - Nx Run Time</a>
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#individual">
+            <i
+              class="benchee-help-icon icon-question-circle-o"
+              title="Graphs showing the individual run time distribution for Two videos into one pipeline benchmark - Nx.
+  Run Times Histogram shows the distribution of occurrences of specific run times in buckets.
+  Raw Run Times shows all individual recorded run times in the order they were recorded in."
+            ></i>
+          </a>
+        </h2>
+
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+        <th>Iterations per Second</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left">Two videos into one pipeline benchmark - Nx</td>
+        
+        
+          <td>0.158</td>
+          <td>6.33 s</td>
+          <td>±0.94%</td>
+          <td>6.31 s</td>
+          <td>none</td>
+          <td>6.25 s</td>
+          <td>6.49 s</td>
+        
+        <td>15</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="run-times-histogram" class="plot"></div>
+        </section>
+        <section class="benchee-plot-container">
+          <div id="raw-run-times" class="plot"></div>
+        </section>
+      </article>
+    
+
+    
+      <article>
+        <h2>
+          <a name="memory" href="#memory">Two videos into one pipeline benchmark - Nx Memory</a>
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#individual">
+            <i
+              class="benchee-help-icon icon-question-circle-o"
+              title="Graphs showing the individual memory usage distribution for Two videos into one pipeline benchmark - Nx.
+  Run Times Histogram shows the distribution of occurrences of specific run times in buckets.
+  Raw Run Times shows all individual recorded run times in the order they were recorded in."
+            ></i>
+          </a>
+        </h2>
+
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left">Two videos into one pipeline benchmark - Nx</td>
+        
+        
+          <td>45.22 KB</td>
+          <td>±0.00%</td>
+          <td>45.22 KB</td>
+          <td>none</td>
+          <td>45.22 KB</td>
+          <td>45.22 KB</td>
+        
+        <td>1</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        
+      </article>
+    
+
+    <footer>
+      <a href="https://github.com/PragTob/benchee" target="blank">benchee version: 1.1.0 </a>
+<br/>
+<a href="https://github.com/PragTob/benchee_html" target="blank">benchee_html version: 1.0.0</a>
+
+
+    </footer>
+
+    
+  <script src="assets/javascripts/plotly-1.30.1.min.js"></script>
+  <script src="assets/javascripts/benchee.js"></script>
+
+
+
+    <script>
+      var scenario = {"name":"Two videos into one pipeline benchmark - Nx","job_name":"Two videos into one pipeline benchmark - Nx","input_name":"1. 720p 60s 30fps","run_time_data":{"statistics":{"absolute_difference":null,"average":6327638688.733334,"ips":0.15803683636054447,"maximum":6487468653,"median":6307735997.0,"minimum":6246579209,"mode":null,"percentiles":{"50":6307735997.0,"99":6487468653.0},"relative_less":null,"relative_more":null,"sample_size":15,"std_dev":59579840.99535283,"std_dev_ips":0.0014880447580762058,"std_dev_ratio":0.009415809581769833},"samples":[6292025555,6303879141,6370671427,6487468653,6353215157,6349265053,6382381965,6298161343,6361132703,6272800533,6307735997,6274309405,6288425292,6326528898,6246579209]},"memory_usage_data":{"statistics":{"absolute_difference":null,"average":46304.0,"ips":null,"maximum":46304,"median":46304.0,"minimum":46304,"mode":null,"percentiles":{"50":46304.0,"99":46304.0},"relative_less":null,"relative_more":null,"sample_size":1,"std_dev":0.0,"std_dev_ips":null,"std_dev_ratio":0.0},"samples":[46304]},"tag":null};
+
+      var inputHeadline = " (1. 720p 60s 30fps)"
+
+      
+        drawRunTimeHistogram(scenario, inputHeadline);
+        drawRawRunTimeChart(scenario, inputHeadline);
+      
+
+      
+        if (scenario.memory_usage_data.statistics.std_dev !== 0) {
+          drawMemoryHistogram(scenario, inputHeadline);
+          drawRawMemoryChart(scenario, inputHeadline);
+        };
+      
+    </script>
+  </body>
+</html>

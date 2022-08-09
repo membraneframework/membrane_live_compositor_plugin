@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Benchee Report</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+    <link rel="stylesheet" type="text/css" href="assets/stylesheets/benchee.css">
+    <link rel="stylesheet" type="text/css" href="assets/fontello/css/fontello.css">
+  
+</head>
+
+  <body>
+
+    <div class="header">
+  <h1>benchee report</h1>
+  
+  <span class="input-label">
+    1. 720p 60s 30fps
+  </span>
+
+
+  <span class="version-note">
+  <a href="javascript:toggleSystemDataInfo();" title="Click to toggle system info">System info</a>
+</span>
+
+</div>
+
+
+    <article id="system-info" class="benchee-systeminfo" >
+  <h3>System info</h3>
+  <ul class="benchee-systeminfo-list">
+    <li>Elixir: 1.13.4</li>
+    <li>Erlang: 25.0.2</li>
+    <li>Operating system: macOS</li>
+    <li>Available memory: 16 GB</li>
+    <li>CPU Information: Intel(R) Core(TM) i5-1038NG7 CPU @ 2.00GHz</li>
+    <li>Number of Available Cores: 8</li>
+  </ul>
+</article>
+
+
+    
+      <article>
+        <h2>
+          <a name="run_time" href="#run_time">Two videos into one pipeline benchmark - OpenGL Run Time</a>
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#individual">
+            <i
+              class="benchee-help-icon icon-question-circle-o"
+              title="Graphs showing the individual run time distribution for Two videos into one pipeline benchmark - OpenGL.
+  Run Times Histogram shows the distribution of occurrences of specific run times in buckets.
+  Raw Run Times shows all individual recorded run times in the order they were recorded in."
+            ></i>
+          </a>
+        </h2>
+
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+        <th>Iterations per Second</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left">Two videos into one pipeline benchmark - OpenGL</td>
+        
+        
+          <td>0.155</td>
+          <td>6.47 s</td>
+          <td>±1.15%</td>
+          <td>6.48 s</td>
+          <td>none</td>
+          <td>6.31 s</td>
+          <td>6.58 s</td>
+        
+        <td>14</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="run-times-histogram" class="plot"></div>
+        </section>
+        <section class="benchee-plot-container">
+          <div id="raw-run-times" class="plot"></div>
+        </section>
+      </article>
+    
+
+    
+      <article>
+        <h2>
+          <a name="memory" href="#memory">Two videos into one pipeline benchmark - OpenGL Memory</a>
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#individual">
+            <i
+              class="benchee-help-icon icon-question-circle-o"
+              title="Graphs showing the individual memory usage distribution for Two videos into one pipeline benchmark - OpenGL.
+  Run Times Histogram shows the distribution of occurrences of specific run times in buckets.
+  Raw Run Times shows all individual recorded run times in the order they were recorded in."
+            ></i>
+          </a>
+        </h2>
+
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left">Two videos into one pipeline benchmark - OpenGL</td>
+        
+        
+          <td>45.72 KB</td>
+          <td>±0.00%</td>
+          <td>45.72 KB</td>
+          <td>none</td>
+          <td>45.72 KB</td>
+          <td>45.72 KB</td>
+        
+        <td>1</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        
+      </article>
+    
+
+    <footer>
+      <a href="https://github.com/PragTob/benchee" target="blank">benchee version: 1.1.0 </a>
+<br/>
+<a href="https://github.com/PragTob/benchee_html" target="blank">benchee_html version: 1.0.0</a>
+
+
+    </footer>
+
+    
+  <script src="assets/javascripts/plotly-1.30.1.min.js"></script>
+  <script src="assets/javascripts/benchee.js"></script>
+
+
+
+    <script>
+      var scenario = {"name":"Two videos into one pipeline benchmark - OpenGL","job_name":"Two videos into one pipeline benchmark - OpenGL","input_name":"1. 720p 60s 30fps","run_time_data":{"statistics":{"absolute_difference":142339045.7666664,"average":6469977734.5,"ips":0.1545600373039429,"maximum":6580618148,"median":6476336996.0,"minimum":6307013446,"mode":null,"percentiles":{"50":6476336996.0,"99":6580618148.0},"relative_less":0.9780000717764964,"relative_more":1.0224948124835427,"sample_size":14,"std_dev":74221911.54696256,"std_dev_ips":0.0017730727814251157,"std_dev_ratio":0.011471741417468484},"samples":[6448425840,6362666358,6307013446,6512305415,6454987337,6482751191,6476034203,6476639789,6508076884,6523624647,6580618148,6410038374,6463513835,6572992816]},"memory_usage_data":{"statistics":{"absolute_difference":512.0,"average":46816.0,"ips":null,"maximum":46816,"median":46816.0,"minimum":46816,"mode":null,"percentiles":{"50":46816.0,"99":46816.0},"relative_less":0.9890635680109364,"relative_more":1.0110573600552868,"sample_size":1,"std_dev":0.0,"std_dev_ips":null,"std_dev_ratio":0.0},"samples":[46816]},"tag":null};
+
+      var inputHeadline = " (1. 720p 60s 30fps)"
+
+      
+        drawRunTimeHistogram(scenario, inputHeadline);
+        drawRawRunTimeChart(scenario, inputHeadline);
+      
+
+      
+        if (scenario.memory_usage_data.statistics.std_dev !== 0) {
+          drawMemoryHistogram(scenario, inputHeadline);
+          drawRawMemoryChart(scenario, inputHeadline);
+        };
+      
+    </script>
+  </body>
+</html>

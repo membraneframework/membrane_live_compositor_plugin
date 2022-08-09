@@ -25,6 +25,8 @@ options = %{
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
 
+Process.monitor(pid)
+
 receive do
-  :finished -> :ok
+  {:DOWN, _ref, :process, _pid, :normal} -> :ok
 end

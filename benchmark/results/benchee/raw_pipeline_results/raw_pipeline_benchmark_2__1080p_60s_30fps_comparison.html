@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Benchee Report</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+    <link rel="stylesheet" type="text/css" href="assets/stylesheets/benchee.css">
+    <link rel="stylesheet" type="text/css" href="assets/fontello/css/fontello.css">
+  
+</head>
+
+  <body>
+
+    <div class="header">
+  <h1>benchee report</h1>
+  
+  <span class="input-label">
+    2. 1080p 60s 30fps
+  </span>
+
+
+  <span class="version-note">
+  <a href="javascript:toggleSystemDataInfo();" title="Click to toggle system info">System info</a>
+</span>
+
+</div>
+
+
+    <article id="system-info" class="benchee-systeminfo" >
+  <h3>System info</h3>
+  <ul class="benchee-systeminfo-list">
+    <li>Elixir: 1.13.4</li>
+    <li>Erlang: 25.0.2</li>
+    <li>Operating system: macOS</li>
+    <li>Available memory: 16 GB</li>
+    <li>CPU Information: Intel(R) Core(TM) i5-1038NG7 CPU @ 2.00GHz</li>
+    <li>Number of Available Cores: 8</li>
+  </ul>
+</article>
+
+
+    
+      <article>
+        <h2>
+          Run Time Comparison
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#comparison">
+            <i
+            class="benchee-help-icon icon-question-circle-o"
+            title="Comparisons of the different benchmarking jobs. For Iterations per Second higher is better, the black whiskers denote standard deviation. otherwise it is runtime so lower is better. The Box Plot shows a distribution of run times with the median and outliers."
+            ></i>
+          </a>
+        </h2>
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+        <th>Iterations per Second</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___opengl.html">Two videos into one pipeline benchmark - OpenGL</a></td>
+        
+        
+          <td>0.0648</td>
+          <td>15.44 s</td>
+          <td>±0.83%</td>
+          <td>15.46 s</td>
+          <td>none</td>
+          <td>15.20 s</td>
+          <td>15.57 s</td>
+        
+        <td>6</td>
+      </tr>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___nx.html">Two videos into one pipeline benchmark - Nx</a></td>
+        
+        
+          <td>0.0647</td>
+          <td>15.46 s</td>
+          <td>±3.02%</td>
+          <td>15.30 s</td>
+          <td>none</td>
+          <td>15.13 s</td>
+          <td>16.40 s</td>
+        
+        <td>6</td>
+      </tr>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___ffmpeg.html">Two videos into one pipeline benchmark - FFmpeg</a></td>
+        
+        
+          <td>0.0638</td>
+          <td>15.67 s</td>
+          <td>±3.28%</td>
+          <td>15.48 s</td>
+          <td>none</td>
+          <td>15.37 s</td>
+          <td>16.71 s</td>
+        
+        <td>6</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="ips-comparison" class="job-count-3 plot"></div>
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="run-time-box-plot" class="job-count-3 plot"></div>
+        </section>
+      </article>
+    
+
+    
+      <article>
+        <h2>
+          Memory Usage Comparison
+          <a href="https://github.com/PragTob/benchee_html/wiki/Chart-Types#comparison">
+            <i
+            class="benchee-help-icon icon-question-circle-o"
+            title="This is a memory usage comparison"
+            ></i>
+          </a>
+        </h2>
+        <section>
+          <table>
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      
+      <th>Average</th>
+      <th>Deviation</th>
+      <th>Median</th>
+      <th>Mode</th>
+      <th>Minimum</th>
+      <th>Maximum</th>
+      <th>Sample size</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___opengl.html">Two videos into one pipeline benchmark - OpenGL</a></td>
+        
+        
+          <td>45.98 KB</td>
+          <td>±0.00%</td>
+          <td>45.98 KB</td>
+          <td>none</td>
+          <td>45.98 KB</td>
+          <td>45.98 KB</td>
+        
+        <td>1</td>
+      </tr>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___nx.html">Two videos into one pipeline benchmark - Nx</a></td>
+        
+        
+          <td>45.48 KB</td>
+          <td>±0.00%</td>
+          <td>45.48 KB</td>
+          <td>none</td>
+          <td>45.48 KB</td>
+          <td>45.48 KB</td>
+        
+        <td>1</td>
+      </tr>
+    
+      
+      <tr>
+        
+          <td class="text-left"><a href="raw_pipeline_benchmark_2__1080p_60s_30fps_two_videos_into_one_pipeline_benchmark___ffmpeg.html">Two videos into one pipeline benchmark - FFmpeg</a></td>
+        
+        
+          <td>45.98 KB</td>
+          <td>±0.00%</td>
+          <td>45.98 KB</td>
+          <td>none</td>
+          <td>45.98 KB</td>
+          <td>45.98 KB</td>
+        
+        <td>1</td>
+      </tr>
+    
+  </tbody>
+</table>
+
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="memory-comparison" class="job-count-3 plot"></div>
+        </section>
+
+        <section class="benchee-plot-container">
+          <div id="memory-box-plot" class="job-count-3 plot"></div>
+        </section>
+      </article>
+    
+
+    <footer>
+      <a href="https://github.com/PragTob/benchee" target="blank">benchee version: 1.1.0 </a>
+<br/>
+<a href="https://github.com/PragTob/benchee_html" target="blank">benchee_html version: 1.0.0</a>
+
+
+    </footer>
+
+    
+  <script src="assets/javascripts/plotly-1.30.1.min.js"></script>
+  <script src="assets/javascripts/benchee.js"></script>
+
+
+
+    <script>
+      var scenarios     = [{"name":"Two videos into one pipeline benchmark - OpenGL","job_name":"Two videos into one pipeline benchmark - OpenGL","input_name":"2. 1080p 60s 30fps","run_time_data":{"statistics":{"absolute_difference":null,"average":15435626249.166666,"ips":0.06478519133967679,"maximum":15573266317,"median":15464899970.0,"minimum":15203905281,"mode":null,"percentiles":{"50":15464899970.0,"99":15573266317.0},"relative_less":null,"relative_more":null,"sample_size":6,"std_dev":127416126.10222806,"std_dev_ips":5.347809007580033e-4,"std_dev_ratio":0.00825467810929323},"samples":[15484005570,15445794370,15573266317,15505640887,15203905281,15401145070]},"memory_usage_data":{"statistics":{"absolute_difference":null,"average":47088.0,"ips":null,"maximum":47088,"median":47088.0,"minimum":47088,"mode":null,"percentiles":{"50":47088.0,"99":47088.0},"relative_less":null,"relative_more":null,"sample_size":1,"std_dev":0.0,"std_dev_ips":null,"std_dev_ratio":0.0},"samples":[47088]},"tag":null},{"name":"Two videos into one pipeline benchmark - Nx","job_name":"Two videos into one pipeline benchmark - Nx","input_name":"2. 1080p 60s 30fps","run_time_data":{"statistics":{"absolute_difference":22053721.0,"average":15457679970.166666,"ips":0.0646927612636567,"maximum":16397339197,"median":15299611812.5,"minimum":15134626472,"mode":null,"percentiles":{"50":15299611812.5,"99":16397339197.0},"relative_less":0.9985732838923717,"relative_more":1.001428754534737,"sample_size":6,"std_dev":466141474.4877385,"std_dev_ips":0.0019508735581487808,"std_dev_ratio":0.030155979124124183},"samples":[15134626472,15313318883,15264850902,15285904742,15350039625,16397339197]},"memory_usage_data":{"statistics":{"absolute_difference":-512.0,"average":46576.0,"ips":null,"maximum":46576,"median":46576.0,"minimum":46576,"mode":null,"percentiles":{"50":46576.0,"99":46576.0},"relative_less":1.0109927859841978,"relative_more":0.9891267414203194,"sample_size":1,"std_dev":0.0,"std_dev_ips":null,"std_dev_ratio":0.0},"samples":[46576]},"tag":null},{"name":"Two videos into one pipeline benchmark - FFmpeg","job_name":"Two videos into one pipeline benchmark - FFmpeg","input_name":"2. 1080p 60s 30fps","run_time_data":{"statistics":{"absolute_difference":233678961.5,"average":15669305210.666666,"ips":0.06381903897814586,"maximum":16712291898,"median":15482893056.5,"minimum":15366834678,"mode":null,"percentiles":{"50":15482893056.5,"99":16712291898.0},"relative_less":0.9850868332476589,"relative_more":1.0151389362328345,"sample_size":6,"std_dev":514274023.9797542,"std_dev_ips":0.0020945711083264727,"std_dev_ratio":0.03282047398181185},"samples":[16712291898,15430771296,15482784856,15483001257,15540147279,15366834678]},"memory_usage_data":{"statistics":{"absolute_difference":0.0,"average":47088.0,"ips":null,"maximum":47088,"median":47088.0,"minimum":47088,"mode":null,"percentiles":{"50":47088.0,"99":47088.0},"relative_less":1.0,"relative_more":1.0,"sample_size":1,"std_dev":0.0,"std_dev_ips":null,"std_dev_ratio":0.0},"samples":[47088]},"tag":null}];
+      var inputHeadline = " (2. 1080p 60s 30fps)";
+
+      
+        drawIpsComparisonChart(scenarios, inputHeadline);
+        drawRunTimeComparisonBoxPlot(scenarios, inputHeadline);
+      
+
+      
+        drawMemoryComparisonChart(scenarios, inputHeadline);
+        drawMemoryComparisonBoxPlot(scenarios, inputHeadline);
+      
+    </script>
+  </body>
+</html>

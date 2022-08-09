@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Beamchmark Report (RawPipelineBeamchmarkOpenGL) </title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    
+      <link rel="stylesheet" href="/Users/wojciechbarczynski/membrane_video_compositor/membrane_video_compositor_plugin/_build/dev/lib/beamchmark/priv/assets/css/beamchmark.css">
+      <script src="/Users/wojciechbarczynski/membrane_video_compositor/membrane_video_compositor_plugin/_build/dev/lib/beamchmark/priv/assets/js/plotly-2.9.0.min.js"></script>
+    
+  </head>
+  <body>
+    <section class="header">
+      <h1>Beamchmark Report</h2>
+      <h2>Raw Pipeline Benchmark - OpenGL</h2>
+      <h3>RawPipelineBeamchmarkOpenGL</h3>
+    </section>
+    <section><h2>System</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Elixir version</th>
+      <th>OTP version</th>
+      <th>NIF version</th>
+      <th>OS</th>
+      <th>Memory</th>
+      <th>Architecture</th>
+      <th>Number of cores</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1.13.4</td>
+      <td>25</td>
+      <td>2.16</td>
+      <td>macOS</td>
+      <td>16 GB</td>
+      <td>x86_64-apple-darwin21.5.0</td>
+      <td>8</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+    <section><h2>Configuration</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Duration [s]</th>
+      <th>Delay [s]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>60</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</section>
+    
+    <section class="results"><h2>Results</h2>
+<h3>Basic metrics</h3>
+<div id="basicMetrics"></div>
+<h3>Utilization by scheduler type</h3>
+<div id="schedulersByType"></div>
+<h3>Total scheduler utilization</h3>
+<div id="totalSchedulers"></div>
+<h3>Utilization by scheduler type and ID</h3>
+<div id="normalScheduler"></div>
+<div id="cpuScheduler"></div>
+<div id="ioScheduler"></div>
+<h3>CPU utilization</h3>
+<div id="average_cpu_usage"></div>
+<div id="by_core_cpu_usage"></div>
+<h3>Memory utilization</h3>
+<div id="memory_usage"></div>
+<script>
+  
+
+  
+  
+
+  let indicatorConfig =  {
+    type: "indicator",
+    number: { font: { size: 70 } },
+    
+    mode: "number"
+    
+  };
+  let deltaConfig = {
+    relative: true,
+    valueformat: ".2%",
+    increasing: { color: "#FF4136" },
+    decreasing: { color: "#3D9970" }
+  };
+  let layoutConfig = {
+    margin: {t: 0, b: 0, l: 0, r: 0}
+  };
+  let plotlyConfig = {
+    displaylogo: false,
+    responsive: true
+  };
+
+  let basicMetrics = [
+    {
+      title: { text: "Reductions" },
+      value: 19449536,
+      
+      domain: { row: 0, column: 0 },
+      ...indicatorConfig
+    },
+    {
+      title: { text: "Context switches" },
+      value: 118254,
+      
+      domain: { row: 0, column: 1 },
+      ...indicatorConfig
+    },
+    {
+      title: { text: "Average CPU Usage [%]" },
+      value: 4.508647933282871,
+      
+      domain: { row: 0, column: 2 },
+      ...indicatorConfig
+    }
+  ];
+
+  let basicMetricsLayout = {
+    grid: { rows: 1, columns: 3, pattern: "independent" },
+    height: 200,
+    ...layoutConfig
+  };
+
+  Plotly.newPlot("basicMetrics", basicMetrics, basicMetricsLayout, plotlyConfig);
+
+  let schedulersByType = [
+    
+      
+      {
+        title: { text: "Normal Schedulers [s]" },
+        value: 1.8519697905818294e-4,
+        
+        domain: { row: 0, column: 0 },
+        ...indicatorConfig
+      },
+      {
+        title: { text: "Normal Schedulers [%]" },
+        value: 0.0,
+        
+        domain: { row: 1, column: 0 },
+        ...indicatorConfig
+      },
+    
+      
+      {
+        title: { text: "CPU Schedulers [s]" },
+        value: 0.0,
+        
+        domain: { row: 0, column: 1 },
+        ...indicatorConfig
+      },
+      {
+        title: { text: "CPU Schedulers [%]" },
+        value: 0.0,
+        
+        domain: { row: 1, column: 1 },
+        ...indicatorConfig
+      },
+    
+      
+      {
+        title: { text: "IO Schedulers [s]" },
+        value: 3.355508665298601e-7,
+        
+        domain: { row: 0, column: 2 },
+        ...indicatorConfig
+      },
+      {
+        title: { text: "IO Schedulers [%]" },
+        value: 0.0,
+        
+        domain: { row: 1, column: 2 },
+        ...indicatorConfig
+      },
+    
+  ];
+
+  let schedulersByTypeLayout = {
+    grid: { rows: 2, columns: 3, pattern: "independent" },
+    ...layoutConfig
+  };
+
+  Plotly.newPlot("schedulersByType", schedulersByType, schedulersByTypeLayout, plotlyConfig);
+
+  let totalSchedulers = [
+    
+      
+      {
+        title: { text: "Total utilization [s]" },
+        value: 9.259796149541861e-5,
+        
+        domain: { row: 0, column: 0 },
+        ...indicatorConfig
+      },
+      {
+        title: { text: "Total utilization [%]" },
+        value: 0.0,
+        
+        domain: { row: 1, column: 0 },
+        ...indicatorConfig
+      },
+    
+      
+      {
+        title: { text: "Weighted utilization [s]" },
+        value: 1.8519592299083722e-4,
+        
+        domain: { row: 0, column: 1 },
+        ...indicatorConfig
+      },
+      {
+        title: { text: "Weighted utilization [%]" },
+        value: 0.0,
+        
+        domain: { row: 1, column: 1 },
+        ...indicatorConfig
+      },
+    
+  ];
+
+  let totalSchedulersLayout = {
+    grid: { rows: 2, columns: 2, pattern: "independent" },
+    ...layoutConfig
+  };
+
+  Plotly.newPlot("totalSchedulers", totalSchedulers, totalSchedulersLayout, plotlyConfig);
+
+  let schedulerLayout = {
+    barmode: "group",
+    xaxis: {
+      title: { text: "Scheduler ID" },
+      type: "category"
+    },
+    yaxis: {
+      title: { text: "Mean time spent busy [s]" }
+    }
+  };
+
+  
+    
+    let normalScheduler = [
+      
+      {
+        name: "New",
+        type: "bar",
+        marker: {
+          color: "#DD7085",
+          opacity: 0.8,
+          line: {
+            color: "#451F55",
+            width: 1.5
+          }
+        },
+        x: [1, 2, 3, 4, 5, 6, 7, 8],
+        y: [8.030444525112768e-4, 1.0903865772404731e-4, 1.2062448339780886e-4, 1.1858340601392726e-4, 9.22482473028306e-5, 8.350473042341144e-5, 7.811542674577472e-5, 7.641642834638624e-5],
+        text: ["0.1%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%"]
+      }
+    ];
+
+    Plotly.newPlot(
+      "normalScheduler",
+      normalScheduler,
+      { title: "Normal Scheduler", ...schedulerLayout },
+      plotlyConfig
+    );
+  
+    
+    let ioScheduler = [
+      
+      {
+        name: "New",
+        type: "bar",
+        marker: {
+          color: "#DD7085",
+          opacity: 0.8,
+          line: {
+            color: "#451F55",
+            width: 1.5
+          }
+        },
+        x: [17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
+        y: [3.355508665298601e-6, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        text: ["0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%", "0.0%"]
+      }
+    ];
+
+    Plotly.newPlot(
+      "ioScheduler",
+      ioScheduler,
+      { title: "IO Scheduler", ...schedulerLayout },
+      plotlyConfig
+    );
+  
+
+    
+    let average_cpu_usage = [
+      
+      {
+        name: "new",
+          mode: 'lines+markers',
+          marker: {
+            color: "#DD7085",
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [4.0, 2.48, 3.88, 6.97, 2.38, 1.99, 1.75, 2.87, 1.87, 1.74, 2.38, 1.99, 1.61, 8.89, 1.62, 1.61, 1.26, 4.35, 4.36, 1.88, 1.62, 1.99, 1.76, 3.24, 2.74, 2.5, 1.5, 1.75, 11.97, 1.51, 1.61, 2.12, 1.75, 2.13, 2.24, 2.37, 1.74, 2.75, 2.24, 2.62, 1.61, 5.25, 1.87, 5.23, 1.76, 1.74, 2.0, 3.11, 5.02, 2.99, 2.75, 2.0, 3.24, 2.12, 3.51, 3.85, 18.99, 22.38, 29.41, 39.68],
+        x: [60.0, 59.0, 58.0, 57.0, 56.0, 55.0, 54.0, 53.0, 52.0, 51.0, 50.0, 49.0, 48.0, 47.0, 46.0, 45.0, 44.0, 43.0, 42.0, 41.0, 40.0, 39.0, 38.0, 37.0, 36.0, 35.0, 34.0, 33.0, 32.0, 31.0, 30.0, 29.0, 28.0, 27.0, 26.0, 25.0, 24.0, 23.0, 22.0, 21.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 14.0, 13.0, 12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0],
+      }
+    ];
+
+    Plotly.newPlot(
+      "average_cpu_usage",
+      average_cpu_usage,
+      {
+        title: "Average CPU Usage",
+        xaxis: {
+          title: { text: "Time[s]" },
+          },
+        yaxis: {
+          title: { text: "CPU Usage (all cores) [%]"}
+          }
+      },
+      plotlyConfig
+    );
+
+    
+    let by_core_cpu_usage = [
+  
+      {
+        name: "core_0",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [13.0, 8.91, 13.13, 18.81, 10.1, 6.93, 5.0, 9.09, 7.92, 6.0, 7.07, 5.94, 5.94, 23.23, 6.0, 5.94, 5.05, 10.89, 12.87, 7.07, 5.94, 6.0, 6.06, 11.0, 8.91, 10.0, 6.0, 6.06, 24.75, 6.06, 6.93, 7.0, 7.0, 9.0, 7.92, 6.06, 5.94, 8.0, 7.0, 8.0, 4.0, 14.0, 5.94, 13.0, 6.06, 6.93, 6.0, 8.0, 12.12, 9.9, 10.0, 6.0, 9.9, 8.0, 12.0, 10.0, 46.53, 53.06, 58.82, 66.97],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_1",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [0.0, 0.0, 0.99, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.99, 0.0, 0.0, 0.99, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.99, 0.99, 0.0, 0.0, 2.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.0, 0.99, 0.99, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.99, 0.0, 0.0, 0.0, 1.0, 1.98, 0.0, 0.0, 0.99, 0.0, 0.0, 0.99, 1.0, 6.0, 9.9, 10.0, 18.92],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_2",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [8.0, 5.0, 9.0, 15.0, 4.0, 4.0, 4.0, 5.94, 4.04, 3.96, 7.0, 4.0, 2.0, 21.0, 3.96, 2.0, 2.02, 8.0, 10.0, 2.97, 4.0, 4.0, 4.0, 6.93, 4.04, 4.0, 2.0, 3.96, 24.0, 3.03, 3.0, 4.0, 3.0, 5.0, 4.0, 7.92, 3.0, 6.06, 5.94, 5.0, 3.96, 9.0, 3.03, 16.83, 4.0, 3.0, 4.0, 6.93, 8.0, 5.05, 5.0, 4.0, 4.95, 5.0, 5.05, 6.86, 33.33, 43.0, 53.0, 63.06],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_3",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [0.0, 1.96, 0.0, 0.0, 0.99, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.99, 0.0, 1.0, 0.99, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 2.97, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.99, 0.0, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.99, 0.99, 1.01, 0.0, 0.99, 0.0, 1.0, 0.99, 0.0, 0.0, 8.91, 8.0, 10.0, 18.02],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_4",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [5.05, 2.0, 4.95, 12.0, 1.01, 2.97, 2.0, 2.02, 3.0, 1.98, 2.0, 2.0, 2.97, 11.88, 0.0, 2.97, 2.0, 6.93, 5.05, 2.0, 2.0, 1.98, 1.01, 4.0, 4.95, 2.0, 2.02, 1.98, 18.0, 1.0, 1.98, 2.0, 2.0, 2.0, 3.0, 2.0, 2.0, 4.95, 3.0, 2.02, 2.97, 12.0, 2.0, 4.0, 2.0, 2.0, 2.02, 3.96, 9.0, 5.0, 3.0, 2.97, 9.09, 1.98, 5.0, 2.97, 21.21, 30.0, 49.5, 59.46],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_5",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [1.0, 0.0, 0.99, 1.0, 0.0, 0.0, 0.99, 0.99, 0.0, 0.0, 0.99, 0.0, 0.0, 1.98, 0.0, 0.0, 0.0, 1.0, 0.0, 0.99, 0.0, 0.0, 0.99, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.0, 1.0, 0.99, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.96, 1.01, 0.99, 0.0, 0.99, 0.0, 0.0, 1.0, 0.0, 5.94, 6.06, 10.0, 16.96],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_6",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [3.0, 2.0, 2.0, 7.92, 1.0, 2.02, 0.99, 2.97, 0.0, 1.0, 1.0, 2.0, 0.99, 11.0, 1.01, 1.98, 1.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.98, 3.0, 2.0, 2.0, 1.98, 0.0, 20.0, 1.98, 0.0, 1.0, 1.0, 1.01, 1.98, 0.0, 1.96, 2.02, 1.0, 2.0, 0.99, 7.0, 1.0, 6.06, 1.98, 1.0, 1.98, 2.0, 6.0, 2.02, 1.98, 1.01, 1.0, 0.99, 3.0, 9.0, 27.0, 25.0, 36.0, 57.66],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+      {
+        name: "core_7",
+          mode: 'lines+markers',
+          marker: {
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [1.98, 0.0, 0.0, 0.0, 1.96, 0.0, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 0.99, 1.0, 0.0, 0.0, 0.0, 1.0, 0.99, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.99, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.99, 0.0, 0.0, 0.0, 0.99, 0.0, 0.0, 1.0, 0.99, 0.0, 1.01, 0.99, 1.0, 0.0, 0.0, 0.0, 1.0, 0.99, 3.0, 4.04, 7.92, 16.36],
+        x: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0, 59.0, 60.0],
+      },
+    
+    ];
+
+    Plotly.newPlot(
+      "by_core_cpu_usage",
+      by_core_cpu_usage,
+      {
+        title: "CPU Usage by core",
+        xaxis: {
+          title: { text: "Time[s]" },
+          },
+        yaxis: {
+          title: { text: "CPU Usage by core [%]"}
+          }
+      },
+      plotlyConfig
+    );
+
+    
+    let memory_usage = [
+      
+      {
+        name: "new",
+          mode: 'lines+markers',
+          marker: {
+            color: "#DD7085",
+            opacity: 0.8,
+            line: {
+              color: "#22162B",
+              width: 1.5
+            }
+          },
+        type: 'scatter',
+        y: [35978952, 35983048, 35961408, 36032680, 35997240, 35980616, 36111008, 36065512, 36005520, 35993408, 36019752, 36103920, 36060264, 36014104, 35970832, 36007288, 35966712, 35952016, 35972712, 36011136, 35959264, 36010944, 36010752, 36024680, 35983264, 36015256, 36102928, 36044720, 36107872, 36064280, 36086328, 36060448, 36074200, 36057248, 36086808, 36057440, 36093968, 36068120, 36109728, 36068120, 36093968, 36068120, 35998040, 35961736, 35965800, 36051336, 36005792, 36045712, 35998344, 36029312, 36000880, 36041904, 36013912, 35929272, 35904848, 35946128, 35919624, 35965808, 35923696, 35755304],
+        x: [60.0, 59.0, 58.0, 57.0, 56.0, 55.0, 54.0, 53.0, 52.0, 51.0, 50.0, 49.0, 48.0, 47.0, 46.0, 45.0, 44.0, 43.0, 42.0, 41.0, 40.0, 39.0, 38.0, 37.0, 36.0, 35.0, 34.0, 33.0, 32.0, 31.0, 30.0, 29.0, 28.0, 27.0, 26.0, 25.0, 24.0, 23.0, 22.0, 21.0, 20.0, 19.0, 18.0, 17.0, 16.0, 15.0, 14.0, 13.0, 12.0, 11.0, 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0],
+      }
+    ];
+
+    Plotly.newPlot(
+      "memory_usage",
+      memory_usage,
+      {
+        title: "Memory usage",
+        xaxis: {
+          title: { text: "Time[s]" },
+          },
+        yaxis: {
+          title: { text: "Memory Usage [B]"},
+          tickformat: '.2e'
+          }
+      },
+      plotlyConfig
+    );
+</script>
+</section>
+    <div class="footer">
+      
+      <a href="https://github.com/membraneframework/beamchmark/tree/v1.4.0">Beamchmark v1.4.0</a><br/>
+      Made with &hearts; by <a href="https://www.membraneframework.org">Membrane Team</a>
+    </div>
+  </body>
+</html>
