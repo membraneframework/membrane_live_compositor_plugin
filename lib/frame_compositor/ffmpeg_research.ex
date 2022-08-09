@@ -1,6 +1,12 @@
 defmodule Membrane.VideoCompositor.FFMPEG.Research do
   @moduledoc """
-  This module implements video composition in ffmpeg.
+  This module is used for ffmpeg research purposes.
+  It dynamically composes several input videos, adding one video every 80 frames.
+
+  Composition starts with two videos, one above of the other.
+  Every 80 frames one new video (copy of the second input one, to be precise) is added to the composition.
+  Every next video is rendered on the previous ones,
+  being positioned slightly higher (following the harmonic series).
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
