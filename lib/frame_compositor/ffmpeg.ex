@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.FFMPEG do
   alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
   alias Membrane.VideoCompositor.FFmpeg.Native.RawVideo, as: NativeRawVideo
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def init(caps) do
     {:ok, video} = NativeRawVideo.from_membrane_raw_video(caps)
     videos = [video, video]
@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor.FFMPEG do
     FFmpeg.init(videos)
   end
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def merge_frames(frames, state_of_init_module) do
     frames = [frames.first, frames.second]
 

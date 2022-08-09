@@ -5,12 +5,12 @@ defmodule Membrane.VideoCompositor.OpenGL do
 
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def init(_caps) do
     {:ok, %{}}
   end
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def merge_frames(frames, internal_state) do
     merged_frames_binary = frames.first <> frames.second
     {{:ok, merged_frames_binary}, internal_state}
