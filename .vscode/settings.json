@@ -14,5 +14,10 @@
         "random": "c",
         "*.inc": "c",
         "video_compositor.h": "c"
-    }
+    },
+    "cSpell.words": [
+        "Beamchmark",
+        "benchee",
+        "opengl"
+    ]
 }

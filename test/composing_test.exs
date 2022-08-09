@@ -81,8 +81,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         output_path: output_path
       },
       caps: video_caps,
-      implementation: implementation,
-      return_pid: self()
+      implementation: implementation
     }
 
     assert {:ok, pid} =
