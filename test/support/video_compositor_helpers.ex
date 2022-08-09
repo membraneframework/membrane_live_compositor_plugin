@@ -4,11 +4,24 @@ defmodule Membrane.VideoCompositor.Test.Utility do
 
   require Membrane.Logger
 
+  @type input_video_path_t :: binary()
+  @type output_video_path_t :: binary()
+  @type reference_video_path_t :: binary()
+  @type duration_t :: non_neg_integer()
+  @type extension_t :: binary()
+  @type directory_t :: binary()
+
   @doc """
-  Creates a video and prepares filenames for input, returns input, reference and output videos paths.
+  Creates a input video and returns filenames for input, reference and output videos.
   """
-  @spec prepare_testing_video(Membrane.RawVideo, integer(), binary(), binary(), binary()) ::
-          {binary(), binary(), binary()}
+  @spec prepare_testing_video(
+          Membrane.RawVideo.t(),
+          duration_t(),
+          extension_t(),
+          directory_t(),
+          directory_t()
+        ) ::
+          {input_video_path_t(), output_video_path_t(), reference_video_path_t()}
   def prepare_testing_video(
         video_description,
         duration,
@@ -31,7 +44,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @doc """
   Generate and save described video in the given filename.
   """
-  @spec generate_testing_video(binary(), Membrane.RawVideo, integer()) :: nil | :ok
+  @spec generate_testing_video(input_video_path_t(), Membrane.RawVideo.t(), duration_t()) ::
+          nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
     # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
     {framerate, _} = video_description.framerate
@@ -83,7 +97,13 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     :ok
   end
 
-  @spec prepare_paths(binary(), binary(), binary(), binary()) :: {binary(), binary(), binary()}
+  @spec prepare_paths(
+          input_video_path_t(),
+          reference_video_path_t(),
+          directory_t(),
+          directory_t()
+        ) ::
+          {input_video_path_t(), output_video_path_t(), reference_video_path_t()}
   def prepare_paths(input_file_name, ref_file_name, tmp_dir \\ "", sub_dir_name \\ "") do
     fixtures_dir =
       Path.join([
@@ -101,7 +121,7 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     {in_path, out_path, ref_path}
   end
 
-  @spec create_ffmpeg_reference(binary, binary, binary) :: nil | :ok
+  @spec create_ffmpeg_reference(input_video_path_t(), output_video_path_t(), binary) :: nil | :ok
   def create_ffmpeg_reference(input_path, output_reference_path, filter_descr) do
     {result, exit_status} =
       System.cmd(
@@ -136,7 +156,7 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @doc """
   Get tmp directory of the project.
   """
-  @spec get_tmp_dir() :: binary()
+  @spec get_tmp_dir() :: directory_t()
   def get_tmp_dir() do
     Path.join(File.cwd!(), "tmp")
   end
