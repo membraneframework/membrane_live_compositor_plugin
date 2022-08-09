@@ -13,8 +13,7 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
         output_path: String.t()
       },
       caps: RawVideo,
-      implementation: :ffmpeg | :opengl | :nx,
-      return_pid: pid()
+      implementation: :ffmpeg | :opengl | :nx
   })
   """
   @impl true
@@ -50,15 +49,13 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
       |> to(:file_sink)
     ]
 
-    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]},
-     %{return_pid: options.return_pid}}
+    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
   end
 
   @impl true
-  def handle_element_end_of_stream({:file_sink, :input}, _context, %{return_pid: pid} = state) do
+  def handle_element_end_of_stream({:file_sink, :input}, _context, state) do
     Membrane.Logger.bare_log(:info, "file_sink send EOS")
-    send(pid, :finished)
-    {:ok, state}
+    {{:ok, [playback: :terminating]}, state}
   end
 
   @impl true
