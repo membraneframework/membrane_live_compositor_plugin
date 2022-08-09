@@ -7,16 +7,16 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @doc """
   Creates a video and prepares filenames for input, returns input, reference and output videos paths.
   """
-  @spec prepare_testing_video(Membrane.RawVideo, integer(), binary()) ::
+  @spec prepare_testing_video(Membrane.RawVideo, integer(), binary(), binary()) ::
           {binary(), binary(), binary()}
-  def prepare_testing_video(video_description, duration, extension) do
+  def prepare_testing_video(video_description, duration, extension, sub_dir_name \\ "") do
     res = video_description.height
     file_base = "#{duration}s_#{res}p.#{extension}"
     input_file_name = "input_#{file_base}"
     ref_file_name = "ref_#{file_base}"
 
     {input_file_name, out_file_name, ref_file_name} =
-      prepare_paths(input_file_name, ref_file_name)
+      prepare_paths(input_file_name, ref_file_name, sub_dir_name)
 
     generate_testing_video(input_file_name, video_description, duration)
     {input_file_name, out_file_name, ref_file_name}
