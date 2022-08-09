@@ -5,61 +5,65 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
   alias Membrane.VideoCompositor.FFmpeg.Native
   alias Membrane.VideoCompositor.Test.Utility
 
-  test "compose doubled raw video frames on top of each other", %{tmp_dir: tmp_dir} do
-    {in_path, out_path, ref_path} =
-      Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
+  describe "FFmpeg native test on " do
+    @describetag :tmp_dir
 
-    video = %RawVideo{
-      width: 640,
-      height: 360,
-      pixel_format: :I420,
-      framerate: {1, 1},
-      aligned: nil
-    }
+    test "compose doubled raw video frames on top of each other", %{tmp_dir: tmp_dir} do
+      {in_path, out_path, ref_path} =
+        Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
 
-    n_frames = 2
-    assert compose_n_frames(in_path, out_path, video, n_frames)
+      video = %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: {1, 1},
+        aligned: nil
+      }
 
-    reference_input_path = String.replace_suffix(in_path, "yuv", "h264")
+      n_frames = 2
+      assert compose_n_frames(in_path, out_path, video, n_frames)
 
-    Utility.create_ffmpeg_reference(
-      reference_input_path,
-      ref_path,
-      "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-    )
+      reference_input_path = String.replace_suffix(in_path, "yuv", "h264")
 
-    Utility.compare_contents(out_path, ref_path)
-  end
+      Utility.create_ffmpeg_reference(
+        reference_input_path,
+        ref_path,
+        "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
+      )
 
-  test "compose multiple raw video frames", %{tmp: tmp} do
-    {in_path, out_path, _ref_path} =
-      Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
+      Utility.compare_contents(out_path, ref_path)
+    end
 
-    video = %RawVideo{
-      width: 640,
-      height: 360,
-      pixel_format: :I420,
-      framerate: {1, 1},
-      aligned: nil
-    }
+    test "compose multiple raw video frames", %{tmp_dir: tmp_dir} do
+      {in_path, out_path, _ref_path} =
+        Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
 
-    n_frames = 6
-    assert compose_n_frames(in_path, out_path, video, n_frames)
-  end
+      video = %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: {1, 1},
+        aligned: nil
+      }
 
-  defp compose_n_frames(in_path, out_path, caps, n_frames) do
-    assert frame = File.read!(in_path)
-    frames = for _n <- 1..n_frames, do: frame
+      n_frames = 6
+      assert compose_n_frames(in_path, out_path, video, n_frames)
+    end
 
-    {:ok, video} = Membrane.VideoCompositor.FFmpeg.Native.RawVideo.from_membrane_raw_video(caps)
-    videos = for _n <- 1..n_frames, do: video
+    defp compose_n_frames(in_path, out_path, caps, n_frames) do
+      assert frame = File.read!(in_path)
+      frames = for _n <- 1..n_frames, do: frame
 
-    assert {:ok, ref} = Native.init(videos)
-    assert {:ok, out_frame} = Native.apply_filter(frames, ref)
+      {:ok, video} = Membrane.VideoCompositor.FFmpeg.Native.RawVideo.from_membrane_raw_video(caps)
+      videos = for _n <- 1..n_frames, do: video
 
-    assert {:ok, file} = File.open(out_path, [:write])
-    on_exit(fn -> File.close(file) end)
+      assert {:ok, ref} = Native.init(videos)
+      assert {:ok, out_frame} = Native.apply_filter(frames, ref)
 
-    IO.binwrite(file, out_frame)
+      assert {:ok, file} = File.open(out_path, [:write])
+      on_exit(fn -> File.close(file) end)
+
+      IO.binwrite(file, out_frame)
+    end
   end
 end
