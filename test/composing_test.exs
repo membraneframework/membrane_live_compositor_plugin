@@ -5,17 +5,18 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   describe "Checks composition and raw video pipeline on " do
     @describetag :tmp_dir
 
-    test "on 3s 720p 1fps raw video", ctx do
+    test "on 3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       input_paths = %{
         first_raw_video_path: "./test/fixtures/short_videos/input_3s_720p_1fps.raw",
         second_raw_video_path: "./test/fixtures/short_videos/input_3s_720p_1fps.raw"
       }
 
-      output_path = Path.join(ctx.tmp_dir, "output_3s_1280x1440_1fps.raw")
+      output_path = Path.join(tmp_dir, "output_3s_1280x1440_1fps.raw")
       composed_video_path = "./test/fixtures/short_videos/composed_video_3s_1280x1440_1fps.raw"
 
       video_caps = %RawVideo{
@@ -38,13 +39,13 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     end
 
     @tag long: true
-    test "10s 720p 1fps raw video", ctx do
+    test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       input_paths = %{
         first_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
         second_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw"
       }
 
-      output_path = Path.join(ctx.tmp_dir, "output_10s_1280x1440_1fps.raw")
+      output_path = Path.join(tmp_dir, "output_10s_1280x1440_1fps.raw")
       composed_video_path = "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
 
       video_caps = %RawVideo{
