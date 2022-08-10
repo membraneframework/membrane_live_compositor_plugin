@@ -46,29 +46,6 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     "#{duration}s_#{resolution}p.#{extension}"
   end
 
-  @spec get_ffmpeg_raw_video_input_options(Membrane.RawVideo.t()) :: [binary()]
-  defp get_ffmpeg_raw_video_input_options(video_description) do
-    remove_prefix = fn full, prefix ->
-      base = byte_size(prefix)
-      <<_::binary-size(base), rest::binary>> = full
-      rest
-    end
-
-    # -video_size 1280x720 -framerate 25 -pixel_format yuv420p
-    {num, den} = video_description.framerate
-
-    [
-      "-video_size",
-      "#{video_description.width}x#{video_description.height}",
-      "-framerate",
-      "#{div(num, den)}",
-      "-pixel_format",
-      "yuv#{video_description.pixel_format |> Atom.to_string() |> remove_prefix.("I")}p",
-      "-f",
-      "rawvideo"
-    ]
-  end
-
   @doc """
   Generate video file described by the `video_description` and `duration` (in seconds) and save it in the `file_name`.
   """
@@ -235,6 +212,29 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     ]
 
     raw_video ++ output
+  end
+
+  @spec get_ffmpeg_raw_video_input_options(Membrane.RawVideo.t()) :: [binary()]
+  defp get_ffmpeg_raw_video_input_options(video_description) do
+    remove_prefix = fn full, prefix ->
+      base = byte_size(prefix)
+      <<_::binary-size(base), rest::binary>> = full
+      rest
+    end
+
+    # -video_size 1280x720 -framerate 25 -pixel_format yuv420p
+    {num, den} = video_description.framerate
+
+    [
+      "-video_size",
+      "#{video_description.width}x#{video_description.height}",
+      "-framerate",
+      "#{div(num, den)}",
+      "-pixel_format",
+      "yuv#{video_description.pixel_format |> Atom.to_string() |> remove_prefix.("I")}p",
+      "-f",
+      "rawvideo"
+    ]
   end
 
   @doc """

@@ -7,18 +7,12 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
-  describe "Checks composition and raw video pipeline on " do
+  @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
+
+  describe "Checks composition and raw video pipeline on" do
     @describetag :tmp_dir
 
-    test "on 3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-      input_paths = %{
-        first_raw_video_path: "./test/fixtures/short_videos/input_3s_720p_1fps.raw",
-        second_raw_video_path: "./test/fixtures/short_videos/input_3s_720p_1fps.raw"
-      }
-
-      output_path = Path.join(tmp_dir, "output_3s_1280x1440_1fps.raw")
-      composed_video_path = "./test/fixtures/short_videos/composed_video_3s_1280x1440_1fps.raw"
-
+    test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -27,12 +21,35 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         aligned: nil
       }
 
+      duration = 3
+
+      {input_path, output_path, reference_path} =
+        TestingUtility.prepare_testing_video(
+          video_caps,
+          duration,
+          "raw",
+          tmp_dir,
+          "short_videos"
+        )
+
+      input_paths = %{
+        first_raw_video_path: input_path,
+        second_raw_video_path: input_path
+      }
+
       implementation = :nx
+
+      TestingUtility.generate_raw_ffmpeg_reference(
+        input_path,
+        video_caps,
+        reference_path,
+        @filter_description
+      )
 
       test_raw_pipeline_and_composing(
         input_paths,
         output_path,
-        composed_video_path,
+        reference_path,
         video_caps,
         implementation
       )
