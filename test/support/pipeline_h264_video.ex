@@ -18,37 +18,13 @@ defmodule Membrane.VideoCompositor.PipelineH264 do
   """
   @impl true
   def handle_init(options) do
-    children = %{
-      file_src_1: %Membrane.File.Source{location: options.paths.first_h264_video_path},
-      file_src_2: %Membrane.File.Source{location: options.paths.second_h264_video_path},
-      parser_1: Membrane.H264.FFmpeg.Parser,
-      parser_2: Membrane.H264.FFmpeg.Parser,
-      decoder_1: Membrane.H264.FFmpeg.Decoder,
-      decoder_2: Membrane.H264.FFmpeg.Decoder,
-      compositor: %Membrane.VideoCompositor{
-        implementation: options.implementation,
-        caps: options.caps
-      },
-      encoder: Membrane.H264.FFmpeg.Encoder,
-      file_sink: %Membrane.File.Sink{location: options.paths.output_path}
-    }
+    decoder = Membrane.VideoCompositor.Demo.H264.InputParser
+    encoder = Membrane.H264.FFmpeg.Encoder
 
-    links = [
-      link(:file_src_1)
-      |> to(:parser_1)
-      |> to(:decoder_1)
-      |> via_in(:first_input)
-      |> to(:compositor),
-      link(:file_src_2)
-      |> to(:parser_2)
-      |> to(:decoder_2)
-      |> via_in(:second_input)
-      |> to(:compositor)
-      |> to(:encoder)
-      |> to(:file_sink)
-    ]
+    options = Map.put(options, :decoder, decoder)
+    options = Map.put_new(options, :encoder, encoder)
 
-    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
+    Membrane.VideoCompositor.Demo.PipelineTemplate.handle_init(options)
   end
 
   @impl true
