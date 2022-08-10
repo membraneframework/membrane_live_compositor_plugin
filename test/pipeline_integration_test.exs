@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
   end
 end
