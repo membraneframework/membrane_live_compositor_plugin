@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.FFmpeg.Research do
     videos = [video, video]
 
     {:ok, internal_state} = FFmpeg.init(videos)
-    {:ok, %{state: internal_state, iter: 1, raw_video: video}}
+    {:ok, %{internal_state: internal_state, iter: 1, raw_video: video}}
   end
 
   @impl true
