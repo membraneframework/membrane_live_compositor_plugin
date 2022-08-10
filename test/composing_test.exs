@@ -49,13 +49,6 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         @filter_description
       )
 
-    parser = %Membrane.RawVideo.Parser{
-      framerate: video_caps.framerate,
-      width: video_caps.width,
-      height: video_caps.height,
-      pixel_format: video_caps.pixel_format
-    }
-
     options = %{
       paths: %{
         first_video_path: input_path,

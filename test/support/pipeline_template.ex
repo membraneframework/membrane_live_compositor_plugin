@@ -1,4 +1,7 @@
 defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
+  @moduledoc """
+  Simple pass by Membrane element.It should have no side effects on the pipeline.
+  """
   use Membrane.Filter
 
   def_input_pad :input, demand_unit: :buffers, caps: :any, demand_mode: :auto
@@ -17,7 +20,11 @@ end
 
 defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   @moduledoc """
-  Pipeline for testing simple composing of two videos, by placing one above the other.
+  Universal pipeline for testing simple composing of two videos, by placing one above the other.
+  It loads two videos from the `options.first_video_path` and `options.second_video_path` files,
+  parses them using `options.decoder`, feeds VideoCompositor, encodes result (or simply pass by as RawVideo
+  if no `options.encoder` is specified) and feed sink. Default sink saves result in the `options.output_path`
+  file, if `options.sink` is not specified.
   """
 
   use Membrane.Pipeline
