@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
   end
 end
 
-defmodule Membrane.VideoCompositor.Pipeline.Compose do
+defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """

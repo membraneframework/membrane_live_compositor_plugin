@@ -46,6 +46,6 @@ options = %{
   sink: sink
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Pipeline.Compose.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
 
 Process.sleep(1_000_000)

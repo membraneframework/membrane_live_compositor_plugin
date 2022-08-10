@@ -63,15 +63,14 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         output_path: output_path
       },
       caps: caps,
-      implementation: implementation,
-      decoder: parser
+      implementation: implementation
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
     assert {:ok, out_video} = File.read(output_path)

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline.H264.InputDecoder do
+defmodule Membrane.VideoCompositor.Demo.H264.InputParser do
   use Membrane.Bin
   alias Membrane.RawVideo
 
