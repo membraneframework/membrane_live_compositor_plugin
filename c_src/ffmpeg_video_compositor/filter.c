@@ -159,8 +159,8 @@ static int apply_filters_options_string(char *filter_str, int filter_size,
   for (int i = 1; i < n_videos; ++i) {
     Vec2 pos = positions[i];
     filter_end += snprintf(filter_str + filter_end, filter_size - filter_end,
-                           "[mid_%d];\n[mid_%d][in_%d] overlay=x=%d + t*6:y=%d",
-                           i, i, i + 1, pos.x, pos.y);
+                           "[mid_%d];\n[mid_%d][in_%d] overlay=x=%d:y=%d", i, i,
+                           i + 1, pos.x, pos.y);
   }
   return filter_end;
 }
