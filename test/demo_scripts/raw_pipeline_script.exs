@@ -5,14 +5,14 @@ implementation =
     "nx" -> :nx
     "ffmpeg" -> :ffmpeg
     "opengl" -> :opengl
-    _ -> raise "unsupported implementation #{s}"
+    _unsupported -> raise "unsupported implementation #{s}"
   end
 
 sink =
   case s = System.get_env("SINK", "file") do
     "file" -> nil
     "play" -> Membrane.SDL.Player
-    _ -> raise "unsupported sink #{s}"
+    _unsupported -> raise "unsupported sink #{s}"
   end
 
 paths = %{
