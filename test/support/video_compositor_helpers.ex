@@ -39,6 +39,10 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     {input_file_name, out_file_name, ref_file_name}
   end
 
+  @doc """
+  Create a base filename with `extension` for testing video file, described by `video_description` and `duration` (in seconds).
+  """
+  @spec get_file_base_name(Membrane.RawVideo.t(), duration_t, extension_t) :: binary()
   def get_file_base_name(video_description, duration, extension) do
     width = video_description.width
     height = video_description.height
@@ -54,7 +58,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
           nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
     # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
-    {framerate, _} = video_description.framerate
+    {num, den} = video_description.framerate
+    framerate = div(num, den)
 
     video_description_str = """
     testsrc=\
@@ -218,7 +223,7 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   defp get_ffmpeg_raw_video_input_options(video_description) do
     remove_prefix = fn full, prefix ->
       base = byte_size(prefix)
-      <<_::binary-size(base), rest::binary>> = full
+      <<_prefix::binary-size(base), rest::binary>> = full
       rest
     end
 
