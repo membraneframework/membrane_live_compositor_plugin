@@ -19,8 +19,7 @@ implementation = :nx
 options = %{
   paths: paths,
   caps: caps,
-  implementation: implementation,
-  return_pid: self()
+  implementation: implementation
 }
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
