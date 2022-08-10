@@ -31,21 +31,13 @@ caps = %RawVideo{
 
 implementation = :nx
 
-parser = %Membrane.RawVideo.Parser{
-  framerate: caps.framerate,
-  width: caps.width,
-  height: caps.height,
-  pixel_format: caps.pixel_format
-}
-
 options = %{
   paths: paths,
   caps: caps,
   implementation: implementation,
-  decoder: parser,
   sink: sink
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Demo.PipelineTemplate.start(options)
+{:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
 
 Process.sleep(1_000_000)
