@@ -22,49 +22,19 @@ defmodule Membrane.VideoCompositor.ComposingTest do
       }
 
       duration = 3
-
-      {input_path, output_path, reference_path} =
-        TestingUtility.prepare_testing_video(
-          video_caps,
-          duration,
-          "raw",
-          tmp_dir,
-          "short_videos"
-        )
-
-      input_paths = %{
-        first_raw_video_path: input_path,
-        second_raw_video_path: input_path
-      }
-
       implementation = :nx
 
-      TestingUtility.generate_raw_ffmpeg_reference(
-        input_path,
-        video_caps,
-        reference_path,
-        @filter_description
-      )
-
       test_raw_pipeline_and_composing(
-        input_paths,
-        output_path,
-        reference_path,
         video_caps,
-        implementation
+        duration,
+        implementation,
+        tmp_dir,
+        "short_videos"
       )
     end
 
     @tag long: true
     test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-      input_paths = %{
-        first_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-        second_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw"
-      }
-
-      output_path = Path.join(tmp_dir, "output_10s_1280x1440_1fps.raw")
-      composed_video_path = "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
-
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -73,25 +43,54 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         aligned: nil
       }
 
+      duration = 10
       implementation = :nx
 
       test_raw_pipeline_and_composing(
-        input_paths,
-        output_path,
-        composed_video_path,
         video_caps,
-        implementation
+        duration,
+        implementation,
+        tmp_dir,
+        "long_videos"
       )
     end
   end
 
+  @spec test_raw_pipeline_and_composing(
+          Membrane.RawVideo.t(),
+          non_neg_integer(),
+          atom,
+          binary(),
+          binary()
+        ) :: nil
   defp test_raw_pipeline_and_composing(
-         input_paths,
-         output_path,
-         composed_video_path,
          video_caps,
-         implementation
+         duration,
+         implementation,
+         tmp_dir,
+         sub_dir_name
        ) do
+    {input_path, output_path, reference_path} =
+      TestingUtility.prepare_testing_video(
+        video_caps,
+        duration,
+        "raw",
+        tmp_dir,
+        sub_dir_name
+      )
+
+    input_paths = %{
+      first_raw_video_path: input_path,
+      second_raw_video_path: input_path
+    }
+
+    TestingUtility.generate_raw_ffmpeg_reference(
+      input_path,
+      video_caps,
+      reference_path,
+      @filter_description
+    )
+
     options = %{
       paths: %{
         first_raw_video_path: input_paths.first_raw_video_path,
@@ -114,7 +113,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     TestingPipeline.terminate(pid, blocking?: true)
 
     assert {:ok, out_video} = File.read(output_path)
-    assert {:ok, composed_video} = File.read(composed_video_path)
+    assert {:ok, composed_video} = File.read(reference_path)
 
     assert out_video == composed_video
   end
