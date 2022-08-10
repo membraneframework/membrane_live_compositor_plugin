@@ -46,6 +46,29 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     "#{duration}s_#{resolution}p.#{extension}"
   end
 
+  @spec get_ffmpeg_raw_video_input_options(Membrane.RawVideo.t()) :: [binary()]
+  defp get_ffmpeg_raw_video_input_options(video_description) do
+    remove_prefix = fn full, prefix ->
+      base = byte_size(prefix)
+      <<_::binary-size(base), rest::binary>> = full
+      rest
+    end
+
+    # -video_size 1280x720 -framerate 25 -pixel_format yuv420p
+    {num, den} = video_description.framerate
+
+    [
+      "-video_size",
+      "#{video_description.width}x#{video_description.height}",
+      "-framerate",
+      "#{div(num, den)}",
+      "-pixel_format",
+      "yuv#{video_description.pixel_format |> Atom.to_string() |> remove_prefix.("I")}p",
+      "-f",
+      "rawvideo"
+    ]
+  end
+
   @doc """
   Generate video file described by the `video_description` and `duration` (in seconds) and save it in the `file_name`.
   """
@@ -125,6 +148,9 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @spec generate_ffmpeg_reference(input_video_path_t(), reference_video_path_t(), binary) ::
           nil | :ok
   def generate_ffmpeg_reference(input_path, reference_path, filter_description) do
+    unless String.ends_with?(input_path, ".h264"), do: raise("Only H264 files are supported")
+    unless String.ends_with?(reference_path, ".h264"), do: raise("Only H264 files are supported")
+
     input = [
       # overrides the output file without asking if it already exists
       "-y",
@@ -150,12 +176,56 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     end
   end
 
+  @doc """
+  Generate video file described by the given FFmpeg `filter_description`, using as an input raw video from `input_path` described by `input_video_description`, and save it in the `reference_path`.
+  """
+  @spec generate_raw_ffmpeg_reference(
+          input_video_path_t(),
+          Membrane.RawVideo.t(),
+          reference_video_path_t(),
+          binary
+        ) :: nil | :ok
+  def generate_raw_ffmpeg_reference(
+        input_path,
+        input_video_description,
+        reference_path,
+        filter_description
+      ) do
+    unless String.ends_with?(input_path, ".raw"), do: raise("Only RAW files are supported")
+
+    raw_input = get_ffmpeg_raw_video_input_options(input_video_description)
+
+    input = [
+      # overrides the output file without asking if it already exists
+      "-y",
+      # video input filename
+      "-i",
+      input_path,
+      # description of the filter (transformation graph)
+      "-vf",
+      filter_description
+    ]
+
+    output = get_ffmpeg_save_parameters(reference_path)
+
+    {result, exit_status} =
+      System.cmd(
+        "ffmpeg",
+        raw_input ++ input ++ output,
+        stderr_to_stdout: true
+      )
+
+    if exit_status != 0 do
+      raise inspect(result)
+    end
+  end
+
   @spec get_ffmpeg_save_parameters(binary) :: [binary()]
   defp get_ffmpeg_save_parameters(file_name) do
     # enforce raw video format, if needed
     raw_video =
       if(String.ends_with?(file_name, ".raw"),
-        do: ["-f", " rawvideo"],
+        do: ["-f", "rawvideo"],
         else: []
       )
 
