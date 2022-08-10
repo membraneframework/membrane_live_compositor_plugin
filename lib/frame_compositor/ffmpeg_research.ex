@@ -24,15 +24,13 @@ defmodule Membrane.VideoCompositor.FFmpeg.Research do
   end
 
   @impl true
-  def merge_frames(frames, state_of_init_module) do
-    %{state: internal_state, iter: iter} = state_of_init_module
-
+  def merge_frames(frames, %{internal_state: internal_state, iter: iter} = state) do
     repeated_frames = Stream.repeatedly(fn -> frames.second end) |> Enum.take(div(iter, 80))
     frames = [frames.first, frames.second] ++ repeated_frames
 
     internal_state =
       if rem(iter, 80) == 0 do
-        raw_videos = for _n <- 1..(div(iter, 80) + 2), do: state_of_init_module.raw_video
+        raw_videos = for _n <- 1..(div(iter, 80) + 2), do: state.raw_video
 
         {:ok, new_internal_state} = FFmpeg.init(raw_videos)
         {:ok, new_internal_state} = FFmpeg.duplicate_metadata(new_internal_state, internal_state)
@@ -42,6 +40,6 @@ defmodule Membrane.VideoCompositor.FFmpeg.Research do
       end
 
     {:ok, merged_frames_binary} = FFmpeg.apply_filter(frames, internal_state)
-    {{:ok, merged_frames_binary}, %{state_of_init_module | state: internal_state, iter: iter + 1}}
+    {{:ok, merged_frames_binary}, %{state | internal_state: internal_state, iter: iter + 1}}
   end
 end
