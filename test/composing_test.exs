@@ -8,53 +8,54 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
+  @implementations [:nx, :ffmpeg]
 
-  describe "Checks composition and raw video pipeline on" do
-    @describetag :tmp_dir
+  Enum.map(@implementations, fn implementation ->
+    describe "Checks #{implementation} composition and raw video pipeline on" do
+      @describetag :tmp_dir
 
-    test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-      video_caps = %RawVideo{
-        width: 1280,
-        height: 720,
-        framerate: {1, 1},
-        pixel_format: :I420,
-        aligned: nil
-      }
+      test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+        video_caps = %RawVideo{
+          width: 1280,
+          height: 720,
+          framerate: {1, 1},
+          pixel_format: :I420,
+          aligned: nil
+        }
 
-      duration = 3
-      implementation = :nx
+        duration = 3
 
-      test_raw_pipeline_and_composing(
-        video_caps,
-        duration,
-        implementation,
-        tmp_dir,
-        "short_videos"
-      )
+        test_raw_pipeline_and_composing(
+          video_caps,
+          duration,
+          unquote(implementation),
+          tmp_dir,
+          "short_videos"
+        )
+      end
+
+      @tag long: true
+      test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+        video_caps = %RawVideo{
+          width: 1280,
+          height: 720,
+          framerate: {1, 1},
+          pixel_format: :I420,
+          aligned: nil
+        }
+
+        duration = 10
+
+        test_raw_pipeline_and_composing(
+          video_caps,
+          duration,
+          unquote(implementation),
+          tmp_dir,
+          "long_videos"
+        )
+      end
     end
-
-    @tag long: true
-    test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-      video_caps = %RawVideo{
-        width: 1280,
-        height: 720,
-        framerate: {1, 1},
-        pixel_format: :I420,
-        aligned: nil
-      }
-
-      duration = 10
-      implementation = :nx
-
-      test_raw_pipeline_and_composing(
-        video_caps,
-        duration,
-        implementation,
-        tmp_dir,
-        "long_videos"
-      )
-    end
-  end
+  end)
 
   @spec test_raw_pipeline_and_composing(
           Membrane.RawVideo.t(),
