@@ -6,10 +6,10 @@ defmodule MergeFramesBenchmark do
   alias Membrane.RawVideo
 
   def benchmark() do
-    report_dir = "./benchmark/results/benchee/merge_frames_result"
-    raw_720p_frame_path = "./benchmark/tmp_dir/frame_720p.raw"
-    raw_1080p_frame_path = "./benchmark/tmp_dir/frame_1080p.raw"
-    raw_4k_frame_path = "./benchmark/tmp_dir/frame_4k.raw"
+    report_dir = "./results/benchee/merge_frames_results"
+    raw_720p_frame_path = "./tmp_dir/frame_720p.raw"
+    raw_1080p_frame_path = "./tmp_dir/frame_1080p.raw"
+    raw_4k_frame_path = "./tmp_dir/frame_4k.raw"
 
     caps_720p = %RawVideo{
       width: 1280,

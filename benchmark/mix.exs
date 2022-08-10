@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.MixProject do
 
   def project do
     [
-      app: :membrane_video_compositor_plugin,
+      app: :membrane_video_compositor_plugin_benchmark,
       version: @version,
       elixir: "~> 1.13",
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
@@ -34,11 +34,11 @@ defmodule Membrane.VideoCompositor.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["lib"]
-  defp elixirc_paths(_env), do: ["lib", "test/support", "benchmarks"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
     [
-      {:membrane_video_compositor_plugin, path: ".."}
+      {:membrane_video_compositor_plugin, path: ".."},
       {:membrane_core, "~> 0.10.0"},
       {:membrane_file_plugin, "~> 0.12.0"},
       {:membrane_raw_video_parser_plugin, "~> 0.8.0"},

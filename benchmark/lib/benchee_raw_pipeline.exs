@@ -7,11 +7,11 @@ defmodule RawPipelineBeamchmark do
   alias Membrane.VideoCompositor.Test.Utility
 
   def benchmark() do
-    report_output_dir = "./benchmark/results/benchee/raw_pipeline_results"
+    report_output_dir = "./results/benchee/raw_pipeline_results"
 
     video_duration = 30
 
-    output_dir = "./test/fixtures/tmp_dir"
+    output_dir = "./tmp_dir"
     output_path_720p = Path.join(output_dir, "output_60s_1280x1440.raw")
     output_path_1080p = Path.join(output_dir, "output_60s_1920x2160.raw")
 
@@ -31,8 +31,8 @@ defmodule RawPipelineBeamchmark do
       aligned: nil
     }
 
-    input_path_720p = "./benchmark/tmp_dir/input_#{video_duration}s_720p.raw"
-    input_path_1080p = "./benchmark/tmp_dir/input_#{video_duration}s_1080p.raw"
+    input_path_720p = "./tmp_dir/input_#{video_duration}s_720p.raw"
+    input_path_1080p = "./tmp_dir/input_#{video_duration}s_1080p.raw"
 
     :ok = Utility.generate_testing_video(input_path_720p, caps_720p, video_duration)
     :ok = Utility.generate_testing_video(input_path_1080p, caps_1080p, video_duration)

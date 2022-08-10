@@ -6,11 +6,11 @@ defmodule H264PipelineBeamchmark do
   alias Membrane.VideoCompositor.Test.Utility
 
   def benchmark() do
-    report_output_dir = "./benchmark/results/benchee/h264_pipeline_results"
+    report_output_dir = "./results/benchee/h264_pipeline_results"
 
     video_duration = 30
 
-    output_dir = "./benchmark/tmp_dir"
+    output_dir = "./tmp_dir"
     output_path_720p = Path.join(output_dir, "output_#{video_duration}s_1280x1440.h264")
     output_path_1080p = Path.join(output_dir, "output_#{video_duration}s_1280x1440.h264")
 
@@ -30,8 +30,8 @@ defmodule H264PipelineBeamchmark do
       aligned: nil
     }
 
-    input_path_720p = "./benchmark/tmp_dir/input_#{video_duration}s_720p.h264"
-    input_path_1080p = "./benchmark/tmp_dir/input_#{video_duration}s_1080p.h264"
+    input_path_720p = "./tmp_dir/input_#{video_duration}s_720p.h264"
+    input_path_1080p = "./tmp_dir/input_#{video_duration}s_1080p.h264"
 
     :ok = Utility.generate_testing_video(input_path_720p, caps_720p, video_duration)
     :ok = Utility.generate_testing_video(input_path_1080p, caps_1080p, video_duration)

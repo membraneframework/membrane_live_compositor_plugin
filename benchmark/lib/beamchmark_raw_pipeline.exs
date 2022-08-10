@@ -45,10 +45,10 @@ defmodule RawPipelineBeamchmark do
 
     video_duration = 30
 
-    output_dir = "./benchmark/tmp_dir"
+    output_dir = "./tmp_dir"
     output_path = Path.join(output_dir, "output_#{video_duration}s_#{caps.height}p.raw")
 
-    input_path = "./benchmark/tmp_dir/input_#{video_duration}s_#{caps.height}p.raw"
+    input_path = "./tmp_dir/input_#{video_duration}s_#{caps.height}p.raw"
     :ok = Utility.generate_testing_video(input_path, caps, video_duration)
 
     pipeline_init_options = %{
@@ -82,7 +82,7 @@ benchmarks_options = %{
   memory_interval: 1000,
   delay: 0,
   compare?: false,
-  output_dir: "./benchmark/results/beamchmark/raw_pipeline_results",
+  output_dir: "./results/beamchmark/raw_pipeline_results",
 }
 
 Beamchmark.run(RawPipelineBeamchmarkFFMPEG,
