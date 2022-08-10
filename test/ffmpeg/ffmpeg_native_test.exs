@@ -9,8 +9,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
     @describetag :tmp_dir
 
     test "compose doubled raw video frames on top of each other", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, ref_path} =
-        Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
+      {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       video = %RawVideo{
         width: 640,
@@ -35,8 +34,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
     end
 
     test "compose multiple raw video frames", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, _ref_path} =
-        Utility.prepare_paths("1frame.yuv", "ref-native.yuv", tmp_dir, "native")
+      {in_path, out_path, _ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       video = %RawVideo{
         width: 640,

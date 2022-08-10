@@ -31,19 +31,20 @@ defmodule Membrane.VideoCompositor.Test.Utility do
         sub_dir_name \\ ""
       ) do
     file_base = get_file_base_name(video_description, duration, extension)
-    input_file_name = "input_#{file_base}"
-    ref_file_name = "ref_#{file_base}"
 
     {input_file_name, out_file_name, ref_file_name} =
-      prepare_paths(input_file_name, ref_file_name, tmp_dir, sub_dir_name)
+      prepare_paths(file_base, tmp_dir, sub_dir_name)
 
     generate_testing_video(input_file_name, video_description, duration)
     {input_file_name, out_file_name, ref_file_name}
   end
 
   def get_file_base_name(video_description, duration, extension) do
-    resolution = video_description.height
-    "#{duration}s_#{resolution}p.#{extension}"
+    width = video_description.width
+    height = video_description.height
+    {num, den} = video_description.framerate
+    framerate = div(num, den)
+    "#{duration}s_#{width}x#{height}_#{framerate}fps.#{extension}"
   end
 
   @doc """
@@ -96,13 +97,12 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   Creates the input, output and reference filepaths for the video testing.
   """
   @spec prepare_paths(
-          input_video_path_t(),
-          reference_video_path_t(),
+          binary(),
           directory_t(),
           directory_t()
         ) ::
           {input_video_path_t(), output_video_path_t(), reference_video_path_t()}
-  def prepare_paths(input_file_name, ref_file_name, tmp_dir \\ "", sub_dir_name \\ "") do
+  def prepare_paths(file_base_name, tmp_dir \\ "", sub_dir_name \\ "") do
     fixtures_dir =
       Path.join([
         File.cwd!(),
@@ -113,9 +113,9 @@ defmodule Membrane.VideoCompositor.Test.Utility do
 
     tmp_dir = if tmp_dir == "", do: get_tmp_dir(), else: tmp_dir
 
-    in_path = Path.join(fixtures_dir, input_file_name)
-    out_path = Path.join(tmp_dir, "out-#{ref_file_name}")
-    ref_path = Path.join(tmp_dir, ref_file_name)
+    in_path = Path.join(fixtures_dir, "input-#{file_base_name}")
+    out_path = Path.join(tmp_dir, "out-#{file_base_name}")
+    ref_path = Path.join(tmp_dir, "ref-#{file_base_name}")
     {in_path, out_path, ref_path}
   end
 
@@ -125,8 +125,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
   @spec generate_ffmpeg_reference(input_video_path_t(), reference_video_path_t(), binary) ::
           nil | :ok
   def generate_ffmpeg_reference(input_path, reference_path, filter_description) do
-    unless String.ends_with?(input_path, ".h264"), do: raise("Only H264 files are supported")
-    unless String.ends_with?(reference_path, ".h264"), do: raise("Only H264 files are supported")
+    if String.ends_with?(input_path, ".raw"),
+      do: raise("RAW files are not supported (use `generate_raw_ffmpeg_reference` instead)")
 
     input = [
       # overrides the output file without asking if it already exists
