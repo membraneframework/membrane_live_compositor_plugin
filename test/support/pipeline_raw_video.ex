@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
   @doc """
   handle_init(%{
       paths: %{
-        first_raw_video_path: String.t(),
+        first_video_path: String.t(),
         second_video_path: String.t(),
         output_path: String.t()
       },
@@ -26,7 +26,7 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
     }
 
     children = %{
-      file_src_1: %Membrane.File.Source{location: options.paths.first_raw_video_path},
+      file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
       file_src_2: %Membrane.File.Source{location: options.paths.second_video_path},
       parser_1: parser,
       parser_2: parser,
