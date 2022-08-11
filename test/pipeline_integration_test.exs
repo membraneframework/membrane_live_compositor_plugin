@@ -103,8 +103,8 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
     options = %{
       paths: %{
-        first_h264_video_path: input_file_name,
-        second_h264_video_path: input_file_name,
+        first_video_path: input_file_name,
+        second_video_path: input_file_name,
         output_path: out_file_name
       },
       caps: video_caps,

@@ -1,8 +1,8 @@
 alias Membrane.RawVideo
 
 paths = %{
-  first_h264_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
-  second_h264_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
+  first_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
+  second_video_path: "~/membrane_video_compositor/input_120s_4k.h264",
   output_path: "~/membrane_video_compositor/output_120s.h264"
 }
 

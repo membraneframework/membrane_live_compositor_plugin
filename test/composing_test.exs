@@ -82,7 +82,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     input_paths = %{
       first_raw_video_path: input_path,
-      second_raw_video_path: input_path
+      second_video_path: input_path
     }
 
     TestingUtility.generate_raw_ffmpeg_reference(
@@ -95,7 +95,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     options = %{
       paths: %{
         first_raw_video_path: input_paths.first_raw_video_path,
-        second_raw_video_path: input_paths.second_raw_video_path,
+        second_video_path: input_paths.second_video_path,
         output_path: output_path
       },
       caps: video_caps,
