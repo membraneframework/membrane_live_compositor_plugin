@@ -194,9 +194,8 @@ impl Scene {
       for video in self.videos.iter() {
         video.draw();
       }
-
-      self.render_target.read(buffer);
     }
+    self.render_target.read(buffer);
   }
 
   pub fn out_witdh(&self) -> usize {
