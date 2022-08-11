@@ -17,9 +17,6 @@ defmodule Membrane.VideoCompositor.BundlexProject do
         preprocessor: Unifex,
         src_base: "ffmpeg_video_compositor"
       ],
-      # TODO: This only works on macos if `libEGL.dylib` and `libGLES.dylib` are present in the project root.
-      #       The config should be able to work on linux too.
-      #       .dylibs should maybe be placed somewhere else???
       opengl_video_compositor: [
         sources: [
           "BasicFBO.cpp",
