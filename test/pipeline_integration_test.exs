@@ -5,18 +5,42 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
-  describe "Checks h264 pipeline on " do
+  describe "Checks h264 nx pipeline on " do
     @describetag :tmp_dir
 
-    test "2s 720p 30fps video", ctx do
-      input_paths = %{
-        first_h264_video_path: "./test/fixtures/short_videos/input_2s_720p.h264",
-        second_h264_video_path: "./test/fixtures/short_videos/input_2s_720p.h264"
+    test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1280,
+        height: 720,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
       }
 
-      output_path = Path.join(ctx.tmp_dir, "output_2s_1280x1440.h264")
+      implementation = :nx
+      duration = 2
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
+    end
 
+    test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1920,
+        height: 1080,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
+      }
+
+      implementation = :nx
+      duration = 1
+
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
+    end
+
+    @tag long: true
+    test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1280,
         height: 720,
@@ -27,17 +51,13 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       implementation = :nx
 
-      test_h264_pipeline(input_paths, output_path, video_caps, implementation)
+      duration = 30
+
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
 
-    test "1s 1080p 30fps video", ctx do
-      input_paths = %{
-        first_h264_video_path: "./test/fixtures/short_videos/input_1s_1080p.h264",
-        second_h264_video_path: "./test/fixtures/short_videos/input_1s_1080p.h264"
-      }
-
-      output_path = Path.join(ctx.tmp_dir, "output_1s_1920x2160.h264")
-
+    @tag long: true, timeout: 100_000
+    test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       video_caps = %RawVideo{
         width: 1920,
         height: 1080,
@@ -48,60 +68,88 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
       implementation = :nx
 
-      test_h264_pipeline(input_paths, output_path, video_caps, implementation)
-    end
+      duration = 60
 
-    @tag long: true
-    test "30s 720p 30fps video", ctx do
-      input_paths = %{
-        first_h264_video_path: "./test/fixtures/long_videos/input_30s_720p.h264",
-        second_h264_video_path: "./test/fixtures/long_videos/input_30s_720p.h264"
-      }
-
-      output_path = Path.join(ctx.tmp_dir, "output_30s_1280x1440.h264")
-
-      video_caps = %RawVideo{
-        width: 1280,
-        height: 720,
-        framerate: {30, 1},
-        pixel_format: :I420,
-        aligned: nil
-      }
-
-      implementation = :nx
-
-      test_h264_pipeline(input_paths, output_path, video_caps, implementation)
-    end
-
-    @tag long: true
-    test "60s 1080p 30fps video", ctx do
-      input_paths = %{
-        first_h264_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
-        second_h264_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264"
-      }
-
-      output_path = Path.join(ctx.tmp_dir, "output_60s_1920x2160.h264")
-
-      video_caps = %RawVideo{
-        width: 1920,
-        height: 1080,
-        framerate: {30, 1},
-        pixel_format: :I420,
-        aligned: nil
-      }
-
-      implementation = :nx
-
-      test_h264_pipeline(input_paths, output_path, video_caps, implementation)
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
     end
   end
 
-  defp test_h264_pipeline(input_paths, output_path, video_caps, implementation) do
+  describe "Checks h264 ffmpeg pipeline on " do
+    @describetag :tmp_dir
+
+    test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1280,
+        height: 720,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
+      }
+
+      implementation = :ffmpeg
+      duration = 2
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
+    end
+
+    test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1920,
+        height: 1080,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
+      }
+
+      implementation = :ffmpeg
+      duration = 1
+
+      test_h264_pipeline(video_caps, duration, implementation, "short_videos", tmp_dir)
+    end
+
+    @tag long: true
+    test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1280,
+        height: 720,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
+      }
+
+      implementation = :ffmpeg
+
+      duration = 30
+
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
+    end
+
+    @tag long: true, timeout: 100_000
+    test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
+      video_caps = %RawVideo{
+        width: 1920,
+        height: 1080,
+        framerate: {30, 1},
+        pixel_format: :I420,
+        aligned: nil
+      }
+
+      implementation = :ffmpeg
+
+      duration = 60
+
+      test_h264_pipeline(video_caps, duration, implementation, "long_videos", tmp_dir)
+    end
+  end
+
+  defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name, tmp_dir) do
+    {input_file_name, out_file_name, _ref_file_name} =
+      TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
+
     options = %{
       paths: %{
-        first_h264_video_path: input_paths.first_h264_video_path,
-        second_h264_video_path: input_paths.first_h264_video_path,
-        output_path: output_path
+        first_h264_video_path: input_file_name,
+        second_h264_video_path: input_file_name,
+        output_path: out_file_name
       },
       caps: video_caps,
       implementation: implementation

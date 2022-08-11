@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   """
   alias Membrane.RawVideo
 
-  @callback init(caps :: RawVideo) :: {:ok, state :: any()}
+  @callback init(caps :: RawVideo.t()) :: {:ok, state :: any()}
   @callback merge_frames(
               frames :: %{
                 first: binary(),
