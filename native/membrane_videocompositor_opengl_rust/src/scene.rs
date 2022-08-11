@@ -21,9 +21,9 @@ impl VideoPlacementTemplate {
     // FIXME: validate this
     vec![
       self.top_right.0, self.top_right.1, self.z_value, 1.0, 1.0,
-      self.top_left.0,  self.top_left.1,  self.z_value, 1.0, 1.0,
-      self.bot_left.0,  self.bot_left.1,  self.z_value, 1.0, 1.0,
-      self.bot_right.0, self.bot_right.1, self.z_value, 1.0, 1.0,
+      self.top_left.0,  self.top_left.1,  self.z_value, 0.0, 1.0,
+      self.bot_left.0,  self.bot_left.1,  self.z_value, 0.0, 0.0,
+      self.bot_right.0, self.bot_right.1, self.z_value, 1.0, 0.0,
     ]
   }
 }
