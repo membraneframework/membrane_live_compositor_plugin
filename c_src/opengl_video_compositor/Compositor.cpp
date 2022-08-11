@@ -31,6 +31,13 @@ const std::vector<float> vertices_top = {
 
 const std::vector<unsigned int> indices = {0, 1, 3, 1, 2, 3};
 
+/**
+ * @brief Construct a new Compositor object capable of compositing
+ *        two videos, one above the other.
+ * 
+ * @param width Width of the input videos
+ * @param height Height of the input videos
+ */
 Compositor::Compositor(GLsizei width, GLsizei height)
     : m_in_width(width),
       m_in_height(height),
@@ -44,6 +51,14 @@ Compositor::Compositor(GLsizei width, GLsizei height)
   m_renderer = {width, height, std::move(vaos), std::move(shader)};
 }
 
+/**
+ * @brief Joins two frames and writes the result into a vector
+ * 
+ * @param upper Input frame for the video located higher in the output
+ * @param lower Input frame for the video located lower in the output
+ * @param buffer A buffer for the resulting data. This will be resized 
+ *               to hold the whole frame
+ */
 void Compositor::join_frames(char *upper, char *lower,
                              std::vector<char> &buffer) {
   m_renderer->upload_texture(upper, true);

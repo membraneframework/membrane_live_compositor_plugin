@@ -6,6 +6,11 @@
 
 #include "NonCopyable.h"
 
+/**
+ * @brief This class is an abstraction for OpenGL's FrameBuffer Object together with an attached renderbuffer
+ *        Framebuffer objects: https://www.khronos.org/opengl/wiki/Framebuffer_Object
+ * 
+ */
 class BasicFBO : public NonCopyable {
  public:
   BasicFBO(unsigned int width, unsigned int height, GLenum internal_format,

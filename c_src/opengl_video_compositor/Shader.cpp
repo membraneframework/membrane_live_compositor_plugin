@@ -7,6 +7,13 @@
 
 #include "glad/gles2.h"
 
+/**
+ * @brief Construct a new Shader object from vertex & fragment shader source code.
+ *        This will print out an error log if the shaders fail to link/compile
+ * 
+ * @param vertex_code Source code for the vertex shader
+ * @param fragment_code Source code for the fragment shader
+ */
 Shader::Shader(const char *vertex_code, const char *fragment_code) {
   const char *vertexCodeCStr = vertex_code;
   const char *fragmentCodeCStr = fragment_code;
@@ -33,17 +40,48 @@ Shader::Shader(const char *vertex_code, const char *fragment_code) {
   glDeleteShader(fragmentShaderId);
 }
 
+/**
+ * @brief Use this shader program.
+ * 
+ */
 void Shader::use() const { glUseProgram(m_id); }
 
+/**
+ * @brief Set a boolean uniform in this shader program
+ * 
+ * @param name Name of the uniform to set
+ * @param value Value to set the uniform to
+ */
 void Shader::setBool(const std::string &name, bool value) const {
   glUniform1i(glGetUniformLocation(m_id, name.c_str()), (int)value);
 }
+
+/**
+ * @brief Set an integer uniform in this shader program
+ * 
+ * @param name Name of the uniform to set
+ * @param value Value to set the uniform to
+ */
 void Shader::setInt(const std::string &name, int value) const {
   glUniform1i(glGetUniformLocation(m_id, name.c_str()), value);
 }
+
+/**
+ * @brief Set a float uniform in this shader program
+ * 
+ * @param name Name of the uniform to set
+ * @param value Value to set the uniform to
+ */
 void Shader::setFloat(const std::string &name, float value) const {
   glUniform1f(glGetUniformLocation(m_id, name.c_str()), value);
 }
+
+/**
+ * @brief Set a 4x4 matrix uniform in this shader program
+ * 
+ * @param name Name of the uniform to set
+ * @param value Value to set the uniform to
+ */
 void Shader::setMat4(const std::string &name, const float *value) const {
   glUniformMatrix4fv(glGetUniformLocation(m_id, name.c_str()), 1, GL_FALSE,
                      value);

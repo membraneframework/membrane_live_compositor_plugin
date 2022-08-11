@@ -10,6 +10,10 @@
 #include "Shader.h"
 #include "YUVTexture.h"
 
+/**
+ * @brief This class holds all state necessary for rendering planar-YUV-encoded frames
+ * 
+ */
 class YUVRenderer : public NonCopyable {
  public:
   YUVRenderer(GLsizei width, GLsizei height, std::vector<RectVAO> &&vaos,

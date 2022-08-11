@@ -6,6 +6,11 @@
 
 #include "NonCopyable.h"
 
+/**
+ * @brief This class is an abstraction of OpenGL's shader program
+ *        https://www.khronos.org/opengl/wiki/Shader
+ * 
+ */
 class Shader : public NonCopyable {
  public:
   GLuint m_id = 0;

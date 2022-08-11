@@ -1,5 +1,16 @@
 #include "RectVAO.h"
 
+/**
+ * @brief Construct a new RectVAO object
+ * 
+ * @param vertices A vector of vertex positions for this rectangle's corners 
+ *                 and their mappings into the texture space. This should be 
+ *                 exactly 5 floats long per vertex (3 values between -1 and 1
+ *                 representing x, y and z coordinates for the vertex and two
+ *                 values between 0 and 1 representing where this vertex is in 
+ *                 texture space)
+ * @param indices A vector of unsigned ints representing the elements buffer
+ */
 RectVAO::RectVAO(const std::vector<float> &vertices,
                  const std::vector<unsigned int> &indices)
     : m_id(0), m_vertex_buffer_id(0), m_elements_buffer_id(0) {
@@ -32,8 +43,16 @@ RectVAO::~RectVAO() {
   if (m_id != 0) glDeleteVertexArrays(1, &m_id);
 }
 
+/**
+ * @brief Bind this VAO for drawing
+ * 
+ */
 void RectVAO::bind() const { glBindVertexArray(m_id); }
 
+/**
+ * @brief Draw this VAO
+ * 
+ */
 void RectVAO::draw() const {
   bind();
   glDrawElements(GL_TRIANGLES, m_indices_amount, GL_UNSIGNED_INT, nullptr);
