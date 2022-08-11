@@ -12,23 +12,15 @@ defmodule VideoCompositor.OpenGL.NativeTest do
     assert {:ok, frame_a} = File.read(in_path)
     assert {:ok, frame_b} = File.read(in_path)
 
-    assert {:ok, state} =
-             Native.init(
-               %RawVideo{
-                 width: 640,
-                 height: 360,
-                 pixel_format: :I420,
-                 aligned: nil,
-                 framerate: nil
-               },
-               %RawVideo{
-                 width: 640,
-                 height: 360,
-                 pixel_format: :I420,
-                 aligned: nil,
-                 framerate: nil
-               }
-             )
+    caps = %RawVideo{
+      width: 640,
+      height: 360,
+      pixel_format: :I420,
+      aligned: nil,
+      framerate: nil
+    }
+
+    assert {:ok, state} = Native.init(caps, caps)
 
     assert {:ok, out_frame} = Native.join_frames(frame_a, frame_b, state)
     assert {:ok, file} = File.open(out_path, [:write])
