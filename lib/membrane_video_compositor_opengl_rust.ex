@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
     crate: :membrane_videocompositor_opengl_rust
 
   def init(_first_video, _second_video, _out_video), do: error()
-  def join_frames(_upper, _lower), do: error()
+  def join_frames(_state, _upper, _lower), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
 end

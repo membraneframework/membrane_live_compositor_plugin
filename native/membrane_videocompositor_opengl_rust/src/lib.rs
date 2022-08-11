@@ -58,7 +58,7 @@ mod state {
       let display = unsafe { egl::Display::from_ptr(self.display as *mut std::ffi::c_void) };
       let context = unsafe { egl::Context::from_ptr(self.context as *mut std::ffi::c_void) };
       egl::API.make_current(display, None, None, Some(context))?;
-      Ok(BoundContext { display })
+      Ok(BoundContext { display, scene: &self.scene })
     }
 
     pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
@@ -70,11 +70,12 @@ mod state {
     }
   }
 
-  pub struct BoundContext {
+  pub struct BoundContext<'a> {
     display: egl::Display,
+    pub scene: &'a Scene
   }
 
-  impl Drop for BoundContext {
+  impl<'a> Drop for BoundContext<'a> {
     fn drop(&mut self) {
       egl::API
         .make_current(self.display, None, None, None)
@@ -82,7 +83,7 @@ mod state {
     }
   }
 }
-use state::State;
+use state::{State, BoundContext};
 
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
   rustler::resource!(State, env);
@@ -90,7 +91,7 @@ fn load(env: rustler::Env, _: rustler::Term) -> bool {
 }
 
 #[rustler::nif]
-fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> Result<ResourceArc<State>, rustler::Error> {
+fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> Result<(rustler::Atom, ResourceArc<State>), rustler::Error> {
   use crate::scene::Scene;
   use crate::shaders::ShaderProgram;
 
@@ -103,6 +104,8 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
   let display = egl
     .get_display(egl::DEFAULT_DISPLAY)
     .ok_or(rustler::Error::Atom("cant_get_default_display"))?;
+
+  egl.initialize(display).nif_err()?;
 
   #[rustfmt::skip]
   let attributes = [
@@ -175,12 +178,25 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
 
 
   egl.make_current(display, None, None, None).nif_err()?;
-  Ok(ResourceArc::new(State::new(display, context, scene)))
+  Ok((atoms::ok(), ResourceArc::new(State::new(display, context, scene))))
 }
 
 #[rustler::nif]
-fn join_frames(upper: rustler::Binary, lower: rustler::Binary) {
+fn join_frames<'a>(env: rustler::Env<'a>, state: rustler::ResourceArc<State>, upper: rustler::Binary, lower: rustler::Binary) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
+  let ctx: BoundContext = state.bind_context().nif_err()?;
+  // for some reason VS Code can't suggest stuff correctly until 
+  // I forward all of this into a different function. It's inlined and thusly free
+  return join_frames_fwd(env, &ctx, upper, lower);
+}
 
+#[inline(always)]
+fn join_frames_fwd<'a>(env: rustler::Env<'a>, ctx: &BoundContext, upper: rustler::Binary, lower: rustler::Binary)  -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
+  ctx.scene.upload_texture(0, upper.as_slice());
+  ctx.scene.upload_texture(1, lower.as_slice());
+
+  let mut binary = rustler::OwnedBinary::new(ctx.scene.out_witdh() * ctx.scene.out_height() * 3 / 2).unwrap();
+  ctx.scene.draw_into(binary.as_mut_slice());
+  Ok((atoms::ok(), binary.release(env).to_term(env)))
 }
 
 

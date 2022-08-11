@@ -131,6 +131,14 @@ impl YUVRenderTarget {
       self.framebuffers[2].read_to_ptr(buffer.as_mut_ptr().add(pixels_amount * 5 / 4));
     }
   }
+
+  pub fn width(&self) -> usize {
+    self.width 
+  }
+
+  pub fn height(&self) -> usize {
+    self.height 
+  }
 }
 
 #[repr(usize)]

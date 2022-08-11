@@ -198,4 +198,12 @@ impl Scene {
       self.render_target.read(buffer);
     }
   }
+
+  pub fn out_witdh(&self) -> usize {
+    self.render_target.width() 
+  }
+
+  pub fn out_height(&self) -> usize {
+    self.render_target.height() 
+  }
 }
