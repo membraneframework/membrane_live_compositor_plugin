@@ -121,13 +121,10 @@ impl YUVRenderTarget {
     assert!(buffer.len() >= pixels_amount * 3 / 2);
 
     unsafe {
-      self.framebuffers[0].bind_for_reading();
       self.framebuffers[0].read_to_ptr(buffer.as_mut_ptr());
 
-      self.framebuffers[1].bind_for_reading();
       self.framebuffers[1].read_to_ptr(buffer.as_mut_ptr().add(pixels_amount));
 
-      self.framebuffers[2].bind_for_reading();
       self.framebuffers[2].read_to_ptr(buffer.as_mut_ptr().add(pixels_amount * 5 / 4));
     }
   }
