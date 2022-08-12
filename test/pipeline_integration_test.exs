@@ -9,90 +9,42 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   @implementations [:ffmpeg, :nx]
 
+  @hd_video %RawVideo{
+    width: 1280,
+    height: 720,
+    framerate: {30, 1},
+    pixel_format: :I420,
+    aligned: nil
+  }
+
+  @full_hd_video %RawVideo{
+    width: 1920,
+    height: 1080,
+    framerate: {30, 1},
+    pixel_format: :I420,
+    aligned: nil
+  }
+
   Enum.map(@implementations, fn implementation ->
     describe "Checks h264 #{implementation} pipeline on" do
       @describetag :tmp_dir
 
       test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1280,
-          height: 720,
-          framerate: {30, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 2
-
-        test_h264_pipeline(
-          video_caps,
-          duration,
-          unquote(implementation),
-          "short_videos",
-          tmp_dir
-        )
+        test_h264_pipeline(@hd_video, 2, unquote(implementation), "short_videos", tmp_dir)
       end
 
       test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1920,
-          height: 1080,
-          framerate: {30, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 1
-
-        test_h264_pipeline(
-          video_caps,
-          duration,
-          unquote(implementation),
-          "short_videos",
-          tmp_dir
-        )
+        test_h264_pipeline(@full_hd_video, 1, unquote(implementation), "short_videos", tmp_dir)
       end
 
       @tag long: true
       test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1280,
-          height: 720,
-          framerate: {30, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 30
-
-        test_h264_pipeline(
-          video_caps,
-          duration,
-          unquote(implementation),
-          "long_videos",
-          tmp_dir
-        )
+        test_h264_pipeline(@hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end
 
       @tag long: true, timeout: 100_000
       test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1920,
-          height: 1080,
-          framerate: {30, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 60
-
-        test_h264_pipeline(
-          video_caps,
-          duration,
-          unquote(implementation),
-          "long_videos",
-          tmp_dir
-        )
+        test_h264_pipeline(@full_hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end
     end
   end)

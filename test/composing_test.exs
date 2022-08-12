@@ -10,62 +10,38 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
   @implementations [:nx, :ffmpeg]
 
+  @hd_video %RawVideo{
+    width: 1280,
+    height: 720,
+    framerate: {1, 1},
+    pixel_format: :I420,
+    aligned: nil
+  }
+
   Enum.map(@implementations, fn implementation ->
     describe "Checks #{implementation} composition and raw video pipeline on" do
       @describetag :tmp_dir
 
       test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1280,
-          height: 720,
-          framerate: {1, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 3
-
-        test_raw_pipeline_and_composing(
-          video_caps,
-          duration,
-          unquote(implementation),
-          tmp_dir,
-          "short_videos"
-        )
+        test_raw_composing(@hd_video, 3, unquote(implementation), tmp_dir, "short_videos")
       end
 
       @tag long: true
       test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-        video_caps = %RawVideo{
-          width: 1280,
-          height: 720,
-          framerate: {1, 1},
-          pixel_format: :I420,
-          aligned: nil
-        }
-
-        duration = 10
-
-        test_raw_pipeline_and_composing(
-          video_caps,
-          duration,
-          unquote(implementation),
-          tmp_dir,
-          "long_videos"
-        )
+        test_raw_composing(@hd_video, 10, unquote(implementation), tmp_dir, "long_videos")
       end
     end
   end)
 
-  @spec test_raw_pipeline_and_composing(
+  @spec test_raw_composing(
           Membrane.RawVideo.t(),
           non_neg_integer(),
           atom,
           binary(),
           binary()
         ) :: nil
-  defp test_raw_pipeline_and_composing(
-         video_caps,
+  defp test_raw_composing(
+         caps,
          duration,
          implementation,
          tmp_dir,
@@ -73,7 +49,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
        ) do
     {input_path, output_path, reference_path} =
       TestingUtility.prepare_testing_video(
-        video_caps,
+        caps,
         duration,
         "raw",
         tmp_dir,
@@ -82,7 +58,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     TestingUtility.generate_raw_ffmpeg_reference(
       input_path,
-      video_caps,
+      caps,
       reference_path,
       @filter_description
     )
@@ -93,7 +69,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         second_video_path: input_path,
         output_path: output_path
       },
-      caps: video_caps,
+      caps: caps,
       implementation: implementation
     }
 
