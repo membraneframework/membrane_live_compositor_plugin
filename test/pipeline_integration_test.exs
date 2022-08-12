@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.PipelineH264
+  alias Membrane.VideoCompositor.Test.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   @implementations [:ffmpeg, :nx]

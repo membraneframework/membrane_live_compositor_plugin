@@ -10,7 +10,7 @@ caps = %RawVideo{
 }
 
 basename = Utility.get_file_base_name(caps, 10, "raw")
-demo_path = Path.join([File.cwd!(), "test", "fixtures", "demo"])
+demo_path = Path.join([File.cwd!(), "lib", "tmp", "fixtures"])
 in_path = Path.join(demo_path, "in-#{basename}")
 out_path = Path.join(demo_path, "out-#{basename}")
 
@@ -47,6 +47,6 @@ options = %{
   implementation: implementation
 }
 
-{:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Test.Pipeline.Raw.start(options)
 
 Process.sleep(1_000_000)

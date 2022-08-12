@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.PipelineRaw do
+defmodule Membrane.VideoCompositor.Test.Pipeline.Raw do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """
@@ -29,12 +29,12 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
 
     options = Map.put(options, :decoder, parser)
 
-    Membrane.VideoCompositor.Demo.PipelineTemplate.handle_init(options)
+    Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs.handle_init(options)
   end
 
   @impl true
   def handle_element_end_of_stream({pad, ref}, context, state) do
-    Membrane.VideoCompositor.Demo.PipelineTemplate.handle_element_end_of_stream(
+    Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs.handle_element_end_of_stream(
       {pad, ref},
       context,
       state

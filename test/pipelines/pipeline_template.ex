@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
+defmodule Membrane.VideoCompositor.Test.Pipeline.Utility.NoOp do
   @moduledoc """
   Simple pass by Membrane element.It should have no side effects on the pipeline.
   """
@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Demo.Helpers.NoOp do
   end
 end
 
-defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
+defmodule Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs do
   @moduledoc """
   Universal pipeline for testing simple composing of two videos, by placing one above the other.
   It loads two videos from the `options.first_video_path` and `options.second_video_path` files/src elements,
@@ -27,6 +27,7 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   """
 
   use Membrane.Pipeline
+  alias Membrane.VideoCompositor.Test.Pipeline.Utility.NoOp
 
   @doc """
   handle_init(%{
@@ -90,11 +91,11 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   end
 
   defp get_encoder(options) do
-    Map.get(options, :encoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
+    Map.get(options, :encoder) || NoOp
   end
 
   defp get_decoder(options) do
-    Map.get(options, :decoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
+    Map.get(options, :decoder) || NoOp
   end
 
   @impl true
