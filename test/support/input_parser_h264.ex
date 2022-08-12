@@ -1,4 +1,7 @@
 defmodule Membrane.VideoCompositor.Demo.H264.InputParser do
+  @moduledoc """
+  Simple bin parsing and decoding H264 buffers into raw frames.
+  """
   use Membrane.Bin
   alias Membrane.RawVideo
 
