@@ -1,10 +1,12 @@
 defmodule Membrane.VideoCompositor.PipelineTest do
+  @moduledoc false
   use ExUnit.Case
 
   import Membrane.Testing.Assertions
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.PipelineH264
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   @implementations [:ffmpeg, :nx]
@@ -63,11 +65,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
       implementation: implementation
     }
 
-    assert {:ok, pid} =
-             TestingPipeline.start_link(
-               module: Membrane.VideoCompositor.PipelineH264,
-               custom_args: options
-             )
+    assert {:ok, pid} = TestingPipeline.start_link(module: PipelineH264, custom_args: options)
 
     assert_pipeline_playback_changed(pid, _, :playing)
 

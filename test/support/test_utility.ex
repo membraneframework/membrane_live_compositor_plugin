@@ -200,6 +200,8 @@ defmodule Membrane.VideoCompositor.Test.Utility do
     if exit_status != 0 do
       raise inspect(result)
     end
+
+    :ok
   end
 
   @spec get_ffmpeg_save_parameters(binary) :: [binary()]

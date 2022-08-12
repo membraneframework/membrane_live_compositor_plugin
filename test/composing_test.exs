@@ -1,10 +1,12 @@
 defmodule Membrane.VideoCompositor.ComposingTest do
+  @moduledoc false
   use ExUnit.Case
 
   import Membrane.Testing.Assertions
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.PipelineRaw
   alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
 
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
@@ -33,35 +35,19 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     end
   end)
 
-  @spec test_raw_composing(
-          Membrane.RawVideo.t(),
-          non_neg_integer(),
-          atom,
-          binary(),
-          binary()
-        ) :: nil
-  defp test_raw_composing(
-         caps,
-         duration,
-         implementation,
-         tmp_dir,
-         sub_dir_name
-       ) do
+  @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), atom, binary(), binary()) ::
+          nil
+  defp test_raw_composing(caps, duration, implementation, tmp_dir, sub_dir_name) do
     {input_path, output_path, reference_path} =
-      TestingUtility.prepare_testing_video(
-        caps,
-        duration,
-        "raw",
-        tmp_dir,
-        sub_dir_name
-      )
+      TestingUtility.prepare_testing_video(caps, duration, "raw", tmp_dir, sub_dir_name)
 
-    TestingUtility.generate_raw_ffmpeg_reference(
-      input_path,
-      caps,
-      reference_path,
-      @filter_description
-    )
+    :ok =
+      TestingUtility.generate_raw_ffmpeg_reference(
+        input_path,
+        caps,
+        reference_path,
+        @filter_description
+      )
 
     options = %{
       paths: %{
@@ -73,11 +59,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
       implementation: implementation
     }
 
-    assert {:ok, pid} =
-             TestingPipeline.start_link(
-               module: Membrane.VideoCompositor.PipelineRaw,
-               custom_args: options
-             )
+    assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
