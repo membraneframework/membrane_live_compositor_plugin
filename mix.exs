@@ -45,9 +45,9 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_common_c, "~> 0.13.0"},
       {:nx, "~> 0.2"},
       # Testing
-      {:membrane_file_plugin, "~> 0.12.0", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.21.0", only: :test},
-      {:membrane_raw_video_parser_plugin, "~> 0.8.0", only: :test},
+      {:membrane_file_plugin, "~> 0.12.0"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.21.0"},
+      {:membrane_raw_video_parser_plugin, "~> 0.8.0"},
       # Development
       {:exla, "~> 0.2", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
