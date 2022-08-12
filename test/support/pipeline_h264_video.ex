@@ -8,8 +8,8 @@ defmodule Membrane.VideoCompositor.PipelineH264 do
   @doc """
   handle_init(%{
       paths: %{
-        first_h264_video_path: String.t(),
-        second_h264_video_path: String.t(),
+        first_video_path: String.t(),
+        second_video_path: String.t(),
         output_path: String.t()
       },
       caps: RawVideo,
@@ -19,8 +19,8 @@ defmodule Membrane.VideoCompositor.PipelineH264 do
   @impl true
   def handle_init(options) do
     children = %{
-      file_src_1: %Membrane.File.Source{location: options.paths.first_h264_video_path},
-      file_src_2: %Membrane.File.Source{location: options.paths.second_h264_video_path},
+      file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
+      file_src_2: %Membrane.File.Source{location: options.paths.second_video_path},
       parser_1: Membrane.H264.FFmpeg.Parser,
       parser_2: Membrane.H264.FFmpeg.Parser,
       decoder_1: Membrane.H264.FFmpeg.Decoder,

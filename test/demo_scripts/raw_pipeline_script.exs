@@ -1,8 +1,8 @@
 alias Membrane.RawVideo
 
 paths = %{
-  first_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-  second_raw_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
+  first_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
+  second_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
   output_path: "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
 }
 
