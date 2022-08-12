@@ -1,21 +1,6 @@
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Test.Utility
 
-implementation =
-  case s = System.get_env("IMPL", "nx") do
-    "nx" -> :nx
-    "ffmpeg" -> :ffmpeg
-    "opengl" -> :opengl
-    _unsupported -> raise "unsupported implementation #{s}"
-  end
-
-{sink, encoder} =
-  case s = System.get_env("SINK", "file") do
-    "file" -> {nil, Membrane.H264.FFmpeg.Encoder}
-    "play" -> {Membrane.SDL.Player, nil}
-    _unsupported -> raise "unsupported sink #{s}"
-  end
-
 caps = %RawVideo{
   aligned: true,
   framerate: {30, 1},
@@ -31,18 +16,34 @@ out_path = Path.join(demo_path, "out-#{basename}")
 
 Utility.generate_testing_video(in_path, caps, 60)
 
+implementation =
+  case s = System.get_env("IMPL", "nx") do
+    "nx" -> :nx
+    "ffmpeg" -> :ffmpeg
+    "opengl" -> :opengl
+    _unsupported -> raise "unsupported implementation #{s}"
+  end
+
+{sink, encoder} =
+  case s = System.get_env("SINK", "file") do
+    "file" -> {out_path, Membrane.H264.FFmpeg.Encoder}
+    "play" -> {Membrane.SDL.Player, nil}
+    _unsupported -> raise "unsupported sink #{s}"
+  end
+
+src = in_path
+
 paths = %{
-  first_video_path: in_path,
-  second_video_path: in_path,
-  output_path: out_path
+  first_video_path: src,
+  second_video_path: src,
+  output_path: sink
 }
 
 options = %{
   paths: paths,
   caps: caps,
   implementation: implementation,
-  encoder: encoder,
-  sink: sink
+  encoder: encoder
 }
 
 {:ok, _pid} = Membrane.VideoCompositor.PipelineH264.start(options)

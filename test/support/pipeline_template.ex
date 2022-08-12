@@ -21,51 +21,47 @@ end
 defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
   @moduledoc """
   Universal pipeline for testing simple composing of two videos, by placing one above the other.
-  It loads two videos from the `options.first_video_path` and `options.second_video_path` files,
+  It loads two videos from the `options.first_video_path` and `options.second_video_path` files/src elements,
   parses them using `options.decoder`, feeds VideoCompositor, encodes result (or simply pass by as RawVideo
-  if no `options.encoder` is specified) and feed sink. Default sink saves result in the `options.output_path`
-  file, if `options.sink` is not specified.
+  if no `options.encoder` is specified) and feed `options.output_path` file/sink element.
   """
 
   use Membrane.Pipeline
 
   @doc """
   handle_init(%{
-      paths: %{
-        first_video_path: String.t(),
-        second_video_path: String.t(),
-        decoder: Membrane.Filter.t(),
-        sink: Membrane.Sink.t()
+    paths: %{
+        first_video_path: String.t() | Membrane.Source,
+        second_video_path: String.t() | Membrane.Source,
+        output_path: Membrane.Sink.t() | Membrane.Sink
       },
-      caps: RawVideo,
-      implementation: :ffmpeg | :opengl | :nx
+      caps: RawVideo.t(),
+      implementation: :ffmpeg | :opengl | :nx,
+      decoder: Membrane.Filter.t() | nil,
+      encoder: Membrane.Filter.t() | nil
   })
   """
   @impl true
   def handle_init(options) do
-    decoder = options.decoder
-    sink = get_sink(options)
-    encoder = get_encoder(options)
-
     children = %{
-      file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
-      file_src_2: %Membrane.File.Source{location: options.paths.second_video_path},
-      decoder_1: decoder,
-      decoder_2: decoder,
+      src_1: get_src(options.paths.first_video_path),
+      src_2: get_src(options.paths.second_video_path),
+      decoder_1: get_decoder(options),
+      decoder_2: get_decoder(options),
       compositor: %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
       },
-      encoder: encoder,
-      sink: sink
+      encoder: get_encoder(options),
+      sink: get_sink(options.paths.output_path)
     }
 
     links = [
-      link(:file_src_1)
+      link(:src_1)
       |> to(:decoder_1)
       |> via_in(:first_input)
       |> to(:compositor),
-      link(:file_src_2)
+      link(:src_2)
       |> to(:decoder_2)
       |> via_in(:second_input)
       |> to(:compositor),
@@ -77,16 +73,28 @@ defmodule Membrane.VideoCompositor.Demo.PipelineTemplate do
     {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
   end
 
-  defp get_sink(%{sink: sink} = _options) when not is_nil(sink) do
-    sink
+  defp get_src(input_path) when is_binary(input_path) do
+    %Membrane.File.Source{location: input_path}
   end
 
-  defp get_sink(%{paths: %{output_path: output_path}} = _options) do
+  defp get_src(src) when not is_nil(src) do
+    src
+  end
+
+  defp get_sink(output_path) when is_binary(output_path) do
     %Membrane.File.Sink{location: output_path}
+  end
+
+  defp get_sink(sink) when not is_nil(sink) do
+    sink
   end
 
   defp get_encoder(options) do
     Map.get(options, :encoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
+  end
+
+  defp get_decoder(options) do
+    Map.get(options, :decoder) || Membrane.VideoCompositor.Demo.Helpers.NoOp
   end
 
   @impl true
