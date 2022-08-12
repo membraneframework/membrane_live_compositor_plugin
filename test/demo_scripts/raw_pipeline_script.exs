@@ -1,4 +1,5 @@
 alias Membrane.RawVideo
+alias Membrane.VideoCompositor.Test.Utility
 
 implementation =
   case s = System.get_env("IMPL", "nx") do
@@ -15,18 +16,25 @@ sink =
     _unsupported -> raise "unsupported sink #{s}"
   end
 
-paths = %{
-  first_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-  second_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-  output_path: "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
-}
-
 caps = %RawVideo{
   aligned: true,
   framerate: {1, 1},
   width: 1280,
   height: 720,
   pixel_format: :I420
+}
+
+basename = Utility.get_file_base_name(caps, 10, "raw")
+demo_path = Path.join([File.cwd!(), "test", "fixtures", "demo"])
+in_path = Path.join(demo_path, "in-#{basename}")
+out_path = Path.join(demo_path, "out-#{basename}")
+
+Utility.generate_testing_video(in_path, caps, 10)
+
+paths = %{
+  first_video_path: in_path,
+  second_video_path: in_path,
+  output_path: out_path
 }
 
 implementation = :nx
