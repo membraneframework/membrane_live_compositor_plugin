@@ -19,5 +19,8 @@
         "string": "c",
         "string_view": "c",
         "parseutils.h": "c"
-    }
+    },
+    "rust-analyzer.linkedProjects": [
+        "native/membrane_videocompositor_opengl_rust/Cargo.toml"
+    ]
 }
