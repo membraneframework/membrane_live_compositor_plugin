@@ -7,6 +7,7 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
 
   describe "OpenGL cpp native test on " do
     @describetag :tmp_dir
+    @describetag opengl: true
 
     test "compose doubled raw video frames on top of each other", %{tmp_dir: tmp_dir} do
       {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
