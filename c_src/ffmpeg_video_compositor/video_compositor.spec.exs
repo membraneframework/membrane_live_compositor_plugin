@@ -3,19 +3,21 @@ module Membrane.VideoCompositor.FFmpeg.Native
 state_type "State"
 
 type(
-  raw_video :: %Membrane.RawVideo{
+  raw_video :: %Membrane.VideoCompositor.FFmpeg.Native.RawVideo{
     width: int,
     height: int,
-    pixel_format: atom
+    pixel_format: atom,
+    framerate_num: int,
+    framerate_den: int
   }
 )
 
-spec init(
-       first_video :: raw_video,
-       second_video :: raw_video
-     ) :: {:ok :: label, state} | {:error :: label, reason :: atom}
+spec init(videos :: [raw_video]) :: {:ok :: label, state} | {:error :: label, reason :: atom}
 
-spec apply_filter(left_payload :: payload, right_payload :: payload, state) ::
+spec apply_filter(payloads :: [payload], state) ::
        {:ok :: label, payload} | {:error :: label, reason :: atom}
+
+spec duplicate_metadata(new_state :: state, old_state :: state) ::
+       {:ok :: label, state} | {:error :: label, reason :: atom}
 
 dirty :cpu, apply_filter: 3
