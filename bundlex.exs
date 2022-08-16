@@ -11,15 +11,12 @@ defmodule Membrane.VideoCompositor.BundlexProject do
     [
       video_compositor: [
         interface: :nif,
-        sources: ["video_compositor.c", "filter.c", "raw_video.c"],
-        includes: ["filter.h", "raw_video.h"],
+        sources: ["video_compositor.c", "filter.c", "raw_video.c", "utility.c", "vstate.c"],
         pkg_configs: ["libavutil", "libavfilter"],
         preprocessor: Unifex,
-        src_base: "ffmpeg_video_compositor"
+        src_base: "ffmpeg_video_compositor",
+        compiler_flags: ["-g"]
       ],
-      # TODO: This only works on macos if `libEGL.dylib` and `libGLES.dylib` are present in the project root.
-      #       The config should be able to work on linux too.
-      #       .dylibs should maybe be placed somewhere else???
       opengl_video_compositor: [
         sources: [
           "BasicFBO.cpp",

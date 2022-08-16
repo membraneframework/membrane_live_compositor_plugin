@@ -12,7 +12,18 @@
  */
 static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
-                                      RawVideo videos[], int n_videos);
+                                      RawVideo videos[], unsigned n_videos);
+
+UNIFEX_TERM duplicate_metadata(UnifexEnv *env, State *new_state,
+                               State *old_state) {
+  UNIFEX_TERM result;
+
+  new_state->last_pts = old_state->last_pts;
+
+  result = duplicate_metadata_result_ok(env, new_state);
+
+  return result;
+}
 
 /**
  * @brief Initializes the state of the video compositor and creates a filter
@@ -23,44 +34,68 @@ static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
  * @param second_video Second input video
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
-                 raw_video second_video) {
+UNIFEX_TERM init(UnifexEnv *env, raw_video input_videos[], unsigned n_videos) {
   UNIFEX_TERM result;
-  char filter_str[512];
 
-  RawVideo videos[2];
-  if (init_raw_video(&videos[0], first_video.width, first_video.height,
-                     first_video.pixel_format) < 0) {
-    result = init_result_error(env, "unsupported_pixel_format");
-    goto end;
-  }
-  if (init_raw_video(&videos[1], second_video.width, second_video.height,
-                     second_video.pixel_format) < 0) {
-    result = init_result_error(env, "unsupported_pixel_format");
+  if (n_videos < 2) {
+    result = init_result_error(env, "expected_at_least_two_input_videos");
     goto end;
   }
 
-  get_filter_description(filter_str, sizeof filter_str, videos, SIZE(videos));
-  result = init_unifex_filter(env, filter_str, videos, SIZE(videos));
+  char filter_str[4096];
+
+  RawVideo videos[N_MAX_VIDEOS];
+
+  for (unsigned i = 0; i < n_videos; i++) {
+    raw_video input_video = input_videos[i % n_videos];
+    if (init_raw_video(&videos[i], input_video.width, input_video.height,
+                       input_video.framerate_num, input_video.framerate_den,
+                       input_video.pixel_format) < 0) {
+      result = init_result_error(env, "unsupported_pixel_format");
+      goto end;
+    }
+  }
+
+  Vec2 positions[N_MAX_VIDEOS];
+
+  const RawVideo first_video = videos[0];
+  if (n_videos == 2) {
+    positions[0] = (Vec2){.x = 0, .y = 0};
+    positions[1] = (Vec2){.x = 0, .y = first_video.height};
+  } else {
+    positions[0] = (Vec2){.x = 0, .y = 0};
+
+    for (int i = 1; i < SIZE(positions); i++) {
+      positions[i] = (Vec2){.x = 0, .y = first_video.height / i};
+    }
+  }
+
+  get_filter_description(filter_str, sizeof filter_str, videos, positions,
+                         n_videos);
+  result = init_unifex_filter(env, filter_str, videos, n_videos);
+
 end:
   return result;
 }
 
 static UNIFEX_TERM init_unifex_filter(UnifexEnv *env,
                                       const char *filter_description,
-                                      RawVideo videos[], int n_videos) {
+                                      RawVideo videos[], unsigned n_videos) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
+  alloc_vstate(&state->vstate, n_videos);
+  state->last_pts = 0;
 
-  if (SIZE(state->vstate.videos) != n_videos) {
-    result = init_result_error(env, "error_expected_two_input_videos");
+  if (state->vstate.n_videos < n_videos) {
+    result = init_result_error(env, "error_expected_less_input_videos");
     goto exit_create;
   }
-  for (int i = 0; i < SIZE(state->vstate.videos); i++) {
+  for (unsigned i = 0; i < state->vstate.n_videos; i++) {
     state->vstate.videos[i] = videos[i];
   }
 
-  if (init_filters_graph(filter_description, &state->vstate.filter) < 0) {
+  if (init_filters_graph(filter_description, &state->vstate.filter, n_videos) <
+      0) {
     result = init_result_error(env, "error_creating_filters");
     goto exit_create;
   }
@@ -81,35 +116,42 @@ exit_create:
  * @param state State with the initialized filter
  * @return UNIFEX_TERM
  */
-UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
-                         UnifexPayload *right_payload, State *state) {
+UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *payloads[],
+                         unsigned n_payloads, State *main_state) {
   UNIFEX_TERM res;
   int ret = 0;
-  UnifexPayload *payloads[] = {left_payload, right_payload};
-  AVFrame *frames[] = {av_frame_alloc(), av_frame_alloc()};
   AVFrame *filtered_frame = av_frame_alloc();
 
-  if (!frames[0] || !frames[1] || !filtered_frame) {
+  VState *state = &main_state->vstate;
+
+  if (state->n_videos != n_payloads) {
+    res = apply_filter_result_error(env, "error_wrong_number_of_frames");
+    goto exit_filter;
+  }
+
+  if (!filtered_frame) {
     res = apply_filter_result_error(env, "error_allocating_frame");
     goto exit_filter;
   }
 
-  for (int i = 0; i < SIZE(frames); i++) {
-    AVFrame *frame = frames[i];
-    RawVideo *video = &state->vstate.videos[i];
+  for (unsigned i = 0; i < state->n_videos; i++) {
+    AVFrame *frame = state->input_frames[i];
+    RawVideo *video = &state->videos[i];
     UnifexPayload *payload = payloads[i];
     frame->format = video->pixel_format;
     frame->width = video->width;
     frame->height = video->height;
+    frame->pts = main_state->last_pts;
     av_image_fill_arrays(frame->data, frame->linesize, payload->data,
                          frame->format, frame->width, frame->height, 1);
   }
+  main_state->last_pts++;
 
   /* feed the filter graph */
-  FilterState *filter = &state->vstate.filter;
-  for (int i = 0; i < SIZE(filter->inputs); ++i) {
+  FilterState *filter = &state->filter;
+  for (unsigned i = 0; i < filter->n_inputs; ++i) {
     AVFilterContext *input = filter->inputs[i];
-    AVFrame *frame = frames[i];
+    AVFrame *frame = state->input_frames[i];
     if (av_buffersrc_add_frame_flags(input, frame, AV_BUFFERSRC_FLAG_KEEP_REF) <
         0) {
       res = apply_filter_result_error(env, "error_feeding_filtergraph");
@@ -121,6 +163,7 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
    * should always be 1 frame on output for each frame on input*/
   ret = av_buffersink_get_frame(filter->output, filtered_frame);
   if (ret < 0) {
+    print_av_error("Error pulling from filtergraph", ret);
     res = apply_filter_result_error(env, "error_pulling_from_filtergraph");
     goto exit_filter;
   }
@@ -141,8 +184,6 @@ UNIFEX_TERM apply_filter(UnifexEnv *env, UnifexPayload *left_payload,
   }
   res = apply_filter_result_ok(env, &payload_frame);
 exit_filter:
-  if (frames[0] != NULL) av_frame_free(&frames[0]);
-  if (frames[1] != NULL) av_frame_free(&frames[1]);
   if (filtered_frame != NULL) av_frame_free(&filtered_frame);
   return res;
 }
@@ -155,11 +196,5 @@ exit_filter:
  */
 void handle_destroy_state(UnifexEnv *env, State *state) {
   UNIFEX_UNUSED(env);
-  FilterState *filter = &state->vstate.filter;
-  if (filter->graph != NULL) {
-    avfilter_graph_free(&filter->graph);
-  }
-  filter->inputs[0] = NULL;
-  filter->inputs[1] = NULL;
-  filter->output = NULL;
+  free_vstate(&state->vstate);
 }

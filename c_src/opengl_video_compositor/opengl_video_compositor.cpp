@@ -10,6 +10,16 @@ void check_egl_error(const std::string &str);
 
 // FIXME: pretty much all egl calls may fail. Currently, this is not checked in
 // any way.
+
+/**
+ * @brief Initialize all structures necessary for the compositor to work.
+ *        This assumes we want to compose two videos one above the other.
+ * 
+ * @param env Unifex environment
+ * @param first_video Parameters of the first video
+ * @param second_video Parameters of the second video
+ * @return UNIFEX_TERM Compositor state
+ */
 UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
                  raw_video second_video) {
   std::string_view first_format(first_video.pixel_format);
@@ -77,6 +87,15 @@ UNIFEX_TERM init(UnifexEnv *env, raw_video first_video,
   return init_result_ok(env, state);
 }
 
+/**
+ * @brief Compose two input frames into a single output frame
+ * 
+ * @param env Unifex environment
+ * @param upper Pixel data for the upper frame
+ * @param lower Pixel data for the lower frame
+ * @param state Compositor state
+ * @return UNIFEX_TERM A payload with the composed frames
+ */
 UNIFEX_TERM join_frames(UnifexEnv *env, UnifexPayload *upper,
                         UnifexPayload *lower, State *state) {
   // FIXME: Maybe figure out a better way to call this every time we do OpenGL

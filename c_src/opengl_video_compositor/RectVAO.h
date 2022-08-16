@@ -6,6 +6,11 @@
 
 #include "NonCopyable.h"
 
+/**
+ * @brief This class is an abstraction for a Vertex Array Object representing a rectangle
+ *        https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Array_Object
+ * 
+ */
 class RectVAO : public NonCopyable {
  public:
   RectVAO(const std::vector<float> &vertices,

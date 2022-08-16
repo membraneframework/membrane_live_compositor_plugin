@@ -1,5 +1,11 @@
 #include "YUVTexture.h"
 
+/**
+ * @brief Construct a new YUVTexture object
+ * 
+ * @param width Width (in pixels)
+ * @param height Height (in pixels)
+ */
 YUVTexture::YUVTexture(GLsizei width, GLsizei height)
     : m_width{width}, m_height{height} {
   glGenTextures(3, m_textures);
@@ -13,6 +19,10 @@ YUVTexture::YUVTexture(GLsizei width, GLsizei height)
   }
 }
 
+/**
+ * @brief Bind these textures for sampling
+ * 
+ */
 void YUVTexture::bind() const {
   for (int i = 0; i < 3; ++i) {
     glActiveTexture(GL_TEXTURE0 + i);
@@ -20,6 +30,13 @@ void YUVTexture::bind() const {
   }
 }
 
+/**
+ * @brief Upload the data pointed to by `data`. 
+ * 
+ * @param data Pointer to the frame data. This function doesn't check anything 
+ *             about this pointer and assumes it points to a valid YUV frame 
+ *             with a correct resolution.
+ */
 void YUVTexture::load(const char *data) const {
   bind();
   auto pixel_amount = m_width * m_height;

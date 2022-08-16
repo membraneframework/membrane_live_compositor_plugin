@@ -1,5 +1,9 @@
 #pragma once
 
+/**
+ * @brief Inheriting from this class disables copy and move semantics
+ * 
+ */
 class NonCopyable {
  public:
   NonCopyable() = default;

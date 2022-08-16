@@ -5,6 +5,11 @@
 
 #include "YUVRenderer.h"
 
+/**
+ * @brief This class represents a full state of the compositor and should
+ *        be used as the outward-facing interface of this library.
+ * 
+ */
 class Compositor {
  public:
   Compositor(GLsizei width, GLsizei height);

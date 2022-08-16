@@ -13,6 +13,11 @@
         "ostream": "c",
         "random": "c",
         "*.inc": "c",
-        "video_compositor.h": "c"
+        "video_compositor.h": "c",
+        "array": "c",
+        "vector": "c",
+        "string": "c",
+        "string_view": "c",
+        "parseutils.h": "c"
     }
 }

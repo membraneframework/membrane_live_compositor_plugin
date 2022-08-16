@@ -2,6 +2,15 @@
 
 #include <iostream>
 
+/**
+ * @brief Construct a new Basic Framebuffer Object:
+ * 
+ * @param width Width of the buffer (in pixels)
+ * @param height Height of the buffer (in pixels)
+ * @param internal_format Internal format of the buffer (e.g. `GL_R8` or `GL_RGB8`)
+ * @param format Format that the data read form this buffer will have (e.g. `GL_RED` or `GL_RGB`)
+ * @param type Type that the data read form this buffer will have (e.g. `GL_UNSIGNED_INT`)
+ */
 BasicFBO::BasicFBO(unsigned int width, unsigned int height,
                    GLenum internal_format, GLenum format, GLenum type)
     : m_width(width),
@@ -44,17 +53,33 @@ BasicFBO::~BasicFBO() {
   if (m_renderbuffer_id != 0) glDeleteRenderbuffers(1, &m_renderbuffer_id);
 }
 
+/**
+ * @brief Bind this framebuffer object for being drawn into
+ * 
+ */
 void BasicFBO::bind() const {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_id);
-  // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+  GLenum color_attachment = GL_COLOR_ATTACHMENT0;
+  glDrawBuffers(1, &color_attachment);
   glViewport(0, 0, m_width, m_height);
 }
 
+/**
+ * @brief Read the contents of this framebuffer into a vector. 
+ *        This function also ensures the vector has enough capacity.
+ * 
+ * @param buffer Data will be copied into this vector
+ */
 void BasicFBO::read(std::vector<char> &buffer) const {
   buffer.reserve(m_width * m_height);
   read_to_ptr(buffer.data());
 }
 
+/**
+ * @brief Read the contents of this framebuffer into an array pointed to by `buffer`
+ * 
+ * @param buffer Target pointer
+ */
 void BasicFBO::read_to_ptr(char *buffer) const {
   glBindFramebuffer(GL_READ_FRAMEBUFFER, m_id);
   glReadBuffer(GL_COLOR_ATTACHMENT0);
