@@ -12,7 +12,6 @@ defmodule Membrane.VideoCompositor.Demo do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      dialyzer: dialyzer(),
 
       # hex
       description: "Demos for Video Compositor for Membrane Multimedia Framework",
@@ -21,8 +20,7 @@ defmodule Membrane.VideoCompositor.Demo do
       # docs
       name: "Membrane Video Compositor plugin",
       source_url: @github_url,
-      homepage_url: "https://membraneframework.org",
-      docs: docs()
+      homepage_url: "https://membraneframework.org"
     ]
   end
 
@@ -46,25 +44,8 @@ defmodule Membrane.VideoCompositor.Demo do
       {:membrane_raw_video_format, "~> 0.2.0"},
 
       # Development
-      {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
-
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
-  end
-
-  defp dialyzer() do
-    opts = [
-      flags: [:error_handling],
-      plt_add_apps: [:ex_unit]
-    ]
-
-    if System.get_env("CI") == "true" do
-      # Store PLTs in cacheable directory for CI
-      [plt_local_path: "priv/plts", plt_core_path: "priv/plts"] ++ opts
-    else
-      opts
-    end
   end
 
   defp package do
@@ -75,16 +56,6 @@ defmodule Membrane.VideoCompositor.Demo do
         "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"
       }
-    ]
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      extras: ["README.md", "LICENSE"],
-      formatters: ["html"],
-      source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.VideoCompositor]
     ]
   end
 end
