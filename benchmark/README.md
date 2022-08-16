@@ -15,6 +15,6 @@
 4. Results will be displayed in console log and saved in html website saved at "results" directory
 
 ## Example benchmarks results:
-<img src=/assets/results_beamchmark_h264_pipeline_ffmpeg.png alt="H264 pipeline ffmpeg" title="H264 pipeline beamchmark ffmpeg">
-<img src=/assets/results_beamchmark_raw_pipeline_ffmpeg.png alt="Raw pipeline ffmpeg" title="Raw pipeline beamchmark ffmpeg">
-<img src=/assets/results_benchee_merge_frames_720p.png alt="Merge frames benchee results" title="Merge frames benchee results">
+<img src="benchmark/assets/results_beamchmark_h264_pipeline_ffmpeg.png" alt="H264 pipeline ffmpeg" title="H264 pipeline beamchmark ffmpeg">
+<img src="benchmark/assets/results_beamchmark_raw_pipeline_ffmpeg.png" alt="Raw pipeline ffmpeg" title="Raw pipeline beamchmark ffmpeg">
+<img src="benchmark/assets/results_benchee_merge_frames_720p.png" alt="Merge frames benchee results" title="Merge frames benchee results">
