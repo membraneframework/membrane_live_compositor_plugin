@@ -2,8 +2,4 @@
 /_build
 /deps
 /tmp_dir
-/results/beamchmark/h264_pipeline_results
-/results/beamchmark/raw_pipeline_results
-/results/benchee/h264_pipeline_results
-/results/benchee/raw_pipeline_results
-/results/benchee/merge_frames_results
+/results

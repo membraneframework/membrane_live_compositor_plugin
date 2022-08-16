@@ -55,8 +55,8 @@ defmodule H264PipelineBeamchmark do
 
     pipeline_init_options = %{
       paths: %{
-        first_h264_video_path: input_path,
-        second_h264_video_path: input_path,
+        first_video_path: input_path,
+        second_video_path: input_path,
         output_path: output_path
       },
       caps: caps,

@@ -55,8 +55,8 @@ defmodule RawPipeline do
 
     pipeline_init_options = %{
       paths: %{
-        first_raw_video_path: input_path,
-        second_raw_video_path: input_path,
+        first_video_path: input_path,
+        second_video_path: input_path,
         output_path: output_path
       },
       caps: caps,

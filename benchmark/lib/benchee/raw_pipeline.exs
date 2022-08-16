@@ -40,8 +40,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
 
     options_720p = %{
       paths: %{
-        first_raw_video_path: input_path_720p,
-        second_raw_video_path: input_path_720p,
+        first_video_path: input_path_720p,
+        second_video_path: input_path_720p,
         output_path: output_path_720p
       },
       caps: caps_720p,
@@ -50,8 +50,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
 
     options_1080p = %{
       paths: %{
-        first_raw_video_path: input_path_1080p,
-        second_raw_video_path: input_path_1080p,
+        first_video_path: input_path_1080p,
+        second_video_path: input_path_1080p,
         output_path: output_path_1080p
       },
       caps: caps_1080p,
@@ -61,16 +61,16 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
 
     Benchee.run(
       %{
-        "Two videos into one pipeline benchmark - FFmpeg" =>
+        "Two videos into one raw pipeline benchmark - FFmpeg" =>
           fn options -> run_raw_pipeline(%{options | implementation: :ffmpeg}) end,
-        "Two videos into one pipeline benchmark - OpenGL" =>
+        "Two videos into one raw pipeline benchmark - OpenGL" =>
           fn options -> run_raw_pipeline(%{options | implementation: :opengl}) end,
-        "Two videos into one pipeline benchmark - Nx" =>
+        "Two videos into one raw pipeline benchmark - Nx" =>
           fn options -> run_raw_pipeline(%{options | implementation: :nx}) end
       },
       inputs: %{
-        "1. 720p 60s 30fps" => options_720p,
-        "2. 1080p 60s 30fps" => options_1080p
+        "1. 720p #{video_duration} 30fps" => options_720p,
+        "2. 1080p #{video_duration} 30fps" => options_1080p
       },
       title: "Raw pipeline benchmark",
       parallel: 1,

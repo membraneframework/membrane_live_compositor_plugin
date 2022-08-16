@@ -1,10 +1,5 @@
 alias Membrane.RawVideo
-
-paths = %{
-  first_h264_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
-  second_h264_video_path: "./test/fixtures/long_videos/input_60s_1080p.h264",
-  output_path: "~/membrane_video_compositor/output_60s.h264"
-}
+alias Membrane.VideoCompositor.Test.Utility
 
 caps = %RawVideo{
   aligned: true,
@@ -12,6 +7,19 @@ caps = %RawVideo{
   width: 1920,
   height: 1080,
   pixel_format: :I420
+}
+
+video_duration = 10
+
+input_path = "./tmp/input_#{video_duration}s_1080p.h264"
+output_path = "./tmp/output_#{video_duration}s_2160x1080.h264"
+
+:ok = Utility.generate_testing_video(input_path, caps, video_duration)
+
+paths = %{
+  first_video_path: input_path,
+  second_video_path: input_path,
+  output_path: output_path
 }
 
 implementation = :nx

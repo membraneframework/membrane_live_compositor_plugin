@@ -7,12 +7,12 @@ defmodule Membrane.VideoCompositor.Nx do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def init(caps) do
     {:ok, caps}
   end
 
-  @impl Membrane.VideoCompositor.FrameCompositor
+  @impl true
   def merge_frames(frames, internal_state) do
     first_frame_nxtensor = Nx.from_binary(frames.first, {:u, 8})
     second_frame_nxtensor = Nx.from_binary(frames.second, {:u, 8})

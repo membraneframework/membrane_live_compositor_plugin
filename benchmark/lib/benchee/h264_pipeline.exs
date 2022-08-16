@@ -39,8 +39,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
 
     options_720p = %{
       paths: %{
-        first_h264_video_path: input_path_720p,
-        second_h264_video_path: input_path_720p,
+        first_video_path: input_path_720p,
+        second_video_path: input_path_720p,
         output_path: output_path_720p
       },
       caps: caps_720p,
@@ -49,8 +49,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
 
     options_1080p = %{
       paths: %{
-        first_h264_video_path: input_path_1080p,
-        second_h264_video_path: input_path_1080p,
+        first_video_path: input_path_1080p,
+        second_video_path: input_path_1080p,
         output_path: output_path_1080p
       },
       caps: caps_1080p,
@@ -59,11 +59,11 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
 
     Benchee.run(
       %{
-        "Two videos into one pipeline benchmark - FFmpeg" =>
+        "Two videos into one h264 pipeline benchmark - FFmpeg" =>
           fn options -> run_h264_pipeline(%{options | implementation: :ffmpeg}) end,
-        "Two videos into one pipeline benchmark - OpenGL" =>
+        "Two videos into one h264 pipeline benchmark - OpenGL" =>
           fn options -> run_h264_pipeline(%{options | implementation: :opengl}) end,
-        "Two videos into one pipeline benchmark - Nx" =>
+        "Two videos into one h264 pipeline benchmark - Nx" =>
           fn options -> run_h264_pipeline(%{options | implementation: :nx}) end
       },
       inputs: %{
