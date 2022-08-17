@@ -1,6 +1,6 @@
 use glad_gles2::gl;
 
-pub struct FramebufferObject {
+struct FramebufferObject {
   width: usize,
   height: usize,
   id: gl::GLuint,
@@ -11,7 +11,7 @@ pub struct FramebufferObject {
 }
 
 impl FramebufferObject {
-  pub fn new(
+  fn new(
     width: usize,
     height: usize,
     internal_format: gl::GLenum,
