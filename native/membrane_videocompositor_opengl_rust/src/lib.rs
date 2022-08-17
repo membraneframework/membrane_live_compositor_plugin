@@ -141,9 +141,6 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
       .expect("Can't find a GLES procedure") as *const std::ffi::c_void
   });
 
-  let v = unsafe { std::ffi::CStr::from_ptr(gl::GetString(gl::VERSION) as *const i8) };
-  println!("{}", v.to_str().unwrap());
-
   unsafe { gl::ClearColor(0.0, 0.0, 0.0, 1.0) }
 
   let vertex_shader_code = include_str!("shaders/vertex.glsl");
