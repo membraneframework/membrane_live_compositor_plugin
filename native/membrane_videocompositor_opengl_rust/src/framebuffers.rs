@@ -25,7 +25,7 @@ impl FramebufferObject {
       gl::GenFramebuffers(1, &mut id);
       gl::BindFramebuffer(gl::FRAMEBUFFER, id);
 
-      gl::GenRenderbuffers(3, &mut renderbuffer_id);
+      gl::GenRenderbuffers(1, &mut renderbuffer_id);
 
       gl::BindRenderbuffer(gl::RENDERBUFFER, renderbuffer_id);
       gl::RenderbufferStorage(
