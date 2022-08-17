@@ -46,6 +46,6 @@ options = %{
   encoder: encoder
 }
 
-{:ok, _pid} = Membrane.VideoCompositor.Test.Pipeline.H264.start(options)
+{:ok, _pid} = Membrane.VideoCompositor.Demo.Pipeline.H264.start(options)
 
 Process.sleep(1_000_000)

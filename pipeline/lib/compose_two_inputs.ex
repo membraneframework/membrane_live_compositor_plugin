@@ -97,7 +97,13 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeTwoInputs do
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, _}, _context, state) do
+  def handle_element_end_of_stream({:sink, :input}, _context, state) do
+    Membrane.Logger.bare_log(:info, "sink send EOS")
+    {{:ok, [playback: :terminating]}, state}
+  end
+
+  @impl true
+  def handle_element_end_of_stream({pad, _src}, _context, state) do
     Membrane.Logger.bare_log(:info, "#{pad} send EOS")
     {:ok, state}
   end

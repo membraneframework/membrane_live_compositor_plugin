@@ -47,6 +47,6 @@ options = %{
   implementation: implementation
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Test.Pipeline.Raw.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Demo.Pipeline.Raw.start(options)
 
 Process.sleep(1_000_000)
