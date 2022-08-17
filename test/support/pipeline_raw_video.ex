@@ -29,12 +29,18 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.Raw do
 
     options = Map.put(options, :decoder, parser)
 
-    Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs.handle_init(options)
+    options =
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
+        implementation: options.implementation,
+        caps: options.caps
+      })
+
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_init(options)
   end
 
   @impl true
   def handle_element_end_of_stream({pad, ref}, context, state) do
-    Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs.handle_element_end_of_stream(
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_element_end_of_stream(
       {pad, ref},
       context,
       state

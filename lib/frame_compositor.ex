@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.FrameCompositor do
   @moduledoc """
-  This module defines behaviour for different frame composition implementations.
+  This module defines behaviour for different frame composition implementation.
   """
   alias Membrane.RawVideo
 

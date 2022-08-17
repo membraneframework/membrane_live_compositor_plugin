@@ -3,7 +3,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
 
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.FFmpeg.Native
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Utility
 
   describe "FFmpeg native test on " do
     @describetag :tmp_dir

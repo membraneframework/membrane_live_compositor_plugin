@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Demo.Mixfile do
+defmodule Membrane.VideoCompositor.Utility.MixProject do
   use Mix.Project
 
   @version "0.1.0"
@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Demo.Mixfile do
 
   def project do
     [
-      app: :membrane_video_compositor_plugin_demo,
+      app: :membrane_video_compositor_plugin_utility,
       version: @version,
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -14,11 +14,12 @@ defmodule Membrane.VideoCompositor.Demo.Mixfile do
       deps: deps(),
 
       # hex
-      description: "Demos for Video Compositor for Membrane Multimedia Framework",
+      description:
+        "Set of utility functions for Video Compositor, for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane Video Compositor plugin",
+      name: "Utility for Membrane Video Compositor plugin",
       source_url: @github_url,
       homepage_url: "https://membraneframework.org"
     ]
@@ -38,9 +39,6 @@ defmodule Membrane.VideoCompositor.Demo.Mixfile do
   defp deps do
     [
       {:membrane_core, "~> 0.10.0"},
-      {:membrane_video_compositor_plugin, path: ".."},
-      {:membrane_file_plugin, "~> 0.12.0"},
-      {:membrane_sdl_plugin, "~> 0.14.0"},
       {:membrane_raw_video_format, "~> 0.2.0"},
 
       # Development

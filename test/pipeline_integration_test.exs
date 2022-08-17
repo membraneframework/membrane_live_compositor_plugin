@@ -7,9 +7,9 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
-  @implementations [:ffmpeg, :nx]
+  @implementation [:ffmpeg, :nx]
 
   @hd_video %RawVideo{
     width: 1280,
@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     aligned: nil
   }
 
-  Enum.map(@implementations, fn implementation ->
+  Enum.map(@implementation, fn implementation ->
     describe "Checks h264 #{implementation} pipeline on" do
       @describetag :tmp_dir
 

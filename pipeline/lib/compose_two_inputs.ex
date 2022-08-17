@@ -1,6 +1,6 @@
-defmodule Membrane.VideoCompositor.Test.Pipeline.Utility.NoOp do
+defmodule Membrane.VideoCompositor.Pipeline.Utility.NoOp do
   @moduledoc """
-  Simple pass by Membrane element.It should have no side effects on the pipeline.
+  Simple pass by Membrane element. It should have no side effects on the pipeline.
   """
   use Membrane.Filter
 
@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.Utility.NoOp do
   end
 end
 
-defmodule Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs do
+defmodule Membrane.VideoCompositor.Pipeline.ComposeTwoInputs do
   @moduledoc """
   Universal pipeline for testing simple composing of two videos, by placing one above the other.
   It loads two videos from the `options.first_video_path` and `options.second_video_path` files/src elements,
@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Test.Pipeline.Utility.NoOp
+  alias Membrane.VideoCompositor.Pipeline.Utility.NoOp
 
   @doc """
   handle_init(%{
@@ -38,8 +38,9 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs do
       },
       caps: RawVideo.t(),
       implementation: :ffmpeg | :opengl | :nx,
+      compositor: Membrane.Filter.t()
       decoder: Membrane.Filter.t() | nil,
-      encoder: Membrane.Filter.t() | nil
+      encoder: Membrane.Filter.t() | nil,
   })
   """
   @impl true
@@ -49,10 +50,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs do
       src_2: get_src(options.paths.second_video_path),
       decoder_1: get_decoder(options),
       decoder_2: get_decoder(options),
-      compositor: %Membrane.VideoCompositor{
-        implementation: options.implementation,
-        caps: options.caps
-      },
+      compositor: options.compositor,
       encoder: get_encoder(options),
       sink: get_sink(options.paths.output_path)
     }

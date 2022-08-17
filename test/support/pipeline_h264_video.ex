@@ -24,7 +24,13 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.H264 do
     options = Map.put(options, :decoder, decoder)
     options = Map.put_new(options, :encoder, encoder)
 
-    Membrane.VideoCompositor.Test.Pipeline.ComposeTwoInputs.handle_init(options)
+    options =
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
+        implementation: options.implementation,
+        caps: options.caps
+      })
+
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_init(options)
   end
 
   @impl true
