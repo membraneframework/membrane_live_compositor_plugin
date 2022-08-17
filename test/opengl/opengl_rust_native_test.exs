@@ -6,6 +6,7 @@ defmodule VideoCompositor.OpenGL.Rust.Test do
 
   describe "OpenGL rust native test on " do
     @describetag :tmp_dir
+    @describetag opengl: true
 
     test "inits" do
       in_video = %Rust.RawVideo{width: 640, height: 360, pixel_format: :I420}
