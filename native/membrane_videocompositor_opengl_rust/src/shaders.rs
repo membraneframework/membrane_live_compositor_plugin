@@ -61,9 +61,11 @@ impl ShaderProgram {
   }
 
   pub fn set_int(&self, name: &str, value: i32) {
+    use std::ffi::CString;
+    let name_c_str = CString::new(name).unwrap(); // ok to unwrap since name is known before compilation
     unsafe {
       gl::Uniform1i(
-        gl::GetUniformLocation(self.id, name.as_ptr() as *const i8),
+        gl::GetUniformLocation(self.id, name_c_str.as_ptr()),
         value,
       )
     }
