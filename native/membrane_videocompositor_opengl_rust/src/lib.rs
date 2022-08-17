@@ -181,7 +181,7 @@ fn join_frames<'a>(env: rustler::Env<'a>, state: rustler::ResourceArc<State>, up
   let ctx: BoundContext = state.bind_context().nif_err()?;
   // for some reason VS Code can't suggest stuff correctly until 
   // I forward all of this into a different function. It's inlined and thusly free
-  return join_frames_fwd(env, &ctx, upper, lower);
+  join_frames_fwd(env, &ctx, upper, lower)
 }
 
 #[inline(always)]
