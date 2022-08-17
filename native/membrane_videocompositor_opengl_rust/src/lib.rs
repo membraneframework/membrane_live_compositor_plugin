@@ -146,8 +146,6 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
 
   unsafe { gl::ClearColor(0.0, 0.0, 0.0, 1.0) }
 
-  // make a scene here, create the state and return
-
   let vertex_shader_code = include_str!("shaders/vertex.glsl");
   let fragment_shader_code = include_str!("shaders/fragment.glsl");
 
