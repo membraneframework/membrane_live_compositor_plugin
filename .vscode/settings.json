@@ -19,4 +19,5 @@
         "string": "c",
         "string_view": "c",
         "parseutils.h": "c"
+    }
 }
