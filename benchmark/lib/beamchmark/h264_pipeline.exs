@@ -79,7 +79,7 @@ defmodule H264PipelineBeamchmark do
 end
 
 benchmarks_options = %{
-  video_duration: 60,
+  benchmark_duration: 60,
   cpu_interval: 1000,
   memory_interval: 1000,
   delay: 0,
@@ -89,7 +89,7 @@ benchmarks_options = %{
 
 Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.FFMPEG,
   name: "H264 Pipeline Benchmark - ffmpeg",
-  video_duration: benchmarks_options.video_duration,
+  duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
   memory_interval: benchmarks_options.memory_interval,
   delay: benchmarks_options.delay,
@@ -104,7 +104,7 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.FFMPEG,
 
 Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL,
   name: "H264 Pipeline Benchmark - OpenGL",
-  video_duration: benchmarks_options.video_duration,
+  duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
   memory_interval: benchmarks_options.memory_interval,
   delay: benchmarks_options.delay,
@@ -119,7 +119,7 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL,
 
 Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.Nx,
   name: "H264 Pipeline Benchmark - Nx",
-  video_duration: benchmarks_options.video_duration,
+  duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
   memory_interval: benchmarks_options.memory_interval,
   delay: benchmarks_options.delay,

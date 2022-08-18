@@ -15,18 +15,28 @@
 2.  Run ```mix deps.get``` command
 3.  Run command for benchmarks:
     1. For running packs of benchmarks:
-        - for all benchmarks: ```mix run benchmark.exs```
-        - for benchee benchmarks: ```mix run benchmark.exs benchee```
-        - for beamchmark benchmarks: ```mix run benchmark.exs beamchmark```
+        - for all benchmarks (estimated total run time - 27min 30s): ```mix run benchmark.exs```
+        - for benchee benchmarks (estimated total run time - 24min 30s): ```mix run benchmark.exs benchee```
+        - for beamchmark benchmarks (estimated total run time - 3min): ```mix run benchmark.exs beamchmark```
     2. For running single benchmarks:
         - benchee benchmarks: 
-            - for measuring frame composition performance: ```mix run lib/benchee/merge_frames.exs```
-            - for measuring raw pipeline performance: ```mix run lib/benchee/raw_pipeline.exs```
-            - for measuring h264 pipeline performance: ```mix run lib/benchee/h264_pipeline.exs```
+            - for measuring frame composition performance (estimated total run time - 9min 40s): ```mix run lib/benchee/merge_frames.exs```
+            - for measuring raw pipeline performance (estimated total run time - 9min 40s): ```mix run lib/benchee/raw_pipeline.exs```
+            - for measuring h264 pipeline performance (estimated total run time - 5min 10s): ```mix run lib/benchee/h264_pipeline.exs```
         - beamchmark benchmarks:
-            - for measuring raw pipeline performance: ```mix run lib/beamchmark/raw_pipeline.exs```
-            - for measuring h264 pipeline performance: ```mix run lib/beamchmark/h264_pipeline.exs```
+            - for measuring raw pipeline performance (estimated total run time - 3min): ```mix run lib/beamchmark/raw_pipeline.exs```
+            - for measuring h264 pipeline performance (estimated total run time - 3min): ```mix run lib/beamchmark/h264_pipeline.exs```
 4. Results will be displayed in console log and saved in html website saved at "results" directory
+
+## How to modify test length:
+
+1. Benchee: </br>
+    - Modify parameters in ```Benchee.run()``` function:
+        - ```warmup``` for time of benchmark warmup
+        - ```time``` for time of pipeline performance measurement
+        - ```memory_time``` for time of pipeline memory usage measurement
+2. Beamchmark: </br>
+    - Modify ```benchmark_duration``` parameter in ```benchmarks_options``` map.
 
 ## Example benchmarks results:
 
