@@ -63,7 +63,7 @@ impl Video {
   }
 }
 
-/// An abstraction of OpenGL's (Vertex Array Object)[https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Array_Object].
+/// An abstraction of OpenGL's [Vertex Array Object](<https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Array_Object>). 
 /// This struct also stores the vertex and elements buffer ids and deletes the whole thing when it is dropped.
 /// 
 /// It only does rendering in the `GL_TRIANGLES` mode and expects the drawn objects to have a texture.
