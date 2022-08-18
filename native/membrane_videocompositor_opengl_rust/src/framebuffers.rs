@@ -1,3 +1,4 @@
+//! Structures for managing various OpenGL render targets
 use glad_gles2::gl;
 
 /// An abstraction for an individual [framebuffer object](<https://www.khronos.org/opengl/wiki/Framebuffer_Object>) with an attached [renderbuffer](<https://www.khronos.org/opengl/wiki/Renderbuffer_Object>).

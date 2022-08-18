@@ -1,3 +1,5 @@
+//! Structures for managing OpenGL shaders and shader programs
+
 use glad_gles2::gl;
 
 /// An abstraction of OpenGL's [shader program](https://www.khronos.org/opengl/wiki/GLSL_Object#Program_objects).

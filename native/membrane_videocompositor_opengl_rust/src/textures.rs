@@ -1,3 +1,5 @@
+//! Structures for managing OpenGL textures
+
 use glad_gles2::gl;
 
 /// An abstraction of OpenGL's [textures](https://www.khronos.org/opengl/wiki/Texture) bundled together so that every texture represents a separate YUV420p plane

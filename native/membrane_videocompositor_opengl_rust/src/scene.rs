@@ -1,3 +1,5 @@
+//! High-level structures, such as Scenes and Videos.
+
 use crate::{
   framebuffers::{self, YUVRenderTarget},
   shaders::ShaderProgram,
