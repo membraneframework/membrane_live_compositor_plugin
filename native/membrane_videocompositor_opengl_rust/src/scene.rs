@@ -5,11 +5,15 @@ use crate::{
 };
 use glad_gles2::gl;
 
+/// Describes where a video should be located in the scene space.
+/// All coordinates have to be in the range [-1, 1].
 pub struct VideoPlacementTemplate {
   pub top_right: (f32, f32),
   pub top_left: (f32, f32),
   pub bot_left: (f32, f32),
   pub bot_right: (f32, f32),
+  /// This value is supposed to be used for making some videos appear 'in front of' other videos.
+  /// This is still WIP and may not work.
   pub z_value: f32, // don't really know if setting this will do anything.. I guess it shouldn't without a depth buffer? FIXME??
 }
 
@@ -28,12 +32,14 @@ impl VideoPlacementTemplate {
   }
 }
 
+/// Holds the [VertexArrayObject] and [YUVPlanarTexture] which together describe a single input video
 struct Video {
-  vao: VertexArrayObject,
+  vao: VertexArrayObject, // FIXME: We shouldn't probably have a separate VAO for each video and just use transposition matrices for positioning the videos.
   textures: YUVPlanarTexture,
 }
 
 impl Video {
+  /// Create a new video given a (placement template)[VideoPlacementTemplate] and the video's resolution.
   fn new(placement: VideoPlacementTemplate, width: usize, height: usize) -> Self {
     Self {
       vao: VertexArrayObject::new(
@@ -45,16 +51,22 @@ impl Video {
     }
   }
 
+  /// Draw this video into the currently attached render target
   fn draw(&self) {
     self.textures.bind();
     self.vao.draw();
   }
 
+  /// Change the current frame of this video.
   fn upload_texture(&self, data: &[u8]) {
     self.textures.load_frame(data);
   }
 }
 
+/// An abstraction of OpenGL's (Vertex Array Object)[https://www.khronos.org/opengl/wiki/Vertex_Specification#Vertex_Array_Object].
+/// This struct also stores the vertex and elements buffer ids and deletes the whole thing when it is dropped.
+/// 
+/// It only does rendering in the `GL_TRIANGLES` mode and expects the drawn objects to have a texture.
 struct VertexArrayObject {
   id: gl::GLuint,
   vertices_id: gl::GLuint,
@@ -63,6 +75,15 @@ struct VertexArrayObject {
 }
 
 impl VertexArrayObject {
+  /// Create a new instance given the `vertices` and `elements`
+  /// 
+  /// This function assumes the following:
+  ///  * all parameters are valid
+  ///  * `vertices` should be in a specific format. Each vertex should have, in this order:
+  ///    - 3 `f32`s in the [-1, 1] range describing the position.
+  ///    - 2 `f32`s in the [0, 1] range describing the texture coordinates.
+  ///  * `elements.len() % 3 == 0` (since `elements` should describe triangles)
+  ///  * `elements` only contain GLuints in the [0, `vertices.len()`] range.
   fn new(vertices: &[f32], elements: &[gl::GLuint]) -> Self {
     use std::ffi::c_void;
     unsafe {
@@ -127,6 +148,7 @@ impl VertexArrayObject {
     unsafe { gl::BindVertexArray(0) }
   }
 
+  /// Draws this VAO. This function handles the binding and unbinding of this VAO as well.
   fn draw(&self) {
     use std::ffi::c_void;
     self.bind();
@@ -152,6 +174,8 @@ impl Drop for VertexArrayObject {
   }
 }
 
+/// Keeps all of the information and OpenGL components needed for composition.
+/// Supports Adding new videos dynamically, but currently window positions are fixed after the videos are created. Videos also cannot be removed.
 pub struct Scene {
   videos: Vec<Video>,
   render_target: YUVRenderTarget,
@@ -159,7 +183,10 @@ pub struct Scene {
 }
 
 impl Scene {
+  /// Create a new Scene with a given output resolution and a `shader_program`. The shader program will be run for each plane in each video.
+  /// An OpenGL context has to be current for the calling thread for this to work currently.
   pub fn new(out_width: usize, out_height: usize, shader_program: ShaderProgram) -> Self {
+    // FIXME: the shader should probably be constructed in this function instead of being passed as an argument 
     Self {
       videos: Vec::new(),
       render_target: YUVRenderTarget::new(out_width, out_height),
@@ -167,6 +194,9 @@ impl Scene {
     }
   }
 
+  /// Add a video to the scene.
+  /// The video will be placed in an area specified by `placement`
+  /// This returns the index that should be used for uploading textures to this video.
   pub fn add_video(
     &mut self,
     placement: VideoPlacementTemplate,
@@ -177,10 +207,20 @@ impl Scene {
     self.videos.len() - 1
   }
 
+  /// Upload a texture to a video specified by the `video_idx`
+  /// 
+  /// # Panics
+  /// 
+  /// This function will panic if the `video_idx` is not an index of an existing video and if `data` doesn't have proper length for a YUV420p-encoded frame for the specified video.
   pub fn upload_texture(&self, video_idx: usize, data: &[u8]) {
     self.videos[video_idx].upload_texture(data);
   }
 
+  /// Render the current state of the scene and copy the result into `buffer`
+  /// 
+  /// # Panics
+  /// 
+  /// This function will panic if the `buffer` is not long enough to hold the resulting image.
   pub fn draw_into(&self, buffer: &mut [u8]) {
     use framebuffers::Plane;
     self.shader_program.use_program();
@@ -198,10 +238,12 @@ impl Scene {
     self.render_target.read(buffer);
   }
 
-  pub fn out_witdh(&self) -> usize {
+  /// Width of the Y plane of the images produced by rendering this scene
+  pub fn out_width(&self) -> usize {
     self.render_target.width() 
   }
 
+  /// Height of the Y plane of the images produced by rendering this scene
   pub fn out_height(&self) -> usize {
     self.render_target.height() 
   }

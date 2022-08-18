@@ -1,5 +1,6 @@
 use glad_gles2::gl;
 
+/// An abstraction for an individual (framebuffer object)[https://www.khronos.org/opengl/wiki/Framebuffer_Object] with an attached (renderbuffer)[https://www.khronos.org/opengl/wiki/Renderbuffer_Object].
 struct FramebufferObject {
   width: usize,
   height: usize,
@@ -11,6 +12,10 @@ struct FramebufferObject {
 }
 
 impl FramebufferObject {
+  /// Create a new instance.
+  ///  * `width` and `height` should be given in pixels.
+  ///  * `internal_format` is the format used by the renderbuffer internally (e.g `gl::RGB8` or `gl::R8`)
+  ///  * `format` and `type_` represent the type and format we expect to get out when reading from the framebuffer (e.g. `gl::RGB` for `format` and `gl::UNSIGNED_BYTE` for `type_`)
   fn new(
     width: usize,
     height: usize,
@@ -68,6 +73,10 @@ impl FramebufferObject {
     }
   }
 
+  /// Read the contents of `self` to a pointer.
+  /// 
+  /// # Safety
+  /// The caller must ensure `ptr` points to an array long enough to contain all of the contents.
   unsafe fn read_to_ptr(&self, ptr: *mut u8) {
     self.bind_for_reading();
     unsafe {
@@ -93,6 +102,9 @@ impl Drop for FramebufferObject {
   }
 }
 
+/// A render target suitable for rendering YUV420p frames.
+/// Because this is a planar format in which not all planes have the same resolution, the rendering has to be done separately for each frame.
+/// That is why we have 3 separate framebuffers in this struct.
 pub struct YUVRenderTarget {
   framebuffers: [FramebufferObject; 3],
   width: usize,
@@ -100,6 +112,8 @@ pub struct YUVRenderTarget {
 }
 
 impl YUVRenderTarget {
+  /// Create a new instance. 
+  /// `width` and `height` should be the dimensions of the Y plane in pixels
   pub fn new(width: usize, height: usize) -> Self {
     Self {
       framebuffers: [
@@ -112,10 +126,16 @@ impl YUVRenderTarget {
     }
   }
 
+  /// Select a [Plane], into which images will be rendered
   pub fn bind_for_drawing(&self, plane: Plane) {
     self.framebuffers[plane as usize].bind_for_drawing();
   }
 
+  /// Copy the contents of the whole render target (all planes) into a `buffer`
+  /// 
+  /// # Panics
+  /// 
+  /// Panics if the buffer is not long enough for the contents to fit.
   pub fn read(&self, buffer: &mut [u8]) {
     let pixels_amount = self.width * self.height;
     assert!(buffer.len() >= pixels_amount * 3 / 2);
@@ -129,10 +149,12 @@ impl YUVRenderTarget {
     }
   }
 
+  /// Get the width of the Y plane.
   pub fn width(&self) -> usize {
     self.width 
   }
 
+  /// Get the height of the Y plane.
   pub fn height(&self) -> usize {
     self.height 
   }
@@ -140,6 +162,7 @@ impl YUVRenderTarget {
 
 #[repr(usize)]
 #[derive(Debug, Clone, Copy)]
+/// Represents a plane in a YUV planar image format.
 pub enum Plane {
   Y = 0,
   U,

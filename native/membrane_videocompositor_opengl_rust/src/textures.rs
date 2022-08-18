@@ -1,5 +1,6 @@
 use glad_gles2::gl;
 
+/// An abstraction of OpenGL's [textures](https://www.khronos.org/opengl/wiki/Texture) bundled together so that every texture represents a separate YUV420p plane
 pub struct YUVPlanarTexture {
   texture_ids: [gl::GLuint; 3],
   width: usize,
@@ -7,6 +8,7 @@ pub struct YUVPlanarTexture {
 }
 
 impl YUVPlanarTexture {
+  /// Create a new texture. `width` and `height` specify the resolution of the Y plane and should be specified in pixels.
   pub fn new(width: usize, height: usize) -> Self {
     let mut texture_ids = [0; 3];
     unsafe { gl::GenTextures(3, texture_ids.as_mut_ptr()) }
@@ -28,6 +30,9 @@ impl YUVPlanarTexture {
     }
   }
 
+  /// Bind these textures.
+  /// 
+  /// The textures for YUV planes will be bound to `GL_TEXTURE0`, `GL_TEXTURE1` and `GL_TEXTURE2` respectively.
   pub fn bind(&self) {
     for (i, &id) in self.texture_ids.iter().enumerate() {
       unsafe {
@@ -37,6 +42,11 @@ impl YUVPlanarTexture {
     }
   }
 
+  /// Load a frame into this texture.
+  /// 
+  /// # Panics
+  /// 
+  /// This function will panic if the length of `data` is not equal to the amount of data this texture needs for loading (`width * height * 3 / 2`).
   pub fn load_frame(&self, data: &[u8]) {
     let pixel_amount = self.width * self.height;
     assert!(data.len() == pixel_amount * 3 / 2);

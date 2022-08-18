@@ -1,4 +1,5 @@
 #![deny(unsafe_op_in_unsafe_fn)]
+//! This crate is a video compositor implementation using OpenGL, intended for use with an Elixir package. 
 
 extern crate khronos_egl as egl;
 
@@ -44,9 +45,12 @@ struct RawVideo {
   pixel_format: rustler::Atom
 }
 
-mod state {
+/// Contains structs used for holding the state of the compositor.
+/// The structures in this module are mostly intended to be stored in the BEAM and passed to calls in this library.
+pub mod state {
   use crate::scene::Scene;
 
+  /// Holds the state of the compositor -- EGL parameters necessary to make the OpenGL context current and the [Scene].
   pub struct State {
     display: usize,
     context: usize,
@@ -54,6 +58,7 @@ mod state {
   }
 
   impl State {
+    /// Bind the OpenGL context and produce a [BoundContext] instance.
     pub fn bind_context(&self) -> Result<BoundContext, egl::Error> {
       let display = unsafe { egl::Display::from_ptr(self.display as *mut std::ffi::c_void) };
       let context = unsafe { egl::Context::from_ptr(self.context as *mut std::ffi::c_void) };
@@ -61,6 +66,7 @@ mod state {
       Ok(BoundContext { display, scene: &self.scene })
     }
 
+    /// Create the [State] from the EGL parameters and the [Scene]
     pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
       Self {
         display: display.as_ptr() as usize,
@@ -70,6 +76,8 @@ mod state {
     }
   }
 
+  /// A proof that the current thread has made an OpenGL context current.
+  /// It releases the context automatically when dropped. It's necessary to create this struct (using [State::bind_context]) in order to access the [Scene].
   pub struct BoundContext<'a> {
     display: egl::Display,
     pub scene: &'a Scene
@@ -85,12 +93,14 @@ mod state {
 }
 use state::{State, BoundContext};
 
+#[doc(hidden)]
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
   rustler::resource!(State, env);
   true
 }
 
 #[rustler::nif]
+/// Initialize the compositor. This function is intended to only be called by Elixir.
 fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> Result<(rustler::Atom, ResourceArc<State>), rustler::Error> {
   use crate::scene::Scene;
   use crate::shaders::ShaderProgram;
@@ -177,6 +187,7 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
 }
 
 #[rustler::nif]
+/// Join two frames passed as [binaries](rustler::Binary). This function is intended to only be called by Elixir.
 fn join_frames<'a>(env: rustler::Env<'a>, state: rustler::ResourceArc<State>, upper: rustler::Binary, lower: rustler::Binary) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
   let ctx: BoundContext = state.bind_context().nif_err()?;
   // for some reason VS Code can't suggest stuff correctly until 
@@ -185,17 +196,19 @@ fn join_frames<'a>(env: rustler::Env<'a>, state: rustler::ResourceArc<State>, up
 }
 
 #[inline(always)]
+#[doc(hidden)]
 fn join_frames_fwd<'a>(env: rustler::Env<'a>, ctx: &BoundContext, upper: rustler::Binary, lower: rustler::Binary)  -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
   ctx.scene.upload_texture(0, upper.as_slice());
   ctx.scene.upload_texture(1, lower.as_slice());
 
-  let mut binary = rustler::OwnedBinary::new(ctx.scene.out_witdh() * ctx.scene.out_height() * 3 / 2).unwrap();
+  let mut binary = rustler::OwnedBinary::new(ctx.scene.out_width() * ctx.scene.out_height() * 3 / 2).unwrap();
   ctx.scene.draw_into(binary.as_mut_slice());
   Ok((atoms::ok(), binary.release(env).to_term(env)))
 }
 
 
 trait ResultExt<T> {
+  /// Convert `T` into a [Result] with a [rustler::Error].
   fn nif_err(self) -> Result<T, rustler::Error>;
 }
 

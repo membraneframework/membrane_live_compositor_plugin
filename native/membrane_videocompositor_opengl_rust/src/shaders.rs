@@ -1,10 +1,13 @@
 use glad_gles2::gl;
 
+/// An abstraction of OpenGL's [shader program](https://www.khronos.org/opengl/wiki/GLSL_Object#Program_objects).
+/// This will delete the program when dropped.
 pub struct ShaderProgram {
   id: gl::GLuint,
 }
 
 impl ShaderProgram {
+  /// Create a new ShaderProgram from the vertex and fragment shader source code
   pub fn new(
     vertex_shader_code: &str,
     fragment_shader_code: &str,
@@ -56,10 +59,12 @@ impl ShaderProgram {
     }
   }
 
+  /// Make OpenGL use this program.
   pub fn use_program(&self) {
     unsafe { gl::UseProgram(self.id) }
   }
 
+  /// Set an integer uniform with the given `name` to the `value` in this program.
   pub fn set_int(&self, name: &str, value: i32) {
     use std::ffi::CString;
     let name_c_str = CString::new(name).unwrap(); // ok to unwrap since name is known before compilation
@@ -78,6 +83,7 @@ impl Drop for ShaderProgram {
   }
 }
 
+/// Represents errors that can happen when interacting with shaders. This error can be converted to a rustler error, which makes the `?` operator work very nicely here.
 pub enum ShaderError {
   CantCompileFragmentShader,
   CantCompileVertexShader,
