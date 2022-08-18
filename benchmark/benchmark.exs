@@ -4,42 +4,56 @@ defmodule Membrane.VideoCompositor.Benchmark.RunBenchmarks do
   """
 
   def run_benchee_benchmarks() do
-    {benchee_h264_result, _exit_code} = System.cmd(
+    {h264_pipeline_result, h264_pipeline_exit_code} = System.cmd(
       "mix",
       ["run", "lib/benchee/h264_pipeline.exs"],
       stderr_to_stdout: true
     )
-    IO.puts(benchee_h264_result)
+    IO.puts(h264_pipeline_result)
 
-    {benchee_raw_result, _exit_code} = System.cmd(
+    {raw_pipeline_result, raw_pipeline_exit_code} = System.cmd(
       "mix",
       ["run", "lib/benchee/raw_pipeline.exs"],
       stderr_to_stdout: true
     )
-    IO.puts(benchee_raw_result)
+    IO.puts(raw_pipeline_result)
 
-    {benchee_merge_frames_result, _exit_code} = System.cmd(
+    {merge_frames_result, merge_frames_exit_code} = System.cmd(
       "mix",
       ["run", "lib/benchee/merge_frames.exs"],
       stderr_to_stdout: true
     )
-    IO.puts(benchee_merge_frames_result)
+    IO.puts(merge_frames_result)
+
+    case {h264_pipeline_exit_code, raw_pipeline_exit_code, merge_frames_exit_code} do
+      {0, 0, 0} ->
+        :ok
+      _other ->
+        :error
+    end
   end
 
   def run_beamchmark_benchmarks() do
-    {beamchmark_h264_result, _exit_code} = System.cmd(
+    {h264_pipeline_result, h264_pipeline_exit_code} = System.cmd(
       "mix",
       ["run", "lib/beamchmark/h264_pipeline.exs"],
       stderr_to_stdout: true
     )
-    IO.puts(beamchmark_h264_result)
+    IO.puts(h264_pipeline_result)
 
-    {beamchmark_raw_result, _exit_code} = System.cmd(
+    {raw_pipeline_result, raw_pipeline_exit_code} = System.cmd(
       "mix",
       ["run", "lib/beamchmark/raw_pipeline.exs"],
       stderr_to_stdout: true
     )
-    IO.puts(beamchmark_raw_result)
+    IO.puts(raw_pipeline_result)
+
+    case {h264_pipeline_exit_code, raw_pipeline_exit_code} do
+      {0, 0} ->
+        :ok
+      _other ->
+        :error
+    end
   end
 end
 
@@ -53,6 +67,13 @@ case benchmark_type do
   ["beamchmark"] ->
     RunBenchmarks.run_beamchmark_benchmarks
   _other ->
-    RunBenchmarks.run_benchee_benchmarks
-    RunBenchmarks.run_beamchmark_benchmarks
+    benchee_exit_status = RunBenchmarks.run_benchee_benchmarks
+    beamchmark_exit_status = RunBenchmarks.run_beamchmark_benchmarks
+
+    case {benchee_exit_status, beamchmark_exit_status} do
+      {:ok, :ok} ->
+        :ok
+      _other ->
+        :error
+    end
 end
