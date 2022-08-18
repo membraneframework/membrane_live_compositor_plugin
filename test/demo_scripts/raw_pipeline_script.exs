@@ -1,17 +1,26 @@
 alias Membrane.RawVideo
 
-paths = %{
-  first_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-  second_video_path: "./test/fixtures/long_videos/input_10s_720p_1fps.raw",
-  output_path: "./test/fixtures/long_videos/composed_video_10s_1280x1440_1fps.raw"
-}
+alias Membrane.VideoCompositor.Test.Utility
 
 caps = %RawVideo{
   aligned: true,
-  framerate: {1, 1},
-  width: 1280,
-  height: 720,
+  framerate: {30, 1},
+  width: 1920,
+  height: 1080,
   pixel_format: :I420
+}
+
+video_duration = 10
+
+input_path = "./tmp/input_#{video_duration}s_1080p.raw"
+output_path = "./tmp/output_#{video_duration}s_2160x1080.raw"
+
+:ok = Utility.generate_testing_video(input_path, caps, video_duration)
+
+paths = %{
+  first_video_path: input_path,
+  second_video_path: input_path,
+  output_path: output_path
 }
 
 implementation = :nx
@@ -24,4 +33,8 @@ options = %{
 
 {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
 
-Process.sleep(1_000_000)
+Process.monitor(pid)
+
+receive do
+  {:DOWN, _ref, :process, _pid, :normal} -> :ok
+end
