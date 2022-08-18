@@ -1,4 +1,5 @@
 alias Membrane.RawVideo
+
 alias Membrane.VideoCompositor.Test.Utility
 
 caps = %RawVideo{

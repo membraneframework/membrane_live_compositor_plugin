@@ -17,6 +17,7 @@ def deps do
   ]
 end
 ```
+To compile on macOS, first get and compile [Google ANGLE](https://github.com/google/angle/blob/main/doc/DevSetup.md) with `is_component_build = false` and place the resulting `libEGL.dylib` and `libGLESv2.dylib` in the root of this package.
 
 ## Usage
 

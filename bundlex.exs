@@ -16,6 +16,26 @@ defmodule Membrane.VideoCompositor.BundlexProject do
         preprocessor: Unifex,
         src_base: "ffmpeg_video_compositor",
         compiler_flags: ["-g"]
+      ],
+      opengl_video_compositor: [
+        sources: [
+          "BasicFBO.cpp",
+          "Compositor.cpp",
+          "gles2.cpp",
+          "opengl_video_compositor.cpp",
+          "RectVAO.cpp",
+          "Shader.cpp",
+          "YUVRenderer.cpp",
+          "YUVTexture.cpp"
+        ],
+        interface: :nif,
+        preprocessor: Unifex,
+        pkg_configs: [],
+        libs: ["EGL", "GLESv2"],
+        language: :cpp,
+        src_base: "opengl_video_compositor",
+        includes: ["c_src/opengl_video_compositor/include"],
+        lib_dirs: ["."]
       ]
     ]
   end
