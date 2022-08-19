@@ -8,21 +8,21 @@ struct FramebufferObject {
   id: gl::GLuint,
   renderbuffer_id: gl::GLuint,
   _internal_format: gl::GLenum, // FIXME these should be custom enums instead of GLenum random ints
-  format: gl::GLenum,
-  type_: gl::GLenum,
+  output_format: gl::GLenum,
+  output_type: gl::GLenum,
 }
 
 impl FramebufferObject {
   /// Create a new instance.
   ///  * `width` and `height` should be given in pixels.
   ///  * `internal_format` is the format used by the renderbuffer internally (e.g `gl::RGB8` or `gl::R8`)
-  ///  * `format` and `type_` represent the type and format we expect to get out when reading from the framebuffer (e.g. `gl::RGB` for `format` and `gl::UNSIGNED_BYTE` for `type_`)
+  ///  * `output_format` and `output_type` represent the type and format we expect to get out when reading from the framebuffer (e.g. `gl::RGB` for `format` and `gl::UNSIGNED_BYTE` for `output_type`)
   fn new(
     width: usize,
     height: usize,
     internal_format: gl::GLenum,
-    format: gl::GLenum,
-    type_: gl::GLenum,
+    output_format: gl::GLenum,
+    output_type: gl::GLenum,
   ) -> Self {
     let mut id = 0;
     let mut renderbuffer_id = 0;
@@ -54,8 +54,8 @@ impl FramebufferObject {
       id,
       renderbuffer_id,
       _internal_format: internal_format,
-      format,
-      type_,
+      output_format,
+      output_type,
     }
   }
 
@@ -86,8 +86,8 @@ impl FramebufferObject {
         0,
         self.width as i32,
         self.height as i32,
-        self.format,
-        self.type_,
+        self.output_format,
+        self.output_type,
         ptr as *mut std::ffi::c_void,
       )
     }
