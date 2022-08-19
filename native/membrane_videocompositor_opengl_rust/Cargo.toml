@@ -2,7 +2,7 @@
 name = "membrane_videocompositor_opengl_rust"
 version = "0.1.0"
 authors = []
-edition = "2018"
+edition = "2021"
 
 [lib]
 name = "membrane_videocompositor_opengl_rust"
