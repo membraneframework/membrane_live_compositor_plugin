@@ -39,8 +39,6 @@ paths = %{
   output_path: sink
 }
 
-implementation = :nx
-
 options = %{
   paths: paths,
   caps: caps,
