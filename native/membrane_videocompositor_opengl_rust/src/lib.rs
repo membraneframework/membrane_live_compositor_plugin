@@ -215,27 +215,24 @@ trait ResultExt<T> {
 impl<T> ResultExt<T> for Result<T, egl::Error> {
   fn nif_err(self) -> Result<T, rustler::Error> {
     use rustler::Error;
-    match self {
-      Ok(x) => Ok(x),
-      Err(error) => match error {
-        egl::Error::NotInitialized => Err(Error::Term(Box::new(atoms::egl_not_initialized()))),
-        egl::Error::BadAccess => Err(Error::Term(Box::new(atoms::egl_bad_access()))),
-        egl::Error::BadAlloc => Err(Error::Term(Box::new(atoms::egl_bad_alloc()))),
-        egl::Error::BadAttribute => Err(Error::Term(Box::new(atoms::egl_bad_attribute()))),
-        egl::Error::BadContext => Err(Error::Term(Box::new(atoms::egl_bad_context()))),
-        egl::Error::BadConfig => Err(Error::Term(Box::new(atoms::egl_bad_config()))),
-        egl::Error::BadCurrentSurface => {
-          Err(Error::Term(Box::new(atoms::egl_bad_current_surface())))
-        }
-        egl::Error::BadDisplay => Err(Error::Term(Box::new(atoms::egl_bad_display()))),
-        egl::Error::BadSurface => Err(Error::Term(Box::new(atoms::egl_bad_surface()))),
-        egl::Error::BadMatch => Err(Error::Term(Box::new(atoms::egl_bad_match()))),
-        egl::Error::BadParameter => Err(Error::Term(Box::new(atoms::egl_bad_parameter()))),
-        egl::Error::BadNativePixmap => Err(Error::Term(Box::new(atoms::egl_bad_native_pixmap()))),
-        egl::Error::BadNativeWindow => Err(Error::Term(Box::new(atoms::egl_bad_native_window()))),
-        egl::Error::ContextLost => Err(Error::Term(Box::new(atoms::egl_context_lost()))),
-      },
-    }
+    self.map_err(|error| match error {
+      egl::Error::NotInitialized => Error::Term(Box::new(atoms::egl_not_initialized())),
+      egl::Error::BadAccess => Error::Term(Box::new(atoms::egl_bad_access())),
+      egl::Error::BadAlloc => Error::Term(Box::new(atoms::egl_bad_alloc())),
+      egl::Error::BadAttribute => Error::Term(Box::new(atoms::egl_bad_attribute())),
+      egl::Error::BadContext => Error::Term(Box::new(atoms::egl_bad_context())),
+      egl::Error::BadConfig => Error::Term(Box::new(atoms::egl_bad_config())),
+      egl::Error::BadCurrentSurface => {
+        Error::Term(Box::new(atoms::egl_bad_current_surface()))
+      }
+      egl::Error::BadDisplay => Error::Term(Box::new(atoms::egl_bad_display())),
+      egl::Error::BadSurface => Error::Term(Box::new(atoms::egl_bad_surface())),
+      egl::Error::BadMatch => Error::Term(Box::new(atoms::egl_bad_match())),
+      egl::Error::BadParameter => Error::Term(Box::new(atoms::egl_bad_parameter())),
+      egl::Error::BadNativePixmap => Error::Term(Box::new(atoms::egl_bad_native_pixmap())),
+      egl::Error::BadNativeWindow => Error::Term(Box::new(atoms::egl_bad_native_window())),
+      egl::Error::ContextLost => Error::Term(Box::new(atoms::egl_context_lost())),
+    })
   }
 }
 
