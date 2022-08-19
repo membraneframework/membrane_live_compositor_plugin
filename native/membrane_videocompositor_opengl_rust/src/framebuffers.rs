@@ -161,9 +161,9 @@ impl YUVRenderTarget {
   }
 }
 
+/// Represents a plane in a YUV planar image format.
 #[repr(usize)]
 #[derive(Debug, Clone, Copy)]
-/// Represents a plane in a YUV planar image format.
 pub enum Plane {
   Y = 0,
   U,
