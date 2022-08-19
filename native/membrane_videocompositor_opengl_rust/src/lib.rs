@@ -189,7 +189,7 @@ fn init(first_video: RawVideo, second_video: RawVideo, out_video: RawVideo) -> R
 #[rustler::nif]
 /// Join two frames passed as [binaries](rustler::Binary). This function is intended to only be called by Elixir.
 fn join_frames<'a>(env: rustler::Env<'a>, state: rustler::ResourceArc<State>, upper: rustler::Binary, lower: rustler::Binary) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-  let ctx: BoundContext = state.bind_context().nif_err()?;
+  let ctx = state.bind_context().nif_err()?;
   // for some reason VS Code can't suggest stuff correctly until 
   // I forward all of this into a different function. It's inlined and thusly free
   join_frames_fwd(env, &ctx, upper, lower)
