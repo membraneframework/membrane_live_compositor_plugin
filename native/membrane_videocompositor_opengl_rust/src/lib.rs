@@ -191,7 +191,7 @@ fn init(
     let fragment_shader_code = include_str!("shaders/fragment.glsl");
 
     let shader_program = ShaderProgram::new(vertex_shader_code, fragment_shader_code)?;
-    let mut scene = Scene::new(out_video.width, out_video.height, shader_program);
+    let mut scene = Scene::new(out_video.width, out_video.height, shader_program)?;
     scene.add_video(
         scene::VideoPlacementTemplate {
             top_right: (1.0, 1.0),
@@ -202,7 +202,7 @@ fn init(
         },
         first_video.width,
         second_video.height,
-    );
+    )?;
 
     scene.add_video(
         scene::VideoPlacementTemplate {
@@ -214,7 +214,7 @@ fn init(
         },
         first_video.width,
         second_video.height,
-    );
+    )?;
 
     egl.make_current(display, None, None, None).nif_err()?;
     Ok((
@@ -245,8 +245,8 @@ fn join_frames_fwd<'a>(
     upper: rustler::Binary,
     lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    ctx.scene.upload_texture(0, upper.as_slice());
-    ctx.scene.upload_texture(1, lower.as_slice());
+    ctx.scene.upload_texture(0, upper.as_slice())?;
+    ctx.scene.upload_texture(1, lower.as_slice())?;
 
     let mut binary =
         rustler::OwnedBinary::new(ctx.scene.out_width() * ctx.scene.out_height() * 3 / 2).unwrap();
