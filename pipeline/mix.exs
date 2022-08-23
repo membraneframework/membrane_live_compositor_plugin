@@ -2,25 +2,15 @@ defmodule Membrane.VideoCompositor.Pipeline.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
     [
       app: :membrane_video_compositor_plugin_pipeline,
       version: @version,
       elixir: "~> 1.13",
-      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_paths: ["lib"],
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-
-      # hex
-      description: "Testing pipelines for Video Compositor, for Membrane Multimedia Framework",
-      package: package(),
-
-      # docs
-      name: "Pipelines for Membrane Video Compositor plugin",
-      source_url: @github_url,
-      homepage_url: "https://membraneframework.org"
+      deps: deps()
     ]
   end
 
@@ -31,29 +21,12 @@ defmodule Membrane.VideoCompositor.Pipeline.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib"]
-  defp elixirc_paths(_env), do: ["lib"]
-
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:membrane_core, "~> 0.10.0"},
       {:membrane_raw_video_format, "~> 0.2.0"},
-      {:membrane_file_plugin, "~> 0.12.0"},
-
-      # Development
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
-    ]
-  end
-
-  defp package do
-    [
-      maintainers: ["Membrane Team"],
-      licenses: ["Apache-2.0"],
-      links: %{
-        "GitHub" => @github_url,
-        "Membrane Framework Homepage" => "https://membraneframework.org"
-      }
+      {:membrane_file_plugin, "~> 0.12.0"}
     ]
   end
 end
