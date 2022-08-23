@@ -24,7 +24,7 @@ impl ShaderProgram {
             let mut ok = 0;
             gl::GetShaderiv(vertex, gl::COMPILE_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CantCompileVertexShader);
+                return Err(ShaderError::CannotCompileVertexShader);
             }
 
             let fragment = gl::CreateShader(gl::FRAGMENT_SHADER);
@@ -38,7 +38,7 @@ impl ShaderProgram {
             gl::CompileShader(fragment);
             gl::GetShaderiv(fragment, gl::COMPILE_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CantCompileFragmentShader);
+                return Err(ShaderError::CannotCompileFragmentShader);
             }
 
             let program = gl::CreateProgram();
@@ -48,7 +48,7 @@ impl ShaderProgram {
 
             gl::GetProgramiv(program, gl::LINK_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CantLinkProgram);
+                return Err(ShaderError::CannotLinkProgram);
             }
 
             gl::DeleteShader(vertex);
@@ -79,30 +79,30 @@ impl Drop for ShaderProgram {
 
 /// Represents errors that can happen when interacting with shaders. This error can be converted to a rustler error, which makes the `?` operator work very nicely here.
 pub enum ShaderError {
-    CantCompileFragmentShader,
-    CantCompileVertexShader,
-    CantLinkProgram,
+    CannotCompileFragmentShader,
+    CannotCompileVertexShader,
+    CannotLinkProgram,
 }
 
 mod atoms {
     rustler::atoms! {
-      cant_compile_fragment_shader,
-      cant_compile_vertex_shader,
-      cant_link_program
+      cannot_compile_fragment_shader,
+      cannot_compile_vertex_shader,
+      cannot_link_program
     }
 }
 
 impl From<ShaderError> for rustler::Error {
     fn from(err: ShaderError) -> Self {
         match err {
-            ShaderError::CantCompileFragmentShader => {
-                rustler::Error::Term(Box::new(atoms::cant_compile_fragment_shader()))
+            ShaderError::CannotCompileFragmentShader => {
+                rustler::Error::Term(Box::new(atoms::cannot_compile_fragment_shader()))
             }
-            ShaderError::CantCompileVertexShader => {
-                rustler::Error::Term(Box::new(atoms::cant_compile_vertex_shader()))
+            ShaderError::CannotCompileVertexShader => {
+                rustler::Error::Term(Box::new(atoms::cannot_compile_vertex_shader()))
             }
-            ShaderError::CantLinkProgram => {
-                rustler::Error::Term(Box::new(atoms::cant_link_program()))
+            ShaderError::CannotLinkProgram => {
+                rustler::Error::Term(Box::new(atoms::cannot_link_program()))
             }
         }
     }
