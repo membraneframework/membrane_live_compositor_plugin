@@ -7,13 +7,16 @@ use crate::{
 };
 use glad_gles2::gl;
 
+/// A point in 2D space
+pub struct Point(pub f32, pub f32);
+
 /// Describes where a video should be located in the scene space.
 /// All coordinates have to be in the range [-1, 1].
 pub struct VideoPlacementTemplate {
-    pub top_right: (f32, f32),
-    pub top_left: (f32, f32),
-    pub bot_left: (f32, f32),
-    pub bot_right: (f32, f32),
+    pub top_right: Point,
+    pub top_left: Point,
+    pub bot_left: Point,
+    pub bot_right: Point,
     /// This value is supposed to be used for making some videos appear 'in front of' other videos.
     /// This is still WIP and may not work.
     pub z_value: f32, // don't really know if setting this will do anything.. I guess it shouldn't without a depth buffer? FIXME??

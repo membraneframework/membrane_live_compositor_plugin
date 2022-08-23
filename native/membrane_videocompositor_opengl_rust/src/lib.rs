@@ -96,6 +96,8 @@ pub mod state {
 }
 use state::{BoundContext, State};
 
+use crate::scene::Point;
+
 #[doc(hidden)]
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
     rustler::resource!(State, env);
@@ -172,10 +174,10 @@ fn init(
     let mut scene = Scene::new(out_video.width, out_video.height, shader_program);
     scene.add_video(
         scene::VideoPlacementTemplate {
-            top_right: (1.0, 1.0),
-            top_left: (-1.0, 1.0),
-            bot_left: (-1.0, 0.0),
-            bot_right: (1.0, 0.0),
+            top_right: Point(1.0, 1.0),
+            top_left: Point(-1.0, 1.0),
+            bot_left: Point(-1.0, 0.0),
+            bot_right: Point(1.0, 0.0),
             z_value: 0.0,
         },
         first_video.width,
@@ -184,10 +186,10 @@ fn init(
 
     scene.add_video(
         scene::VideoPlacementTemplate {
-            top_right: (1.0, 0.0),
-            top_left: (-1.0, 0.0),
-            bot_left: (-1.0, -1.0),
-            bot_right: (1.0, -1.0),
+            top_right: Point(1.0, 0.0),
+            top_left: Point(-1.0, 0.0),
+            bot_left: Point(-1.0, -1.0),
+            bot_right: Point(1.0, -1.0),
             z_value: 0.0,
         },
         first_video.width,
