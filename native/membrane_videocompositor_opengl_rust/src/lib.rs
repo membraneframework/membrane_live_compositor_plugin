@@ -48,29 +48,51 @@ struct RawVideo {
 /// Contains structs used for holding the state of the compositor.
 /// The structures in this module are mostly intended to be stored in the BEAM and passed to calls in this library.
 pub mod state {
+    use std::{ops::Deref, sync::Mutex};
+
     use crate::scene::Scene;
 
     /// Holds the state of the compositor -- EGL parameters necessary to make the OpenGL context current and the [Scene].
     pub struct State {
+        inner: Mutex<InnerState>,
+    }
+
+    impl State {
+        pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
+            Self {
+                inner: Mutex::new(InnerState::new(display, context, scene)),
+            }
+        }
+    }
+
+    impl Deref for State {
+        type Target = Mutex<InnerState>;
+
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
+    }
+
+    pub struct InnerState {
         display: usize,
         context: usize,
         scene: Scene,
     }
 
-    impl State {
+    impl InnerState {
         /// Bind the OpenGL context and produce a [BoundContext] instance.
-        pub fn bind_context(&self) -> Result<BoundContext, egl::Error> {
+        pub fn bind_context(&mut self) -> Result<BoundContext, egl::Error> {
             let display = unsafe { egl::Display::from_ptr(self.display as *mut std::ffi::c_void) };
             let context = unsafe { egl::Context::from_ptr(self.context as *mut std::ffi::c_void) };
             egl::API.make_current(display, None, None, Some(context))?;
             Ok(BoundContext {
                 display,
-                scene: &self.scene,
+                scene: &mut self.scene,
             })
         }
 
         /// Create the [State] from the EGL parameters and the [Scene]
-        pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
+        fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
             Self {
                 display: display.as_ptr() as usize,
                 context: context.as_ptr() as usize,
@@ -83,7 +105,7 @@ pub mod state {
     /// It releases the context automatically when dropped. It's necessary to create this struct (using [State::bind_context]) in order to access the [Scene].
     pub struct BoundContext<'a> {
         display: egl::Display,
-        pub scene: &'a Scene,
+        pub scene: &'a mut Scene,
     }
 
     impl<'a> Drop for BoundContext<'a> {
@@ -211,17 +233,18 @@ fn join_frames<'a>(
     upper: rustler::Binary,
     lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    let ctx = state.bind_context().nif_err()?;
+    let mut locked = state.lock().unwrap();
+    let mut ctx = locked.bind_context().nif_err()?;
     // for some reason VS Code can't suggest stuff correctly until
     // I forward all of this into a different function. It's inlined and thusly free
-    join_frames_fwd(env, &ctx, upper, lower)
+    join_frames_fwd(env, &mut ctx, upper, lower)
 }
 
 #[inline(always)]
 #[doc(hidden)]
 fn join_frames_fwd<'a>(
     env: rustler::Env<'a>,
-    ctx: &BoundContext,
+    ctx: &mut BoundContext,
     upper: rustler::Binary,
     lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {

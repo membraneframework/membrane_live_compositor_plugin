@@ -57,7 +57,7 @@ impl Video {
     }
 
     /// Draw this video into the currently attached render target
-    fn draw(&self) {
+    fn draw(&self, _bind_proof: &framebuffers::DrawBoundYUVRenderTarget) {
         self.textures.bind();
         self.vao.draw();
     }
@@ -226,18 +226,18 @@ impl Scene {
     /// # Panics
     ///
     /// This function will panic if the `buffer` is not long enough to hold the resulting image.
-    pub fn draw_into(&self, buffer: &mut [u8]) {
+    pub fn draw_into(&mut self, buffer: &mut [u8]) {
         use framebuffers::Plane;
         self.shader_program.use_program();
 
         for plane in [Plane::Y, Plane::U, Plane::V] {
-            self.render_target.bind_for_drawing(plane);
+            let bind_proof = self.render_target.bind_for_drawing(plane);
             // FIXME: This is a very ugly API, nothing suggests that you need to set this.
             //        This is how it's implemented in the C++ version, we can change this after we have a MVP
             self.shader_program.set_int("texture1", plane as i32);
 
             for video in self.videos.iter() {
-                video.draw();
+                video.draw(&bind_proof);
             }
         }
         self.render_target.read(buffer);
