@@ -26,7 +26,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Mixfile do
       {:benchee, "~> 1.1.0"},
       {:benchee_html, "~> 1.0"},
       {:beamchmark, "~> 1.4.0"},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+      {:utility, "../utility"}
     ]
   end
 end
