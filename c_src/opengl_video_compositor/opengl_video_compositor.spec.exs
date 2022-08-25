@@ -1,4 +1,4 @@
-module Membrane.VideoCompositor.OpenGL.Native
+module Membrane.VideoCompositor.OpenGL.Native.Cpp
 
 state_type "State"
 

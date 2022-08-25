@@ -1,7 +1,7 @@
 defmodule VideoCompositor.OpenGL.Rust.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.OpenGL.Rust
+  alias Membrane.VideoCompositor.OpenGL.Native.Rust
   alias Membrane.VideoCompositor.Utility
 
   describe "OpenGL rust native test on " do
