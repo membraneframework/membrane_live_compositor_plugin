@@ -9,12 +9,14 @@ caps = %RawVideo{
   pixel_format: :I420
 }
 
-basename = Utility.get_file_base_name(caps, 10, "raw")
+video_duration = 10
+
+basename = Utility.get_file_base_name(caps, video_duration, "raw")
 demo_path = Path.join([File.cwd!(), "lib", "tmp", "fixtures"])
 in_path = Path.join(demo_path, "in-#{basename}")
 out_path = Path.join(demo_path, "out-#{basename}")
 
-Utility.generate_testing_video(in_path, caps, 10)
+Utility.generate_testing_video(in_path, caps, video_duration)
 
 implementation =
   case s = System.get_env("IMPL", "nx") do
@@ -47,4 +49,8 @@ options = %{
 
 {:ok, pid} = Membrane.VideoCompositor.Demo.Pipeline.Raw.start(options)
 
-Process.sleep(1_000_000)
+Process.monitor(pid)
+
+receive do
+  {:DOWN, _ref, :process, _pid, :normal} -> :ok
+end
