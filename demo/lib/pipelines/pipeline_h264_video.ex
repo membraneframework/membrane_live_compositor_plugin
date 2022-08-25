@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Pipeline.H264 do
+defmodule Membrane.VideoCompositor.Demo.Pipeline.H264 do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """
@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.H264 do
   """
   @impl true
   def handle_init(options) do
-    decoder = Membrane.VideoCompositor.Test.Pipeline.H264.TwoInputsParser
+    decoder = Membrane.VideoCompositor.Demo.Pipeline.H264.TwoInputsParser
     encoder = Membrane.H264.FFmpeg.Encoder
 
     options = Map.put(options, :decoder, decoder)
@@ -34,12 +34,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.H264 do
   end
 
   @impl true
-  def handle_element_end_of_stream({:file_sink, :input}, _context, state) do
-    {{:ok, [playback: :terminating]}, state}
-  end
-
-  @impl true
-  def handle_element_end_of_stream(_pad, _context, state) do
+  def handle_element_end_of_stream({pad, _}, _context, state) do
+    Membrane.Logger.bare_log(:info, "#{pad} send EOS")
     {:ok, state}
   end
 end

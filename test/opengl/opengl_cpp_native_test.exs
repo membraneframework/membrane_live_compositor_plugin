@@ -3,7 +3,7 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
 
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.OpenGL.Native
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Utility
 
   describe "OpenGL cpp native test on " do
     @describetag :tmp_dir

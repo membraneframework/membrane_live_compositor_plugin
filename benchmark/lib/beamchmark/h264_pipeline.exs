@@ -33,7 +33,7 @@ defmodule H264PipelineBeamchmark do
   """
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Utility
 
   @spec benchmark(:ffmpeg | :opengl | :nx) :: :ok
   def benchmark(implementation) do

@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   """
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Utility
 
   @spec benchmark() :: :ok
   def benchmark() do
