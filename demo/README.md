@@ -24,7 +24,7 @@ Run demos with the command line, for example:
 
 ### Currently available demos:
  - `lib/h264_pipeline_script.exs` - 60 seconds, 30 fps, full-hd (`SINK=play` is not supported right now)
- - `lib/h264_pipeline_script.exs` - 10 seconds, 1 fps, hd
+ - `lib/raw_pipeline_script.exs` - 10 seconds, 1 fps, hd
 
 ## Copyright and License
 
