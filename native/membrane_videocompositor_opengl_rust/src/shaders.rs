@@ -2,6 +2,8 @@
 
 use glad_gles2::gl;
 
+use crate::errors::CompositorError;
+
 /// An abstraction of OpenGL's [shader program](https://www.khronos.org/opengl/wiki/GLSL_Object#Program_objects).
 /// This will delete the program when dropped.
 pub struct ShaderProgram {
@@ -10,7 +12,10 @@ pub struct ShaderProgram {
 
 impl ShaderProgram {
     /// Create a new ShaderProgram from the vertex and fragment shader source code
-    pub fn new(vertex_shader_code: &str, fragment_shader_code: &str) -> Result<Self, ShaderError> {
+    pub fn new(
+        vertex_shader_code: &str,
+        fragment_shader_code: &str,
+    ) -> Result<Self, CompositorError> {
         unsafe {
             let vertex = gl::CreateShader(gl::VERTEX_SHADER);
             gl::ShaderSource(
@@ -24,7 +29,7 @@ impl ShaderProgram {
             let mut ok = 0;
             gl::GetShaderiv(vertex, gl::COMPILE_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CannotCompileVertexShader);
+                return Err(CompositorError::ShaderError("cannot_compile_vertex_shader"));
             }
 
             let fragment = gl::CreateShader(gl::FRAGMENT_SHADER);
@@ -38,7 +43,9 @@ impl ShaderProgram {
             gl::CompileShader(fragment);
             gl::GetShaderiv(fragment, gl::COMPILE_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CannotCompileFragmentShader);
+                return Err(CompositorError::ShaderError(
+                    "cannot_compile_fragment_shader",
+                ));
             }
 
             let program = gl::CreateProgram();
@@ -48,7 +55,7 @@ impl ShaderProgram {
 
             gl::GetProgramiv(program, gl::LINK_STATUS, &mut ok);
             if ok != gl::TRUE.into() {
-                return Err(ShaderError::CannotLinkProgram);
+                return Err(CompositorError::ShaderError("cannot_link_program"));
             }
 
             gl::DeleteShader(vertex);
@@ -74,36 +81,5 @@ impl ShaderProgram {
 impl Drop for ShaderProgram {
     fn drop(&mut self) {
         unsafe { gl::DeleteProgram(self.id) }
-    }
-}
-
-/// Represents errors that can happen when interacting with shaders. This error can be converted to a rustler error, which makes the `?` operator work very nicely here.
-pub enum ShaderError {
-    CannotCompileFragmentShader,
-    CannotCompileVertexShader,
-    CannotLinkProgram,
-}
-
-mod atoms {
-    rustler::atoms! {
-      cannot_compile_fragment_shader,
-      cannot_compile_vertex_shader,
-      cannot_link_program
-    }
-}
-
-impl From<ShaderError> for rustler::Error {
-    fn from(err: ShaderError) -> Self {
-        match err {
-            ShaderError::CannotCompileFragmentShader => {
-                rustler::Error::Term(Box::new(atoms::cannot_compile_fragment_shader()))
-            }
-            ShaderError::CannotCompileVertexShader => {
-                rustler::Error::Term(Box::new(atoms::cannot_compile_vertex_shader()))
-            }
-            ShaderError::CannotLinkProgram => {
-                rustler::Error::Term(Box::new(atoms::cannot_link_program()))
-            }
-        }
     }
 }
