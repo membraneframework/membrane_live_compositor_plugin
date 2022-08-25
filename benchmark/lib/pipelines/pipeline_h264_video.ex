@@ -34,8 +34,11 @@ defmodule Membrane.VideoCompositor.Benchmark.Pipeline.H264 do
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, _}, _context, state) do
-    Membrane.Logger.bare_log(:info, "#{pad} send EOS")
-    {:ok, state}
+  def handle_element_end_of_stream({pad, ref}, context, state) do
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_element_end_of_stream(
+      {pad, ref},
+      context,
+      state
+    )
   end
 end
