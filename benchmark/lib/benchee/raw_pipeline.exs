@@ -91,7 +91,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   end
 
   defp run_raw_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.Raw.start(options)
 
     Process.monitor(pid)
 

@@ -68,7 +68,7 @@ defmodule H264PipelineBeamchmark do
   end
 
   defp run_h264_pipeline(pipeline_init_options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(pipeline_init_options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.H264.start(pipeline_init_options)
 
     Process.monitor(pid)
 

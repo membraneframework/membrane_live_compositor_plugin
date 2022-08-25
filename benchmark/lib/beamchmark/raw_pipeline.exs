@@ -68,7 +68,7 @@ defmodule RawPipeline do
   end
 
   defp run_raw_pipeline(pipeline_init_options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(pipeline_init_options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.Raw.start(pipeline_init_options)
 
     Process.monitor(pid)
 

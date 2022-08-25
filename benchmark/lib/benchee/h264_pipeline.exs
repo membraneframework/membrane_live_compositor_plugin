@@ -89,7 +89,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   end
 
   defp run_h264_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.H264.start(options)
 
     Process.monitor(pid)
 

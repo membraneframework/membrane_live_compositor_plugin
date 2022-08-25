@@ -22,6 +22,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Mixfile do
   defp deps do
     [
       {:membrane_video_compositor_plugin, path: ".."},
+      {:membrane_video_compositor_plugin_pipeline, path: "../pipeline"},
       {:benchee, "~> 1.1.0"},
       {:benchee_html, "~> 1.0"},
       {:beamchmark, "~> 1.4.0"},
