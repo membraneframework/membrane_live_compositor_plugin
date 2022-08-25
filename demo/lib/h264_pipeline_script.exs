@@ -48,7 +48,9 @@ options = %{
   encoder: encoder
 }
 
-{:ok, _pid} = Membrane.VideoCompositor.Demo.Pipeline.H264.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Demo.Pipeline.H264.start(options)
+
+Process.monitor(pid)
 
 receive do
   {:DOWN, _ref, :process, _pid, :normal} -> :ok
