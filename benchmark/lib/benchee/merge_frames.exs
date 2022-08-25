@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
   Benchmark for merge frames function.
   """
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.Utility
 
   @spec benchmark() :: :ok
   def benchmark() do
