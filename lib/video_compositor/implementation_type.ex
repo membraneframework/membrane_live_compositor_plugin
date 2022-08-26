@@ -38,7 +38,7 @@ defmodule Membrane.VideoCompositor.Implementation do
     [:ffmpeg, :opengl_cpp, :opengl_rust, :nx]
   end
 
-  @spec get_implementation_atom_from_string(String.t()) ::implementation_t()
+  @spec get_implementation_atom_from_string(String.t()) :: implementation_t()
   def get_implementation_atom_from_string(implementation_string) do
     case implementation_string do
       "ffmpeg" -> :ffmpeg
