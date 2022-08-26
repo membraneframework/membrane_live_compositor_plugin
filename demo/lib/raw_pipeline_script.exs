@@ -1,4 +1,5 @@
 alias Membrane.RawVideo
+alias Membrane.VideoCompositor.Implementation
 alias Membrane.VideoCompositor.Utility
 
 caps = %RawVideo{
@@ -19,12 +20,7 @@ out_path = Path.join(demo_path, "out-#{basename}")
 Utility.generate_testing_video(in_path, caps, video_duration)
 
 implementation =
-  case s = System.get_env("IMPL", "nx") do
-    "nx" -> :nx
-    "ffmpeg" -> :ffmpeg
-    "opengl" -> :opengl
-    _unsupported -> raise "unsupported implementation #{s}"
-  end
+  Implementation.get_implementation_atom_from_string(System.get_env("IMPL", "nx"))
 
 sink =
   case s = System.get_env("SINK", "file") do

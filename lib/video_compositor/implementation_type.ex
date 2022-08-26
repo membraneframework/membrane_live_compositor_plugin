@@ -28,6 +28,15 @@ defmodule Membrane.VideoCompositor.Implementation do
     [:ffmpeg, :opengl_cpp, :opengl_rust, :nx]
   end
 
+  def get_implementation_atom_from_string(implementation_string) do
+    case implementation_string do
+      "ffmpeg" -> :ffmpeg
+      "opengl_cpp" -> :opengl_cpp
+      "opengl_rust" -> :opengl_rust
+      "nx" -> :nx
+    end
+  end
+
   @spec get_implementation_name(implementation_t) :: {:ok, String.t()} | {:error, String.t()}
   def get_implementation_name(implementation) do
     case implementation do
