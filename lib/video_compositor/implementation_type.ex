@@ -23,6 +23,12 @@ defmodule Membrane.VideoCompositor.Implementation do
     end
   end
 
+  @spec get_test_implementations() :: list()
+  def get_test_implementations() do
+    test_implementations = [:ffmpeg, :nx]
+    test_implementations
+  end
+
   @spec get_all_implementations() :: list()
   def get_all_implementations() do
     [:ffmpeg, :opengl_cpp, :opengl_rust, :nx]
@@ -34,17 +40,6 @@ defmodule Membrane.VideoCompositor.Implementation do
       "opengl_cpp" -> :opengl_cpp
       "opengl_rust" -> :opengl_rust
       "nx" -> :nx
-    end
-  end
-
-  @spec get_implementation_name(implementation_t) :: {:ok, String.t()} | {:error, String.t()}
-  def get_implementation_name(implementation) do
-    case implementation do
-      :ffmpeg -> {:ok, "FFmpeg"}
-      :opengl_cpp -> {:ok, "OpenGL C++"}
-      :opengl_rust -> {:ok, "OpenGL Rust"}
-      :nx -> {:ok, "Nx"}
-      _other -> {:error, "Format not supported"}
     end
   end
 end

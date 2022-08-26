@@ -6,10 +6,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.Implementation
   alias Membrane.VideoCompositor.Test.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
-  @implementation [:ffmpeg, :nx]
+  @implementation Implementation.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
