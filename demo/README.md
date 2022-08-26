@@ -17,7 +17,8 @@ Run demos with the command line, for example:
 - `IMPL=` - implementation of video compositor 
   - `ffmpeg`
   - `nx`
-  - `opengl`
+  - `opengl_cpp`
+  - `opengl_rust`
 - `SINK=` - result destination
   - `file` - create an output file with the corresponding video format
   - `play` - play result in real-time, using SDL video player

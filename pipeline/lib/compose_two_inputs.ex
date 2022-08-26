@@ -102,7 +102,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeTwoInputs do
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, _src}, _context, state) do
+  def handle_element_end_of_stream({_pad, _src}, _context, state) do
     {:ok, state}
   end
 end
