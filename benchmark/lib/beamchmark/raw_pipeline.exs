@@ -1,5 +1,5 @@
 defmodule Membrane.VideoCompositor.Benchmark.Beamchmark.Raw do
-  defmodule FFMPEG do
+  defmodule FFmpeg do
     @behaviour Beamchmark.Scenario
 
     @impl true
@@ -8,12 +8,21 @@ defmodule Membrane.VideoCompositor.Benchmark.Beamchmark.Raw do
     end
   end
 
-  defmodule OpenGL do
+  defmodule OpenGL_Cpp do
     @behaviour Beamchmark.Scenario
 
     @impl true
     def run() do
-      RawPipeline.benchmark(:opengl)
+      RawPipeline.benchmark(:opengl_cpp)
+    end
+  end
+
+  defmodule OpenGL_Rust do
+    @behaviour Beamchmark.Scenario
+
+    @impl true
+    def run() do
+      RawPipeline.benchmark(:opengl_rust)
     end
   end
 
@@ -33,9 +42,10 @@ defmodule RawPipeline do
   """
 
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Implementation
   alias Membrane.VideoCompositor.Utility
 
-  @spec benchmark(:ffmpeg | :opengl | :nx) :: :ok
+  @spec benchmark(Implementation.implementation_t()) :: :ok
   def benchmark(implementation) do
     caps = %RawVideo{
       width: 1280,
@@ -68,7 +78,7 @@ defmodule RawPipeline do
   end
 
   defp run_raw_pipeline(pipeline_init_options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(pipeline_init_options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.Raw.start(pipeline_init_options)
 
     Process.monitor(pid)
 
@@ -87,8 +97,8 @@ benchmarks_options = %{
   output_dir: "./results/beamchmark/raw_pipeline_results",
 }
 
-Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.FFMPEG,
-  name: "Raw Pipeline Benchmark - ffmpeg",
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.FFmpeg,
+  name: "Raw Pipeline Benchmark - FFmpeg",
   duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
   memory_interval: benchmarks_options.memory_interval,
@@ -102,7 +112,22 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.FFMPEG,
   ]
 )
 
-Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.OpenGL,
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.OpenGL_Cpp,
+  name: "Raw Pipeline Benchmark - OpenGL C++",
+  duration: benchmarks_options.benchmark_duration,
+  cpu_interval: benchmarks_options.cpu_interval,
+  memory_interval: benchmarks_options.memory_interval,
+  delay: benchmarks_options.delay,
+  compare?: benchmarks_options.compare?,
+  output_dir: benchmarks_options.output_dir,
+  formatters: [
+    Beamchmark.Formatters.Console,
+    {Beamchmark.Formatters.HTML,
+      [output_path: Path.join(benchmarks_options.output_dir, "raw_pipeline_opengl_cpp_beamchmark_results.html")]}
+  ]
+)
+
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.OpenGL_Rust,
   name: "Raw Pipeline Benchmark - OpenGL",
   duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
@@ -113,7 +138,7 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.Raw.OpenGL,
   formatters: [
     Beamchmark.Formatters.Console,
     {Beamchmark.Formatters.HTML,
-      [output_path: Path.join(benchmarks_options.output_dir, "raw_pipeline_opengl_beamchmark_results.html")]}
+      [output_path: Path.join(benchmarks_options.output_dir, "raw_pipeline_opengl_rust_beamchmark_results.html")]}
   ]
 )
 

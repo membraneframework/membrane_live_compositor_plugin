@@ -63,8 +63,10 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
       %{
         "Two videos into one raw pipeline benchmark - FFmpeg" =>
           fn options -> run_raw_pipeline(%{options | implementation: :ffmpeg}) end,
-        "Two videos into one raw pipeline benchmark - OpenGL" =>
-          fn options -> run_raw_pipeline(%{options | implementation: :opengl}) end,
+        "Two videos into one raw pipeline benchmark - OpenGL C++" =>
+          fn options -> run_raw_pipeline(%{options | implementation: :opengl_cpp}) end,
+        "Two videos into one raw pipeline benchmark - OpenGL Rust" =>
+          fn options -> run_raw_pipeline(%{options | implementation: :opengl_rust}) end,
         "Two videos into one raw pipeline benchmark - Nx" =>
           fn options -> run_raw_pipeline(%{options | implementation: :nx}) end
       },
@@ -91,7 +93,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   end
 
   defp run_raw_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineRaw.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.Raw.start(options)
 
     Process.monitor(pid)
 

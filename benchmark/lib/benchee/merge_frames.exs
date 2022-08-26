@@ -63,9 +63,13 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
     {:ok, ffmpeg_internal_state_1080p} = Membrane.VideoCompositor.FFMPEG.init(caps_1080p)
     {:ok, ffmpeg_internal_state_4k} = Membrane.VideoCompositor.FFMPEG.init(caps_4k)
 
-    {:ok, opengl_internal_state_720p} = Membrane.VideoCompositor.OpenGL.init(caps_720p)
-    {:ok, opengl_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.init(caps_1080p)
-    {:ok, opengl_internal_state_4k} = Membrane.VideoCompositor.OpenGL.init(caps_4k)
+    {:ok, opengl_cpp_internal_state_720p} = Membrane.VideoCompositor.OpenGL.Cpp.init(caps_720p)
+    {:ok, opengl_cpp_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.Cpp.init(caps_1080p)
+    {:ok, opengl_cpp_internal_state_4k} = Membrane.VideoCompositor.OpenGL.Cpp.init(caps_4k)
+
+    {:ok, opengl_rust_internal_state_720p} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_720p)
+    {:ok, opengl_rust_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_1080p)
+    {:ok, opengl_rust_internal_state_4k} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_4k)
 
     {:ok, nx_internal_state_720p} = Membrane.VideoCompositor.Nx.init(caps_720p)
     {:ok, nx_internal_state_1080p} = Membrane.VideoCompositor.Nx.init(caps_1080p)
@@ -73,28 +77,33 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
 
     internal_states_720p = %{
       ffmpeg: ffmpeg_internal_state_720p,
-      opengl: opengl_internal_state_720p,
+      opengl_cpp: opengl_cpp_internal_state_720p,
+      opengl_rust: opengl_rust_internal_state_720p,
       nx: nx_internal_state_720p
     }
 
     internal_states_1080p = %{
       ffmpeg: ffmpeg_internal_state_1080p,
-      opengl: opengl_internal_state_1080p,
+      opengl_cpp: opengl_cpp_internal_state_1080p,
+      opengl_rust: opengl_rust_internal_state_1080p,
       nx: nx_internal_state_1080p
     }
 
     internal_states_4k = %{
       ffmpeg: ffmpeg_internal_state_4k,
-      opengl: opengl_internal_state_4k,
+      opengl_cpp: opengl_cpp_internal_state_4k,
+      opengl_rust: opengl_rust_internal_state_4k,
       nx: nx_internal_state_4k
     }
 
     Benchee.run(
       %{
         "Merge two frames to one - FFmpeg" =>
-          fn {frames, internal_states} -> Membrane.VideoCompositor.FFMPEG.merge_frames(frames, internal_states.ffmpeg) end,
-        "Merge two frames to one - OpenGL" =>
-          fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.merge_frames(frames, internal_states.opengl) end,
+          fn {frames, internal_states} -> Membrane.VideoCompositor.FFmpeg.merge_frames(frames, internal_states.ffmpeg) end,
+        "Merge two frames to one - OpenGL C++" =>
+          fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.Cpp.merge_frames(frames, internal_states.opengl_cpp) end,
+        "Merge two frames to one - OpenGL Rust" =>
+          fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.Rust.merge_frames(frames, internal_states.opengl_rust) end,
         "Merge two frames to one - Nx" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.Nx.merge_frames(frames, internal_states.nx) end
       },

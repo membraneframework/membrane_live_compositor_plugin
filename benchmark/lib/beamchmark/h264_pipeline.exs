@@ -1,5 +1,5 @@
 defmodule Membrane.VideoCompositor.Benchmark.Beamchmark.H264 do
-  defmodule FFMPEG do
+  defmodule FFmpeg do
     @behaviour Beamchmark.Scenario
 
     @impl true
@@ -8,12 +8,21 @@ defmodule Membrane.VideoCompositor.Benchmark.Beamchmark.H264 do
     end
   end
 
-  defmodule OpenGL do
+  defmodule OpenGL_Cpp do
     @behaviour Beamchmark.Scenario
 
     @impl true
     def run() do
-      H264PipelineBeamchmark.benchmark(:opengl)
+      H264PipelineBeamchmark.benchmark(:opengl_cpp)
+    end
+  end
+
+  defmodule OpenGL_Rust do
+    @behaviour Beamchmark.Scenario
+
+    @impl true
+    def run() do
+      H264PipelineBeamchmark.benchmark(:opengl_rust)
     end
   end
 
@@ -33,9 +42,10 @@ defmodule H264PipelineBeamchmark do
   """
 
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Implementation
   alias Membrane.VideoCompositor.Utility
 
-  @spec benchmark(:ffmpeg | :opengl | :nx) :: :ok
+  @spec benchmark(Implementation.implementation_t()) :: :ok
   def benchmark(implementation) do
     caps = %RawVideo{
       width: 1280,
@@ -68,7 +78,7 @@ defmodule H264PipelineBeamchmark do
   end
 
   defp run_h264_pipeline(pipeline_init_options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(pipeline_init_options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.H264.start(pipeline_init_options)
 
     Process.monitor(pid)
 
@@ -87,7 +97,7 @@ benchmarks_options = %{
   output_dir: "./results/beamchmark/h264_pipeline_results",
 }
 
-Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.FFMPEG,
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.FFmpeg,
   name: "H264 Pipeline Benchmark - ffmpeg",
   duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
@@ -102,8 +112,8 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.FFMPEG,
   ]
 )
 
-Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL,
-  name: "H264 Pipeline Benchmark - OpenGL",
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL_Cpp,
+  name: "H264 Pipeline Benchmark - OpenGL C++",
   duration: benchmarks_options.benchmark_duration,
   cpu_interval: benchmarks_options.cpu_interval,
   memory_interval: benchmarks_options.memory_interval,
@@ -113,7 +123,22 @@ Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL,
   formatters: [
     Beamchmark.Formatters.Console,
     {Beamchmark.Formatters.HTML,
-      [output_path: Path.join(benchmarks_options.output_dir, "h264_pipeline_opengl_beamchmark_results.html")]}
+      [output_path: Path.join(benchmarks_options.output_dir, "h264_pipeline_opengl_cpp_beamchmark_results.html")]}
+  ]
+)
+
+Beamchmark.run(Membrane.VideoCompositor.Benchmark.Beamchmark.H264.OpenGL_Rust,
+  name: "H264 Pipeline Benchmark - OpenGL Rust",
+  duration: benchmarks_options.benchmark_duration,
+  cpu_interval: benchmarks_options.cpu_interval,
+  memory_interval: benchmarks_options.memory_interval,
+  delay: benchmarks_options.delay,
+  compare?: benchmarks_options.compare?,
+  output_dir: benchmarks_options.output_dir,
+  formatters: [
+    Beamchmark.Formatters.Console,
+    {Beamchmark.Formatters.HTML,
+      [output_path: Path.join(benchmarks_options.output_dir, "h264_pipeline_opengl_rust_beamchmark_results.html")]}
   ]
 )
 
