@@ -98,13 +98,13 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
 
     Benchee.run(
       %{
-        "Merge two frames to one - FFmpeg" =>
+        "FFmpeg - Merge two frames to one" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.FFmpeg.merge_frames(frames, internal_states.ffmpeg) end,
-        "Merge two frames to one - OpenGL C++" =>
+        "OpenGL C++ - Merge two frames to one" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.Cpp.merge_frames(frames, internal_states.opengl_cpp) end,
-        "Merge two frames to one - OpenGL Rust" =>
+        "OpenGL Rust - Merge two frames to one" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.OpenGL.Rust.merge_frames(frames, internal_states.opengl_rust) end,
-        "Merge two frames to one - Nx" =>
+        "Nx - Merge two frames to one" =>
           fn {frames, internal_states} -> Membrane.VideoCompositor.Nx.merge_frames(frames, internal_states.nx) end
       },
       inputs: %{
