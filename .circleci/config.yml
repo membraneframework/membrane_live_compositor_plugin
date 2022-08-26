@@ -12,4 +12,10 @@ jobs:
           mix deps.get
           mix deps.compile --all
           mix format --check-formatted
+          for path in native/*
+          do
+            cargo fmt --manifest-path $path/Cargo.toml -- --check
+            cargo clippy --manifest-path $path/Cargo.toml -- -D warnings
+            cargo test --manifest-path $path/Cargo.toml
+          done
           mix test
