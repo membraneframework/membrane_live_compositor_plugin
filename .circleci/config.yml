@@ -1,11 +1,15 @@
 version: 2.1
-orbs:
-  elixir: membraneframework/elixir@1
-
-workflows:
-  version: 2
+jobs:
   build:
-    jobs:
-      - elixir/build_test
-      - elixir/test
-      - elixir/lint
+    docker:
+      - image: membraneframeworklabs/docker_membrane:latest
+    environment:
+      MIX_ENV: test
+
+    steps:
+      - checkout
+      - run: |
+          mix deps.get
+          mix deps.compile --all
+          mix format --check-formatted
+          mix test
