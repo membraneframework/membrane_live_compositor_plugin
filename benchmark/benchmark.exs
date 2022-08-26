@@ -63,10 +63,13 @@ alias Membrane.VideoCompositor.Benchmark.RunBenchmarks
 
 case benchmark_type do
   ["benchee"] ->
+    Membrane.Logger.bare_log(:info, "Starting benchee benchmarks")
     RunBenchmarks.run_benchee_benchmarks
   ["beamchmark"] ->
+    Membrane.Logger.bare_log(:info, "Starting beamchmark benchmarks")
     RunBenchmarks.run_beamchmark_benchmarks
   _other ->
+    Membrane.Logger.bare_log(:info, "Starting all benchmarks")
     benchee_exit_status = RunBenchmarks.run_benchee_benchmarks
     beamchmark_exit_status = RunBenchmarks.run_beamchmark_benchmarks
 

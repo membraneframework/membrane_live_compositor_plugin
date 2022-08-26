@@ -71,8 +71,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
           fn options -> run_raw_pipeline(%{options | implementation: :nx}) end
       },
       inputs: %{
-        "1. 720p #{video_duration} 30fps" => options_720p,
-        "2. 1080p #{video_duration} 30fps" => options_1080p
+        "1. 720p #{video_duration}s 30fps" => options_720p,
+        "2. 1080p #{video_duration}s 30fps" => options_1080p
       },
       title: "Raw pipeline benchmark",
       parallel: 1,

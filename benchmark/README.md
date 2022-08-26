@@ -40,21 +40,25 @@
 
 ## Example benchmarks results:
 
-<h3 align="center"> Benchee pipelines results: </h3>
+<h3 align="center"> Benchee merge two frames results: </h3>
+
+720p                       |  1080p                    |  4k
+:-------------------------:|:-------------------------:|:-------------------------:
+![Benchee merge two 720p frames results](assets/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_4k.png)
+
+
+<h3 align="center"> Benchee h264 pipeline results: </h3>
 
 720p                       |  1080p
 :-------------------------:|:-------------------------:
 ![Benchee h264 pipeline 720p 30s 30fps results](assets/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/results_benchee_h264_pipeline_1080p_30s_30fps.png)
 
-<h3 align="center"> Benchee merge two frames results: </h3>
+
+<h3 align="center"> Benchee raw pipeline results: </h3>
 
 720p                       |  1080p
 :-------------------------:|:-------------------------:
-![Benchee merge two 720p frames results](assets/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_1080p.png)
+![Benchee raw pipeline 720p 30s 30fps results](assets/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/results_benchee_raw_pipeline_1080p_30s_30fps.png)
 
 
-<h3 align="center"> Beamchmark pipelines ffmpeg results: </h3>
 
-h264 pipeline             |  raw pipeline
-:-------------------------:|:-------------------------:
-![Beamchmark h264 pipeline ffmpeg results](assets/results_beamchmark_h264_pipeline_ffmpeg.png) | ![Beamchmark raw pipeline ffmpeg results](assets/results_beamchmark_raw_pipeline_ffmpeg.png)

@@ -59,9 +59,9 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
       second: frame_4k
     }
 
-    {:ok, ffmpeg_internal_state_720p} = Membrane.VideoCompositor.FFMPEG.init(caps_720p)
-    {:ok, ffmpeg_internal_state_1080p} = Membrane.VideoCompositor.FFMPEG.init(caps_1080p)
-    {:ok, ffmpeg_internal_state_4k} = Membrane.VideoCompositor.FFMPEG.init(caps_4k)
+    {:ok, ffmpeg_internal_state_720p} = Membrane.VideoCompositor.FFmpeg.init(caps_720p)
+    {:ok, ffmpeg_internal_state_1080p} = Membrane.VideoCompositor.FFmpeg.init(caps_1080p)
+    {:ok, ffmpeg_internal_state_4k} = Membrane.VideoCompositor.FFmpeg.init(caps_4k)
 
     {:ok, opengl_cpp_internal_state_720p} = Membrane.VideoCompositor.OpenGL.Cpp.init(caps_720p)
     {:ok, opengl_cpp_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.Cpp.init(caps_1080p)
