@@ -40,8 +40,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(options) do
-    {:ok, compositor_module} =
-      Implementation.get_implementation_module(options.implementation)
+    {:ok, compositor_module} = Implementation.get_implementation_module(options.implementation)
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 

@@ -12,12 +12,16 @@ defmodule Membrane.VideoCompositor.Implementation do
     case implementation do
       :ffmpeg ->
         {:ok, Membrane.VideoCompositor.FFmpeg}
+
       :opengl_cpp ->
         {:ok, Membrane.VideoCompositor.OpenGL.Cpp}
+
       :opengl_rust ->
         {:ok, Membrane.VideoCompositor.OpenGL.Rust}
+
       :nx ->
         {:ok, Membrane.VideoCompositor.Nx}
+
       _other ->
         {:error, "Format not supported"}
     end
