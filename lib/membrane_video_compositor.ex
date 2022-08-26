@@ -8,10 +8,11 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Implementation
 
   def_options implementation: [
                 type: :atom,
-                spec: :ffmpeg | :opengl | :nx,
+                spec: Implementation.implementation_t(),
                 description: "Implementation of video composer."
               ],
               caps: [
@@ -39,7 +40,8 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(options) do
-    compositor_module = determine_compositor_module(options.implementation)
+    {:ok, compositor_module} =
+      Implementation.get_implementation_module(options.implementation)
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 
@@ -104,26 +106,6 @@ defmodule Membrane.VideoCompositor do
 
       _one_streams_has_not_ended ->
         {:ok, state}
-    end
-  end
-
-  @spec determine_compositor_module(atom()) :: module()
-  defp determine_compositor_module(implementation) do
-    case implementation do
-      :ffmpeg ->
-        Membrane.VideoCompositor.FFMPEG
-
-      :opengl ->
-        Membrane.VideoCompositor.OpenGL
-
-      :nx ->
-        Membrane.VideoCompositor.Nx
-
-      :ffmpeg_research ->
-        Membrane.VideoCompositor.FFmpeg.Research
-
-      _other ->
-        raise "#{implementation} is not available implementation."
     end
   end
 end
