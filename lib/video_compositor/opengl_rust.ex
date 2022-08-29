@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
   @impl true
   def init(%Membrane.RawVideo{width: width, height: height, pixel_format: pixel_format}) do
     input_caps = %Rust.RawVideo{width: width, height: height, pixel_format: pixel_format}
-    output_caps = %Rust.RawVideo{width: width, height: 2 * height, pixel_format: pixel_format}
+    output_caps = %Rust.RawVideo{input_caps | height: 2 * height}
 
     Rust.init(input_caps, input_caps, output_caps)
   end
