@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
             buffers: Qex.t(Membrane.Buffer.t()),
             state: :playing | :end_of_stream
           }
-    defstruct buffers: :queue.new(), state: :playing
+    defstruct buffers: Qex.new(), state: :playing
   end
 
   @impl true
@@ -49,31 +49,69 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     {:ok, internal_state} = compositor_module.init(options.caps)
 
     state = %{
-      tracks: %{},
+      ids_to_tracks: %{},
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
-      pads_to_id: {0, %{}}
+      pads_to_ids: {0, %{}}
     }
 
     {:ok, state}
   end
 
+  defp add_video(pad, state) do
+    {new_id, pads_to_ids} = state.pads_to_ids
+    state = %{state | pads_to_ids: {new_id + 1, Map.put(pads_to_ids, pad, new_id)}}
+
+    %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}
+  end
+
   @impl true
   def handle_pad_added(pad, _context, state) do
-    {new_id, pads_to_id} = state.pads_to_id
-    state = %{state | pads_to_id: {new_id + 1, Map.put(pads_to_id, pad, new_id)}}
-
-    state = %{state | tracks: Map.put(state.tracks, pad, %Track{})}
+    state = add_video(pad, state)
     {:ok, state}
   end
 
   @impl true
-  def handle_caps(pad, caps, _context, %{pads_to_id: {_new_id, pads_to_id}} = state) do
-    id = Map.get(pads_to_id, pad)
-    {:ok, internal_state} = state.compositor_module.add_video(id, caps, %{x: 0, y: 0})
+  def handle_caps(pad, caps, _context, state) do
+    %{pads_to_ids: {_new_id, pads_to_ids}, internal_state: internal_state} = state
+    id = Map.get(pads_to_ids, pad)
+
+    {:ok, internal_state} =
+      state.compositor_module.add_video(id, caps, %{x: 0, y: 0}, internal_state)
+
     state = %{state | internal_state: internal_state}
     {{:ok, caps: {:output, state.caps}}, state}
+  end
+
+  defp push_frame(ids_to_tracks, id, frame) do
+    Map.update!(ids_to_tracks, id, fn %Track{buffers: buffers} = track ->
+      %Track{track | buffers: Qex.push(buffers, frame)}
+    end)
+  end
+
+  defp all_has_frame?(ids_to_tracks) do
+    any_empty? =
+      ids_to_tracks
+      |> Map.values()
+      |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
+      |> Enum.any?(&Enum.empty?/1)
+
+    not any_empty?
+  end
+
+  defp get_ids_to_frames(ids_to_tracks) do
+    ids_to_tracks
+    |> Enum.map(fn {id, %Track{buffers: buffers}} -> {id, Qex.first!(buffers)} end)
+    |> Map.new()
+  end
+
+  defp pop_frames(ids_to_tracks) do
+    ids_to_tracks
+    |> Enum.map(fn {id, %Track{buffers: buffers} = track} ->
+      {id, %Track{track | buffers: Qex.pop!(buffers) |> elem(1)}}
+    end)
+    |> Map.new()
   end
 
   @impl true
@@ -81,56 +119,57 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
         pad,
         buffer,
         _context,
-        %{tracks: tracks, internal_state: internal_state} = state
+        %{
+          ids_to_tracks: ids_to_tracks,
+          internal_state: internal_state,
+          pads_to_ids: {_new_id, pads_to_ids}
+        } = state
       ) do
-    tracks =
-      Map.update!(tracks, pad, fn %Track{buffers: buffers} = track ->
-        %Track{track | buffers: Qex.push(buffers, buffer)}
-      end)
+    id = Map.get(pads_to_ids, pad)
 
-    state = %{state | tracks: tracks}
+    ids_to_tracks = push_frame(ids_to_tracks, id, buffer)
 
-    any_empty? =
-      tracks
-      |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
-      |> Enum.all?(&Enum.empty?/1)
+    state = %{state | ids_to_tracks: ids_to_tracks}
 
-    all_empty? = not any_empty?
-
-    if all_empty? do
-      all_frames =
-        tracks
-        |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
-        |> Enum.map(&Qex.first!/1)
+    if all_has_frame?(ids_to_tracks) do
+      ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
       {{:ok, merged_frame_binary}, internal_state} =
-        state.compositor_module.merge_frames(all_frames, internal_state)
+        state.compositor_module.merge_frames(ids_to_frames, internal_state)
 
-      tracks =
-        tracks
-        |> Enum.map(fn %Track{buffers: buffers} = track ->
-          %Track{track | buffers: Qex.pop!(buffers) |> elem(1)}
-        end)
+      ids_to_tracks = pop_frames(ids_to_tracks)
 
       state = %{
         state
-        | tracks: tracks,
+        | ids_to_tracks: ids_to_tracks,
           internal_state: internal_state
       }
 
-      {{:ok, buffer: {:output, merged_frame_binary}}, state}
+      {{:ok, buffer: {:output, %Membrane.Buffer{payload: merged_frame_binary}}}, state}
     else
       {:ok, state}
     end
   end
 
-  @impl true
-  def handle_end_of_stream(pad, _context, %{streams_state: streams_state} = state) do
-    streams_state = Map.put(streams_state, pad, :end_of_the_stream)
-    state = %{state | streams_state: streams_state}
+  defp remove_video(id, %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state) do
+    ids_to_tracks = Map.delete(ids_to_tracks, id)
+    {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+    %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
+  end
 
-    all_ended? =
-      streams_state |> Enum.all?(fn {_pad, stream_state} -> stream_state == :end_of_stream end)
+  @impl true
+  def handle_end_of_stream(
+        pad,
+        _context,
+        %{pads_to_ids: {_new_id, pads_to_ids}} = state
+      ) do
+    id = Map.get(pads_to_ids, pad)
+
+    state = remove_video(id, state)
+
+    %{ids_to_tracks: ids_to_tracks} = state
+
+    all_ended? = Enum.empty?(ids_to_tracks)
 
     if all_ended? do
       {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
@@ -142,8 +181,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
   @spec determine_compositor_module(atom()) :: module()
   defp determine_compositor_module(implementation) do
     case implementation do
-      :ffmpeg ->
-        Membrane.VideoCompositor.FFMPEG
+      # :ffmpeg ->
+      #   Membrane.VideoCompositor.FFMPEG
 
       # :opengl ->
       #   Membrane.VideoCompositor.OpenGL
@@ -155,7 +194,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
       #   Membrane.VideoCompositor.FFmpeg.Research
 
       _other ->
-        raise "#{implementation} is not available implementation."
+        implementation
     end
   end
 end
