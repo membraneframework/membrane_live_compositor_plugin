@@ -39,26 +39,50 @@
     - Modify ```benchmark_duration``` parameter in ```benchmarks_options``` map.
 
 ## Example benchmarks results:
+### Lenovo Legion i7-11800H, 32GB RAM, RTX 3050 Ti
 
 <h3 align="center"> Benchee merge two frames results: </h3>
 
 720p                       |  1080p                    |  4k
 :-------------------------:|:-------------------------:|:-------------------------:
-![Benchee merge two 720p frames results](assets/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_4k.png)
+![Benchee merge two 720p frames results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_4k.png)
 
 
 <h3 align="center"> Benchee h264 pipeline results: </h3>
 
 720p                       |  1080p
 :-------------------------:|:-------------------------:
-![Benchee h264 pipeline 720p 30s 30fps results](assets/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/results_benchee_h264_pipeline_1080p_30s_30fps.png)
+![Benchee h264 pipeline 720p 30s 30fps results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_h264_pipeline_1080p_30s_30fps.png)
 
 
 <h3 align="center"> Benchee raw pipeline results: </h3>
 
 720p                       |  1080p
 :-------------------------:|:-------------------------:
-![Benchee raw pipeline 720p 30s 30fps results](assets/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/results_benchee_raw_pipeline_1080p_30s_30fps.png)
+![Benchee raw pipeline 720p 30s 30fps results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_raw_pipeline_1080p_30s_30fps.png)
+
+
+### MacBook Pro i5-1038NG7, 16GB RAM, Intel Iris Plus Graphics 1536 MB
+
+<h3 align="center"> Benchee merge two frames results: </h3>
+
+720p                       |  1080p                    |  4k
+:-------------------------:|:-------------------------:|:-------------------------:
+![Benchee merge two 720p frames results](assets/mac_i5-1038NG7/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/mac_i5-1038NG7/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/mac_i5-1038NG7/results_benchee_merge_frames_4k.png)
+
+
+<h3 align="center"> Benchee h264 pipeline results: </h3>
+
+720p                       |  1080p
+:-------------------------:|:-------------------------:
+![Benchee h264 pipeline 720p 30s 30fps results](assets/mac_i5-1038NG7/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/mac_i5-1038NG7/results_benchee_h264_pipeline_1080p_30s_30fps.png)
+
+
+<h3 align="center"> Benchee raw pipeline results: </h3>
+
+720p                       |  1080p
+:-------------------------:|:-------------------------:
+![Benchee raw pipeline 720p 30s 30fps results](assets/mac_i5-1038NG7/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/mac_i5-1038NG7/results_benchee_raw_pipeline_1080p_30s_30fps.png)
 
 
 
