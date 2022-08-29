@@ -6,11 +6,12 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.Implementation
   alias Membrane.VideoCompositor.Test.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-  @implementation [:nx, :ffmpeg]
+  @implementation Implementation.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 1280,

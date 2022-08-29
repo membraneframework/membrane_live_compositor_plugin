@@ -61,12 +61,17 @@ benchmark_type = System.argv()
 
 alias Membrane.VideoCompositor.Benchmark.RunBenchmarks
 
+require Membrane.Logger
+
 case benchmark_type do
   ["benchee"] ->
+    Membrane.Logger.info("Starting benchee benchmarks")
     RunBenchmarks.run_benchee_benchmarks
   ["beamchmark"] ->
+    Membrane.Logger.info("Starting beamchmark benchmarks")
     RunBenchmarks.run_beamchmark_benchmarks
   _other ->
+    Membrane.Logger.info("Starting all benchmarks")
     benchee_exit_status = RunBenchmarks.run_benchee_benchmarks
     beamchmark_exit_status = RunBenchmarks.run_beamchmark_benchmarks
 

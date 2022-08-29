@@ -59,11 +59,13 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
 
     Benchee.run(
       %{
-        "Two videos into one h264 pipeline benchmark - FFmpeg" =>
+        "FFmpeg - Two videos into one h264 pipeline benchmark" =>
           fn options -> run_h264_pipeline(%{options | implementation: :ffmpeg}) end,
-        "Two videos into one h264 pipeline benchmark - OpenGL" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :opengl}) end,
-        "Two videos into one h264 pipeline benchmark - Nx" =>
+        "OpenGL C++ - Two videos into one h264 pipeline benchmark" =>
+          fn options -> run_h264_pipeline(%{options | implementation: :opengl_cpp}) end,
+        "OpenGL Rust - Two videos into one h264 pipeline benchmark" =>
+          fn options -> run_h264_pipeline(%{options | implementation: :opengl_rust}) end,
+        "Nx - Two videos into one h264 pipeline benchmark" =>
           fn options -> run_h264_pipeline(%{options | implementation: :nx}) end
       },
       inputs: %{
@@ -89,7 +91,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   end
 
   defp run_h264_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.PipelineH264.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.H264.start(options)
 
     Process.monitor(pid)
 

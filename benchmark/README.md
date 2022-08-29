@@ -15,17 +15,17 @@
 2.  Run ```mix deps.get``` command
 3.  Run command for benchmarks:
     1. For running packs of benchmarks:
-        - for all benchmarks (estimated total run time - 27min 30s): ```mix run benchmark.exs```
-        - for benchee benchmarks (estimated total run time - 24min 30s): ```mix run benchmark.exs benchee```
-        - for beamchmark benchmarks (estimated total run time - 3min): ```mix run benchmark.exs beamchmark```
+        - for all benchmarks (estimated total run time - 38min): ```mix run benchmark.exs```
+        - for benchee benchmarks (estimated total run time - 32min): ```mix run benchmark.exs benchee```
+        - for beamchmark benchmarks (estimated total run time - 6min): ```mix run benchmark.exs beamchmark```
     2. For running single benchmarks:
         - benchee benchmarks: 
-            - for measuring frame composition performance (estimated total run time - 9min 40s): ```mix run lib/benchee/merge_frames.exs```
-            - for measuring raw pipeline performance (estimated total run time - 9min 40s): ```mix run lib/benchee/raw_pipeline.exs```
-            - for measuring h264 pipeline performance (estimated total run time - 5min 10s): ```mix run lib/benchee/h264_pipeline.exs```
+            - for measuring frame composition performance (estimated total run time - 13min): ```mix run lib/benchee/merge_frames.exs```
+            - for measuring raw pipeline performance (estimated total run time - 13min): ```mix run lib/benchee/raw_pipeline.exs```
+            - for measuring h264 pipeline performance (estimated total run time - 6min): ```mix run lib/benchee/h264_pipeline.exs```
         - beamchmark benchmarks:
-            - for measuring raw pipeline performance (estimated total run time - 3min): ```mix run lib/beamchmark/raw_pipeline.exs```
-            - for measuring h264 pipeline performance (estimated total run time - 3min): ```mix run lib/beamchmark/h264_pipeline.exs```
+            - for measuring raw pipeline performance (estimated total run time - 4min): ```mix run lib/beamchmark/raw_pipeline.exs```
+            - for measuring h264 pipeline performance (estimated total run time - 4min): ```mix run lib/beamchmark/h264_pipeline.exs```
 4. Results will be displayed in console log and saved in html website saved at "results" directory
 
 ## How to modify test length:
@@ -39,22 +39,50 @@
     - Modify ```benchmark_duration``` parameter in ```benchmarks_options``` map.
 
 ## Example benchmarks results:
-
-<h3 align="center"> Benchee pipelines results: </h3>
-
-720p                       |  1080p
-:-------------------------:|:-------------------------:
-![Benchee h264 pipeline 720p 30s 30fps results](assets/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/results_benchee_h264_pipeline_1080p_30s_30fps.png)
+### Lenovo Legion i7-11800H, 32GB RAM, RTX 3050 Ti
 
 <h3 align="center"> Benchee merge two frames results: </h3>
 
+720p                       |  1080p                    |  4k
+:-------------------------:|:-------------------------:|:-------------------------:
+![Benchee merge two 720p frames results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_merge_frames_4k.png)
+
+
+<h3 align="center"> Benchee h264 pipeline results: </h3>
+
 720p                       |  1080p
 :-------------------------:|:-------------------------:
-![Benchee merge two 720p frames results](assets/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/results_benchee_merge_frames_1080p.png)
+![Benchee h264 pipeline 720p 30s 30fps results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_h264_pipeline_1080p_30s_30fps.png)
 
 
-<h3 align="center"> Beamchmark pipelines ffmpeg results: </h3>
+<h3 align="center"> Benchee raw pipeline results: </h3>
 
-h264 pipeline             |  raw pipeline
+720p                       |  1080p
 :-------------------------:|:-------------------------:
-![Beamchmark h264 pipeline ffmpeg results](assets/results_beamchmark_h264_pipeline_ffmpeg.png) | ![Beamchmark raw pipeline ffmpeg results](assets/results_beamchmark_raw_pipeline_ffmpeg.png)
+![Benchee raw pipeline 720p 30s 30fps results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/lenovo_i7-11800H_rtx-3050-Ti-Mobile/results_benchee_raw_pipeline_1080p_30s_30fps.png)
+
+
+### MacBook Pro i5-1038NG7, 16GB RAM, Intel Iris Plus Graphics 1536 MB
+
+<h3 align="center"> Benchee merge two frames results: </h3>
+
+720p                       |  1080p                    |  4k
+:-------------------------:|:-------------------------:|:-------------------------:
+![Benchee merge two 720p frames results](assets/mac_i5-1038NG7/results_benchee_merge_frames_720p.png) | ![Benchee merge two 1080p frames results:](assets/mac_i5-1038NG7/results_benchee_merge_frames_1080p.png) | ![Benchee merge two 1080p frames results:](assets/mac_i5-1038NG7/results_benchee_merge_frames_4k.png)
+
+
+<h3 align="center"> Benchee h264 pipeline results: </h3>
+
+720p                       |  1080p
+:-------------------------:|:-------------------------:
+![Benchee h264 pipeline 720p 30s 30fps results](assets/mac_i5-1038NG7/results_benchee_h264_pipeline_720p_30s_30fps.png) | ![Benchee h264 pipeline ffmpeg results](assets/mac_i5-1038NG7/results_benchee_h264_pipeline_1080p_30s_30fps.png)
+
+
+<h3 align="center"> Benchee raw pipeline results: </h3>
+
+720p                       |  1080p
+:-------------------------:|:-------------------------:
+![Benchee raw pipeline 720p 30s 30fps results](assets/mac_i5-1038NG7/results_benchee_raw_pipeline_720p_30s_30fps.png) | ![Benchee raw pipeline ffmpeg results](assets/mac_i5-1038NG7/results_benchee_raw_pipeline_1080p_30s_30fps.png)
+
+
+
