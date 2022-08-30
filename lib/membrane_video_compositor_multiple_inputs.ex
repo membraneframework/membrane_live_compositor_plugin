@@ -160,8 +160,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
       ids_to_tracks
       |> Enum.reduce(
         {ids_to_tracks, internal_state},
-        fn {id, %Track{state: state, buffers: buffers}}, {ids_to_tracks, internal_state} ->
-          if state == :end_of_stream and Enum.empty?(buffers) do
+        fn {id, %Track{state: status, buffers: buffers}}, {ids_to_tracks, internal_state} ->
+          if status == :end_of_stream and Enum.empty?(buffers) do
             ids_to_tracks = Map.delete(ids_to_tracks, id)
             {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
             {ids_to_tracks, internal_state}
@@ -202,7 +202,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     state = %{state | ids_to_tracks: ids_to_tracks}
 
     if all_streams_ended?(ids_to_tracks) do
-      {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
+      {{:ok, end_of_stream: :output}, state}
     else
       {:ok, state}
     end
