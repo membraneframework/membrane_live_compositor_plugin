@@ -59,17 +59,17 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     {:ok, state}
   end
 
+  @impl true
+  def handle_pad_added(pad, _context, state) do
+    state = add_video(pad, state)
+    {:ok, state}
+  end
+
   defp add_video(pad, state) do
     {new_id, pads_to_ids} = state.pads_to_ids
     state = %{state | pads_to_ids: {new_id + 1, Map.put(pads_to_ids, pad, new_id)}}
 
     %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}
-  end
-
-  @impl true
-  def handle_pad_added(pad, _context, state) do
-    state = add_video(pad, state)
-    {:ok, state}
   end
 
   @impl true
@@ -82,36 +82,6 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
     state = %{state | internal_state: internal_state}
     {{:ok, caps: {:output, state.caps}}, state}
-  end
-
-  defp push_frame(ids_to_tracks, id, frame) do
-    Map.update!(ids_to_tracks, id, fn %Track{buffers: buffers} = track ->
-      %Track{track | buffers: Qex.push(buffers, frame)}
-    end)
-  end
-
-  defp all_has_frame?(ids_to_tracks) do
-    any_empty? =
-      ids_to_tracks
-      |> Map.values()
-      |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
-      |> Enum.any?(&Enum.empty?/1)
-
-    not any_empty?
-  end
-
-  defp get_ids_to_frames(ids_to_tracks) do
-    ids_to_tracks
-    |> Enum.map(fn {id, %Track{buffers: buffers}} -> {id, Qex.first!(buffers)} end)
-    |> Map.new()
-  end
-
-  defp pop_frames(ids_to_tracks) do
-    ids_to_tracks
-    |> Enum.map(fn {id, %Track{buffers: buffers} = track} ->
-      {id, %Track{track | buffers: Qex.pop!(buffers) |> elem(1)}}
-    end)
-    |> Map.new()
   end
 
   @impl true
@@ -145,33 +115,93 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
           internal_state: internal_state
       }
 
+      state = remove_ended_videos(state)
+
       {{:ok, buffer: {:output, %Membrane.Buffer{payload: merged_frame_binary}}}, state}
     else
       {:ok, state}
     end
   end
 
-  defp remove_video(id, %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state) do
-    ids_to_tracks = Map.delete(ids_to_tracks, id)
-    {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+  defp push_frame(ids_to_tracks, id, frame) do
+    Map.update!(ids_to_tracks, id, fn %Track{buffers: buffers} = track ->
+      %Track{track | buffers: Qex.push(buffers, frame)}
+    end)
+  end
+
+  defp all_has_frame?(ids_to_tracks) do
+    any_empty? =
+      ids_to_tracks
+      |> Map.values()
+      |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
+      |> Enum.any?(&Enum.empty?/1)
+
+    not any_empty?
+  end
+
+  defp get_ids_to_frames(ids_to_tracks) do
+    ids_to_tracks
+    |> Enum.map(fn {id, %Track{buffers: buffers}} -> {id, Qex.first!(buffers)} end)
+    |> Map.new()
+  end
+
+  defp pop_frames(ids_to_tracks) do
+    ids_to_tracks
+    |> Enum.map(fn {id, %Track{buffers: buffers} = track} ->
+      {id, %Track{track | buffers: Qex.pop!(buffers) |> elem(1)}}
+    end)
+    |> Map.new()
+  end
+
+  defp remove_ended_videos(
+         %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state
+       ) do
+    {ids_to_tracks, internal_state} =
+      ids_to_tracks
+      |> Enum.reduce(
+        {ids_to_tracks, internal_state},
+        fn {id, %Track{state: state, buffers: buffers}}, {ids_to_tracks, internal_state} ->
+          if state == :end_of_stream and Enum.empty?(buffers) do
+            ids_to_tracks = Map.delete(ids_to_tracks, id)
+            {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+            {ids_to_tracks, internal_state}
+          else
+            {ids_to_tracks, internal_state}
+          end
+        end
+      )
+
     %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
+  end
+
+  # defp _remove_video(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
+  #   ids_to_tracks = Map.delete(ids_to_tracks, id)
+  #   {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+  #   %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
+  # end
+
+  defp update_track_status(ids_to_tracks, id, status) do
+    ids_to_tracks
+    |> Map.update!(id, fn track -> %Track{track | state: status} end)
+  end
+
+  defp all_streams_ended?(ids_to_tracks) do
+    Enum.empty?(ids_to_tracks) or
+      Enum.all?(ids_to_tracks, fn {_id, %Track{state: state}} -> state == :end_of_stream end)
   end
 
   @impl true
   def handle_end_of_stream(
         pad,
         _context,
-        %{pads_to_ids: {_new_id, pads_to_ids}} = state
+        %{ids_to_tracks: ids_to_tracks, pads_to_ids: {_new_id, pads_to_ids}} = state
       ) do
     id = Map.get(pads_to_ids, pad)
 
-    state = remove_video(id, state)
+    ids_to_tracks = ids_to_tracks |> update_track_status(id, :end_of_stream)
+    state = %{state | ids_to_tracks: ids_to_tracks}
 
-    %{ids_to_tracks: ids_to_tracks} = state
-
-    all_ended? = Enum.empty?(ids_to_tracks)
-
-    if all_ended? do
+    if all_streams_ended?(ids_to_tracks) do
       {{:ok, end_of_stream: :output, notify: {:end_of_stream, pad}}, state}
     else
       {:ok, state}
