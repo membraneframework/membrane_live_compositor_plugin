@@ -16,19 +16,13 @@ macro_rules! gl {
         {
             // FIXME: we should probably add something like `ensure_current_thread_holds_context` here
             let result = glad_gles2::gl::$call($($args),*);
-            #[allow(unused_unsafe)] // we have this, because maybe there are some gl calls that are safe and in that case we need our own unsafe block here
-            let err = unsafe { glad_gles2::gl::GetError() };
-            crate::errors::result_or_gl_error(result, err, crate::errors::ErrorLocation {
+            crate::errors::result_or_gl_error(result, crate::errors::ErrorLocation {
                 file: file!().to_string(),
                 line: line!(),
                 call: format!("gl{}({})", stringify!($call), stringify!($($args),*))
             })
         }
     };
-
-    ($name:ident) => {
-        glad_gles2::gl::$name
-    }
 }
 
 pub(crate) use gl;
