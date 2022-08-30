@@ -16,11 +16,7 @@ macro_rules! gl {
         {
             // FIXME: we should probably add something like `ensure_current_thread_holds_context` here
             let result = glad_gles2::gl::$call($($args),*);
-            crate::errors::result_or_gl_error(result, crate::errors::ErrorLocation {
-                file: file!().to_string(),
-                line: line!(),
-                call: format!("gl{}({})", stringify!($call), stringify!($($args),*))
-            })
+            crate::errors::result_or_gl_error(result, file!(), line!(), stringify!($call), stringify!($($args),*))
         }
     };
 }

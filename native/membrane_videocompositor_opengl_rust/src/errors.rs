@@ -4,16 +4,33 @@ use thiserror::Error;
 #[module = "Membrane.VideoCompositor.OpenGL.Rust.ErrorLocation"]
 /// Carries information about a location where an error happened
 pub struct ErrorLocation {
-    pub file: String,
-    pub line: u32,
-    pub call: String,
+    file: String,
+    line: u32,
+    call: String,
 }
 
-pub fn result_or_gl_error<T>(res: T, location: ErrorLocation) -> Result<T, CompositorError> {
+pub fn result_or_gl_error<T>(
+    res: T,
+    file: &str,
+    line: u32,
+    function: &str,
+    args: &str,
+) -> Result<T, CompositorError> {
     use glad_gles2::gl;
+
     let err = unsafe { gl::GetError() };
+
+    if err == gl::NO_ERROR {
+        return Ok(res);
+    }
+
+    let location = ErrorLocation {
+        file: file.to_string(),
+        line,
+        call: format!("gl{}({})", function, args),
+    };
+
     match err {
-        gl::NO_ERROR => Ok(res),
         gl::INVALID_ENUM => Err(CompositorError::GLError("gl_invalid_enum", location)),
         gl::INVALID_VALUE => Err(CompositorError::GLError("gl_invalid_value", location)),
         gl::INVALID_OPERATION => Err(CompositorError::GLError("gl_invalid_operation", location)),
@@ -22,7 +39,10 @@ pub fn result_or_gl_error<T>(res: T, location: ErrorLocation) -> Result<T, Compo
             location,
         )),
         gl::OUT_OF_MEMORY => Err(CompositorError::GLError("gl_out_of_memory", location)),
-        _ => panic!("Error passed to result_or_gl_error is not an OpenGL error"),
+        _ => panic!(
+            "Error code grabbed from glGetError is not an OpenGL error code (it is {:#x})",
+            err
+        ),
     }
 }
 
