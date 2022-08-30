@@ -61,11 +61,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   @impl true
   def handle_pad_added(pad, _context, state) do
-    state = add_video(pad, state)
+    state = add_video(state, pad)
     {:ok, state}
   end
 
-  defp add_video(pad, state) do
+  defp add_video(state, pad) do
     {new_id, pads_to_ids} = state.pads_to_ids
     state = %{state | pads_to_ids: {new_id + 1, Map.put(pads_to_ids, pad, new_id)}}
 
@@ -91,7 +91,6 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
         _context,
         %{
           ids_to_tracks: ids_to_tracks,
-          internal_state: internal_state,
           pads_to_ids: {_new_id, pads_to_ids}
         } = state
       ) do
@@ -101,6 +100,20 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
     state = %{state | ids_to_tracks: ids_to_tracks}
 
+    if all_has_frame?(ids_to_tracks) do
+      {buffers, state} = merge_frames(state)
+      {{:ok, buffer: {:output, buffers}}, state}
+    else
+      {:ok, state}
+    end
+  end
+
+  defp merge_frames(
+         %{
+           ids_to_tracks: ids_to_tracks,
+           internal_state: internal_state
+         } = state
+       ) do
     if all_has_frame?(ids_to_tracks) do
       ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
@@ -117,9 +130,10 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
       state = remove_ended_videos(state)
 
-      {{:ok, buffer: {:output, %Membrane.Buffer{payload: merged_frame_binary}}}, state}
+      {tail, state} = merge_frames(state)
+      {[%Membrane.Buffer{payload: merged_frame_binary}] ++ tail, state}
     else
-      {:ok, state}
+      {[], state}
     end
   end
 
@@ -127,6 +141,10 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     Map.update!(ids_to_tracks, id, fn %Track{buffers: buffers} = track ->
       %Track{track | buffers: Qex.push(buffers, frame)}
     end)
+  end
+
+  defp all_has_frame?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+    false
   end
 
   defp all_has_frame?(ids_to_tracks) do
@@ -174,20 +192,30 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
   end
 
-  # defp _remove_video(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
-  #   ids_to_tracks = Map.delete(ids_to_tracks, id)
-  #   {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
-  #   %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
-  # end
+  defp video_ended?(ids_to_tracks, id) do
+    %Track{state: status, buffers: buffers} = Map.get(ids_to_tracks, id)
+    status == :end_of_stream and Enum.empty?(buffers)
+  end
+
+  defp remove_video(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
+    ids_to_tracks = Map.delete(ids_to_tracks, id)
+    {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+    %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
+  end
 
   defp update_track_status(ids_to_tracks, id, status) do
     ids_to_tracks
     |> Map.update!(id, fn track -> %Track{track | state: status} end)
   end
 
+  defp all_streams_ended?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+    true
+  end
+
   defp all_streams_ended?(ids_to_tracks) do
-    Enum.empty?(ids_to_tracks) or
-      Enum.all?(ids_to_tracks, fn {_id, %Track{state: state}} -> state == :end_of_stream end)
+    Enum.all?(ids_to_tracks, fn {_id, %Track{state: state, buffers: buffers}} ->
+      state == :end_of_stream and Enum.empty?(buffers)
+    end)
   end
 
   @impl true
@@ -201,10 +229,29 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     ids_to_tracks = ids_to_tracks |> update_track_status(id, :end_of_stream)
     state = %{state | ids_to_tracks: ids_to_tracks}
 
+    state =
+      if video_ended?(ids_to_tracks, id) do
+        remove_video(state, id)
+      else
+        state
+      end
+
+    {buffers, state} = merge_frames(state)
+
+    %{ids_to_tracks: ids_to_tracks} = state
+
     if all_streams_ended?(ids_to_tracks) do
-      {{:ok, end_of_stream: :output}, state}
+      if Enum.empty?(buffers) do
+        {{:ok, end_of_stream: :output}, state}
+      else
+        {{:ok, buffer: {:output, buffers}, end_of_stream: :output}, state}
+      end
     else
-      {:ok, state}
+      if Enum.empty?(buffers) do
+        {:ok, state}
+      else
+        {{:ok, buffer: {:output, buffers}}, state}
+      end
     end
   end
 
