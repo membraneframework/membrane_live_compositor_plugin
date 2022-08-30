@@ -13,8 +13,7 @@ pub fn result_or_gl_error<T>(
     res: T,
     file: &str,
     line: u32,
-    function: &str,
-    args: &str,
+    call: &str,
 ) -> Result<T, CompositorError> {
     use glad_gles2::gl;
 
@@ -27,7 +26,7 @@ pub fn result_or_gl_error<T>(
     let location = ErrorLocation {
         file: file.to_string(),
         line,
-        call: format!("gl{}({})", function, args),
+        call: call.to_string(),
     };
 
     match err {
