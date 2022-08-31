@@ -44,7 +44,7 @@ struct Video {
 }
 
 impl Video {
-    /// Create a new video given a (placement template)[VideoPlacementTemplate] and the video's resolution.
+    /// Create a new video given a (placement template)[VideoPlacementTemplate]  and the video's resolution.
     fn new(placement: VideoPlacementTemplate, width: usize, height: usize) -> Self {
         Self {
             vao: VertexArrayObject::new(

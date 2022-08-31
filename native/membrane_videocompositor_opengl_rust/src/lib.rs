@@ -214,7 +214,7 @@ fn init(
             z_value: 0.0,
         },
         first_video.width,
-        second_video.height,
+        first_video.height,
     );
 
     scene.add_video(
@@ -225,7 +225,7 @@ fn init(
             bot_right: Point(1.0, -1.0),
             z_value: 0.0,
         },
-        first_video.width,
+        second_video.width,
         second_video.height,
     );
 
