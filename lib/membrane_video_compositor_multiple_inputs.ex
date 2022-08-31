@@ -100,7 +100,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
     state = %{state | ids_to_tracks: ids_to_tracks}
 
-    if all_has_frame?(ids_to_tracks) do
+    if all_have_frame?(ids_to_tracks) do
       {buffers, state} = merge_frames(state)
       {{:ok, buffer: {:output, buffers}}, state}
     else
@@ -114,7 +114,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
            internal_state: internal_state
          } = state
        ) do
-    if all_has_frame?(ids_to_tracks) do
+    if all_have_frame?(ids_to_tracks) do
       ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
       {{:ok, merged_frame_binary}, internal_state} =
@@ -143,11 +143,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     end)
   end
 
-  defp all_has_frame?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+  defp all_have_frame?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
     false
   end
 
-  defp all_has_frame?(ids_to_tracks) do
+  defp all_have_frame?(ids_to_tracks) do
     any_empty? =
       ids_to_tracks
       |> Map.values()
