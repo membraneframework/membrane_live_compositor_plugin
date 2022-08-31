@@ -8,15 +8,17 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
   use Membrane.Filter
   alias Membrane.RawVideo
 
-  def_options implementation: [
-                type: :atom,
-                spec: :ffmpeg | :opengl | :nx,
-                description: "Implementation of video composer."
-              ],
-              caps: [
-                type: RawVideo,
-                description: "Struct with video width, height, framerate and pixel format."
-              ]
+  def_options(
+    implementation: [
+      type: :atom,
+      spec: :ffmpeg | :opengl | :nx,
+      description: "Implementation of video composer."
+    ],
+    caps: [
+      type: RawVideo,
+      description: "Struct with video width, height, framerate and pixel format."
+    ]
+  )
 
   def_input_pad(
     :input,
@@ -35,11 +37,42 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   defmodule Track do
     @moduledoc false
+
+    @type buffer_t :: Membrane.Buffer.t()
+
     @type t :: %__MODULE__{
-            buffers: Qex.t(Membrane.Buffer.t()),
+            buffers: Qex.t(buffer_t),
             status: :playing | :end_of_stream
           }
     defstruct buffers: Qex.new(), status: :playing
+
+    @doc """
+    Checks whether track is empty and can be removed
+    """
+    @spec depleted?(__MODULE__.t()) :: boolean()
+    def depleted?(%__MODULE__{status: status, buffers: buffers}) do
+      status == :end_of_stream and Enum.empty?(buffers)
+    end
+
+    @spec push_frame(__MODULE__.t(), buffer_t) :: __MODULE__.t()
+    def push_frame(%__MODULE__{buffers: buffers} = track, frame) do
+      %__MODULE__{track | buffers: Qex.push(buffers, frame)}
+    end
+
+    @spec pop_frame(__MODULE__.t()) :: __MODULE__.t()
+    def pop_frame(%__MODULE__{buffers: buffers} = track) do
+      %__MODULE__{track | buffers: Qex.pop!(buffers) |> elem(1)}
+    end
+
+    @spec first_frame(__MODULE__.t()) :: buffer_t
+    def first_frame(%__MODULE__{buffers: buffers}) do
+      Qex.first!(buffers)
+    end
+
+    @spec has_frame?(__MODULE__.t()) :: boolean
+    def has_frame?(%__MODULE__{buffers: buffers}) do
+      not Enum.empty?(buffers)
+    end
   end
 
   @impl true
@@ -138,8 +171,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
   end
 
   defp push_frame(ids_to_tracks, id, frame) do
-    Map.update!(ids_to_tracks, id, fn %Track{buffers: buffers} = track ->
-      %Track{track | buffers: Qex.push(buffers, frame)}
+    Map.update!(ids_to_tracks, id, fn track ->
+      Track.push_frame(track, frame)
     end)
   end
 
@@ -148,25 +181,21 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
   end
 
   defp all_have_frame?(ids_to_tracks) do
-    any_empty? =
-      ids_to_tracks
-      |> Map.values()
-      |> Enum.map(fn %Track{buffers: buffers} -> buffers end)
-      |> Enum.any?(&Enum.empty?/1)
-
-    not any_empty?
+    ids_to_tracks
+    |> Map.values()
+    |> Enum.all?(&Track.has_frame?/1)
   end
 
   defp get_ids_to_frames(ids_to_tracks) do
     ids_to_tracks
-    |> Enum.map(fn {id, %Track{buffers: buffers}} -> {id, Qex.first!(buffers)} end)
+    |> Enum.map(fn {id, %Track{} = track} -> {id, Track.first_frame(track)} end)
     |> Map.new()
   end
 
   defp pop_frames(ids_to_tracks) do
     ids_to_tracks
-    |> Enum.map(fn {id, %Track{buffers: buffers} = track} ->
-      {id, %Track{track | buffers: Qex.pop!(buffers) |> elem(1)}}
+    |> Enum.map(fn {id, %Track{} = track} ->
+      {id, Track.pop_frame(track)}
     end)
     |> Map.new()
   end
@@ -176,7 +205,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     |> Enum.reduce(
       state,
       fn {id, %Track{} = track}, state ->
-        if track_depleted?(track) do
+        if Track.depleted?(track) do
           remove_track(state, id)
         else
           state
@@ -185,13 +214,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     )
   end
 
-  defp track_depleted?(%Track{status: status, buffers: buffers}) do
-    status == :end_of_stream and Enum.empty?(buffers)
-  end
-
   defp track_depleted?(ids_to_tracks, id) do
     track = Map.get(ids_to_tracks, id)
-    track_depleted?(track)
+    Track.depleted?(track)
   end
 
   defp remove_track(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
@@ -211,7 +236,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   defp all_tracks_depleted?(ids_to_tracks) do
     Enum.all?(ids_to_tracks, fn {_id, %Track{} = track} ->
-      track_depleted?(track)
+      Track.depleted?(track)
     end)
   end
 
