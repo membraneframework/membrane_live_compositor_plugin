@@ -37,9 +37,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     @moduledoc false
     @type t :: %__MODULE__{
             buffers: Qex.t(Membrane.Buffer.t()),
-            state: :playing | :end_of_stream
+            status: :playing | :end_of_stream
           }
-    defstruct buffers: Qex.new(), state: :playing
+    defstruct buffers: Qex.new(), status: :playing
   end
 
   @impl true
@@ -61,11 +61,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   @impl true
   def handle_pad_added(pad, _context, state) do
-    state = add_video(state, pad)
+    state = register_track(state, pad)
     {:ok, state}
   end
 
-  defp add_video(state, pad) do
+  defp register_track(state, pad) do
     {new_id, pads_to_ids} = state.pads_to_ids
     state = %{state | pads_to_ids: {new_id + 1, Map.put(pads_to_ids, pad, new_id)}}
 
@@ -128,7 +128,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
           internal_state: internal_state
       }
 
-      state = remove_ended_videos(state)
+      state = remove_depleted_tracks(state)
 
       {tail, state} = merge_frames(state)
       {[%Membrane.Buffer{payload: merged_frame_binary}] ++ tail, state}
@@ -171,13 +171,13 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     |> Map.new()
   end
 
-  defp remove_ended_videos(%{ids_to_tracks: ids_to_tracks} = state) do
+  defp remove_depleted_tracks(%{ids_to_tracks: ids_to_tracks} = state) do
     ids_to_tracks
     |> Enum.reduce(
       state,
-      fn {id, %Track{state: status, buffers: buffers}}, state ->
+      fn {id, %Track{status: status, buffers: buffers}}, state ->
         if status == :end_of_stream and Enum.empty?(buffers) do
-          remove_video(state, id)
+          remove_track(state, id)
         else
           state
         end
@@ -185,12 +185,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     )
   end
 
-  defp video_ended?(ids_to_tracks, id) do
-    %Track{state: status, buffers: buffers} = Map.get(ids_to_tracks, id)
+  defp track_depleted?(ids_to_tracks, id) do
+    %Track{status: status, buffers: buffers} = Map.get(ids_to_tracks, id)
     status == :end_of_stream and Enum.empty?(buffers)
   end
 
-  defp remove_video(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
+  defp remove_track(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
     ids_to_tracks = Map.delete(ids_to_tracks, id)
     {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
     %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
@@ -198,15 +198,15 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   defp update_track_status(ids_to_tracks, id, status) do
     ids_to_tracks
-    |> Map.update!(id, fn track -> %Track{track | state: status} end)
+    |> Map.update!(id, fn track -> %Track{track | status: status} end)
   end
 
-  defp all_streams_ended?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+  defp all_tracks_depleted?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
     true
   end
 
-  defp all_streams_ended?(ids_to_tracks) do
-    Enum.all?(ids_to_tracks, fn {_id, %Track{state: state, buffers: buffers}} ->
+  defp all_tracks_depleted?(ids_to_tracks) do
+    Enum.all?(ids_to_tracks, fn {_id, %Track{status: state, buffers: buffers}} ->
       state == :end_of_stream and Enum.empty?(buffers)
     end)
   end
@@ -223,8 +223,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     state = %{state | ids_to_tracks: ids_to_tracks}
 
     state =
-      if video_ended?(ids_to_tracks, id) do
-        remove_video(state, id)
+      if track_depleted?(ids_to_tracks, id) do
+        remove_track(state, id)
       else
         state
       end
@@ -233,7 +233,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
     %{ids_to_tracks: ids_to_tracks} = state
 
-    if all_streams_ended?(ids_to_tracks) do
+    if all_tracks_depleted?(ids_to_tracks) do
       if Enum.empty?(buffers) do
         {{:ok, end_of_stream: :output}, state}
       else
@@ -248,7 +248,6 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     end
   end
 
-  @spec determine_compositor_module(atom()) :: module()
   defp determine_compositor_module(implementation) do
     case implementation do
       # :ffmpeg ->
