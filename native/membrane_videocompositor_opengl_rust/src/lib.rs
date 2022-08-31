@@ -4,13 +4,23 @@
 
 extern crate khronos_egl as egl;
 
-use glad_gles2::gl;
 use rustler::ResourceArc;
 
+pub mod errors;
 pub mod framebuffers;
 pub mod scene;
 pub mod shaders;
 pub mod textures;
+
+macro_rules! gl {
+    ($call:expr) => {{
+        // FIXME: we should probably add something like `ensure_current_thread_holds_context` here
+        let result = $call;
+        crate::errors::result_or_gl_error(result, file!(), line!(), stringify!(call))
+    }};
+}
+
+pub(crate) use gl;
 
 #[allow(non_snake_case)]
 mod atoms {
@@ -183,12 +193,12 @@ fn init(
     egl.make_current(display, None, None, Some(context))
         .nif_err()?;
 
-    gl::load(|name| {
+    glad_gles2::gl::load(|name| {
         egl.get_proc_address(name)
             .expect("Can't find a GLES procedure") as *const std::ffi::c_void
     });
 
-    unsafe { gl::ClearColor(0.0, 0.0, 0.0, 1.0) }
+    unsafe { gl!(glad_gles2::gl::ClearColor(0.0, 0.0, 0.0, 1.0))? }
 
     let vertex_shader_code = include_str!("shaders/vertex.glsl");
     let fragment_shader_code = include_str!("shaders/fragment.glsl");
