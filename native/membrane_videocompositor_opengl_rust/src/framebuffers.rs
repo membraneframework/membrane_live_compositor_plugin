@@ -10,6 +10,7 @@ struct FramebufferObject {
     _internal_format: gl::GLenum, // FIXME these should be custom enums instead of GLenum random ints
     output_format: gl::GLenum,
     output_type: gl::GLenum,
+    draw_bound: bool,
 }
 
 impl FramebufferObject {
@@ -56,15 +57,23 @@ impl FramebufferObject {
             _internal_format: internal_format,
             output_format,
             output_type,
+            draw_bound: false,
         }
     }
 
-    fn bind_for_drawing(&self) {
+    fn bind_for_drawing(&mut self) {
         unsafe {
             gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, self.id);
             gl::DrawBuffers(1, [gl::COLOR_ATTACHMENT0].as_ptr());
             gl::Viewport(0, 0, self.width as i32, self.height as i32);
         }
+
+        self.draw_bound = true;
+    }
+
+    fn unbind_drawing(&mut self) {
+        assert!(self.draw_bound);
+        unsafe { gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0) }
     }
 
     fn bind_for_reading(&self) {
@@ -110,6 +119,7 @@ pub struct YUVRenderTarget {
     framebuffers: [FramebufferObject; 3],
     width: usize,
     height: usize,
+    bound_plane: Option<Plane>,
 }
 
 impl YUVRenderTarget {
@@ -124,12 +134,15 @@ impl YUVRenderTarget {
             ],
             width,
             height,
+            bound_plane: None,
         }
     }
 
     /// Select a [Plane], into which images will be rendered
-    pub fn bind_for_drawing(&self, plane: Plane) {
+    pub fn bind_for_drawing(&mut self, plane: Plane) -> DrawBoundYUVRenderTarget {
         self.framebuffers[plane as usize].bind_for_drawing();
+        self.bound_plane = Some(plane);
+        DrawBoundYUVRenderTarget { target: self }
     }
 
     /// Copy the contents of the whole render target (all planes) into a `buffer`
@@ -158,6 +171,17 @@ impl YUVRenderTarget {
     /// Get the height of the Y plane.
     pub fn height(&self) -> usize {
         self.height
+    }
+}
+
+pub struct DrawBoundYUVRenderTarget<'a> {
+    target: &'a mut YUVRenderTarget,
+}
+
+impl<'a> Drop for DrawBoundYUVRenderTarget<'a> {
+    fn drop(&mut self) {
+        self.target.framebuffers[self.target.bound_plane.unwrap() as usize].unbind_drawing();
+        self.target.bound_plane = None;
     }
 }
 

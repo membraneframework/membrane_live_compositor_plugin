@@ -6,11 +6,12 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.PipelineRaw
-  alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.Test.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-  @implementations [:nx, :ffmpeg]
+  @implementation Implementation.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
@@ -20,7 +21,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     aligned: nil
   }
 
-  Enum.map(@implementations, fn implementation ->
+  Enum.map(@implementation, fn implementation ->
     describe "Checks #{implementation} composition and raw video pipeline on" do
       @describetag :tmp_dir
 
@@ -63,7 +64,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
     assert {:ok, out_video} = File.read(output_path)

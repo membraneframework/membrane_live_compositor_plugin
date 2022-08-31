@@ -2,8 +2,8 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
   use ExUnit.Case
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.OpenGL.Native
-  alias Membrane.VideoCompositor.Test.Utility
+  alias Membrane.VideoCompositor.OpenGL.Native.Cpp
+  alias Membrane.VideoCompositor.Utility
 
   describe "OpenGL cpp native test on " do
     @describetag :tmp_dir
@@ -25,8 +25,8 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
 
       assert in_frame = File.read!(in_path)
 
-      assert {:ok, state} = Native.init(video, video)
-      assert {:ok, out_frame} = Native.join_frames(in_frame, in_frame, state)
+      assert {:ok, state} = Cpp.init(video, video)
+      assert {:ok, out_frame} = Cpp.join_frames(in_frame, in_frame, state)
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(out_path)

@@ -1,11 +1,12 @@
 //! Structures for managing OpenGL shaders and shader programs
 
 use crate::{errors::CompositorError, gl};
+use glad_gles2::gl;
 
 /// An abstraction of OpenGL's [shader program](https://www.khronos.org/opengl/wiki/GLSL_Object#Program_objects).
 /// This will delete the program when dropped.
 pub struct ShaderProgram {
-    id: gl!(GLuint),
+    id: gl::GLuint,
 }
 
 impl ShaderProgram {
@@ -15,36 +16,36 @@ impl ShaderProgram {
         fragment_shader_code: &str,
     ) -> Result<Self, CompositorError> {
         unsafe {
-            let vertex = gl!(CreateShader(gl!(VERTEX_SHADER)))?;
-            gl!(ShaderSource(
+            let vertex = gl!(gl::CreateShader(gl::VERTEX_SHADER))?;
+            gl!(gl::ShaderSource(
                 vertex,
                 1,
                 &(vertex_shader_code.as_ptr() as *const i8),
                 &(vertex_shader_code.len() as i32)
             ))?;
 
-            gl!(CompileShader(vertex))?;
+            gl!(gl::CompileShader(vertex))?;
             Self::check_shader_compilation_error(vertex, ShaderType::Vertex)?;
 
-            let fragment = gl!(CreateShader(gl!(FRAGMENT_SHADER)))?;
-            gl!(ShaderSource(
+            let fragment = gl!(gl::CreateShader(gl::FRAGMENT_SHADER))?;
+            gl!(gl::ShaderSource(
                 fragment,
                 1,
                 &(fragment_shader_code.as_ptr() as *const i8),
                 &(fragment_shader_code.len() as i32)
             ))?;
 
-            gl!(CompileShader(fragment))?;
+            gl!(gl::CompileShader(fragment))?;
             Self::check_shader_compilation_error(fragment, ShaderType::Fragment)?;
 
-            let program = gl!(CreateProgram())?;
-            gl!(AttachShader(program, vertex))?;
-            gl!(AttachShader(program, fragment))?;
-            gl!(LinkProgram(program))?;
+            let program = gl!(gl::CreateProgram())?;
+            gl!(gl::AttachShader(program, vertex))?;
+            gl!(gl::AttachShader(program, fragment))?;
+            gl!(gl::LinkProgram(program))?;
             Self::check_program_linking_error(program)?;
 
-            gl!(DeleteShader(vertex))?;
-            gl!(DeleteShader(fragment))?;
+            gl!(gl::DeleteShader(vertex))?;
+            gl!(gl::DeleteShader(fragment))?;
 
             Ok(Self { id: program })
         }
@@ -52,7 +53,7 @@ impl ShaderProgram {
 
     /// Make OpenGL use this program.
     pub fn use_program(&self) -> Result<(), CompositorError> {
-        unsafe { gl!(UseProgram(self.id))? }
+        unsafe { gl!(gl::UseProgram(self.id))? }
         Ok(())
     }
 
@@ -61,8 +62,8 @@ impl ShaderProgram {
         use std::ffi::CString;
         let name_c_str = CString::new(name).unwrap(); // ok to unwrap since name is known before compilation
         unsafe {
-            gl!(Uniform1i(
-                gl!(GetUniformLocation(self.id, name_c_str.as_ptr()))?,
+            gl!(gl::Uniform1i(
+                gl!(gl::GetUniformLocation(self.id, name_c_str.as_ptr()))?,
                 value
             ))?
         }
@@ -70,22 +71,22 @@ impl ShaderProgram {
     }
 
     fn check_shader_compilation_error(
-        shader_id: gl!(GLuint),
+        shader_id: gl::GLuint,
         shader_type: ShaderType,
     ) -> Result<(), CompositorError> {
         use std::ffi::CString;
 
         let mut ok = 0;
         unsafe {
-            gl!(GetShaderiv(shader_id, gl!(COMPILE_STATUS), &mut ok))?;
-            if ok == gl!(TRUE).into() {
+            gl!(gl::GetShaderiv(shader_id, gl::COMPILE_STATUS, &mut ok))?;
+            if ok == gl::TRUE.into() {
                 return Ok(());
             }
 
             let mut log_length = 0;
-            gl!(GetShaderiv(
+            gl!(gl::GetShaderiv(
                 shader_id,
-                gl!(INFO_LOG_LENGTH),
+                gl::INFO_LOG_LENGTH,
                 &mut log_length
             ))?;
 
@@ -95,7 +96,7 @@ impl ShaderProgram {
                 let buffer = CString::new(" ".repeat(log_length as usize))
                     .unwrap()
                     .into_raw();
-                gl!(GetShaderInfoLog(
+                gl!(gl::GetShaderInfoLog(
                     shader_id,
                     log_length + 1,
                     std::ptr::null_mut(),
@@ -105,30 +106,32 @@ impl ShaderProgram {
             };
 
             match shader_type {
-                ShaderType::Vertex => {
-                    Err(ShaderError::CantCompileVertexShader { error_log }.into())
-                }
-                ShaderType::Fragment => {
-                    Err(ShaderError::CantCompileFragmentShader { error_log }.into())
-                }
+                ShaderType::Vertex => Err(CompositorError::ShaderError {
+                    atom: "cannot_compile_vertex_shader",
+                    error_log,
+                }),
+                ShaderType::Fragment => Err(CompositorError::ShaderError {
+                    atom: "cannot_compile_fragment_shader",
+                    error_log,
+                }),
             }
         }
     }
 
-    fn check_program_linking_error(program_id: gl!(GLuint)) -> Result<(), CompositorError> {
+    fn check_program_linking_error(program_id: gl::GLuint) -> Result<(), CompositorError> {
         use std::ffi::CString;
 
         let mut ok = 0;
         unsafe {
-            gl!(GetProgramiv(program_id, gl!(LINK_STATUS), &mut ok))?;
-            if ok == gl!(TRUE).into() {
+            gl!(gl::GetProgramiv(program_id, gl::LINK_STATUS, &mut ok))?;
+            if ok == gl::TRUE.into() {
                 return Ok(());
             }
 
             let mut log_length = 0;
-            gl!(GetProgramiv(
+            gl!(gl::GetProgramiv(
                 program_id,
-                gl!(INFO_LOG_LENGTH),
+                gl::INFO_LOG_LENGTH,
                 &mut log_length
             ))?;
 
@@ -138,7 +141,7 @@ impl ShaderProgram {
                 let buffer = CString::new(" ".repeat(log_length as usize))
                     .unwrap()
                     .into_raw();
-                gl!(GetProgramInfoLog(
+                gl!(gl::GetProgramInfoLog(
                     program_id,
                     log_length + 1,
                     std::ptr::null_mut(),
@@ -147,51 +150,22 @@ impl ShaderProgram {
                 CString::from_raw(buffer).to_str().unwrap().to_string()
             };
 
-            Err(ShaderError::CantLinkProgram { error_log }.into())
+            Err(CompositorError::ShaderError {
+                atom: "cannot_link_program",
+                error_log,
+            })
         }
     }
 }
 
 impl Drop for ShaderProgram {
     fn drop(&mut self) {
-        unsafe { gl!(DeleteProgram(self.id)).unwrap() }
+        unsafe { gl!(gl::DeleteProgram(self.id)).unwrap() }
     }
 }
 
-/// Represents errors that can happen when interacting with shaders. This error can be converted to a rustler error, which makes the `?` operator work very nicely here.
-pub enum ShaderError {
-    CantCompileFragmentShader { error_log: String },
-    CantCompileVertexShader { error_log: String },
-    CantLinkProgram { error_log: String },
-}
-
-pub enum ShaderType {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ShaderType {
     Vertex,
     Fragment,
-}
-
-mod atoms {
-    rustler::atoms! {
-      cant_compile_fragment_shader,
-      cant_compile_vertex_shader,
-      cant_link_shader_program
-    }
-}
-
-impl From<ShaderError> for rustler::Error {
-    fn from(err: ShaderError) -> Self {
-        // FIXME: I don't know whether returning { :error, { :cant_compile_vertex_shader, error_log } }
-        //        is an amazing elixir API
-        match err {
-            ShaderError::CantCompileFragmentShader { error_log } => {
-                rustler::Error::Term(Box::new((atoms::cant_compile_fragment_shader(), error_log)))
-            }
-            ShaderError::CantCompileVertexShader { error_log } => {
-                rustler::Error::Term(Box::new((atoms::cant_compile_vertex_shader(), error_log)))
-            }
-            ShaderError::CantLinkProgram { error_log } => {
-                rustler::Error::Term(Box::new((atoms::cant_link_shader_program(), error_log)))
-            }
-        }
-    }
 }

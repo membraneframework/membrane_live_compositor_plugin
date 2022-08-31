@@ -1,89 +1,83 @@
-use crate::{gl, shaders::ShaderError};
+use thiserror::Error;
 
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.OpenGL.Rust.ErrorLocation"]
+/// Carries information about a location where an error happened
 pub struct ErrorLocation {
-    pub file: String,
-    pub line: u32,
-    pub call: String,
+    file: String,
+    line: u32,
+    call: String,
 }
 
-#[derive(Debug)]
-pub enum GLError {
-    InvalidEnum(ErrorLocation),
-    InvalidValue(ErrorLocation),
-    InvalidOperation(ErrorLocation),
-    InvalidFramebufferOperation(ErrorLocation),
-    OutOfMemory(ErrorLocation),
-}
+pub fn result_or_gl_error<T>(
+    res: T,
+    file: &str,
+    line: u32,
+    call: &str,
+) -> Result<T, CompositorError> {
+    use glad_gles2::gl;
 
-pub fn result_or_gl_error<T>(res: T, err: u32, location: ErrorLocation) -> Result<T, GLError> {
+    let err = unsafe { gl::GetError() };
+
+    if err == gl::NO_ERROR {
+        return Ok(res);
+    }
+
+    let location = ErrorLocation {
+        file: file.to_string(),
+        line,
+        call: call.to_string(),
+    };
+
     match err {
-        gl!(NO_ERROR) => Ok(res),
-        gl!(INVALID_ENUM) => Err(GLError::InvalidEnum(location)),
-        gl!(INVALID_VALUE) => Err(GLError::InvalidValue(location)),
-        gl!(INVALID_OPERATION) => Err(GLError::InvalidOperation(location)),
-        gl!(INVALID_FRAMEBUFFER_OPERATION) => Err(GLError::InvalidFramebufferOperation(location)),
-        gl!(OUT_OF_MEMORY) => Err(GLError::OutOfMemory(location)),
-        _ => panic!("Error passed to result_or_gl_error is not an OpenGL error"),
+        gl::INVALID_ENUM => Err(CompositorError::GLError("gl_invalid_enum", location)),
+        gl::INVALID_VALUE => Err(CompositorError::GLError("gl_invalid_value", location)),
+        gl::INVALID_OPERATION => Err(CompositorError::GLError("gl_invalid_operation", location)),
+        gl::INVALID_FRAMEBUFFER_OPERATION => Err(CompositorError::GLError(
+            "gl_invalid_framebuffer_operations",
+            location,
+        )),
+        gl::OUT_OF_MEMORY => Err(CompositorError::GLError("gl_out_of_memory", location)),
+        _ => panic!(
+            "Error code grabbed from glGetError is not an OpenGL error code (it is {:#x})",
+            err
+        ),
     }
 }
 
 mod atoms {
     rustler::atoms! {
-        invalid_enum,
-        invalid_value,
-        invalid_operation,
-        invalid_framebuffer_operation,
-        out_of_memory
+        error,
     }
 }
 
-impl From<GLError> for rustler::Error {
-    fn from(error: GLError) -> Self {
-        use rustler::Error;
-        match error {
-            GLError::InvalidEnum(location) => {
-                Error::Term(Box::new((atoms::invalid_enum(), location)))
+#[derive(Debug, Error)]
+/// An enum representing various errors that can happen during composition
+pub enum CompositorError {
+    #[error("shader compilation or linking error")]
+    ShaderError {
+        atom: &'static str,
+        error_log: String,
+    },
+    #[error("error while calling OpenGL")]
+    GLError(&'static str, ErrorLocation),
+}
+
+impl rustler::Encoder for CompositorError {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        match self {
+            CompositorError::ShaderError { atom, error_log } => {
+                (rustler::Atom::from_str(env, atom).unwrap(), error_log).encode(env)
             }
-            GLError::InvalidValue(location) => {
-                Error::Term(Box::new((atoms::invalid_value(), location)))
-            }
-            GLError::InvalidOperation(location) => {
-                Error::Term(Box::new((atoms::invalid_operation(), location)))
-            }
-            GLError::InvalidFramebufferOperation(location) => {
-                Error::Term(Box::new((atoms::invalid_framebuffer_operation(), location)))
-            }
-            GLError::OutOfMemory(location) => {
-                Error::Term(Box::new((atoms::out_of_memory(), location)))
+            CompositorError::GLError(atom, location) => {
+                (rustler::Atom::from_str(env, atom).unwrap(), location).encode(env)
             }
         }
-    }
-}
-
-pub enum CompositorError {
-    ShaderError(ShaderError),
-    GLError(GLError),
-}
-
-impl From<ShaderError> for CompositorError {
-    fn from(error: ShaderError) -> Self {
-        Self::ShaderError(error)
-    }
-}
-
-impl From<GLError> for CompositorError {
-    fn from(error: GLError) -> Self {
-        Self::GLError(error)
     }
 }
 
 impl From<CompositorError> for rustler::Error {
     fn from(error: CompositorError) -> Self {
-        match error {
-            CompositorError::ShaderError(error) => error.into(),
-            CompositorError::GLError(error) => error.into(),
-        }
+        rustler::Error::Term(Box::new(error))
     }
 }

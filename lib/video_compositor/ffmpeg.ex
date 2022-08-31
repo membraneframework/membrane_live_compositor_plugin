@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.FFMPEG do
+defmodule Membrane.VideoCompositor.FFmpeg do
   @moduledoc """
   This module implements video composition in ffmpeg.
   """

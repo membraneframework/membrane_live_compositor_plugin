@@ -2,6 +2,38 @@ version: 2.1
 orbs:
   elixir: membraneframework/elixir@1
 
+jobs:
+  rust_lint:
+    executor: 
+      name: elixir/docker_membrane
+      mix_env: test
+
+    steps:
+      - checkout
+      - run:
+          name: Rust lint
+          command: |
+            for path in native/*
+            do
+              cargo fmt --manifest-path $path/Cargo.toml -- --check
+              cargo clippy --manifest-path $path/Cargo.toml -- -D warnings
+            done
+
+  rust_tests:
+    executor: 
+      name: elixir/docker_membrane
+      mix_env: test
+
+    steps:
+      - checkout
+      - run:
+          name: Rust tests
+          command: |
+            for path in native/*
+            do
+              cargo test --manifest-path $path/Cargo.toml
+            done
+
 workflows:
   version: 2
   build:
@@ -9,3 +41,5 @@ workflows:
       - elixir/build_test
       - elixir/test
       - elixir/lint
+      - rust_lint
+      - rust_tests
