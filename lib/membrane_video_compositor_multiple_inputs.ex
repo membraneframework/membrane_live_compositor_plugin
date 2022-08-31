@@ -133,11 +133,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
     state = %{state | ids_to_tracks: ids_to_tracks}
 
-    if all_have_frame?(ids_to_tracks) do
-      {buffers, state} = merge_frames(state)
-      {{:ok, buffer: {:output, buffers}}, state}
-    else
-      {:ok, state}
+    case merge_frames(state) do
+      {{:merged, buffers}, state} -> {{:ok, buffer: {:output, buffers}}, state}
+      {{:empty, _empty}, state} -> {:ok, state}
     end
   end
 
@@ -163,10 +161,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
       state = remove_depleted_tracks(state)
 
-      {tail, state} = merge_frames(state)
-      {[%Membrane.Buffer{payload: merged_frame_binary}] ++ tail, state}
+      {{_status, tail}, state} = merge_frames(state)
+      merged = [%Membrane.Buffer{payload: merged_frame_binary}] ++ tail
+
+      {{:merged, merged}, state}
     else
-      {[], state}
+      {{:empty, []}, state}
     end
   end
 
@@ -230,14 +230,16 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     |> Map.update!(id, fn track -> %Track{track | status: status} end)
   end
 
-  defp all_tracks_depleted?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
-    true
+  defp tracks_status(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+    :all_finished
   end
 
-  defp all_tracks_depleted?(ids_to_tracks) do
-    Enum.all?(ids_to_tracks, fn {_id, %Track{} = track} ->
-      Track.depleted?(track)
-    end)
+  defp tracks_status(ids_to_tracks) do
+    if Map.values(ids_to_tracks) |> Enum.all?(&Track.depleted?/1) do
+      :all_finished
+    else
+      :still_ongoing
+    end
   end
 
   @impl true
@@ -258,22 +260,20 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
         state
       end
 
-    {buffers, state} = merge_frames(state)
+    {{buffers_status, buffers}, state} = merge_frames(state)
 
-    %{ids_to_tracks: ids_to_tracks} = state
-
-    if all_tracks_depleted?(ids_to_tracks) do
-      if Enum.empty?(buffers) do
-        {{:ok, end_of_stream: :output}, state}
-      else
-        {{:ok, buffer: {:output, buffers}, end_of_stream: :output}, state}
-      end
-    else
-      if Enum.empty?(buffers) do
+    case {buffers_status, tracks_status(state.ids_to_tracks)} do
+      {:empty, :still_ongoing} ->
         {:ok, state}
-      else
+
+      {:empty, :all_finished} ->
+        {{:ok, end_of_stream: :output}, state}
+
+      {:merged, :still_ongoing} ->
         {{:ok, buffer: {:output, buffers}}, state}
-      end
+
+      {:merged, :all_finished} ->
+        {{:ok, buffer: {:output, buffers}, end_of_stream: :output}, state}
     end
   end
 
