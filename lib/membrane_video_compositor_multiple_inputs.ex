@@ -7,11 +7,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   use Membrane.Filter
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.MultipleInputs.Implementation
 
   def_options(
     implementation: [
       type: :atom,
-      spec: :ffmpeg | :opengl | :nx,
+      spec: Implementation.implementation_t() | {:mock, module()},
       description: "Implementation of video composer."
     ],
     caps: [
@@ -277,22 +278,17 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
     end
   end
 
+  @dialyzer {:nowarn_function, determine_compositor_module: 1}
   defp determine_compositor_module(implementation) do
     case implementation do
-      # :ffmpeg ->
-      #   Membrane.VideoCompositor.FFMPEG
+      {:mock, module} ->
+        module
 
-      # :opengl ->
-      #   Membrane.VideoCompositor.OpenGL
-
-      # :nx ->
-      #   Membrane.VideoCompositor.Nx
-
-      # :ffmpeg_research ->
-      #   Membrane.VideoCompositor.FFmpeg.Research
-
-      _other ->
-        implementation
+      implementation ->
+        case Implementation.get_implementation_module(implementation) do
+          {:ok, module} -> module
+          {:error, error} -> raise error
+        end
     end
   end
 end

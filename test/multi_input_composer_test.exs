@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Test.MultiInputComposerTest.Utility do
       source_children ++
         [
           composer: %MultiVideoCompositor{
-            implementation: MockFrameComposer,
+            implementation: {:mock, MockFrameComposer},
             caps: @no_video
           },
           sink: Testing.Sink
