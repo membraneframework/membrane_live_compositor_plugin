@@ -5,26 +5,27 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust do
     crate: :membrane_videocompositor_opengl_rust
 
   @type internal_state_t :: any()
+  @type error_t :: any()
   @type id_t() :: non_neg_integer()
 
   @spec init(__MODULE__.RawVideo.t()) ::
-          {:ok, internal_state_t()} | {:error, internal_state_t()}
+          {:ok, internal_state_t()} | {:error, error_t()}
   def init(_out_video), do: error()
 
-  @spec join_frames(internal_state_t(), [binary()]) ::
-          {:ok, binary()} | {:error, internal_state_t()}
+  @spec join_frames(internal_state_t(), [{id_t(), binary()}]) ::
+          {:ok, binary()} | {:error, error_t()}
   def join_frames(_state, _frames), do: error()
 
   @spec add_video(internal_state_t(), id_t(), __MODULE__.RawVideo.t(), __MODULE__.Position.t()) ::
-          {:ok, internal_state_t()} | {:error, internal_state_t()}
+          :ok | {:error, error_t()}
   def add_video(_state, _id, _in_video, _position), do: error()
 
   @spec remove_video(internal_state_t(), id_t()) ::
-          {:ok, internal_state_t()} | {:error, internal_state_t()}
+          :ok | {:error, error_t()}
   def remove_video(_state, _id), do: error()
 
   @spec set_position(internal_state_t(), id_t(), __MODULE__.Position.t()) ::
-          {:ok, internal_state_t()} | {:error, internal_state_t()}
+          :ok | {:error, error_t()}
   def set_position(_state, _id, _position), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
@@ -56,8 +57,8 @@ defmodule Membrane.VideoCompositor.OpenGL.Native.Rust.Position do
   """
 
   @type t :: %__MODULE__{
-          x: non_negative_integer(),
-          y: non_negative_integer()
+          x: non_neg_integer(),
+          y: non_neg_integer()
         }
 
   @enforce_keys [:x, :y]

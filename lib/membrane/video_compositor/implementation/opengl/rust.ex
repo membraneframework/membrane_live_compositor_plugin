@@ -22,6 +22,6 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Rust do
 
   @impl true
   def merge_frames(%{first: first, second: second}, internal_state) do
-    {Rust.join_frames(internal_state, [first, second]), internal_state}
+    {Rust.join_frames(internal_state, [{0, first}, {1, second}]), internal_state}
   end
 end

@@ -1,6 +1,8 @@
 //! High-level structures, such as Scenes and Videos.
 
 use crate::gl;
+use std::collections::BTreeMap;
+
 use crate::{
     errors::CompositorError,
     framebuffers::{self, YUVRenderTarget},
@@ -196,7 +198,7 @@ impl Drop for VertexArrayObject {
 /// Keeps all of the information and OpenGL components needed for composition.
 /// Supports Adding new videos dynamically, but currently window positions are fixed after the videos are created. Videos also cannot be removed.
 pub struct Scene {
-    videos: Vec<Video>,
+    videos: BTreeMap<usize, Video>,
     render_target: YUVRenderTarget,
     shader_program: ShaderProgram,
 }
@@ -211,7 +213,7 @@ impl Scene {
     ) -> Result<Self, CompositorError> {
         // FIXME: the shader should probably be constructed in this function instead of being passed as an argument
         Ok(Self {
-            videos: Vec::new(),
+            videos: BTreeMap::new(),
             render_target: YUVRenderTarget::new(out_width, out_height)?,
             shader_program,
         })
@@ -219,15 +221,24 @@ impl Scene {
 
     /// Add a video to the scene.
     /// The video will be placed in an area specified by `placement`
-    /// This returns the index that should be used for uploading textures to this video.
     pub fn add_video(
         &mut self,
+        video_idx: usize,
         placement: VideoPlacementTemplate,
         width: usize,
         height: usize,
-    ) -> Result<usize, CompositorError> {
-        self.videos.push(Video::new(placement, width, height)?);
-        Ok(self.videos.len() - 1)
+    ) -> Result<(), CompositorError> {
+        self.videos
+            .insert(video_idx, Video::new(placement, width, height)?);
+        Ok(())
+    }
+
+    /// Remove a video from the scene.
+    /// # Panics
+    ///
+    /// This function will panic if the `video_idx` is not an index of an existing video
+    pub fn remove_video(&mut self, video_idx: usize) {
+        self.videos.remove(&video_idx);
     }
 
     /// Upload a texture to a video specified by the `video_idx`
@@ -235,7 +246,7 @@ impl Scene {
     /// # Panics
     ///
     /// This function will panic if the `video_idx` is not an index of an existing video and if `data` doesn't have proper length for a YUV420p-encoded frame for the specified video.
-    pub fn upload_texture(&self, video_idx: usize, data: &[u8]) -> Result<(), CompositorError> {
+    pub fn upload_texture(&self, video_idx: &usize, data: &[u8]) -> Result<(), CompositorError> {
         self.videos[video_idx].upload_texture(data)?;
         Ok(())
     }
@@ -256,7 +267,7 @@ impl Scene {
             //        This is how it's implemented in the C++ version, we can change this after we have a MVP
             self.shader_program.set_int("texture1", plane as i32)?;
 
-            for video in self.videos.iter() {
+            for video in self.videos.values() {
                 video.draw(&bind_proof)?;
             }
         }
