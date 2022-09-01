@@ -55,7 +55,10 @@ mod atoms {
 /// An enum representing various errors that can happen during composition
 pub enum CompositorError {
     #[error("shader compilation or linking error")]
-    ShaderError(&'static str),
+    ShaderError {
+        atom: &'static str,
+        error_log: String,
+    },
     #[error("error while calling OpenGL")]
     GLError(&'static str, ErrorLocation),
 }
@@ -63,8 +66,8 @@ pub enum CompositorError {
 impl rustler::Encoder for CompositorError {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         match self {
-            CompositorError::ShaderError(atom) => {
-                rustler::Atom::from_str(env, atom).unwrap().encode(env)
+            CompositorError::ShaderError { atom, error_log } => {
+                (rustler::Atom::from_str(env, atom).unwrap(), error_log).encode(env)
             }
             CompositorError::GLError(atom, location) => {
                 (rustler::Atom::from_str(env, atom).unwrap(), location).encode(env)

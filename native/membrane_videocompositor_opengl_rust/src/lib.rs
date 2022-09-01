@@ -264,7 +264,7 @@ fn join_frames_fwd<'a>(
 
     let mut binary =
         rustler::OwnedBinary::new(ctx.scene.out_width() * ctx.scene.out_height() * 3 / 2).unwrap();
-    ctx.scene.draw_into(binary.as_mut_slice());
+    ctx.scene.draw_into(binary.as_mut_slice())?;
     Ok((atoms::ok(), binary.release(env).to_term(env)))
 }
 
