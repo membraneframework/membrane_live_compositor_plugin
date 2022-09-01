@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.PipelineRaw do
+defmodule Membrane.VideoCompositor.Test.Pipeline.Raw do
   @moduledoc """
   Pipeline for testing simple composing of two videos, by placing one above the other.
   """
@@ -18,43 +18,32 @@ defmodule Membrane.VideoCompositor.PipelineRaw do
   """
   @impl true
   def handle_init(options) do
+    caps = options.caps
+
     parser = %Membrane.RawVideo.Parser{
-      framerate: options.caps.framerate,
-      width: options.caps.width,
-      height: options.caps.height,
-      pixel_format: options.caps.pixel_format
+      framerate: caps.framerate,
+      width: caps.width,
+      height: caps.height,
+      pixel_format: caps.pixel_format
     }
 
-    children = %{
-      file_src_1: %Membrane.File.Source{location: options.paths.first_video_path},
-      file_src_2: %Membrane.File.Source{location: options.paths.second_video_path},
-      parser_1: parser,
-      parser_2: parser,
-      compositor: %Membrane.VideoCompositor{
+    options = Map.put(options, :decoder, parser)
+
+    options =
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
-      },
-      file_sink: %Membrane.File.Sink{location: options.paths.output_path}
-    }
+      })
 
-    links = [
-      link(:file_src_1)
-      |> to(:parser_1)
-      |> via_in(:first_input)
-      |> to(:compositor),
-      link(:file_src_2)
-      |> to(:parser_2)
-      |> via_in(:second_input)
-      |> to(:compositor)
-      |> to(:file_sink)
-    ]
-
-    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_init(options)
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, _}, _context, state) do
-    Membrane.Logger.bare_log(:info, "#{pad} send EOS")
-    {:ok, state}
+  def handle_element_end_of_stream({pad, ref}, context, state) do
+    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_element_end_of_stream(
+      {pad, ref},
+      context,
+      state
+    )
   end
 end

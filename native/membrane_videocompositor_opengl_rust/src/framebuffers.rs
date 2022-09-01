@@ -1,15 +1,17 @@
 //! Structures for managing various OpenGL render targets
 use crate::{errors::CompositorError, gl};
+use glad_gles2::gl;
 
 /// An abstraction for an individual [framebuffer object](<https://www.khronos.org/opengl/wiki/Framebuffer_Object>) with an attached [renderbuffer](<https://www.khronos.org/opengl/wiki/Renderbuffer_Object>).
 struct FramebufferObject {
     width: usize,
     height: usize,
-    id: gl!(GLuint),
-    renderbuffer_id: gl!(GLuint),
-    _internal_format: gl!(GLuint), // FIXME these should be custom enums instead of GLenum random ints
-    output_format: gl!(GLuint),
-    output_type: gl!(GLuint),
+    id: gl::GLuint,
+    renderbuffer_id: gl::GLuint,
+    _internal_format: gl::GLenum, // FIXME these should be custom enums instead of GLenum random ints
+    output_format: gl::GLenum,
+    output_type: gl::GLenum,
+    draw_bound: bool,
 }
 
 impl FramebufferObject {
@@ -20,30 +22,30 @@ impl FramebufferObject {
     fn new(
         width: usize,
         height: usize,
-        internal_format: gl!(GLuint),
-        output_format: gl!(GLuint),
-        output_type: gl!(GLuint),
-    ) -> Result<Self, crate::errors::GLError> {
+        internal_format: gl::GLuint,
+        output_format: gl::GLuint,
+        output_type: gl::GLuint,
+    ) -> Result<Self, CompositorError> {
         let mut id = 0;
         let mut renderbuffer_id = 0;
 
         unsafe {
-            gl!(GenFramebuffers(1, &mut id))?;
-            gl!(BindFramebuffer(gl!(FRAMEBUFFER), id))?;
+            gl!(gl::GenFramebuffers(1, &mut id))?;
+            gl!(gl::BindFramebuffer(gl::FRAMEBUFFER, id))?;
 
-            gl!(GenRenderbuffers(1, &mut renderbuffer_id))?;
+            gl!(gl::GenRenderbuffers(1, &mut renderbuffer_id))?;
 
-            gl!(BindRenderbuffer(gl!(RENDERBUFFER), renderbuffer_id))?;
-            gl!(RenderbufferStorage(
-                gl!(RENDERBUFFER),
+            gl!(gl::BindRenderbuffer(gl::RENDERBUFFER, renderbuffer_id))?;
+            gl!(gl::RenderbufferStorage(
+                gl::RENDERBUFFER,
                 internal_format,
                 width as i32,
                 height as i32
             ))?;
-            gl!(FramebufferRenderbuffer(
-                gl!(FRAMEBUFFER),
-                gl!(COLOR_ATTACHMENT0),
-                gl!(RENDERBUFFER),
+            gl!(gl::FramebufferRenderbuffer(
+                gl::FRAMEBUFFER,
+                gl::COLOR_ATTACHMENT0,
+                gl::RENDERBUFFER,
                 renderbuffer_id
             ))?;
         }
@@ -56,22 +58,30 @@ impl FramebufferObject {
             _internal_format: internal_format,
             output_format,
             output_type,
+            draw_bound: false,
         })
     }
 
-    fn bind_for_drawing(&self) -> Result<(), CompositorError> {
+    fn bind_for_drawing(&mut self) -> Result<(), CompositorError> {
         unsafe {
-            gl!(BindFramebuffer(gl!(DRAW_FRAMEBUFFER), self.id))?;
-            gl!(DrawBuffers(1, [gl!(COLOR_ATTACHMENT0)].as_ptr()))?;
-            gl!(Viewport(0, 0, self.width as i32, self.height as i32))?;
+            gl!(gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, self.id))?;
+            gl!(gl::DrawBuffers(1, [gl::COLOR_ATTACHMENT0].as_ptr()))?;
+            gl!(gl::Viewport(0, 0, self.width as i32, self.height as i32))?;
         }
+
+        self.draw_bound = true;
         Ok(())
+    }
+
+    fn unbind_drawing(&mut self) {
+        assert!(self.draw_bound);
+        unsafe { gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, 0) }
     }
 
     fn bind_for_reading(&self) -> Result<(), CompositorError> {
         unsafe {
-            gl!(BindFramebuffer(gl!(READ_FRAMEBUFFER), self.id))?;
-            gl!(ReadBuffer(gl!(COLOR_ATTACHMENT0)))?;
+            gl!(gl::BindFramebuffer(gl::READ_FRAMEBUFFER, self.id))?;
+            gl!(gl::ReadBuffer(gl::COLOR_ATTACHMENT0))?;
         }
 
         Ok(())
@@ -84,7 +94,7 @@ impl FramebufferObject {
     unsafe fn read_to_ptr(&self, ptr: *mut u8) -> Result<(), CompositorError> {
         self.bind_for_reading()?;
         unsafe {
-            gl!(ReadPixels(
+            gl!(gl::ReadPixels(
                 0,
                 0,
                 self.width as i32,
@@ -102,8 +112,8 @@ impl FramebufferObject {
 impl Drop for FramebufferObject {
     fn drop(&mut self) {
         unsafe {
-            gl!(DeleteFramebuffers(1, &self.id)).unwrap();
-            gl!(DeleteRenderbuffers(1, &self.renderbuffer_id)).unwrap();
+            gl!(gl::DeleteFramebuffers(1, &self.id)).unwrap();
+            gl!(gl::DeleteRenderbuffers(1, &self.renderbuffer_id)).unwrap();
         }
     }
 }
@@ -115,6 +125,7 @@ pub struct YUVRenderTarget {
     framebuffers: [FramebufferObject; 3],
     width: usize,
     height: usize,
+    bound_plane: Option<Plane>,
 }
 
 impl YUVRenderTarget {
@@ -123,31 +134,24 @@ impl YUVRenderTarget {
     pub fn new(width: usize, height: usize) -> Result<Self, CompositorError> {
         Ok(Self {
             framebuffers: [
-                FramebufferObject::new(width, height, gl!(R8), gl!(RED), gl!(UNSIGNED_BYTE))?,
-                FramebufferObject::new(
-                    width / 2,
-                    height / 2,
-                    gl!(R8),
-                    gl!(RED),
-                    gl!(UNSIGNED_BYTE),
-                )?,
-                FramebufferObject::new(
-                    width / 2,
-                    height / 2,
-                    gl!(R8),
-                    gl!(RED),
-                    gl!(UNSIGNED_BYTE),
-                )?,
+                FramebufferObject::new(width, height, gl::R8, gl::RED, gl::UNSIGNED_BYTE)?,
+                FramebufferObject::new(width / 2, height / 2, gl::R8, gl::RED, gl::UNSIGNED_BYTE)?,
+                FramebufferObject::new(width / 2, height / 2, gl::R8, gl::RED, gl::UNSIGNED_BYTE)?,
             ],
             width,
             height,
+            bound_plane: None,
         })
     }
 
     /// Select a [Plane], into which images will be rendered
-    pub fn bind_for_drawing(&self, plane: Plane) -> Result<(), CompositorError> {
+    pub fn bind_for_drawing(
+        &mut self,
+        plane: Plane,
+    ) -> Result<DrawBoundYUVRenderTarget, CompositorError> {
         self.framebuffers[plane as usize].bind_for_drawing()?;
-        Ok(())
+        self.bound_plane = Some(plane);
+        Ok(DrawBoundYUVRenderTarget { target: self })
     }
 
     /// Copy the contents of the whole render target (all planes) into a `buffer`
@@ -178,6 +182,17 @@ impl YUVRenderTarget {
     /// Get the height of the Y plane.
     pub fn height(&self) -> usize {
         self.height
+    }
+}
+
+pub struct DrawBoundYUVRenderTarget<'a> {
+    target: &'a mut YUVRenderTarget,
+}
+
+impl<'a> Drop for DrawBoundYUVRenderTarget<'a> {
+    fn drop(&mut self) {
+        self.target.framebuffers[self.target.bound_plane.unwrap() as usize].unbind_drawing();
+        self.target.bound_plane = None;
     }
 }
 

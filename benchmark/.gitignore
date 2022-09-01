@@ -1,0 +1,12 @@
+# benchamrk
+/_build
+/deps
+/tmp_dir
+/results
+
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib

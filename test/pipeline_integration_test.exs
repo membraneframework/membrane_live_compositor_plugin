@@ -6,10 +6,11 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.PipelineH264
-  alias Membrane.VideoCompositor.Test.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.Test.Pipeline.H264, as: PipelineH264
+  alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
-  @implementations [:ffmpeg, :nx]
+  @implementation Implementation.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
@@ -27,7 +28,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     aligned: nil
   }
 
-  Enum.map(@implementations, fn implementation ->
+  Enum.map(@implementation, fn implementation ->
     describe "Checks h264 #{implementation} pipeline on" do
       @describetag :tmp_dir
 
@@ -69,7 +70,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
 
     assert_pipeline_playback_changed(pid, _, :playing)
 
-    assert_end_of_stream(pid, :file_sink, :input, 1_000_000)
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
   end
 end

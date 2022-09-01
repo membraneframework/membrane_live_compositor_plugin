@@ -1,4 +1,5 @@
 #![deny(unsafe_op_in_unsafe_fn)]
+#![allow(clippy::extra_unused_lifetimes)] // we have to do this because of a bug in rustler ;(
 //! This crate is a video compositor implementation using OpenGL, intended for use with an Elixir package.
 
 extern crate khronos_egl as egl;
@@ -12,23 +13,11 @@ pub mod shaders;
 pub mod textures;
 
 macro_rules! gl {
-    ($call:ident($($args:expr),*)) => {
-        {
-            // FIXME: we should probably add something like `ensure_current_thread_holds_context` here
-            let result = glad_gles2::gl::$call($($args),*);
-            #[allow(unused_unsafe)] // we have this, because maybe there are some gl calls that are safe and in that case we need our own unsafe block here
-            let err = unsafe { glad_gles2::gl::GetError() };
-            crate::errors::result_or_gl_error(result, err, crate::errors::ErrorLocation {
-                file: file!().to_string(),
-                line: line!(),
-                call: format!("gl{}({})", stringify!($call), stringify!($($args),*))
-            })
-        }
-    };
-
-    ($name:ident) => {
-        glad_gles2::gl::$name
-    }
+    ($call:expr) => {{
+        // FIXME: we should probably add something like `ensure_current_thread_holds_context` here
+        let result = $call;
+        crate::errors::result_or_gl_error(result, file!(), line!(), stringify!(call))
+    }};
 }
 
 pub(crate) use gl;
@@ -60,7 +49,7 @@ mod atoms {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo"]
 struct RawVideo {
     width: usize,
     height: usize,
@@ -70,29 +59,51 @@ struct RawVideo {
 /// Contains structs used for holding the state of the compositor.
 /// The structures in this module are mostly intended to be stored in the BEAM and passed to calls in this library.
 pub mod state {
+    use std::{ops::Deref, sync::Mutex};
+
     use crate::scene::Scene;
 
     /// Holds the state of the compositor -- EGL parameters necessary to make the OpenGL context current and the [Scene].
     pub struct State {
+        inner: Mutex<InnerState>,
+    }
+
+    impl State {
+        pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
+            Self {
+                inner: Mutex::new(InnerState::new(display, context, scene)),
+            }
+        }
+    }
+
+    impl Deref for State {
+        type Target = Mutex<InnerState>;
+
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
+    }
+
+    pub struct InnerState {
         display: usize,
         context: usize,
         scene: Scene,
     }
 
-    impl State {
+    impl InnerState {
         /// Bind the OpenGL context and produce a [BoundContext] instance.
-        pub fn bind_context(&self) -> Result<BoundContext, egl::Error> {
+        pub fn bind_context(&mut self) -> Result<BoundContext, egl::Error> {
             let display = unsafe { egl::Display::from_ptr(self.display as *mut std::ffi::c_void) };
             let context = unsafe { egl::Context::from_ptr(self.context as *mut std::ffi::c_void) };
             egl::API.make_current(display, None, None, Some(context))?;
             Ok(BoundContext {
                 display,
-                scene: &self.scene,
+                scene: &mut self.scene,
             })
         }
 
         /// Create the [State] from the EGL parameters and the [Scene]
-        pub fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
+        fn new(display: egl::Display, context: egl::Context, scene: Scene) -> Self {
             Self {
                 display: display.as_ptr() as usize,
                 context: context.as_ptr() as usize,
@@ -105,7 +116,7 @@ pub mod state {
     /// It releases the context automatically when dropped. It's necessary to create this struct (using [State::bind_context]) in order to access the [Scene].
     pub struct BoundContext<'a> {
         display: egl::Display,
-        pub scene: &'a Scene,
+        pub scene: &'a mut Scene,
     }
 
     impl<'a> Drop for BoundContext<'a> {
@@ -117,6 +128,8 @@ pub mod state {
     }
 }
 use state::{BoundContext, State};
+
+use crate::scene::Point;
 
 #[doc(hidden)]
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
@@ -185,7 +198,7 @@ fn init(
             .expect("Can't find a GLES procedure") as *const std::ffi::c_void
     });
 
-    unsafe { gl!(ClearColor(0.0, 0.0, 0.0, 1.0))? }
+    unsafe { gl!(glad_gles2::gl::ClearColor(0.0, 0.0, 0.0, 1.0))? }
 
     let vertex_shader_code = include_str!("shaders/vertex.glsl");
     let fragment_shader_code = include_str!("shaders/fragment.glsl");
@@ -194,25 +207,25 @@ fn init(
     let mut scene = Scene::new(out_video.width, out_video.height, shader_program)?;
     scene.add_video(
         scene::VideoPlacementTemplate {
-            top_right: (1.0, 1.0),
-            top_left: (-1.0, 1.0),
-            bot_left: (-1.0, 0.0),
-            bot_right: (1.0, 0.0),
+            top_right: Point(1.0, 1.0),
+            top_left: Point(-1.0, 1.0),
+            bot_left: Point(-1.0, 0.0),
+            bot_right: Point(1.0, 0.0),
             z_value: 0.0,
         },
         first_video.width,
-        second_video.height,
+        first_video.height,
     )?;
 
     scene.add_video(
         scene::VideoPlacementTemplate {
-            top_right: (1.0, 0.0),
-            top_left: (-1.0, 0.0),
-            bot_left: (-1.0, -1.0),
-            bot_right: (1.0, -1.0),
+            top_right: Point(1.0, 0.0),
+            top_left: Point(-1.0, 0.0),
+            bot_left: Point(-1.0, -1.0),
+            bot_right: Point(1.0, -1.0),
             z_value: 0.0,
         },
-        first_video.width,
+        second_video.width,
         second_video.height,
     )?;
 
@@ -231,17 +244,18 @@ fn join_frames<'a>(
     upper: rustler::Binary,
     lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    let ctx = state.bind_context().nif_err()?;
+    let mut locked = state.lock().unwrap();
+    let mut ctx = locked.bind_context().nif_err()?;
     // for some reason VS Code can't suggest stuff correctly until
     // I forward all of this into a different function. It's inlined and thusly free
-    join_frames_fwd(env, &ctx, upper, lower)
+    join_frames_fwd(env, &mut ctx, upper, lower)
 }
 
 #[inline(always)]
 #[doc(hidden)]
 fn join_frames_fwd<'a>(
     env: rustler::Env<'a>,
-    ctx: &BoundContext,
+    ctx: &mut BoundContext,
     upper: rustler::Binary,
     lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
@@ -284,7 +298,7 @@ impl<T> ResultExt<T> for Result<T, egl::Error> {
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.OpenGL.Rust",
+    "Elixir.Membrane.VideoCompositor.OpenGL.Native.Rust",
     [init, join_frames],
     load = load
 );

@@ -7,14 +7,18 @@ use crate::{
     shaders::ShaderProgram,
     textures::YUVPlanarTexture,
 };
+use glad_gles2::gl;
+
+/// A point in 2D space
+pub struct Point(pub f32, pub f32);
 
 /// Describes where a video should be located in the scene space.
 /// All coordinates have to be in the range [-1, 1].
 pub struct VideoPlacementTemplate {
-    pub top_right: (f32, f32),
-    pub top_left: (f32, f32),
-    pub bot_left: (f32, f32),
-    pub bot_right: (f32, f32),
+    pub top_right: Point,
+    pub top_left: Point,
+    pub bot_left: Point,
+    pub bot_right: Point,
     /// This value is supposed to be used for making some videos appear 'in front of' other videos.
     /// This is still WIP and may not work.
     pub z_value: f32, // don't really know if setting this will do anything.. I guess it shouldn't without a depth buffer? FIXME??
@@ -59,7 +63,10 @@ impl Video {
     }
 
     /// Draw this video into the currently attached render target
-    fn draw(&self) -> Result<(), CompositorError> {
+    fn draw(
+        &self,
+        _bind_proof: &framebuffers::DrawBoundYUVRenderTarget,
+    ) -> Result<(), CompositorError> {
         self.textures.bind()?;
         self.vao.draw()?;
         Ok(())
@@ -77,9 +84,9 @@ impl Video {
 ///
 /// It only does rendering in the `GL_TRIANGLES` mode and expects the drawn objects to have a texture.
 struct VertexArrayObject {
-    id: gl!(GLuint),
-    vertices_id: gl!(GLuint),
-    elements_id: gl!(GLuint),
+    id: gl::GLuint,
+    vertices_id: gl::GLuint,
+    elements_id: gl::GLuint,
     elements_len: usize,
 }
 
@@ -93,51 +100,51 @@ impl VertexArrayObject {
     ///    - 2 `f32`s in the [0, 1] range describing the texture coordinates.
     ///  * `elements.len() % 3 == 0` (since `elements` should describe triangles)
     ///  * `elements` only contain GLuints in the [0, `vertices.len()`] range.
-    fn new(vertices: &[f32], elements: &[gl!(GLuint)]) -> Result<Self, CompositorError> {
+    fn new(vertices: &[f32], elements: &[gl::GLuint]) -> Result<Self, CompositorError> {
         use std::ffi::c_void;
         unsafe {
             let mut id = 0;
-            gl!(GenVertexArrays(1, &mut id))?;
-            gl!(BindVertexArray(id))?;
+            gl!(gl::GenVertexArrays(1, &mut id))?;
+            gl!(gl::BindVertexArray(id))?;
 
             let mut buffers = [0, 0];
-            gl!(GenBuffers(2, buffers.as_mut_ptr()))?;
+            gl!(gl::GenBuffers(2, buffers.as_mut_ptr()))?;
             let [vertices_id, elements_id] = buffers;
 
-            gl!(BindBuffer(gl!(ARRAY_BUFFER), vertices_id))?;
-            gl!(BufferData(
-                gl!(ARRAY_BUFFER),
+            gl!(gl::BindBuffer(gl::ARRAY_BUFFER, vertices_id))?;
+            gl!(gl::BufferData(
+                gl::ARRAY_BUFFER,
                 std::mem::size_of_val(vertices) as isize,
                 vertices.as_ptr() as *const c_void,
-                gl!(STATIC_DRAW)
+                gl::STATIC_DRAW
             ))?;
 
-            gl!(VertexAttribPointer(
+            gl!(gl::VertexAttribPointer(
                 0,
                 3,
-                gl!(FLOAT),
-                gl!(FALSE),
+                gl::FLOAT,
+                gl::FALSE,
                 5 * std::mem::size_of::<f32>() as i32,
                 std::ptr::null::<c_void>()
             ))?;
-            gl!(EnableVertexAttribArray(0))?;
+            gl!(gl::EnableVertexAttribArray(0))?;
 
-            gl!(VertexAttribPointer(
+            gl!(gl::VertexAttribPointer(
                 1,
                 2,
-                gl!(FLOAT),
-                gl!(FALSE),
+                gl::FLOAT,
+                gl::FALSE,
                 5 * std::mem::size_of::<f32>() as i32,
                 (3 * std::mem::size_of::<f32>()) as *const c_void
             ))?;
-            gl!(EnableVertexAttribArray(1))?;
+            gl!(gl::EnableVertexAttribArray(1))?;
 
-            gl!(BindBuffer(gl!(ELEMENT_ARRAY_BUFFER), elements_id))?;
-            gl!(BufferData(
-                gl!(ELEMENT_ARRAY_BUFFER),
+            gl!(gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, elements_id))?;
+            gl!(gl::BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
                 std::mem::size_of_val(elements) as isize,
                 elements.as_ptr() as *const c_void,
-                gl!(STATIC_DRAW)
+                gl::STATIC_DRAW
             ))?;
 
             Ok(Self {
@@ -150,12 +157,12 @@ impl VertexArrayObject {
     }
 
     fn bind(&self) -> Result<(), CompositorError> {
-        unsafe { gl!(BindVertexArray(self.id))? }
+        unsafe { gl!(gl::BindVertexArray(self.id))? }
         Ok(())
     }
 
     fn unbind() -> Result<(), CompositorError> {
-        unsafe { gl!(BindVertexArray(0))? }
+        unsafe { gl!(gl::BindVertexArray(0))? }
         Ok(())
     }
 
@@ -164,10 +171,10 @@ impl VertexArrayObject {
         use std::ffi::c_void;
         self.bind()?;
         unsafe {
-            gl!(DrawElements(
-                gl!(TRIANGLES),
+            gl!(gl::DrawElements(
+                gl::TRIANGLES,
                 self.elements_len as i32,
-                gl!(UNSIGNED_INT),
+                gl::UNSIGNED_INT,
                 std::ptr::null::<c_void>()
             ))?
         }
@@ -180,8 +187,8 @@ impl Drop for VertexArrayObject {
     fn drop(&mut self) {
         unsafe {
             let buffers = [self.vertices_id, self.elements_id];
-            gl!(DeleteBuffers(2, buffers.as_ptr())).unwrap();
-            gl!(DeleteVertexArrays(1, &self.id)).unwrap();
+            gl!(gl::DeleteBuffers(2, buffers.as_ptr())).unwrap();
+            gl!(gl::DeleteVertexArrays(1, &self.id)).unwrap();
         }
     }
 }
@@ -238,18 +245,19 @@ impl Scene {
     /// # Panics
     ///
     /// This function will panic if the `buffer` is not long enough to hold the resulting image.
-    pub fn draw_into(&self, buffer: &mut [u8]) -> Result<(), CompositorError> {
+
+    pub fn draw_into(&mut self, buffer: &mut [u8]) -> Result<(), CompositorError> {
         use framebuffers::Plane;
         self.shader_program.use_program()?;
 
         for plane in [Plane::Y, Plane::U, Plane::V] {
-            self.render_target.bind_for_drawing(plane)?;
+            let bind_proof = self.render_target.bind_for_drawing(plane)?;
             // FIXME: This is a very ugly API, nothing suggests that you need to set this.
             //        This is how it's implemented in the C++ version, we can change this after we have a MVP
             self.shader_program.set_int("texture1", plane as i32)?;
 
             for video in self.videos.iter() {
-                video.draw()?;
+                video.draw(&bind_proof)?;
             }
         }
         self.render_target.read(buffer)?;
