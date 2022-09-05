@@ -87,7 +87,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
-      pads_to_ids: {0, %{}}
+      pads_to_ids: %{},
+      new_pad_id: 0
     }
 
     {:ok, state}
@@ -100,15 +101,20 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   end
 
   defp register_track(state, pad) do
-    {new_id, pads_to_ids} = state.pads_to_ids
-    state = %{state | pads_to_ids: {new_id + 1, Map.put(pads_to_ids, pad, new_id)}}
+    new_id = state.new_pad_id
+
+    state = %{
+      state
+      | pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
+        new_pad_id: new_id + 1
+    }
 
     %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}
   end
 
   @impl true
   def handle_caps(pad, caps, _context, state) do
-    %{pads_to_ids: {_new_id, pads_to_ids}, internal_state: internal_state} = state
+    %{pads_to_ids: pads_to_ids, internal_state: internal_state} = state
     id = Map.get(pads_to_ids, pad)
 
     {:ok, internal_state} =
@@ -123,11 +129,13 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
         pad,
         buffer,
         _context,
-        %{
-          ids_to_tracks: ids_to_tracks,
-          pads_to_ids: {_new_id, pads_to_ids}
-        } = state
+        state
       ) do
+    %{
+      ids_to_tracks: ids_to_tracks,
+      pads_to_ids: pads_to_ids
+    } = state
+
     id = Map.get(pads_to_ids, pad)
 
     ids_to_tracks = push_frame(ids_to_tracks, id, buffer)
@@ -140,12 +148,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     end
   end
 
-  defp merge_frames(
-         %{
-           ids_to_tracks: ids_to_tracks,
-           internal_state: internal_state
-         } = state
-       ) do
+  defp merge_frames(state) do
+    %{
+      ids_to_tracks: ids_to_tracks,
+      internal_state: internal_state
+    } = state
+
     if all_have_frame?(ids_to_tracks) do
       ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
@@ -201,8 +209,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     |> Map.new()
   end
 
-  defp remove_finished_tracks(%{ids_to_tracks: ids_to_tracks} = state) do
-    ids_to_tracks
+  defp remove_finished_tracks(state) do
+    state.ids_to_tracks
     |> Enum.reduce(
       state,
       fn {id, %Track{} = track}, state ->
@@ -220,7 +228,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     Track.finished?(track)
   end
 
-  defp remove_track(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
+  defp remove_track(state, id) do
+    %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state
     ids_to_tracks = Map.delete(ids_to_tracks, id)
     {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
     %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
@@ -247,8 +256,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   def handle_end_of_stream(
         pad,
         _context,
-        %{ids_to_tracks: ids_to_tracks, pads_to_ids: {_new_id, pads_to_ids}} = state
+        state
       ) do
+    %{ids_to_tracks: ids_to_tracks, pads_to_ids: pads_to_ids} = state
     id = Map.get(pads_to_ids, pad)
 
     ids_to_tracks = ids_to_tracks |> update_track_status(id, :end_of_stream)
