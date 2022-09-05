@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Test.MultiInputComposerTest.Utility do
 
   alias Membrane.RawVideo
   alias Membrane.Testing
-  alias Membrane.VideoCompositor.MultipleInputs, as: MultiVideoCompositor
+  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor, as: MultiVideoCompositor
   alias Membrane.VideoCompositor.Test.Mock.FrameComposer.MultipleInput, as: MockFrameComposer
 
   @no_video %RawVideo{

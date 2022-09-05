@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.MultipleInputs do
+defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   @moduledoc """
   The element responsible for placing the first received frame
   above the other and sending forward buffer with
@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs do
 
   use Membrane.Filter
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.MultipleInputs.Implementation
+  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
 
   def_options(
     implementation: [

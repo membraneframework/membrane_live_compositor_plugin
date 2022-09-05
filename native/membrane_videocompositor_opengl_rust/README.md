@@ -1,4 +1,4 @@
-# NIF for Elixir.Membrane.VideoCompositor.OpenGL.Rust
+# NIF for Elixir.Membrane.VideoCompositor.Implementation.OpenGL.Rust
 
 ## To build the NIF module:
 
@@ -7,7 +7,7 @@
 ## To load the NIF:
 
 ```elixir
-defmodule Membrane.VideoCompositor.OpenGL.Rust do
+defmodule Membrane.VideoCompositor.Implementation.OpenGL.Rust do
     use Rustler, otp_app: :membrane_video_compositor_plugin, crate: "membrane_videocompositor_opengl_rust"
 
     # When your NIF is loaded, it will override this function.

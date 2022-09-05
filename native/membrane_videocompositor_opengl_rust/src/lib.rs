@@ -49,7 +49,7 @@ mod atoms {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.RawVideo"]
 struct RawVideo {
     width: usize,
     height: usize,
@@ -298,7 +298,7 @@ impl<T> ResultExt<T> for Result<T, egl::Error> {
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.OpenGL.Native.Rust",
+    "Elixir.Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust",
     [init, join_frames],
     load = load
 );
