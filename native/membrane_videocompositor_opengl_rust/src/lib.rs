@@ -1,5 +1,4 @@
 #![deny(unsafe_op_in_unsafe_fn)]
-#![allow(clippy::extra_unused_lifetimes)] // we have to do this because of a bug in rustler ;(
 //! This crate is a video compositor implementation using OpenGL, intended for use with an Elixir package.
 
 extern crate khronos_egl as egl;
