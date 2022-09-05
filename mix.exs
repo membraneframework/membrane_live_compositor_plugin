@@ -44,8 +44,8 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.13.0"},
       {:nx, "~> 0.2"},
-      {:rustler, "~> 0.25.0"},
       {:qex, "~> 0.5.1"},
+      {:rustler, "~> 0.26.0"},
       # Testing
       {:membrane_file_plugin, "~> 0.12.0", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.21.0", only: :test},
