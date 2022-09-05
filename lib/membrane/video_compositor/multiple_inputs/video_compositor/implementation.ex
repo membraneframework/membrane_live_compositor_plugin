@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
         raise ":opengl_cpp is not implemented yet"
 
       :opengl_rust ->
-        raise ":opengl_rust is not implemented yet"
+        {:ok, Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust}
 
       :nx ->
         raise ":nx is not implemented yet"
