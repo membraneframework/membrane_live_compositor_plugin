@@ -1,11 +1,11 @@
-defmodule Membrane.VideoCompositor.OpenGL.Cpp do
+defmodule Membrane.VideoCompositor.Implementation.OpenGL.Cpp do
   @moduledoc """
   This module implements video composition in OpenGL with a C++ backend
   """
 
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.OpenGL.Native.Cpp
+  alias Membrane.VideoCompositor.Implementation.OpenGL.Native.Cpp
 
   @impl true
   def init(caps) do
