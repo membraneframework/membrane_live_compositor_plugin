@@ -50,8 +50,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     @doc """
     Checks whether track is empty and can be removed
     """
-    @spec depleted?(__MODULE__.t()) :: boolean()
-    def depleted?(%__MODULE__{status: status, buffers: buffers}) do
+    @spec finished?(__MODULE__.t()) :: boolean()
+    def finished?(%__MODULE__{status: status, buffers: buffers}) do
       status == :end_of_stream and Enum.empty?(buffers)
     end
 
@@ -160,7 +160,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
           internal_state: internal_state
       }
 
-      state = remove_depleted_tracks(state)
+      state = remove_finished_tracks(state)
 
       {{_status, tail}, state} = merge_frames(state)
       merged = [%Membrane.Buffer{payload: merged_frame_binary}] ++ tail
@@ -201,12 +201,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     |> Map.new()
   end
 
-  defp remove_depleted_tracks(%{ids_to_tracks: ids_to_tracks} = state) do
+  defp remove_finished_tracks(%{ids_to_tracks: ids_to_tracks} = state) do
     ids_to_tracks
     |> Enum.reduce(
       state,
       fn {id, %Track{} = track}, state ->
-        if Track.depleted?(track) do
+        if Track.finished?(track) do
           remove_track(state, id)
         else
           state
@@ -215,9 +215,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     )
   end
 
-  defp track_depleted?(ids_to_tracks, id) do
+  defp track_finished?(ids_to_tracks, id) do
     track = Map.get(ids_to_tracks, id)
-    Track.depleted?(track)
+    Track.finished?(track)
   end
 
   defp remove_track(%{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state, id) do
@@ -236,7 +236,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   end
 
   defp tracks_status(ids_to_tracks) do
-    if Map.values(ids_to_tracks) |> Enum.all?(&Track.depleted?/1) do
+    if Map.values(ids_to_tracks) |> Enum.all?(&Track.finished?/1) do
       :all_finished
     else
       :still_ongoing
@@ -255,7 +255,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     state = %{state | ids_to_tracks: ids_to_tracks}
 
     state =
-      if track_depleted?(ids_to_tracks, id) do
+      if track_finished?(ids_to_tracks, id) do
         remove_track(state, id)
       else
         state
