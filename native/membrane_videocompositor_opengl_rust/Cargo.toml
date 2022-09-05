@@ -10,7 +10,7 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-rustler = "0.25.0"
+rustler = "0.26.0"
 khronos-egl = { version = "4.1.0", features = ["static", "no-pkg-config"] }
 glad-gles2 = { path = "glad-gles2" }
 thiserror = "1.0.32"
