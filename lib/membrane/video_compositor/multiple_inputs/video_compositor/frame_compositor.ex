@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.FrameCompositor do
   @moduledoc """
-  This module defines behaviour for different frame composition implementations supporting multiple input frames.
+  This module defines behaviour for different frame composition implementations, supporting multiple input frames.
   """
   alias Membrane.RawVideo
 

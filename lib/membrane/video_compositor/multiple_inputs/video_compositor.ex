@@ -260,7 +260,6 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     end
   end
 
-  @dialyzer {:nowarn_function, determine_compositor_module: 1}
   defp determine_compositor_module(implementation) do
     case implementation do
       {:mock, module} ->
