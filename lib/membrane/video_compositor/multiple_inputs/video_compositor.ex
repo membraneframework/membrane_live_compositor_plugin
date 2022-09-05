@@ -95,6 +95,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   end
 
   @impl true
+  def handle_prepared_to_playing(_ctx, state) do
+    {{:ok, caps: {:output, state.caps}}, state}
+  end
+
+  @impl true
   def handle_pad_added(pad, _context, state) do
     state = register_track(state, pad)
     {:ok, state}
@@ -121,7 +126,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
       state.compositor_module.add_video(id, caps, %{x: 0, y: 0}, internal_state)
 
     state = %{state | internal_state: internal_state}
-    {{:ok, caps: {:output, state.caps}}, state}
+    {:ok, state}
   end
 
   @impl true
@@ -238,10 +243,6 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   defp update_track_status(ids_to_tracks, id, status) do
     ids_to_tracks
     |> Map.update!(id, fn track -> %Track{track | status: status} end)
-  end
-
-  defp tracks_status(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
-    :all_finished
   end
 
   defp tracks_status(ids_to_tracks) do
