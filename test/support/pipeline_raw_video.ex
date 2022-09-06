@@ -5,17 +5,6 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.Raw do
 
   use Membrane.Pipeline
 
-  @doc """
-  handle_init(%{
-      paths: %{
-        first_video_path: String.t(),
-        second_video_path: String.t(),
-        output_path: String.t()
-      },
-      caps: RawVideo,
-      implementation: :ffmpeg | :opengl | :nx
-  })
-  """
   @impl true
   def handle_init(options) do
     caps = options.caps
