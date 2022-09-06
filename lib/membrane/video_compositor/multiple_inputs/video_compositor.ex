@@ -27,7 +27,16 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     demand_unit: :buffers,
     availability: :on_request,
     demand_mode: :auto,
-    caps: {RawVideo, pixel_format: :I420}
+    caps: {RawVideo, pixel_format: :I420},
+    options: [
+      position: [
+        type: :tuple,
+        spec: {integer(), integer()},
+        description:
+          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
+        default: {0, 0}
+      ]
+    ]
   )
 
   def_output_pad(
@@ -49,7 +58,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
       compositor_module: compositor_module,
       internal_state: internal_state,
       pads_to_ids: %{},
-      new_pad_id: 0
+      new_pad_id: 0,
+      ids_to_positions: %{}
     }
 
     {:ok, state}
@@ -61,18 +71,21 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   end
 
   @impl true
-  def handle_pad_added(pad, _context, state) do
-    state = register_track(state, pad)
+  def handle_pad_added(pad, context, state) do
+    position = context.options.position
+
+    state = register_track(state, pad, position)
     {:ok, state}
   end
 
-  defp register_track(state, pad) do
+  defp register_track(state, pad, position) do
     new_id = state.new_pad_id
 
     state = %{
       state
       | pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
-        new_pad_id: new_id + 1
+        new_pad_id: new_id + 1,
+        ids_to_positions: Map.put(state.ids_to_positions, new_id, position)
     }
 
     %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}
@@ -80,11 +93,16 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
 
   @impl true
   def handle_caps(pad, caps, _context, state) do
-    %{pads_to_ids: pads_to_ids, internal_state: internal_state} = state
+    %{
+      pads_to_ids: pads_to_ids,
+      internal_state: internal_state,
+      ids_to_positions: ids_to_positions
+    } = state
+
     id = Map.get(pads_to_ids, pad)
 
-    {:ok, internal_state} =
-      state.compositor_module.add_video(id, caps, %{x: 0, y: 0}, internal_state)
+    position = Map.get(ids_to_positions, id)
+    {:ok, internal_state} = state.compositor_module.add_video(id, caps, position, internal_state)
 
     state = %{state | internal_state: internal_state}
     {:ok, state}
