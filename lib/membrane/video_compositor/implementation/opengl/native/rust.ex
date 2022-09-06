@@ -42,16 +42,29 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo d
   @type pixel_format_t :: :I420
 
   @type t :: %__MODULE__{
-          width: pos_integer(),
-          height: pos_integer(),
+          width: non_neg_integer(),
+          height: non_neg_integer(),
           pixel_format: pixel_format_t()
         }
 
   @enforce_keys [:width, :height, :pixel_format]
   defstruct [:width, :height, :pixel_format]
+
+  def from_membrane_raw_video(%Membrane.RawVideo{} = raw_video) do
+    {:ok,
+     %__MODULE__{
+       width: raw_video.width,
+       height: raw_video.height,
+       pixel_format: raw_video.pixel_format
+     }}
+  end
+
+  def from_membrane_raw_video(%__MODULE__{} = raw_video) do
+    {:ok, raw_video}
+  end
 end
 
-defmodule Membrane.VideoCompositor.OpenGL.Native.Rust.Position do
+defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.Position do
   @moduledoc """
   A Position struct describing the video position for use with the rust-based compositor implementation
   """
@@ -63,4 +76,8 @@ defmodule Membrane.VideoCompositor.OpenGL.Native.Rust.Position do
 
   @enforce_keys [:x, :y]
   defstruct [:x, :y]
+
+  def from_tuple({x, y}) do
+    {:ok, %__MODULE__{x: x, y: y}}
+  end
 end

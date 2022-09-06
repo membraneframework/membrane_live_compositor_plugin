@@ -57,7 +57,7 @@ struct RawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.Position"]
+#[module = "Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.Position"]
 struct Position {
     x: usize,
     y: usize,
@@ -400,7 +400,7 @@ impl<T> ResultExt<T> for Result<T, egl::Error> {
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust",
-    [init, join_frames],
+    "Elixir.Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust",
+    [init, join_frames, add_video, remove_video, set_position],
     load = load
 );
