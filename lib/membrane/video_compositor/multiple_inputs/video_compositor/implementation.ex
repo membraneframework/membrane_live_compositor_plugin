@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
 
   @spec get_all_implementations() :: list(implementation_t)
   def get_all_implementations() do
-    []
+    [:opengl_rust]
   end
 
   @spec get_implementation_atom_from_string(String.t()) :: implementation_t()

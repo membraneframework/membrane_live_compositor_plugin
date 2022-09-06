@@ -8,11 +8,14 @@ defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
 
   @impl true
   def init(output_caps) do
+    {:ok, output_caps} = Rust.RawVideo.from_membrane_raw_video(output_caps)
     Rust.init(output_caps)
   end
 
   @impl true
   def add_video(id, input_caps, position, internal_state) do
+    {:ok, input_caps} = Rust.RawVideo.from_membrane_raw_video(input_caps)
+    {:ok, position} = Rust.Position.from_tuple(position)
     {Rust.add_video(internal_state, id, input_caps, position), internal_state}
   end
 
@@ -28,6 +31,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
 
   @impl true
   def set_position(id, position, internal_state) do
+    {:ok, position} = Rust.Position.from_tuple(position)
     {Rust.set_position(internal_state, id, position), internal_state}
   end
 end

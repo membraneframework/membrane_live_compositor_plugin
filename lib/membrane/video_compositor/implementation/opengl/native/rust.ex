@@ -50,6 +50,7 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo d
   @enforce_keys [:width, :height, :pixel_format]
   defstruct [:width, :height, :pixel_format]
 
+  @spec from_membrane_raw_video(Membrane.RawVideo.t()) :: __MODULE__.t()
   def from_membrane_raw_video(%Membrane.RawVideo{} = raw_video) do
     {:ok,
      %__MODULE__{
@@ -57,10 +58,6 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo d
        height: raw_video.height,
        pixel_format: raw_video.pixel_format
      }}
-  end
-
-  def from_membrane_raw_video(%__MODULE__{} = raw_video) do
-    {:ok, raw_video}
   end
 end
 
@@ -77,6 +74,7 @@ defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.Position do
   @enforce_keys [:x, :y]
   defstruct [:x, :y]
 
+  @spec from_tuple({non_neg_integer(), non_neg_integer()}) :: __MODULE__.t()
   def from_tuple({x, y}) do
     {:ok, %__MODULE__{x: x, y: y}}
   end
