@@ -1,12 +1,33 @@
+use rustler::ResourceArc;
+
+mod compositor;
+
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo"]
-struct RawVideo {
-    width: usize,
-    height: usize,
-    pixel_format: rustler::Atom,
+pub struct RawVideo {
+    pub width: usize,
+    pub height: usize,
+    pub pixel_format: rustler::Atom,
+}
+
+mod atoms {
+    rustler::atoms! {
+        ok,
+        error,
+    }
 }
 
 struct State(std::sync::Mutex<InnerState>);
+
+impl State {
+    fn new(upper_caps: RawVideo, lower_caps: RawVideo, output_caps: RawVideo) -> Self {
+        Self(std::sync::Mutex::new(InnerState::new(
+            upper_caps,
+            lower_caps,
+            output_caps,
+        )))
+    }
+}
 
 impl std::ops::Deref for State {
     type Target = std::sync::Mutex<InnerState>;
@@ -16,35 +37,68 @@ impl std::ops::Deref for State {
     }
 }
 
-struct InnerState {}
+struct InnerState {
+    compositor: compositor::State,
+    _upper_caps: RawVideo,
+    _lower_caps: RawVideo,
+    output_caps: RawVideo,
+}
 
-#[doc(hidden)]
-fn load(env: rustler::Env, _: rustler::Term) -> bool {
-    rustler::resource!(State, env);
-    true
+impl InnerState {
+    fn new(upper_caps: RawVideo, lower_caps: RawVideo, output_caps: RawVideo) -> Self {
+        Self {
+            compositor: pollster::block_on(compositor::State::new(
+                &upper_caps,
+                &lower_caps,
+                &output_caps,
+            )),
+            _upper_caps: upper_caps,
+            _lower_caps: lower_caps,
+            output_caps,
+        }
+    }
 }
 
 #[rustler::nif]
 fn init(
-    _first_video: RawVideo,
-    _second_video: RawVideo,
-    _out_video: RawVideo,
+    #[allow(unused)] env: rustler::Env,
+    upper_caps: RawVideo,
+    lower_caps: RawVideo,
+    output_caps: RawVideo,
 ) -> Result<(rustler::Atom, rustler::ResourceArc<State>), rustler::Error> {
-    todo!()
+    Ok((
+        atoms::ok(),
+        rustler::ResourceArc::new(State::new(upper_caps, lower_caps, output_caps)),
+    ))
 }
 
 #[rustler::nif]
 fn join_frames<'a>(
-    #[allow(unused)] env: rustler::Env<'a>,
-    _state: rustler::ResourceArc<State>,
-    _upper: rustler::Binary,
-    _lower: rustler::Binary,
+    env: rustler::Env<'a>,
+    state: ResourceArc<State>,
+    upper: rustler::Binary,
+    lower: rustler::Binary,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    todo!()
+    let state = state.lock().unwrap();
+
+    let mut output =
+        rustler::OwnedBinary::new(state.output_caps.width * state.output_caps.height * 3 / 2)
+            .unwrap(); //FIXME: return an error instead of panicking here
+
+    pollster::block_on(state.compositor.join_frames(
+        upper.as_slice(),
+        lower.as_slice(),
+        output.as_mut_slice(),
+    ));
+
+    Ok((atoms::ok(), output.release(env).to_term(env)))
 }
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [init, join_frames],
-    load = load
+    load = |env, _| {
+        rustler::resource!(State, env);
+        true
+    }
 );

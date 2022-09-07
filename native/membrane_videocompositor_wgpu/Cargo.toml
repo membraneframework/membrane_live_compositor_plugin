@@ -10,4 +10,8 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
+bytemuck = { version = "1.12.1", features = ["derive"] }
+futures-intrusive = "0.4.0"
+pollster = "0.2.5"
 rustler = "0.26.0"
+wgpu = "0.13.1"
