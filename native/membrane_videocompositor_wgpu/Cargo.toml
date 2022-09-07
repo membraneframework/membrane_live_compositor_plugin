@@ -1,7 +1,9 @@
 [package]
 name = "membrane_videocompositor_wgpu"
 version = "0.1.0"
-authors = []
+authors = ["Membrane Team"]
+license = "Apache-2.0"
+homepage = "https://membrane.stream/"
 edition = "2021"
 
 [lib]
