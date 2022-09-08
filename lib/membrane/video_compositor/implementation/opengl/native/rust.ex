@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo d
   end
 end
 
-defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.Position do
+defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position do
   @moduledoc """
   A Position struct describing the video position for use with the rust-based compositor implementation
   """

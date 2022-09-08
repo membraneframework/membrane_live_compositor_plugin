@@ -6,12 +6,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Test.Pipeline.Raw.MultipleInputs, as: PipelineRaw
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
-  @implementation Implementation.get_test_implementations()
+  @implementation Implementations.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 1280,

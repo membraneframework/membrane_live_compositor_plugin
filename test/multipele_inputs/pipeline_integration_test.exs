@@ -6,11 +6,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Test.Pipeline.H264.MultipleInputs, as: PipelineH264
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
-  @implementation Implementation.get_test_implementations()
+  @implementation Implementations.get_test_implementations()
 
   @hd_video %RawVideo{
     width: 2 * 1280,

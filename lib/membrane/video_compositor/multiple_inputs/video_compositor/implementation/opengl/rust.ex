@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
   """
   @behaviour Membrane.VideoCompositor.MultipleInputs.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust
+  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
 
   @impl true
   def init(output_caps) do
