@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
   """
 
   @typedoc "Define video compositor implementation types"
-  @type implementation_t :: :ffmpeg | :opengl_cpp | :opengl_rust | :nx | module()
+  @type implementation_t :: :ffmpeg | :opengl_cpp | :opengl_rust | :nx
 
   @spec get_implementation_module(implementation_t) :: {:ok, module()} | {:error, String.t()}
   def get_implementation_module(implementation) do
