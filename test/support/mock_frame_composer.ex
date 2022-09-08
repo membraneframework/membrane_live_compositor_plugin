@@ -15,14 +15,13 @@ defmodule Membrane.VideoCompositor.Test.Mock.FrameComposer.MultipleInput do
   end
 
   @impl true
-  def merge_frames(%{} = frames, %{merged_ids: merged_ids} = internal_state) do
-    ids = Map.keys(frames)
+  def merge_frames(frames, %{merged_ids: merged_ids} = internal_state) do
+    {ids, frames} = Enum.unzip(frames)
     internal_state = %{internal_state | merged_ids: [ids | merged_ids]}
 
     concatenated =
       frames
-      |> Map.values()
-      |> Enum.map_join("", fn %Membrane.Buffer{payload: payload} -> payload end)
+      |> Enum.join("")
 
     {{:ok, concatenated}, internal_state}
   end

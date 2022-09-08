@@ -32,7 +32,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track do
 
   @spec first_frame(__MODULE__.t()) :: Buffer.t()
   def first_frame(%__MODULE__{buffers: buffers}) do
-    Qex.first!(buffers)
+    %Buffer{payload: frame} = Qex.first!(buffers)
+    frame
   end
 
   @spec has_frame?(__MODULE__.t()) :: boolean

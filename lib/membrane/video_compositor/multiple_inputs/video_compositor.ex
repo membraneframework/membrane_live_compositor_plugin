@@ -173,7 +173,8 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
 
   defp get_ids_to_frames(ids_to_tracks) do
     ids_to_tracks
-    |> Map.new(fn {id, %Track{} = track} -> {id, Track.first_frame(track)} end)
+    |> Enum.map(fn {id, %Track{} = track} -> {id, Track.first_frame(track)} end)
+    |> Enum.sort()
   end
 
   defp pop_frames(ids_to_tracks) do
