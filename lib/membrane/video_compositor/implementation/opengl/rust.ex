@@ -1,11 +1,11 @@
-defmodule Membrane.VideoCompositor.OpenGL.Rust do
+defmodule Membrane.VideoCompositor.Implementations.OpenGL.Rust do
   @moduledoc """
   This module implements video composition in OpenGL with a Rust backend
   """
 
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.OpenGL.Native.Rust
+  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
 
   @impl true
   def init(%Membrane.RawVideo{width: width, height: height, pixel_format: pixel_format}) do
