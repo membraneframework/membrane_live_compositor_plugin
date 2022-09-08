@@ -229,7 +229,7 @@ fn add_video(
 
 #[inline(always)]
 #[doc(hidden)]
-fn add_video_fwd<'a>(
+fn add_video_fwd(
     ctx: &mut BoundContext,
     id: usize,
     input_video: RawVideo,
