@@ -45,7 +45,7 @@ defmodule H264PipelineBeamchmark do
   alias Membrane.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Utility
 
-  @spec benchmark(Implementation.implementation_t()) :: :ok
+  @spec benchmark(Implementations.implementation_t()) :: :ok
   def benchmark(implementation) do
     caps = %RawVideo{
       width: 1280,
