@@ -8,11 +8,11 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.Implementations
 
   def_options implementation: [
                 type: :atom,
-                spec: Implementation.implementation_t(),
+                spec: Implementations.implementation_t(),
                 description: "Implementation of video composer."
               ],
               caps: [
@@ -40,7 +40,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(options) do
-    {:ok, compositor_module} = Implementation.get_implementation_module(options.implementation)
+    {:ok, compositor_module} = Implementations.get_implementation_module(options.implementation)
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 

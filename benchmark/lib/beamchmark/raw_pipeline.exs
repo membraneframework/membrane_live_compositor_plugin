@@ -42,7 +42,7 @@ defmodule RawPipeline do
   """
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Utility
 
   @spec benchmark(Implementation.implementation_t()) :: :ok

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust do
+defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust do
   @moduledoc false
   use Rustler,
     otp_app: :membrane_video_compositor_plugin,
@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust do
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
 end
 
-defmodule Membrane.VideoCompositor.Implementation.OpenGL.Native.Rust.RawVideo do
+defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo do
   @moduledoc """
   A RawVideo struct describing the video format for use with the rust-based compositor implementation
   """

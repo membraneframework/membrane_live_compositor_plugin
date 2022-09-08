@@ -2,7 +2,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
   use ExUnit.Case, async: true
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Implementation.FFmpeg.Native
+  alias Membrane.VideoCompositor.Implementations.FFmpeg.Native
   alias Membrane.VideoCompositor.Utility
 
   describe "FFmpeg native test on " do
@@ -53,7 +53,7 @@ defmodule VideoCompositor.FFmpeg.Native.Test do
       frames = for _n <- 1..n_frames, do: frame
 
       {:ok, video} =
-        Membrane.VideoCompositor.Implementation.FFmpeg.Native.RawVideo.from_membrane_raw_video(
+        Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo.from_membrane_raw_video(
           caps
         )
 

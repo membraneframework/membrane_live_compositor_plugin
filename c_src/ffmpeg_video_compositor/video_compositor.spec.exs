@@ -1,9 +1,9 @@
-module Membrane.VideoCompositor.Implementation.FFmpeg.Native
+module Membrane.VideoCompositor.Implementations.FFmpeg.Native
 
 state_type "State"
 
 type(
-  raw_video :: %Membrane.VideoCompositor.Implementation.FFmpeg.Native.RawVideo{
+  raw_video :: %Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo{
     width: int,
     height: int,
     pixel_format: atom,

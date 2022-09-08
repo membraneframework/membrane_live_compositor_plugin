@@ -2,7 +2,7 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
   use ExUnit.Case
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Implementation.OpenGL.Native.Cpp
+  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Cpp
   alias Membrane.VideoCompositor.Utility
 
   describe "OpenGL cpp native test on " do
@@ -21,7 +21,7 @@ defmodule VideoCompositor.OpenGL.Cpp.Native.Test do
       }
 
       {:ok, video} =
-        Membrane.VideoCompositor.Implementation.FFmpeg.Native.RawVideo.from_membrane_raw_video(
+        Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo.from_membrane_raw_video(
           video
         )
 

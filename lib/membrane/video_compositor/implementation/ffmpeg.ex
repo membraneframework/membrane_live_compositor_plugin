@@ -1,11 +1,11 @@
-defmodule Membrane.VideoCompositor.Implementation.FFmpeg do
+defmodule Membrane.VideoCompositor.Implementations.FFmpeg do
   @moduledoc """
   This module implements video composition in ffmpeg.
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Implementation.FFmpeg.Native, as: FFmpeg
-  alias Membrane.VideoCompositor.Implementation.FFmpeg.Native.RawVideo, as: NativeRawVideo
+  alias Membrane.VideoCompositor.Implementations.FFmpeg.Native, as: FFmpeg
+  alias Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo, as: NativeRawVideo
 
   @impl true
   def init(caps) do

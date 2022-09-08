@@ -1,9 +1,9 @@
-defmodule Membrane.VideoCompositor.Implementation.FFmpeg.Native do
+defmodule Membrane.VideoCompositor.Implementations.FFmpeg.Native do
   @moduledoc false
   use Unifex.Loader
 end
 
-defmodule Membrane.VideoCompositor.Implementation.FFmpeg.Native.RawVideo do
+defmodule Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo do
   @moduledoc """
   Unifex compatible implementation of Membrane.RawVideo struct.
   It should be used only with the native FFmpeg module functions.

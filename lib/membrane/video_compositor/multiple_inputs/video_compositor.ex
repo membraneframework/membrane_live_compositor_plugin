@@ -7,12 +7,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
 
   use Membrane.Filter
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
+  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track
 
   def_options implementation: [
                 type: :atom,
-                spec: Implementation.implementation_t() | {:mock, module()},
+                spec: Implementations.implementation_t() | {:mock, module()},
                 description: "Implementation of video composer."
               ],
               caps: [
@@ -266,7 +266,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
         module
 
       implementation ->
-        case Implementation.get_implementation_module(implementation) do
+        case Implementations.get_implementation_module(implementation) do
           {:ok, module} -> module
           {:error, error} -> raise error
         end
