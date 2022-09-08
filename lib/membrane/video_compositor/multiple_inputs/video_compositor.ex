@@ -52,8 +52,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
       compositor_module: compositor_module,
       internal_state: internal_state,
       pads_to_ids: %{},
-      new_pad_id: 0,
-      ids_to_positions: %{}
+      new_pad_id: 0
     }
 
     {:ok, state}
@@ -78,11 +77,10 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     state = %{
       state
       | pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
-        new_pad_id: new_id + 1,
-        ids_to_positions: Map.put(state.ids_to_positions, new_id, position)
+        new_pad_id: new_id + 1
     }
 
-    %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}
+    %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{position: position})}
   end
 
   @impl true
@@ -90,12 +88,12 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     %{
       pads_to_ids: pads_to_ids,
       internal_state: internal_state,
-      ids_to_positions: ids_to_positions
+      ids_to_tracks: ids_to_tracks
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    position = Map.get(ids_to_positions, id)
+    position = Map.get(ids_to_tracks, id).position
     {:ok, internal_state} = state.compositor_module.add_video(id, caps, position, internal_state)
 
     state = %{state | internal_state: internal_state}
