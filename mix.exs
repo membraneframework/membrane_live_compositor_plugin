@@ -53,7 +53,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_video_compositor_plugin_utility, path: "./utility", only: :test},
       {:membrane_video_compositor_plugin_pipeline, path: "./pipeline", only: :test},
       # Development
-      {:exla, "~> 0.2", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
