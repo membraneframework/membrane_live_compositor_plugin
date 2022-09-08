@@ -10,20 +10,17 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
   alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
   alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track
 
-  def_options(
-    implementation: [
-      type: :atom,
-      spec: Implementation.implementation_t() | {:mock, module()},
-      description: "Implementation of video composer."
-    ],
-    caps: [
-      type: RawVideo,
-      description: "Struct with video width, height, framerate and pixel format."
-    ]
-  )
+  def_options implementation: [
+                type: :atom,
+                spec: Implementation.implementation_t() | {:mock, module()},
+                description: "Implementation of video composer."
+              ],
+              caps: [
+                type: RawVideo,
+                description: "Struct with video width, height, framerate and pixel format."
+              ]
 
-  def_input_pad(
-    :input,
+  def_input_pad :input,
     demand_unit: :buffers,
     availability: :on_request,
     demand_mode: :auto,
@@ -37,14 +34,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
         default: {0, 0}
       ]
     ]
-  )
 
-  def_output_pad(
-    :output,
+  def_output_pad :output,
     demand_unit: :buffers,
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420}
-  )
 
   @impl true
   def handle_init(options) do
