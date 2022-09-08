@@ -1,10 +1,10 @@
 defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track do
   @moduledoc false
 
-  @type buffer_t :: Membrane.Buffer.t()
+  alias Membrane.Buffer
 
   @type t :: %__MODULE__{
-          buffers: Qex.t(buffer_t),
+          buffers: Qex.t(Buffer.t()),
           status: :playing | :end_of_stream
         }
   defstruct buffers: Qex.new(), status: :playing
@@ -17,17 +17,18 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track do
     status == :end_of_stream and Enum.empty?(buffers)
   end
 
-  @spec push_frame(__MODULE__.t(), buffer_t) :: __MODULE__.t()
+  @spec push_frame(__MODULE__.t(), Buffer.t()) :: __MODULE__.t()
   def push_frame(%__MODULE__{buffers: buffers} = track, frame) do
     %__MODULE__{track | buffers: Qex.push(buffers, frame)}
   end
 
   @spec pop_frame(__MODULE__.t()) :: __MODULE__.t()
   def pop_frame(%__MODULE__{buffers: buffers} = track) do
-    %__MODULE__{track | buffers: Qex.pop!(buffers) |> elem(1)}
+    {_old_frame, buffers} = Qex.pop!(buffers)
+    %__MODULE__{track | buffers: buffers}
   end
 
-  @spec first_frame(__MODULE__.t()) :: buffer_t
+  @spec first_frame(__MODULE__.t()) :: Buffer.t()
   def first_frame(%__MODULE__{buffers: buffers}) do
     Qex.first!(buffers)
   end
