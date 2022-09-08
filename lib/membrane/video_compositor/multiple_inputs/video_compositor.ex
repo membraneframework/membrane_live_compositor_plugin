@@ -132,7 +132,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
       internal_state: internal_state
     } = state
 
-    if all_tracks_are_ready_to_merge?(ids_to_tracks) do
+    if all_tracks_ready_to_merge?(ids_to_tracks) do
       ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
       {{:ok, merged_frame_binary}, internal_state} =
@@ -163,11 +163,11 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor do
     end)
   end
 
-  defp all_tracks_are_ready_to_merge?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
+  defp all_tracks_ready_to_merge?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
     false
   end
 
-  defp all_tracks_are_ready_to_merge?(ids_to_tracks) do
+  defp all_tracks_ready_to_merge?(ids_to_tracks) do
     ids_to_tracks
     |> Map.values()
     |> Enum.all?(&Track.has_frame?/1)
