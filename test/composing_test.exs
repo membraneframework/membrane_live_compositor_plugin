@@ -30,7 +30,6 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         test_raw_composing(@hd_video, 3, unquote(implementation), tmp_dir, "short_videos")
       end
 
-      @tag implementation
       @tag long: true
       test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
         test_raw_composing(@hd_video, 10, unquote(implementation), tmp_dir, "long_videos")
