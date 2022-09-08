@@ -26,7 +26,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
 
   @impl true
   def merge_frames(frames, internal_state) do
-    {Rust.join_frames(internal_state, Map.to_list(frames)), internal_state}
+    {Rust.join_frames(internal_state, frames), internal_state}
   end
 
   @impl true
