@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   alias Membrane.VideoCompositor.Test.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
-  @implementation Implementations.get_implementations()
+  @implementation Implementations.get_all_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
@@ -32,20 +32,25 @@ defmodule Membrane.VideoCompositor.PipelineTest do
     describe "Checks h264 #{implementation} pipeline on" do
       @describetag :tmp_dir
 
+      @tag implementation
       test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
         test_h264_pipeline(@hd_video, 2, unquote(implementation), "short_videos", tmp_dir)
       end
 
+      @tag implementation
       test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
         test_h264_pipeline(@full_hd_video, 1, unquote(implementation), "short_videos", tmp_dir)
       end
 
+      @tag implementation
       @tag long: true
       test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
         test_h264_pipeline(@hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end
 
-      @tag long: true, timeout: 100_000
+      @tag implementation
+      @tag long: true
+      @tag timeout: 100_000
       test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
         test_h264_pipeline(@full_hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end

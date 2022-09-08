@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 
   @filter_description "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
-  @implementation Implementations.get_implementations()
+  @implementation Implementations.get_all_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
@@ -25,10 +25,12 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     describe "Checks #{implementation} composition and raw video pipeline on" do
       @describetag :tmp_dir
 
+      @tag implementation
       test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
         test_raw_composing(@hd_video, 3, unquote(implementation), tmp_dir, "short_videos")
       end
 
+      @tag implementation
       @tag long: true
       test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
         test_raw_composing(@hd_video, 10, unquote(implementation), tmp_dir, "long_videos")
