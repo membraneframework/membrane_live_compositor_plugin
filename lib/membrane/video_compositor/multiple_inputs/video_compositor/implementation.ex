@@ -27,15 +27,9 @@ defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementation
     end
   end
 
-  @spec get_test_implementations() :: list()
-  def get_test_implementations() do
-    test_implementations = [:ffmpeg, :nx]
-    test_implementations
-  end
-
   @spec get_all_implementations() :: list(implementation_t)
   def get_all_implementations() do
-    [:ffmpeg, :opengl_cpp, :opengl_rust, :nx]
+    []
   end
 
   @spec get_implementation_atom_from_string(String.t()) :: implementation_t()
