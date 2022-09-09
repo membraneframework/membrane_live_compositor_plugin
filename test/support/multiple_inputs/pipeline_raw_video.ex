@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.Raw.MultipleInputs do
     options = Map.put(options, :decoder, parser)
 
     options =
-      Map.put_new(options, :compositor, %Membrane.VideoCompositor.MultipleInputs.VideoCompositor{
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
       })

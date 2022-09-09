@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.PipelineTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementations
+  alias Membrane.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Test.Pipeline.H264.MultipleInputs, as: PipelineH264
   alias Membrane.VideoCompositor.Utility, as: TestingUtility
 

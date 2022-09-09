@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Track do
+defmodule Membrane.VideoCompositor.Track do
   @moduledoc false
 
   alias Membrane.Buffer

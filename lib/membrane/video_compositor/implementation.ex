@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.Implementations do
+defmodule Membrane.VideoCompositor.Implementations do
   @moduledoc """
   A module describing multiple input video compositor implementation type and implementing
   functions related with implementation format.

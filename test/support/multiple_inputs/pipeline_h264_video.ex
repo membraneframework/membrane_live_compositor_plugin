@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.H264.MultipleInputs do
     options = Map.put_new(options, :encoder, encoder)
 
     options =
-      Map.put_new(options, :compositor, %Membrane.VideoCompositor.MultipleInputs.VideoCompositor{
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
       })

@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
   @moduledoc """
   This module implements video composition in OpenGL with a Rust backend
   """
-  @behaviour Membrane.VideoCompositor.MultipleInputs.VideoCompositor.FrameCompositor
+  @behaviour Membrane.VideoCompositor.FrameCompositor
 
   alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
 

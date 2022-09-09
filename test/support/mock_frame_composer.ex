@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.Test.Mock.FrameComposer.MultipleInput do
   @moduledoc """
   Mock frame composer for multiple input videos. It supports string buffers and concatenates them as an output.
   """
-  @behaviour Membrane.VideoCompositor.MultipleInputs.VideoCompositor.FrameCompositor
+  @behaviour Membrane.VideoCompositor.FrameCompositor
 
   @impl true
   def init(_output_caps) do

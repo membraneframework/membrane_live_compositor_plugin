@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.MultipleInputs.VideoCompositor.FrameCompositor do
+defmodule Membrane.VideoCompositor.FrameCompositor do
   @moduledoc """
   This module defines behaviour for different frame composition implementations, supporting multiple input frames.
   """
