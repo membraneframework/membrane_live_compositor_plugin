@@ -2,12 +2,13 @@ defmodule Membrane.VideoCompositor.Testing.Pipeline.Raw do
   @moduledoc """
   Pipeline for testing composing of many videos.
   """
-
   use Membrane.Pipeline
+
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
   @impl true
   def handle_init(options) do
-    in_caps = options.in_caps
+    [%InputStream{caps: in_caps} | _tail] = options.inputs
 
     parser = %Membrane.RawVideo.Parser{
       framerate: in_caps.framerate,

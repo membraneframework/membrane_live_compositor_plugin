@@ -1,23 +1,25 @@
 defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   @moduledoc """
   Universal pipeline for testing composing of multiple videos, by placing them on corresponding `options.positions`.
-  It loads multiple videos from the `options.paths.input_paths` files/src elements,
+  It loads multiple videos from the `options.inputs.input` files/src elements,
   parses them using `options.decoder`, feeds MultipleInputs.VideoCompositor, encodes result (or simply pass by as RawVideo
-  if no `options.encoder` is specified) and feed `options.output_path` file/sink element.
+  if no `options.encoder` is specified or set to nil) and feed `options.output` file/sink element.
   """
 
   use Membrane.Pipeline
   alias Membrane.VideoCompositor.Pipeline.Utility.NoOp
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
   @doc """
-  def_options paths: [
-                type: :map,
-                spec: %{
-                  input_paths: [String.t()] | [Membrane.Source],
-                  output_path: Membrane.Sink.t() | Membrane.Sink
-                },
-                description:
-                  "Paths to input/output video files or Membrane elements responsible for production/consumption"
+  def_options inputs: [
+                type: :list
+                spec: [InputStream.t()],
+                description: "Specifications of the input video sources"
+              ],
+              output: [
+                type: :struct,
+                spec: String.t() | Membrane.Sink.t() | Membrane.Sink,
+                description: "Specifications of the sink element or path to the output video file"
               ],
               caps: [
                 type: :struct,
@@ -44,11 +46,9 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   """
   @impl true
   def handle_init(options) do
-    positions = options.positions
-
     source_children =
-      for {input_path, i} <- Enum.with_index(options.paths.input_paths),
-          do: {String.to_atom("source_#{i}"), get_src(input_path)}
+      for {%InputStream{input: input}, i} <- Enum.with_index(options.inputs),
+          do: {String.to_atom("source_#{i}"), get_src(input)}
 
     decoder_children =
       for {_element, i} <- Enum.with_index(source_children),
@@ -60,12 +60,13 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         [
           compositor: options.compositor,
           encoder: get_encoder(options),
-          sink: get_sink(options.paths.output_path)
+          sink: get_sink(options.output)
         ]
 
     source_links =
-      Enum.zip([source_children, decoder_children, positions])
-      |> Enum.map(fn {{source_id, _source}, {decoder_id, _decoder}, position} ->
+      Enum.zip([source_children, decoder_children, options.inputs])
+      |> Enum.map(fn {{source_id, _source}, {decoder_id, _decoder},
+                      %InputStream{position: position}} ->
         link(source_id)
         |> to(decoder_id)
         |> via_in(:input, options: [position: position])

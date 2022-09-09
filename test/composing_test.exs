@@ -40,6 +40,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), atom, binary(), binary()) ::
           nil
   defp test_raw_composing(video_caps, duration, implementation, tmp_dir, sub_dir_name) do
+    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+
     {input_path, output_path, reference_path} =
       TestingUtility.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
 
@@ -58,20 +60,21 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       {video_caps.width, video_caps.height}
     ]
 
-    out_caps = %RawVideo{
-      width: video_caps.width * 2,
-      height: video_caps.height * 2,
-      framerate: video_caps.framerate,
-      pixel_format: video_caps.pixel_format,
-      aligned: video_caps.aligned
-    }
+    inputs =
+      for(
+        pos <- positions,
+        do: %InputStream{
+          position: pos,
+          caps: video_caps,
+          input: input_path
+        }
+      )
+
+    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
 
     options = %{
-      paths: %{
-        input_paths: for(_i <- 1..4, do: input_path),
-        output_path: output_path
-      },
-      in_caps: video_caps,
+      inputs: inputs,
+      output: output_path,
       caps: out_caps,
       implementation: implementation,
       positions: positions

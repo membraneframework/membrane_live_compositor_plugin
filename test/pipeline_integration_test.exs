@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Implementations
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
   alias Membrane.VideoCompositor.Testing.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Testing.Utility, as: TestingUtility
 
@@ -55,7 +56,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   end)
 
   defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name, tmp_dir) do
-    {input_file_name, out_file_name, _ref_file_name} =
+    {input_path, output_path, _ref_file_name} =
       TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
     positions = [
@@ -65,12 +66,20 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       {div(video_caps.width, 2), div(video_caps.height, 2)}
     ]
 
+    inputs =
+      for pos <- positions,
+          do: %InputStream{
+            position: pos,
+            caps: video_caps,
+            input: input_path
+          }
+
+    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
+
     options = %{
-      paths: %{
-        input_paths: for(_i <- 1..4, do: input_file_name),
-        output_path: out_file_name
-      },
-      caps: video_caps,
+      inputs: inputs,
+      output: output_path,
+      caps: out_caps,
       implementation: implementation,
       positions: positions
     }
