@@ -1,6 +1,7 @@
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Implementations
 alias Membrane.VideoCompositor.Testing.Utility
+alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
 caps = %RawVideo{
   aligned: true,
@@ -19,7 +20,8 @@ out_path = Path.join(demo_path, "out-#{basename}")
 
 Utility.generate_testing_video(in_path, caps, video_duration)
 
-implementation = Implementations.get_implementation_atom_from_string(System.get_env("IMPL", "nx"))
+implementation =
+  Implementations.get_implementation_atom_from_string(System.get_env("IMPL", "opengl_rust"))
 
 sink =
   case s = System.get_env("SINK", "file") do
@@ -30,19 +32,17 @@ sink =
 
 src = in_path
 
-paths = %{
-  first_video_path: src,
-  second_video_path: src,
-  output_path: sink
-}
-
 options = %{
-  paths: paths,
-  caps: caps,
+  inputs: [
+    %InputStream{caps: caps, position: {0, 0}, input: src},
+    %InputStream{caps: caps, position: {0, caps.height}, input: src}
+  ],
+  output: sink,
+  caps: %RawVideo{caps | height: caps.height * 2},
   implementation: implementation
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Demo.Pipeline.Raw.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Testing.Pipeline.Raw.start(options)
 
 Process.monitor(pid)
 

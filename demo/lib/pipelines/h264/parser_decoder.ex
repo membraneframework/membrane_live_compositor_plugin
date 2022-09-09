@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Demo.Pipeline.H264.ParserDecoder do
+defmodule Membrane.VideoCompositor.Testing.Pipeline.H264.ParserDecoder do
   @moduledoc """
   Simple bin parsing and decoding H264 buffers into raw frames.
   """

@@ -1,17 +1,23 @@
-defmodule Membrane.VideoCompositor.Testing.Pipeline.H264 do
+defmodule Membrane.VideoCompositor.Testing.Pipeline.Raw do
   @moduledoc """
   Pipeline for testing composing of many videos.
   """
-
   use Membrane.Pipeline
+
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
   @impl true
   def handle_init(options) do
-    decoder = Membrane.VideoCompositor.Testing.Pipeline.H264.ParserDecoder
-    encoder = Membrane.H264.FFmpeg.Encoder
+    [%InputStream{caps: in_caps} | _tail] = options.inputs
 
-    options = Map.put(options, :decoder, decoder)
-    options = Map.put_new(options, :encoder, encoder)
+    parser = %Membrane.RawVideo.Parser{
+      framerate: in_caps.framerate,
+      width: in_caps.width,
+      height: in_caps.height,
+      pixel_format: in_caps.pixel_format
+    }
+
+    options = Map.put(options, :decoder, parser)
 
     options =
       Map.put_new(options, :compositor, %Membrane.VideoCompositor{
