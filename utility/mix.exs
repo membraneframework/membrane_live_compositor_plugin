@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Utility.MixProject do
+defmodule Membrane.VideoCompositor.Testing.Utility.MixProject do
   use Mix.Project
 
   @version "0.1.0"

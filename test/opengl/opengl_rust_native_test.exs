@@ -2,7 +2,7 @@ defmodule VideoCompositor.OpenGL.Rust.Test do
   use ExUnit.Case, async: false
 
   alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
-  alias Membrane.VideoCompositor.Utility
+  alias Membrane.VideoCompositor.Testing.Utility
 
   describe "OpenGL rust native test on " do
     @describetag :tmp_dir

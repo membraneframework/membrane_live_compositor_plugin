@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Utility do
+defmodule Membrane.VideoCompositor.Testing.Utility do
   @moduledoc false
   import ExUnit.Assertions
 

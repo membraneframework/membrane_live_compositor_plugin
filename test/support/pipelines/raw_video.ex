@@ -1,6 +1,6 @@
-defmodule Membrane.VideoCompositor.Test.Pipeline.Raw.MultipleInputs do
+defmodule Membrane.VideoCompositor.Testing.Pipeline.Raw do
   @moduledoc """
-  Pipeline for testing simple composing of two videos, by placing one above the other.
+  Pipeline for testing composing of many videos.
   """
 
   use Membrane.Pipeline

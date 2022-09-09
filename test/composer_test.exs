@@ -1,60 +1,14 @@
-defmodule Membrane.VideoCompositor.Test.MultiInputComposerTest.Utility do
-  import Membrane.ParentSpec
-
-  alias Membrane.RawVideo
-  alias Membrane.Testing
-  alias Membrane.VideoCompositor, as: MultiVideoCompositor
-  alias Membrane.VideoCompositor.Test.Mock.FrameComposer.MultipleInput, as: MockFrameComposer
-
-  @no_video %RawVideo{
-    width: 0,
-    height: 0,
-    framerate: {0, 1},
-    pixel_format: :I420,
-    aligned: false
-  }
-
-  @spec start_multi_input_pipeline([[String.t()]]) :: {:ok, pid()}
-  def start_multi_input_pipeline(inputs) do
-    source_children =
-      for {input, i} <- Enum.with_index(inputs),
-          do: {String.to_atom("source_#{i}"), %Testing.Source{output: input, caps: @no_video}}
-
-    source_links =
-      source_children
-      |> Enum.map(fn {source_id, _element} -> link(source_id) |> to(:composer) end)
-
-    children =
-      source_children ++
-        [
-          composer: %MultiVideoCompositor{
-            implementation: {:mock, MockFrameComposer},
-            caps: @no_video
-          },
-          sink: Testing.Sink
-        ]
-
-    links =
-      source_links ++
-        [
-          link(:composer) |> to(:sink)
-        ]
-
-    Testing.Pipeline.start_link(children: children, links: links)
-  end
-end
-
-defmodule MultiInputComposerTest.ThreeSame do
+defmodule Membrane.VideoCompositor.Test.Composer.ThreeSame do
   use ExUnit.Case
 
   import Membrane.Testing.Assertions
 
   alias Membrane.Testing
-  alias Membrane.VideoCompositor.Test.MultiInputComposerTest.Utility
+  alias Membrane.VideoCompositor.Testing.Pipeline.Mock
 
   setup do
     {:ok, pid} =
-      Utility.start_multi_input_pipeline([
+      Mock.start_multi_input_pipeline([
         ["a0", "a1", "a2"],
         ["b0", "b1", "b2"],
         ["c0", "c1", "c2"]
@@ -91,17 +45,17 @@ defmodule MultiInputComposerTest.ThreeSame do
   end
 end
 
-defmodule MultiInputComposerTest.DifferentSizeBuffers do
+defmodule Membrane.VideoCompositor.Test.Composer.DifferentSizeBuffers do
   use ExUnit.Case
 
   import Membrane.Testing.Assertions
 
   alias Membrane.Testing
-  alias Membrane.VideoCompositor.Test.MultiInputComposerTest.Utility
+  alias Membrane.VideoCompositor.Testing.Pipeline.Mock
 
   setup do
     {:ok, pid} =
-      Utility.start_multi_input_pipeline([
+      Mock.start_multi_input_pipeline([
         ["a0"],
         ["b0", "b1"],
         ["c0", "c1", "c2"],

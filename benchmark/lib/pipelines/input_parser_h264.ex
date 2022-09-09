@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Benchmark.Pipeline.H264.TwoInputsParser do
+defmodule Membrane.VideoCompositor.Benchmark.Pipeline.H264.ParserDecoder do
   @moduledoc """
   Simple bin parsing and decoding H264 buffers into raw frames.
   """

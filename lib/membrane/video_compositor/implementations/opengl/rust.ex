@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.MultipleInputs.OpenGL.Rust do
+defmodule Membrane.VideoCompositor.OpenGL.Rust do
   @moduledoc """
   This module implements video composition in OpenGL with a Rust backend
   """

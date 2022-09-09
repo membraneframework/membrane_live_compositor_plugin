@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Demo.Pipeline.H264 do
   """
   @impl true
   def handle_init(options) do
-    decoder = Membrane.VideoCompositor.Demo.Pipeline.H264.TwoInputsParser
+    decoder = Membrane.VideoCompositor.Demo.Pipeline.H264.ParserDecoder
     encoder = Membrane.H264.FFmpeg.Encoder
 
     options = Map.put(options, :decoder, decoder)

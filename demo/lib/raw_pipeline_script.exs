@@ -1,6 +1,6 @@
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Implementations
-alias Membrane.VideoCompositor.Utility
+alias Membrane.VideoCompositor.Testing.Utility
 
 caps = %RawVideo{
   aligned: true,
