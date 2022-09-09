@@ -8,8 +8,7 @@ defmodule Membrane.VideoCompositor.Demo.Pipeline.H264 do
   @doc """
   handle_init(%{
       paths: %{
-        first_video_path: String.t(),
-        second_video_path: String.t(),
+        input_paths: [ String.t(), String.t()],
         output_path: String.t()
       },
       caps: RawVideo,

@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
       height: 720,
       framerate: {1, 1},
       pixel_format: :I420,
-      aligned: nil
+      aligned: true
     }
 
     caps_1080p = %RawVideo{
@@ -25,7 +25,7 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
       height: 1080,
       framerate: {1, 1},
       pixel_format: :I420,
-      aligned: nil
+      aligned: true
     }
 
     caps_4k = %RawVideo{
@@ -33,7 +33,7 @@ defmodule Membrane.VideoCompositor.Benchmark.MergeFrames do
       height: 2160,
       framerate: {1, 1},
       pixel_format: :I420,
-      aligned: nil
+      aligned: true
     }
 
     :ok = Utility.generate_testing_video(raw_720p_frame_path, caps_720p, 1)

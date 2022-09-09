@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     height: 720,
     framerate: {1, 1},
     pixel_format: :I420,
-    aligned: nil
+    aligned: true
   }
 
   Enum.map(@implementation, fn implementation ->
