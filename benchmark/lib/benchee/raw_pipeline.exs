@@ -61,14 +61,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
 
     Benchee.run(
       %{
-        "FFmpeg - Two videos into one raw pipeline benchmark" =>
-          fn options -> run_raw_pipeline(%{options | implementation: :ffmpeg}) end,
-        "OpenGL C++ - Two videos into one raw pipeline benchmark" =>
-          fn options -> run_raw_pipeline(%{options | implementation: :opengl_cpp}) end,
         "OpenGL Rust - Two videos into one raw pipeline benchmark" =>
           fn options -> run_raw_pipeline(%{options | implementation: :opengl_rust}) end,
-        "Nx - Two videos into one raw pipeline benchmark" =>
-          fn options -> run_raw_pipeline(%{options | implementation: :nx}) end
       },
       inputs: %{
         "1. 720p #{video_duration}s 30fps" => options_720p,
