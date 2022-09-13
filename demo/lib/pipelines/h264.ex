@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Testing.Pipeline.H264 do
+defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
   @moduledoc """
   Pipeline for testing composing of many videos.
   """
@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Testing.Pipeline.H264 do
 
   @impl true
   def handle_init(options) do
-    decoder = Membrane.VideoCompositor.Testing.Pipeline.H264.ParserDecoder
+    decoder = Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder
     encoder = Membrane.H264.FFmpeg.Encoder
 
     options = Map.put(options, :decoder, decoder)

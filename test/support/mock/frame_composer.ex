@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Testing.Mock.FrameComposer do
+defmodule Membrane.VideoCompositor.Test.Support.Mock.FrameComposer do
   @moduledoc """
   Mock frame composer for multiple input videos. It supports string buffers and concatenates them as an output.
   """

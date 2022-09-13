@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   """
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-  alias Membrane.VideoCompositor.Testing.Utility
+  alias Membrane.VideoCompositor.Test.Support.Utility
 
   @spec benchmark() :: :ok
   def benchmark() do
@@ -88,7 +88,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   end
 
   defp run_h264_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.Testing.Pipeline.H264.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.H264.start(options)
 
     Process.monitor(pid)
 

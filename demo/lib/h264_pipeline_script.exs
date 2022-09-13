@@ -1,6 +1,6 @@
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Implementations
-alias Membrane.VideoCompositor.Testing.Utility
+alias Membrane.VideoCompositor.Test.Support.Utility
 alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
 caps = %RawVideo{
@@ -43,7 +43,7 @@ options = %{
   encoder: encoder
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Testing.Pipeline.H264.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.H264.start(options)
 
 Process.monitor(pid)
 

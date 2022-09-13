@@ -1,6 +1,6 @@
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Implementations
-alias Membrane.VideoCompositor.Testing.Utility
+alias Membrane.VideoCompositor.Test.Support.Utility
 alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
 caps = %RawVideo{
@@ -42,7 +42,7 @@ options = %{
   implementation: implementation
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Testing.Pipeline.Raw.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.Raw.start(options)
 
 Process.monitor(pid)
 

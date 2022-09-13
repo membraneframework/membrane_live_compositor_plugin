@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   """
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Testing.Utility
+  alias Membrane.VideoCompositor.Test.Support.Utility
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
 
   @spec benchmark() :: :ok
@@ -89,7 +89,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   end
 
   defp run_raw_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.Testing.Pipeline.Raw.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.Raw.start(options)
 
     Process.monitor(pid)
 

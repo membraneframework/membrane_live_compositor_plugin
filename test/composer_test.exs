@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Test.Composer.ThreeSame do
   import Membrane.Testing.Assertions
 
   alias Membrane.Testing
-  alias Membrane.VideoCompositor.Testing.Pipeline.Mock
+  alias Membrane.VideoCompositor.Test.Support.Pipeline.Mock
 
   setup do
     {:ok, pid} =
@@ -51,7 +51,7 @@ defmodule Membrane.VideoCompositor.Test.Composer.DifferentSizeBuffers do
   import Membrane.Testing.Assertions
 
   alias Membrane.Testing
-  alias Membrane.VideoCompositor.Testing.Pipeline.Mock
+  alias Membrane.VideoCompositor.Test.Support.Pipeline.Mock
 
   setup do
     {:ok, pid} =

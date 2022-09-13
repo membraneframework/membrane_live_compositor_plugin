@@ -7,8 +7,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Implementations
-  alias Membrane.VideoCompositor.Testing.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Testing.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
   @implementation Implementations.get_all_implementations()

@@ -8,8 +8,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-  alias Membrane.VideoCompositor.Testing.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Testing.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
+  alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
   @implementation Implementations.get_all_implementations()
 
