@@ -245,8 +245,11 @@ fn add_video_fwd(
     Ok(atoms::ok())
 }
 
-fn lerp(x: f32, from_min: f32, from_max: f32, to_min: f32, to_max: f32) -> f32 {
-    (x - from_min) / (from_max - from_min) * (to_max - to_min) + to_min
+/// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
+///
+/// `x` outside the original domain will be extrapolated outside the targe domain.
+fn lerp(x: f64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
+    (x - x_min) / (x_max - x_min) * (y_max - y_min) + y_min
 }
 
 fn determine_video_placement(
@@ -257,34 +260,22 @@ fn determine_video_placement(
     let scene_width = scene.out_width();
     let scene_height = scene.out_height();
 
-    let left = lerp(
-        position.x as f32,
-        0.0f32,
-        scene_width as f32,
-        -1.0f32,
-        1.0f32,
-    );
+    let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
     let right = lerp(
-        (position.x + input_video.width) as f32,
-        0.0f32,
-        scene_width as f32,
-        -1.0f32,
-        1.0f32,
-    );
-    let top = lerp(
-        position.y as f32,
-        0.0f32,
-        scene_height as f32,
-        1.0f32,
-        -1.0f32,
-    );
+        (position.x + input_video.width) as f64,
+        0.0,
+        scene_width as f64,
+        -1.0,
+        1.0,
+    ) as f32;
+    let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
     let bot = lerp(
-        (position.y + input_video.height) as f32,
-        0.0f32,
-        scene_height as f32,
-        1.0f32,
-        -1.0f32,
-    );
+        (position.y + input_video.height) as f64,
+        0.0,
+        scene_height as f64,
+        1.0,
+        -1.0,
+    ) as f32;
 
     scene::VideoPlacementTemplate {
         top_right: Point(right, top),
