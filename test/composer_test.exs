@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Composer.ThreeSame do
+defmodule Membrane.VideoCompositor.Test.Composer.ThreeSameSizeBuffers do
   use ExUnit.Case
 
   import Membrane.Testing.Assertions
