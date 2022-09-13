@@ -238,7 +238,7 @@ impl Scene {
         self.videos
             .remove(&video_idx)
             .ok_or(CompositorError::BadVideoIndex(
-                "video_idx_remove_bad_index",
+                "video_remove_nonexistent_index",
                 video_idx,
             ))?;
         Ok(())
@@ -253,7 +253,7 @@ impl Scene {
         self.videos
             .get(&video_idx)
             .ok_or(CompositorError::BadVideoIndex(
-                "video_idx_upload_bad_index",
+                "video_upload_nonexistent_index",
                 video_idx,
             ))?
             .upload_texture(data)?;
