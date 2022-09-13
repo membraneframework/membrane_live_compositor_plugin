@@ -63,7 +63,8 @@ end
 
 defmodule Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position do
   @moduledoc """
-  A Position struct describing the video position for use with the rust-based compositor implementation
+  A Position struct describing the video position for use with the rust-based compositor implementation.
+  Position relative to the top right corner of the background video, in the pixels.
   """
 
   @type t :: %__MODULE__{

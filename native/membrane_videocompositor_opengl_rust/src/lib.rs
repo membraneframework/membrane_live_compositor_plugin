@@ -57,6 +57,7 @@ struct RawVideo {
     pixel_format: rustler::Atom,
 }
 
+/// Position relative to the top right corner of the background video, in the pixels.
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
 struct Position {
