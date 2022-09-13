@@ -235,13 +235,13 @@ impl Scene {
 
     /// Remove a video from the scene.
     pub fn remove_video(&mut self, video_idx: usize) -> Result<(), CompositorError> {
-        match self.videos.remove(&video_idx) {
-            Some(_) => Ok(()),
-            None => Err(CompositorError::BadVideoIndex(
+        self.videos
+            .remove(&video_idx)
+            .ok_or(CompositorError::BadVideoIndex(
                 "video_idx_remove_bad_index",
                 video_idx,
-            )),
-        }
+            ))?;
+        Ok(())
     }
 
     /// Upload a texture to a video specified by the `video_idx`
