@@ -29,7 +29,8 @@ mod atoms {
       test_atom,
       unsupported_pixel_format,
       I420,
-      not_implemented_function,
+      function_not_implemented,
+      bad_video_index,
 
       egl_not_initialized,
       egl_bad_access,
@@ -200,7 +201,7 @@ fn init(out_video: RawVideo) -> Result<(rustler::Atom, ResourceArc<State>), rust
 
     unsafe { gl!(glad_gles2::gl::ClearColor(0.0, 0.0, 0.0, 1.0))? }
 
-    let vertex_shader_code = include_str!(r#"shaders/vertex.glsl"#);
+    let vertex_shader_code = include_str!("shaders/vertex.glsl");
     let fragment_shader_code = include_str!("shaders/fragment.glsl");
 
     let shader_program = ShaderProgram::new(vertex_shader_code, fragment_shader_code)?;
@@ -301,7 +302,7 @@ fn remove_video(
 #[inline(always)]
 #[doc(hidden)]
 fn remove_video_fwd(ctx: &mut BoundContext, id: usize) -> Result<rustler::Atom, rustler::Error> {
-    ctx.scene.remove_video(id);
+    ctx.scene.remove_video(id)?;
     Ok(atoms::ok())
 }
 
@@ -326,7 +327,7 @@ fn set_position_fwd(
     _position: Position,
 ) -> Result<rustler::Atom, rustler::Error> {
     Err(rustler::Error::Term(Box::new(
-        atoms::not_implemented_function(),
+        atoms::function_not_implemented(),
     )))
 }
 
@@ -352,7 +353,7 @@ fn join_frames_fwd<'a>(
     input_videos: Vec<(usize, rustler::Binary)>,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
     for (i, video) in &input_videos {
-        ctx.scene.upload_texture(i, video.as_slice())?;
+        ctx.scene.upload_texture(*i, video.as_slice())?;
     }
 
     let mut binary =

@@ -234,20 +234,29 @@ impl Scene {
     }
 
     /// Remove a video from the scene.
-    /// # Panics
-    ///
-    /// This function will panic if the `video_idx` is not an index of an existing video
-    pub fn remove_video(&mut self, video_idx: usize) {
-        self.videos.remove(&video_idx);
+    pub fn remove_video(&mut self, video_idx: usize) -> Result<(), CompositorError> {
+        match self.videos.remove(&video_idx) {
+            Some(_) => Ok(()),
+            None => Err(CompositorError::BadVideoIndex(
+                "video_idx_remove_bad_index",
+                video_idx,
+            )),
+        }
     }
 
     /// Upload a texture to a video specified by the `video_idx`
     ///
     /// # Panics
     ///
-    /// This function will panic if the `video_idx` is not an index of an existing video and if `data` doesn't have proper length for a YUV420p-encoded frame for the specified video.
-    pub fn upload_texture(&self, video_idx: &usize, data: &[u8]) -> Result<(), CompositorError> {
-        self.videos[video_idx].upload_texture(data)?;
+    /// This function will panic if `data` doesn't have proper length for a YUV420p-encoded frame for the specified video.
+    pub fn upload_texture(&self, video_idx: usize, data: &[u8]) -> Result<(), CompositorError> {
+        self.videos
+            .get(&video_idx)
+            .ok_or(CompositorError::BadVideoIndex(
+                "video_idx_upload_bad_index",
+                video_idx,
+            ))?
+            .upload_texture(data)?;
         Ok(())
     }
 
