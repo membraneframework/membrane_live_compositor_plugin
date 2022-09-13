@@ -30,7 +30,6 @@ mod atoms {
       unsupported_pixel_format,
       I420,
       function_not_implemented,
-      bad_video_index,
 
       egl_not_initialized,
       egl_bad_access,
@@ -57,7 +56,7 @@ struct RawVideo {
     pixel_format: rustler::Atom,
 }
 
-/// Position relative to the top right corner of the background video, in the pixels.
+/// Position relative to the top right corner of the viewport, in pixels
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
 struct Position {
