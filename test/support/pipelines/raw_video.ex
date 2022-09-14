@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
   use Membrane.Pipeline
 
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @impl true
   def handle_init(options) do
@@ -17,13 +18,14 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
       pixel_format: in_caps.pixel_format
     }
 
-    options = Map.put(options, :decoder, parser)
-
-    options =
-      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
-        implementation: options.implementation,
-        caps: options.caps
-      })
+    options = %Options{
+      options
+      | decoder: parser,
+        compositor: %Membrane.VideoCompositor{
+          implementation: options.implementation,
+          caps: options.caps
+        }
+    }
 
     Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)
   end

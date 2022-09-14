@@ -7,79 +7,37 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Pipeline.Utility.NoOp
+  # alias Membrane.VideoCompositor.Pipeline.Utility.NoOp
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
-  @doc """
-  def_options inputs: [
-                type: :list
-                spec: [InputStream.t()],
-                description: "Specifications of the input video sources"
-              ],
-              output: [
-                type: :struct,
-                spec: String.t() | Membrane.Sink.t() | Membrane.Sink,
-                description: "Specifications of the sink element or path to the output video file"
-              ],
-              caps: [
-                type: :struct,
-                spec: RawVideo.t(),
-                description:
-                  "Specification of the output video, parameters of the final \"canvas\""
-              ],
-              compositor: [
-                caps: :struct,
-                spec: Membrane.Filter.t(),
-                description: "Multiple Frames Compositor"
-              ],
-              decoder: [
-                caps: :struct,
-                spec: Membrane.Filter.t() | nil,
-                description: "Decoder for the input buffers. Frames are passed by if `nil` given."
-              ],
-              encoder: [
-                caps: :struct,
-                spec: Membrane.Filter.t() | nil,
-                description:
-                  "Encoder for the output buffers. Frames are passed by if `nil` given."
-              ]
-  """
   @impl true
-  def handle_init(options) do
-    source_children =
-      for {%InputStream{input: input}, i} <- Enum.with_index(options.inputs),
-          do: {String.to_atom("source_#{i}"), get_src(input)}
-
-    decoder_children =
-      for {_element, i} <- Enum.with_index(source_children),
-          do: {String.to_atom("decoder_#{i}"), get_decoder(options)}
-
-    children =
-      source_children ++
-        decoder_children ++
-        [
-          compositor: options.compositor,
-          encoder: get_encoder(options),
-          sink: get_sink(options.output)
-        ]
-
+  def handle_init(%Options{} = options) do
     source_links =
-      Enum.zip([source_children, decoder_children, options.inputs])
-      |> Enum.map(fn {{source_id, _source}, {decoder_id, _decoder},
-                      %InputStream{position: position}} ->
-        link(source_id)
-        |> to(decoder_id)
+      Enum.with_index(options.inputs)
+      |> Enum.map(fn {%InputStream{input: input, position: position}, i} ->
+        source = get_src(input)
+        source_name = String.to_atom("source_#{i}")
+
+        decoder = options.decoder
+        decoder_name = String.to_atom("decoder_#{i}")
+
+        link(source_name, source)
+        |> then(if not is_nil(decoder), do: &to(&1, decoder_name, decoder), else: & &1)
         |> via_in(:input, options: [position: position])
         |> to(:compositor)
       end)
 
     links =
-      source_links ++
-        [
-          link(:compositor) |> to(:encoder) |> to(:sink)
-        ]
+      [
+        link(:compositor, options.compositor)
+        |> then(
+          if not is_nil(options.encoder), do: &to(&1, :encoder, options.encoder), else: & &1
+        )
+        |> to(:sink, get_sink(options.output))
+      ] ++ source_links
 
-    {{:ok, [spec: %ParentSpec{children: children, links: links}, playback: :playing]}, %{}}
+    {{:ok, [spec: %ParentSpec{links: links}, playback: :playing]}, %{}}
   end
 
   defp get_src(input_path) when is_binary(input_path) do
@@ -98,13 +56,13 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
     sink
   end
 
-  defp get_encoder(options) do
-    Map.get(options, :encoder) || NoOp
-  end
+  # defp get_encoder(options) do
+  #   Map.get(options, :encoder) || NoOp
+  # end
 
-  defp get_decoder(options) do
-    Map.get(options, :decoder) || NoOp
-  end
+  # defp get_decoder(options) do
+  #   Map.get(options, :decoder) || NoOp
+  # end
 
   @impl true
   def handle_element_end_of_stream({:sink, :input}, _context, state) do

@@ -41,6 +41,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
           nil
   defp test_raw_composing(video_caps, duration, implementation, tmp_dir, sub_dir_name) do
     alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+    alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
     {input_path, output_path, reference_path} =
       TestingUtility.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
@@ -72,12 +73,11 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
     out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
 
-    options = %{
+    options = %Options{
       inputs: inputs,
       output: output_path,
       caps: out_caps,
-      implementation: implementation,
-      positions: positions
+      implementation: implementation
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)

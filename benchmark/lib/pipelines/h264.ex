@@ -5,19 +5,21 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
 
   use Membrane.Pipeline
 
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
+
   @impl true
-  def handle_init(options) do
+  def handle_init(%Options{} = options) do
     decoder = Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder
     encoder = Membrane.H264.FFmpeg.Encoder
 
-    options = Map.put(options, :decoder, decoder)
-    options = Map.put_new(options, :encoder, encoder)
-
-    options =
-      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
+    options = %Options{options |
+      decoder: decoder,
+      encoder: encoder,
+      compositor: %Membrane.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
-      })
+      }
+    }
 
     Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)
   end
