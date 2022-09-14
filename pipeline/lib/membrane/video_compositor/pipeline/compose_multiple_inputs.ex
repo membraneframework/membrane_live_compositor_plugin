@@ -7,7 +7,6 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   """
 
   use Membrane.Pipeline
-  # alias Membrane.VideoCompositor.Pipeline.Utility.NoOp
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
   alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
@@ -55,14 +54,6 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   defp get_sink(sink) when not is_nil(sink) do
     sink
   end
-
-  # defp get_encoder(options) do
-  #   Map.get(options, :encoder) || NoOp
-  # end
-
-  # defp get_decoder(options) do
-  #   Map.get(options, :decoder) || NoOp
-  # end
 
   @impl true
   def handle_element_end_of_stream({:sink, :input}, _context, state) do
