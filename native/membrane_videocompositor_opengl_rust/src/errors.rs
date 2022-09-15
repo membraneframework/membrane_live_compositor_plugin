@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Rust.ErrorLocation"]
+#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Rust.ErrorLocation"]
 /// Carries information about a location where an error happened
 pub struct ErrorLocation {
     file: String,

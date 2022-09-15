@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.FFmpeg.Research do
+defmodule Membrane.VideoCompositor.Implementations.FFmpeg.Research do
   @moduledoc """
   This module is used for ffmpeg research purposes.
   It dynamically composes several input videos, adding one video every 80 frames.
@@ -10,8 +10,8 @@ defmodule Membrane.VideoCompositor.FFmpeg.Research do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.FFmpeg.Native, as: FFmpeg
-  alias Membrane.VideoCompositor.FFmpeg.Native.RawVideo, as: NativeRawVideo
+  alias Membrane.VideoCompositor.Implementations.FFmpeg.Native, as: FFmpeg
+  alias Membrane.VideoCompositor.Implementations.FFmpeg.Native.RawVideo, as: NativeRawVideo
 
   @impl true
   def init(caps) do

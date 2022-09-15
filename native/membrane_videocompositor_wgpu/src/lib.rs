@@ -3,7 +3,7 @@ use rustler::ResourceArc;
 mod compositor;
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
 pub struct RawVideo {
     pub width: usize,
     pub height: usize,
@@ -95,7 +95,7 @@ fn join_frames<'a>(
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Wgpu.Native",
+    "Elixir.Membrane.VideoCompositor.Implementations.Wgpu.Native",
     [init, join_frames],
     load = |env, _| {
         rustler::resource!(State, env);

@@ -5,8 +5,8 @@ defmodule Membrane.VideoCompositor.Wgpu do
 
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo
-  alias Membrane.VideoCompositor.Wgpu.Native
+  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Wgpu.Native
 
   @impl true
   def init(%Membrane.RawVideo{width: width, height: height, pixel_format: pixel_format}) do

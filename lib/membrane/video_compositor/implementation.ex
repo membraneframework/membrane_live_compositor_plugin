@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Implementation do
+defmodule Membrane.VideoCompositor.Implementations do
   @moduledoc """
   A module describing video compositor implementation type and implementing
   functions related with implementation format.
@@ -11,13 +11,13 @@ defmodule Membrane.VideoCompositor.Implementation do
   def get_implementation_module(implementation) do
     case implementation do
       :ffmpeg ->
-        {:ok, Membrane.VideoCompositor.FFmpeg}
+        {:ok, Membrane.VideoCompositor.Implementations.FFmpeg}
 
       :opengl_cpp ->
-        {:ok, Membrane.VideoCompositor.OpenGL.Cpp}
+        {:ok, Membrane.VideoCompositor.Implementations.OpenGL.Cpp}
 
       :opengl_rust ->
-        {:ok, Membrane.VideoCompositor.OpenGL.Rust}
+        {:ok, Membrane.VideoCompositor.Implementations.OpenGL.Rust}
 
       :nx ->
         {:ok, Membrane.VideoCompositor.Nx}
