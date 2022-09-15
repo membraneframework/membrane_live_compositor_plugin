@@ -29,6 +29,7 @@ mod atoms {
       test_atom,
       unsupported_pixel_format,
       I420,
+      function_not_implemented,
 
       egl_not_initialized,
       egl_bad_access,
@@ -50,9 +51,17 @@ mod atoms {
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
 struct RawVideo {
-    width: usize,
     height: usize,
+    width: usize,
     pixel_format: rustler::Atom,
+}
+
+/// Position relative to the top right corner of the viewport, in pixels
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
+struct Position {
+    x: usize,
+    y: usize,
 }
 
 /// Contains structs used for holding the state of the compositor.
@@ -138,18 +147,11 @@ fn load(env: rustler::Env, _: rustler::Term) -> bool {
 
 #[rustler::nif]
 /// Initialize the compositor. This function is intended to only be called by Elixir.
-fn init(
-    first_video: RawVideo,
-    second_video: RawVideo,
-    out_video: RawVideo,
-) -> Result<(rustler::Atom, ResourceArc<State>), rustler::Error> {
+fn init(out_video: RawVideo) -> Result<(rustler::Atom, ResourceArc<State>), rustler::Error> {
     use crate::scene::Scene;
     use crate::shaders::ShaderProgram;
 
-    if first_video.pixel_format != atoms::I420()
-        || second_video.pixel_format != atoms::I420()
-        || out_video.pixel_format != atoms::I420()
-    {
+    if out_video.pixel_format != atoms::I420() {
         return Err(rustler::Error::Term(Box::new(
             atoms::unsupported_pixel_format(),
         )));
@@ -203,30 +205,7 @@ fn init(
     let fragment_shader_code = include_str!("shaders/fragment.glsl");
 
     let shader_program = ShaderProgram::new(vertex_shader_code, fragment_shader_code)?;
-    let mut scene = Scene::new(out_video.width, out_video.height, shader_program)?;
-    scene.add_video(
-        scene::VideoPlacementTemplate {
-            top_right: Point(1.0, 1.0),
-            top_left: Point(-1.0, 1.0),
-            bot_left: Point(-1.0, 0.0),
-            bot_right: Point(1.0, 0.0),
-            z_value: 0.0,
-        },
-        first_video.width,
-        first_video.height,
-    )?;
-
-    scene.add_video(
-        scene::VideoPlacementTemplate {
-            top_right: Point(1.0, 0.0),
-            top_left: Point(-1.0, 0.0),
-            bot_left: Point(-1.0, -1.0),
-            bot_right: Point(1.0, -1.0),
-            z_value: 0.0,
-        },
-        second_video.width,
-        second_video.height,
-    )?;
+    let scene = Scene::new(out_video.width, out_video.height, shader_program)?;
 
     egl.make_current(display, None, None, None).nif_err()?;
     Ok((
@@ -236,18 +215,134 @@ fn init(
 }
 
 #[rustler::nif]
+fn add_video(
+    #[allow(unused_variables)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    input_video: RawVideo,
+    position: Position,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut locked = state.lock().unwrap();
+    let mut ctx = locked.bind_context().nif_err()?;
+
+    add_video_fwd(&mut ctx, id, input_video, position)
+}
+
+#[inline(always)]
+#[doc(hidden)]
+fn add_video_fwd(
+    ctx: &mut BoundContext,
+    id: usize,
+    input_video: RawVideo,
+    position: Position,
+) -> Result<rustler::Atom, rustler::Error> {
+    ctx.scene.add_video(
+        id,
+        determine_video_placement(ctx.scene, &input_video, &position),
+        input_video.width,
+        input_video.height,
+    )?;
+
+    Ok(atoms::ok())
+}
+
+/// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
+///
+/// `x` outside the original domain will be extrapolated outside the targe domain.
+fn lerp(x: f64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
+    (x - x_min) / (x_max - x_min) * (y_max - y_min) + y_min
+}
+
+fn determine_video_placement(
+    scene: &scene::Scene,
+    input_video: &RawVideo,
+    position: &Position,
+) -> scene::VideoPlacementTemplate {
+    let scene_width = scene.out_width();
+    let scene_height = scene.out_height();
+
+    let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
+    let right = lerp(
+        (position.x + input_video.width) as f64,
+        0.0,
+        scene_width as f64,
+        -1.0,
+        1.0,
+    ) as f32;
+    let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
+    let bot = lerp(
+        (position.y + input_video.height) as f64,
+        0.0,
+        scene_height as f64,
+        1.0,
+        -1.0,
+    ) as f32;
+
+    scene::VideoPlacementTemplate {
+        top_right: Point(right, top),
+        top_left: Point(left, top),
+        bot_left: Point(left, bot),
+        bot_right: Point(right, bot),
+        z_value: 0.0,
+    }
+}
+
+#[rustler::nif]
+fn remove_video(
+    #[allow(unused_variables)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut locked = state.lock().unwrap();
+    let mut ctx = locked.bind_context().nif_err()?;
+
+    remove_video_fwd(&mut ctx, id)
+}
+
+#[inline(always)]
+#[doc(hidden)]
+fn remove_video_fwd(ctx: &mut BoundContext, id: usize) -> Result<rustler::Atom, rustler::Error> {
+    ctx.scene.remove_video(id)?;
+    Ok(atoms::ok())
+}
+
+#[rustler::nif]
+fn set_position(
+    #[allow(unused_variables)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    position: Position,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut locked = state.lock().unwrap();
+    let mut ctx = locked.bind_context().nif_err()?;
+
+    set_position_fwd(&mut ctx, id, position)
+}
+
+#[inline(always)]
+#[doc(hidden)]
+fn set_position_fwd(
+    _ctx: &mut BoundContext,
+    _id: usize,
+    _position: Position,
+) -> Result<rustler::Atom, rustler::Error> {
+    Err(rustler::Error::Term(Box::new(
+        atoms::function_not_implemented(),
+    )))
+}
+
+#[rustler::nif]
 /// Join two frames passed as [binaries](rustler::Binary). This function is intended to only be called by Elixir.
 fn join_frames<'a>(
     env: rustler::Env<'a>,
     state: rustler::ResourceArc<State>,
-    upper: rustler::Binary,
-    lower: rustler::Binary,
+    input_videos: Vec<(usize, rustler::Binary)>,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
     let mut locked = state.lock().unwrap();
     let mut ctx = locked.bind_context().nif_err()?;
     // for some reason VS Code can't suggest stuff correctly until
     // I forward all of this into a different function. It's inlined and thusly free
-    join_frames_fwd(env, &mut ctx, upper, lower)
+    join_frames_fwd(env, &mut ctx, input_videos)
 }
 
 #[inline(always)]
@@ -255,11 +350,11 @@ fn join_frames<'a>(
 fn join_frames_fwd<'a>(
     env: rustler::Env<'a>,
     ctx: &mut BoundContext,
-    upper: rustler::Binary,
-    lower: rustler::Binary,
+    input_videos: Vec<(usize, rustler::Binary)>,
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    ctx.scene.upload_texture(0, upper.as_slice())?;
-    ctx.scene.upload_texture(1, lower.as_slice())?;
+    for (i, video) in &input_videos {
+        ctx.scene.upload_texture(*i, video.as_slice())?;
+    }
 
     let mut binary =
         rustler::OwnedBinary::new(ctx.scene.out_width() * ctx.scene.out_height() * 3 / 2).unwrap();
@@ -298,6 +393,6 @@ impl<T> ResultExt<T> for Result<T, egl::Error> {
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust",
-    [init, join_frames],
+    [init, join_frames, add_video, remove_video, set_position],
     load = load
 );

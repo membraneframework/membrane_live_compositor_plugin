@@ -1,6 +1,6 @@
-defmodule Membrane.VideoCompositor.Test.Pipeline.H264.ComposeTwoInputs do
+defmodule Membrane.VideoCompositor.Test.Pipeline.H264.MultipleInputs do
   @moduledoc """
-  Pipeline for testing simple composing of two videos, by placing one above the other.
+  Pipeline for testing composing of many videos.
   """
 
   use Membrane.Pipeline
@@ -14,12 +14,12 @@ defmodule Membrane.VideoCompositor.Test.Pipeline.H264.ComposeTwoInputs do
     options = Map.put_new(options, :encoder, encoder)
 
     options =
-      Map.put_new(options, :compositor, %Membrane.VideoCompositor{
+      Map.put_new(options, :compositor, %Membrane.VideoCompositor.MultipleInputs.VideoCompositor{
         implementation: options.implementation,
         caps: options.caps
       })
 
-    Membrane.VideoCompositor.Pipeline.ComposeTwoInputs.handle_init(options)
+    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)
   end
 
   @impl true
