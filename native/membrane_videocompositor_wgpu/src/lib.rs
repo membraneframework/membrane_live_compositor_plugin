@@ -1,5 +1,5 @@
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.OpenGL.Native.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.OpenGL.Implementations.Native.Rust.RawVideo"]
 struct RawVideo {
     width: usize,
     height: usize,
@@ -44,7 +44,7 @@ fn join_frames<'a>(
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Wgpu.Native",
+    "Elixir.Membrane.VideoCompositor.Implementations.Wgpu.Native",
     [init, join_frames],
     load = load
 );
