@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Test.Support.Utility
   alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @spec benchmark() :: :ok
   def benchmark() do
@@ -39,7 +40,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
     :ok = Utility.generate_testing_video(input_path_720p, caps_720p, video_duration)
     :ok = Utility.generate_testing_video(input_path_1080p, caps_1080p, video_duration)
 
-    options_720p = %{
+    options_720p = %Options{
       inputs: [
         %InputStream{caps: caps_720p, position: {0, 0}, input: input_path_720p},
         %InputStream{caps: caps_720p, position: {0, caps_720p.height}, input: input_path_720p}
@@ -49,7 +50,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
       implementation: nil
     }
 
-    options_1080p = %{
+    options_1080p = %Options{
       inputs: [
         %InputStream{caps: caps_1080p, position: {0, 0}, input: input_path_1080p},
         %InputStream{caps: caps_1080p, position: {0, caps_1080p.height}, input: input_path_1080p}
