@@ -11,13 +11,12 @@ Set of demos for Membrane video compositor plugin.
 
 Run demos with the command line, for example:
 
-`IMPL=ffmpeg SINK=file  mix run lib/h264_pipeline_script.exs`
+`IMPL=opengl_rust SINK=file  mix run lib/h264_pipeline_script.exs`
+
+`IMPL=opengl_rust SINK=play  mix run lib/raw_pipeline_script.exs`
 
 ### Possible options:
 - `IMPL=` - implementation of video compositor 
-  - `ffmpeg`
-  - `nx`
-  - `opengl_cpp`
   - `opengl_rust`
   
 - `SINK=` - result destination

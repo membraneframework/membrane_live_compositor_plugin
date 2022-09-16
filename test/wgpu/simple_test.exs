@@ -3,7 +3,7 @@ defmodule VideoCompositor.Wgpu.Test do
 
   alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
-  alias Membrane.VideoCompositor.Utility
+  alias Membrane.VideoCompositor.Test.Support.Utility
 
   describe "wgpu native test on " do
     @describetag :tmp_dir

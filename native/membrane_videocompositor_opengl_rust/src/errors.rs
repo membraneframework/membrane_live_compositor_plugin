@@ -61,6 +61,8 @@ pub enum CompositorError {
     },
     #[error("error while calling OpenGL")]
     GLError(&'static str, ErrorLocation),
+    #[error("video of the provided id does not exist")]
+    BadVideoIndex(&'static str, usize),
 }
 
 impl rustler::Encoder for CompositorError {
@@ -72,6 +74,11 @@ impl rustler::Encoder for CompositorError {
             CompositorError::GLError(atom, location) => {
                 (rustler::Atom::from_str(env, atom).unwrap(), location).encode(env)
             }
+            CompositorError::BadVideoIndex(atom, index) => (
+                rustler::Atom::from_str(env, atom).unwrap(),
+                format!("{index} is not a valid video index"),
+            )
+                .encode(env),
         }
     }
 }

@@ -3,7 +3,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   Benchmark for merge frames function.
   """
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Utility
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+  alias Membrane.VideoCompositor.Test.Support.Utility
 
   @spec benchmark() :: :ok
   def benchmark() do
@@ -20,7 +21,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
       height: 720,
       framerate: {30, 1},
       pixel_format: :I420,
-      aligned: nil
+      aligned: true
     }
 
     caps_1080p = %RawVideo{
@@ -28,7 +29,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
       height: 1080,
       framerate: {30, 1},
       pixel_format: :I420,
-      aligned: nil
+      aligned: true
     }
 
     input_path_720p = "./tmp_dir/input_#{video_duration}s_720p.h264"
@@ -38,37 +39,32 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
     :ok = Utility.generate_testing_video(input_path_1080p, caps_1080p, video_duration)
 
     options_720p = %{
-      paths: %{
-        first_video_path: input_path_720p,
-        second_video_path: input_path_720p,
-        output_path: output_path_720p
-      },
-      caps: caps_720p,
+      inputs: [
+        %InputStream{caps: caps_720p, position: {0, 0}, input: input_path_720p},
+        %InputStream{caps: caps_720p, position: {0, caps_720p.height}, input: input_path_720p}
+      ],
+      output: output_path_720p,
+      caps: %RawVideo{caps_720p | height: caps_720p.height * 2},
       implementation: nil
     }
 
     options_1080p = %{
-      paths: %{
-        first_video_path: input_path_1080p,
-        second_video_path: input_path_1080p,
-        output_path: output_path_1080p
-      },
-      caps: caps_1080p,
+      inputs: [
+        %InputStream{caps: caps_1080p, position: {0, 0}, input: input_path_1080p},
+        %InputStream{caps: caps_1080p, position: {0, caps_1080p.height}, input: input_path_1080p}
+      ],
+      output: output_path_1080p,
+      caps: %RawVideo{caps_1080p | height: caps_1080p.height * 2},
       implementation: nil
     }
 
     Benchee.run(
       %{
-        "FFmpeg - Two videos into one h264 pipeline benchmark" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :ffmpeg}) end,
-        "OpenGL C++ - Two videos into one h264 pipeline benchmark" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :opengl_cpp}) end,
-        "OpenGL Rust - Two videos into one h264 pipeline benchmark" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :opengl_rust}) end,
-        "Nx - Two videos into one h264 pipeline benchmark" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :nx}) end,
-        "wgpu - Two videos into one h264 pipeline benchmark" =>
-          fn options -> run_h264_pipeline(%{options | implementation: :wgpu}) end
+        # FIXME: Add wgpu when it's ready
+        # FIXME: Fixes like the above shouldn't be manual
+        "OpenGL Rust - Two videos into one h264 pipeline benchmark" => fn options ->
+          run_h264_pipeline(%{options | implementation: :opengl_rust})
+        end
       },
       inputs: %{
         "1. 720p #{video_duration}s 30fps" => options_720p,
@@ -80,7 +76,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
       time: 90,
       memory_time: 2,
       formatters: [
-        {Benchee.Formatters.HTML, file: Path.join(report_output_dir, "h264_pipeline_benchmark.html")},
+        {Benchee.Formatters.HTML,
+         file: Path.join(report_output_dir, "h264_pipeline_benchmark.html")},
         Benchee.Formatters.Console
       ]
     )
@@ -93,7 +90,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
   end
 
   defp run_h264_pipeline(options) do
-    {:ok, pid} = Membrane.VideoCompositor.Benchmark.Pipeline.H264.start(options)
+    {:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.H264.start(options)
 
     Process.monitor(pid)
 
