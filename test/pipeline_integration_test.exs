@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.PipelineTest do
+defmodule Membrane.VideoCompositor.Test.Pipeline do
   @moduledoc false
   use ExUnit.Case
 
@@ -7,25 +7,25 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Implementations
-  alias Membrane.VideoCompositor.Test.Pipeline.H264.ComposeTwoInputs, as: PipelineH264
-  alias Membrane.VideoCompositor.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
+  alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
   @implementation Implementations.get_all_implementations()
 
   @hd_video %RawVideo{
-    width: 1280,
-    height: 720,
+    width: 2 * 1280,
+    height: 2 * 720,
     framerate: {30, 1},
     pixel_format: :I420,
-    aligned: nil
+    aligned: true
   }
 
   @full_hd_video %RawVideo{
-    width: 1920,
-    height: 1080,
+    width: 2 * 1920,
+    height: 2 * 1080,
     framerate: {30, 1},
     pixel_format: :I420,
-    aligned: nil
+    aligned: true
   }
 
   Enum.map(@implementation, fn implementation ->
@@ -47,8 +47,7 @@ defmodule Membrane.VideoCompositor.PipelineTest do
         test_h264_pipeline(@hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end
 
-      @tag long: true
-      @tag timeout: 100_000
+      @tag long: true, timeout: 100_000
       test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
         test_h264_pipeline(@full_hd_video, 30, unquote(implementation), "long_videos", tmp_dir)
       end
@@ -56,16 +55,33 @@ defmodule Membrane.VideoCompositor.PipelineTest do
   end)
 
   defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name, tmp_dir) do
-    {input_file_name, out_file_name, _ref_file_name} =
+    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+    alias Membrane.VideoCompositor.Pipeline.Utility.Options
+
+    {input_path, output_path, _ref_file_name} =
       TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
-    options = %{
-      paths: %{
-        first_video_path: input_file_name,
-        second_video_path: input_file_name,
-        output_path: out_file_name
-      },
-      caps: video_caps,
+    positions = [
+      {0, 0},
+      {div(video_caps.width, 2), 0},
+      {0, div(video_caps.height, 2)},
+      {div(video_caps.width, 2), div(video_caps.height, 2)}
+    ]
+
+    inputs =
+      for pos <- positions,
+          do: %InputStream{
+            position: pos,
+            caps: video_caps,
+            input: input_path
+          }
+
+    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
+
+    options = %Options{
+      inputs: inputs,
+      output: output_path,
+      caps: out_caps,
       implementation: implementation
     }
 

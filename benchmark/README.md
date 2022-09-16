@@ -3,40 +3,27 @@
 ## Current benchmarks
 
 1. Benchee (run time and memory usage benchmarks):
-    - h264 pipeline benchmark ```lib\benchee\h264_pipeline.exs```
-    - raw pipeline benchmark ```lib\benchee\raw_pipeline.exs```
-    - merge frames benchmark ```lib\benchee\merge_frames.exs```
-2. Beamchmark (reductions / context switches / cpu and memory usage / schedulers):
-    - h264 pipeline benchmark ```lib\beamchmark\h264_pipeline.exs```
-    - raw pipeline benchmark ```lib\beamchmark\raw_pipeline.exs```
+    - h264 pipeline benchmark `lib\benchee\h264_pipeline.exs`
+    - raw pipeline benchmark `lib\benchee\raw_pipeline.exs`
+    - merge frames benchmark `lib\benchee\merge_frames.exs`
 ## How to run benchmarks:
 
-1.  Enter benchmark folder ```cd benchmark```
-2.  Run ```mix deps.get``` command
+1.  Enter benchmark folder `cd benchmark`
+2.  Run `mix deps.get` command
 3.  Run command for benchmarks:
-    1. For running packs of benchmarks:
-        - for all benchmarks (estimated total run time - 38min): ```mix run benchmark.exs```
-        - for benchee benchmarks (estimated total run time - 32min): ```mix run benchmark.exs benchee```
-        - for beamchmark benchmarks (estimated total run time - 6min): ```mix run benchmark.exs beamchmark```
+    1. For running packs of benchee benchmarks: `mix run benchmark.exs`
     2. For running single benchmarks:
-        - benchee benchmarks: 
-            - for measuring frame composition performance (estimated total run time - 13min): ```mix run lib/benchee/merge_frames.exs```
-            - for measuring raw pipeline performance (estimated total run time - 13min): ```mix run lib/benchee/raw_pipeline.exs```
-            - for measuring h264 pipeline performance (estimated total run time - 6min): ```mix run lib/benchee/h264_pipeline.exs```
-        - beamchmark benchmarks:
-            - for measuring raw pipeline performance (estimated total run time - 4min): ```mix run lib/beamchmark/raw_pipeline.exs```
-            - for measuring h264 pipeline performance (estimated total run time - 4min): ```mix run lib/beamchmark/h264_pipeline.exs```
+        - for measuring frame composition performance: `mix run lib/benchee/merge_frames.exs`
+        - for measuring raw pipeline performance: `mix run lib/benchee/raw_pipeline.exs`
+        - for measuring h264 pipeline performance: `mix run lib/benchee/h264_pipeline.exs`
 4. Results will be displayed in console log and saved in html website saved at "results" directory
 
 ## How to modify test length:
 
-1. Benchee: </br>
-    - Modify parameters in ```Benchee.run()``` function:
-        - ```warmup``` for time of benchmark warmup
-        - ```time``` for time of pipeline performance measurement
-        - ```memory_time``` for time of pipeline memory usage measurement
-2. Beamchmark: </br>
-    - Modify ```benchmark_duration``` parameter in ```benchmarks_options``` map.
+- Modify parameters in `Benchee.run()` function:
+    - `warmup` for time of benchmark warmup
+    - `time` for time of pipeline performance measurement
+    - `memory_time` for time of pipeline memory usage measurement
 
 ## Example benchmarks results:
 ### Lenovo Legion i7-11800H, 32GB RAM, RTX 3050 Ti
