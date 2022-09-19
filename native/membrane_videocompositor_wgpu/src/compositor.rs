@@ -1,14 +1,64 @@
+use std::collections::BTreeMap;
+
 mod textures;
 mod videos;
 
 use textures::*;
 use videos::*;
 
+use crate::errors::CompositorError;
+
+/// A point in 2D space
+pub struct Point(pub f32, pub f32);
+
+/// Describes where a video should be located in the scene space.
+/// All coordinates have to be in the range [-1, 1].
+pub struct VideoPlacementTemplate {
+    pub top_right: Point,
+    pub top_left: Point,
+    pub bot_left: Point,
+    pub bot_right: Point,
+    /// This value is supposed to be used for making some videos appear 'in front of' other videos.
+    /// This is still WIP and may not work.
+    pub z_value: f32, // don't really know if setting this will do anything.. I guess it shouldn't without a depth buffer? FIXME??
+}
+
+impl From<VideoPlacementTemplate> for [Vertex; 4] {
+    fn from(template: VideoPlacementTemplate) -> Self {
+        let VideoPlacementTemplate {
+            top_right,
+            top_left,
+            bot_right,
+            bot_left,
+            ..
+        } = template;
+
+        [
+            Vertex {
+                position: [top_right.0, top_right.1, 0.0],
+                texture_coords: [1.0, 0.0],
+            },
+            Vertex {
+                position: [top_left.0, top_left.1, 0.0],
+                texture_coords: [0.0, 0.0],
+            },
+            Vertex {
+                position: [bot_left.0, bot_left.1, 0.0],
+                texture_coords: [0.0, 1.0],
+            },
+            Vertex {
+                position: [bot_right.0, bot_right.1, 0.0],
+                texture_coords: [1.0, 1.0],
+            },
+        ]
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    position: [f32; 3],
-    texture_coords: [f32; 2],
+    pub position: [f32; 3],
+    pub texture_coords: [f32; 2],
 }
 
 impl Vertex {
@@ -19,60 +69,19 @@ impl Vertex {
     };
 }
 
-const UPPER_VERTICES: [Vertex; 4] = [
-    Vertex {
-        position: [1.0, 1.0, 0.0],
-        texture_coords: [1.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 1.0, 0.0],
-        texture_coords: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 0.0, 0.0],
-        texture_coords: [0.0, 1.0],
-    },
-    Vertex {
-        position: [1.0, 0.0, 0.0],
-        texture_coords: [1.0, 1.0],
-    },
-];
-
-const LOWER_VERTICES: [Vertex; 4] = [
-    Vertex {
-        position: [1.0, 0.0, 0.0],
-        texture_coords: [1.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 0.0, 0.0],
-        texture_coords: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, -1.0, 0.0],
-        texture_coords: [0.0, 1.0],
-    },
-    Vertex {
-        position: [1.0, -1.0, 0.0],
-        texture_coords: [1.0, 1.0],
-    },
-];
-
 pub struct State {
     device: wgpu::Device,
-    input_videos: [InputVideo; 2],
+    input_videos: BTreeMap<usize, InputVideo>,
     output_textures: OutputTextures,
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
     _sampler: wgpu::Sampler,
     sampler_bind_group: wgpu::BindGroup,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl State {
-    pub async fn new(
-        upper_caps: &crate::RawVideo,
-        lower_caps: &crate::RawVideo,
-        output_caps: &crate::RawVideo,
-    ) -> State {
+    pub async fn new(output_caps: &crate::RawVideo) -> State {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -110,22 +119,7 @@ impl State {
                 }],
             });
 
-        let input_videos = [
-            InputVideo::new(
-                &device,
-                upper_caps.width as u32,
-                upper_caps.height as u32,
-                &UPPER_VERTICES,
-                &texture_bind_group_layout,
-            ),
-            InputVideo::new(
-                &device,
-                lower_caps.width as u32,
-                lower_caps.height as u32,
-                &LOWER_VERTICES,
-                &texture_bind_group_layout,
-            ),
-        ];
+        let input_videos = BTreeMap::new();
 
         let output_textures =
             OutputTextures::new(&device, output_caps.width as u32, output_caps.height as u32);
@@ -212,18 +206,19 @@ impl State {
             queue,
             _sampler: sampler,
             sampler_bind_group,
+            texture_bind_group_layout,
         }
     }
 
-    pub async fn join_frames(
-        &self,
-        upper_frame: &[u8],
-        lower_frame: &[u8],
-        output_buffer: &mut [u8],
-    ) {
-        self.input_videos[0].upload_data(&self.queue, upper_frame);
-        self.input_videos[1].upload_data(&self.queue, lower_frame);
+    pub fn upload_texture(&self, idx: usize, frame: &[u8]) -> Result<(), CompositorError> {
+        self.input_videos
+            .get(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?
+            .upload_data(&self.queue, frame);
+        Ok(())
+    }
 
+    pub async fn draw_into(&self, output_buffer: &mut [u8]) {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -247,7 +242,7 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler_bind_group, &[]);
 
-            for video in &self.input_videos {
+            for video in self.input_videos.values() {
                 video.draw(&mut render_pass, plane)
             }
         }
@@ -259,5 +254,31 @@ impl State {
         self.output_textures
             .download(&self.device, output_buffer)
             .await;
+    }
+
+    pub fn add_video(
+        &mut self,
+        idx: usize,
+        placement: VideoPlacementTemplate,
+        width: usize,
+        height: usize,
+    ) {
+        self.input_videos.insert(
+            idx,
+            InputVideo::new(
+                &self.device,
+                width as u32,
+                height as u32,
+                &placement.into(),
+                &self.texture_bind_group_layout,
+            ),
+        );
+    }
+
+    pub fn remove_video(&mut self, idx: usize) -> Result<(), CompositorError> {
+        self.input_videos
+            .remove(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?;
+        Ok(())
     }
 }
