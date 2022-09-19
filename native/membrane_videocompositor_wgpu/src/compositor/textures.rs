@@ -228,11 +228,13 @@ impl OutputTextures {
             rx.receive().await.unwrap().unwrap();
 
             let buffer = self.buffers[plane as usize].slice(..).get_mapped_range();
-            buffer
+            for (chunk, output) in buffer
                 .chunks(Self::padded(self.textures[plane].desc.size.width) as usize)
-                .flat_map(|chunk| &chunk[..self.textures[plane].desc.size.width as usize])
-                .zip(output.iter_mut())
-                .for_each(|(val, slot)| *slot = *val);
+                .zip(output.chunks_mut(self.textures[plane].desc.size.width as usize))
+            {
+                let chunk = &chunk[..self.textures[plane].desc.size.width as usize];
+                output.copy_from_slice(chunk)
+            }
         }
 
         for plane in [YUVPlane::Y, YUVPlane::U, YUVPlane::V] {
