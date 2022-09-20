@@ -66,14 +66,14 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames do
       opengl_rust: opengl_rust_internal_state_4k,
     }
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(0, caps_720p, {0, 0}, internal_states_720p.opengl_rust)
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(1, caps_720p, {0, caps_720p.height}, internal_states_720p.opengl_rust)
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_720p.opengl_rust, 0, caps_720p, {0, 0})
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_720p.opengl_rust, 1, caps_720p, {0, caps_720p.height})
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(0, caps_1080p, {0, 0}, internal_states_1080p.opengl_rust)
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(1, caps_1080p, {0, caps_1080p.height}, internal_states_1080p.opengl_rust)
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_1080p.opengl_rust, 0, caps_1080p, {0, 0})
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_1080p.opengl_rust, 1, caps_1080p, {0, caps_1080p.height})
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(0, caps_4k, {0, 0}, internal_states_4k.opengl_rust)
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(1, caps_4k, {0, caps_4k.height}, internal_states_4k.opengl_rust)
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_4k.opengl_rust, 0, caps_4k, {0, 0})
+    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_4k.opengl_rust, 1, caps_4k, {0, caps_4k.height})
 
     range = 1..merges_per_iteration
 
@@ -82,7 +82,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames do
         "OpenGL Rust - Merge two frames to one - #{merges_per_iteration} merges per iteration" =>
           fn {frames, internal_states} ->
             for _ <- range, do:
-              Membrane.VideoCompositor.OpenGL.Rust.merge_frames(frames, internal_states.opengl_rust)
+              Membrane.VideoCompositor.OpenGL.Rust.merge_frames(internal_states.opengl_rust, frames)
           end
       },
       inputs: %{
