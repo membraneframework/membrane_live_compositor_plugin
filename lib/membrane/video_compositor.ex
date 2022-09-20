@@ -94,7 +94,7 @@ defmodule Membrane.VideoCompositor do
     id = Map.get(pads_to_ids, pad)
 
     position = Map.get(ids_to_tracks, id).position
-    {:ok, internal_state} = state.compositor_module.add_video(id, caps, position, internal_state)
+    {:ok, internal_state} = state.compositor_module.add_video(internal_state, id, caps, position)
 
     state = %{state | internal_state: internal_state}
     {:ok, state}
@@ -134,7 +134,7 @@ defmodule Membrane.VideoCompositor do
       ids_to_frames = get_ids_to_frames(ids_to_tracks)
 
       {{:ok, merged_frame_binary}, internal_state} =
-        state.compositor_module.merge_frames(ids_to_frames, internal_state)
+        state.compositor_module.merge_frames(internal_state, ids_to_frames)
 
       ids_to_tracks = pop_frames(ids_to_tracks)
 
@@ -207,7 +207,7 @@ defmodule Membrane.VideoCompositor do
   defp remove_track(state, id) do
     %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state
     ids_to_tracks = Map.delete(ids_to_tracks, id)
-    {:ok, internal_state} = state.compositor_module.remove_video(id, internal_state)
+    {:ok, internal_state} = state.compositor_module.remove_video(internal_state, id)
     %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
   end
 
