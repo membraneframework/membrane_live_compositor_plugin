@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Mock.FrameComposer do
   end
 
   @impl true
-  def merge_frames(frames, %{merged_ids: merged_ids} = internal_state) do
+  def merge_frames(%{merged_ids: merged_ids} = internal_state, frames) do
     {ids, frames} = Enum.unzip(frames)
     internal_state = %{internal_state | merged_ids: [ids | merged_ids]}
 
@@ -28,26 +28,26 @@ defmodule Membrane.VideoCompositor.Test.Support.Mock.FrameComposer do
 
   @impl true
   def add_video(
+        %{inputs: inputs} = internal_state,
         id,
         input_caps,
-        _position,
-        %{inputs: inputs} = internal_state
+        _position
       ) do
     internal_state = %{internal_state | inputs: Map.put(inputs, id, input_caps)}
     {:ok, internal_state}
   end
 
   @impl true
-  def remove_video(id, %{inputs: inputs} = internal_state) do
+  def remove_video(%{inputs: inputs} = internal_state, id) do
     internal_state = %{internal_state | inputs: Map.delete(inputs, id)}
     {:ok, internal_state}
   end
 
   @impl true
   def set_position(
+        internal_state,
         _id,
-        _position,
-        internal_state
+        _position
       ) do
     {:ok, internal_state}
   end
