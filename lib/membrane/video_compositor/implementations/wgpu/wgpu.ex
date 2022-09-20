@@ -15,12 +15,12 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @impl true
-  def merge_frames(frames, internal_state) do
+  def merge_frames(internal_state, frames) do
     {Native.join_frames(internal_state, frames), internal_state}
   end
 
   @impl true
-  def add_video(id, input_caps, position, internal_state) do
+  def add_video(internal_state, id, input_caps, position) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
     {:ok, position} = Position.from_tuple(position)
     :ok = Native.add_video(internal_state, id, input_caps, position)
@@ -28,13 +28,13 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @impl true
-  def set_position(id, position, internal_state) do
+  def set_position(internal_state, id, position) do
     {:ok, position} = Position.from_tuple(position)
     {Native.set_position(internal_state, id, position), internal_state}
   end
 
   @impl true
-  def remove_video(id, internal_state) do
+  def remove_video(internal_state, id) do
     :ok = Native.remove_video(internal_state, id)
     {:ok, internal_state}
   end
