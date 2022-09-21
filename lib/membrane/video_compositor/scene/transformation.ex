@@ -37,6 +37,12 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
     end
   end
 
+  @doc """
+  Apply all transformations on the given state, in the order.
+  Any transformation returning `:done` will be removed from the list.
+  If any transformation returns `:error`,
+  whole transformations chain will be halted and `{:error, error}` will be returned immediately.
+  """
   @spec update_all(target_state_t(), keyword(__MODULE__.t()), number()) ::
           {:ok, {target_state_t(), keyword(__MODULE__.t())}}
           | {:error, error_t()}
