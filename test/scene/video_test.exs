@@ -47,7 +47,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Video do
     end
   end
 
-  test "Single mock scene element" do
+  setup do
     video = %Video{
       position: %Position{
         x: 0,
@@ -65,15 +65,28 @@ defmodule Membrane.VideoCompositor.Test.Scene.Video do
       ]
     }
 
-    assert {:ok, video} = Video.update(video, 10)
-    assert %Video{position: %Position{x: 11, y: 11}} = video
+    %{video: video}
+  end
 
-    assert {:error, "First error msg"} = Video.update(video, :error)
-    assert %Video{position: %Position{x: 11, y: 11}} = video
-    assert 2 = length(video.transformations)
+  describe "Video transformations:" do
+    test "transformations are ordered", %{video: video} do
+      assert {:ok, video} = Video.update(video, 10)
+      assert %Video{position: %Position{x: 11, y: 11}} = video
 
-    assert {:ok, video} = Video.update(video, :done)
-    assert %Video{position: %Position{x: 11, y: 11}} = video
-    assert Enum.empty?(video.transformations)
+      assert {:ok, video} = Video.update(video, 20)
+      assert %Video{position: %Position{x: 21, y: 21}} = video
+    end
+
+    test "errors halt pipeline", %{video: video} do
+      assert {:error, "First error msg"} = Video.update(video, :error)
+      assert %Video{position: %Position{x: 0, y: 0}} = video
+      assert 2 = length(video.transformations)
+    end
+
+    test "done transformations are removed", %{video: video} do
+      assert {:ok, video} = Video.update(video, :done)
+      assert %Video{position: %Position{x: 0, y: 0}} = video
+      assert Enum.empty?(video.transformations)
+    end
   end
 end
