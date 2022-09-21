@@ -4,13 +4,17 @@ defmodule Membrane.VideoCompositor.Scene.Video do
   """
   alias Membrane.VideoCompositor.Scene.Transformation
 
+  @type error_t :: any()
+
   @type t :: %__MODULE__{
-          position: %Membrane.VideoCompositor.Position{}
+          position: Membrane.VideoCompositor.Position.t(),
+          transformations: keyword(Transformation.t()),
+          components: %{required(atom) => any()}
         }
   @enforce_keys [:position]
-  defstruct position: nil, transformations: []
+  defstruct position: nil, transformations: [], components: %{}
 
-  @spec update(__MODULE__.t(), number()) :: __MODULE__.t()
+  @spec update(__MODULE__.t(), number()) :: {:ok, __MODULE__.t()} | {:error, error_t()}
   def update(video, time) do
     case Transformation.update_all(video, video.transformations, time) do
       {:ok, {video, transformations}} ->
