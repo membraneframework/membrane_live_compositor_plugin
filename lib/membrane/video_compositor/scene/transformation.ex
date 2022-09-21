@@ -25,8 +25,7 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
               | {:error, error_t()}
 
   @spec update(target_state_t(), __MODULE__.t(), number()) ::
-          {:ongoing, {target_state_t(), __MODULE__.t()}}
-          | {:done, {target_state_t(), __MODULE__.t()}}
+          {:ok, {target_state_t(), __MODULE__.t()}}
           | {:error, error_t()}
   def update(target_state, transformation_state, time) do
     case transformation_state.module.handle_update(target_state, transformation_state.state, time) do
@@ -39,8 +38,7 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   end
 
   @spec update_all(target_state_t(), keyword(__MODULE__.t()), number()) ::
-          {:ongoing, {target_state_t(), keyword(__MODULE__.t())}}
-          | {:done, {target_state_t(), keyword(__MODULE__.t())}}
+          {:ok, {target_state_t(), keyword(__MODULE__.t())}}
           | {:error, error_t()}
   def update_all(target_state, transformations_states, time) do
     states =
@@ -61,7 +59,7 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
 
     case states do
       {:error, error} -> {:error, error}
-      states -> {:ongoing, states}
+      states -> {:ok, states}
     end
   end
 end

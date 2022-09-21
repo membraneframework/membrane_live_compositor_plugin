@@ -60,7 +60,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Transformations do
 
     target_state = %{target: 0}
 
-    assert {:ongoing, {target_state, transformations_states}} =
+    assert {:ok, {target_state, transformations_states}} =
              Transformation.update_all(target_state, transformations_states, 6)
 
     assert %{target: 6} = target_state
@@ -71,7 +71,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Transformations do
     assert {:error, "Error msg"} =
              Transformation.update_all(target_state, transformations_states, :error)
 
-    assert {:ongoing, {%{target: 6}, []}} =
+    assert {:ok, {%{target: 6}, []}} =
              Transformation.update_all(target_state, transformations_states, :done)
   end
 end
