@@ -64,6 +64,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Transformations do
              Transformation.update_all(target_state, transformations_states, 6)
 
     assert %{target: 6} = target_state
+    assert [first: _first, second: _second] = transformations_states
     assert %Transformation{state: %{count: 1}} = Keyword.get(transformations_states, :first)
     assert %Transformation{state: %{count: 4}} = Keyword.get(transformations_states, :second)
     assert 2 = length(transformations_states)

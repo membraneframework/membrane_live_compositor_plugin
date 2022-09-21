@@ -58,8 +58,11 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
       end)
 
     case states do
-      {:error, error} -> {:error, error}
-      states -> {:ok, states}
+      {:error, error} ->
+        {:error, error}
+
+      {target_state, transformations_states} ->
+        {:ok, {target_state, Enum.reverse(transformations_states)}}
     end
   end
 end
