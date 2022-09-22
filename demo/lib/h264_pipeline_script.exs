@@ -2,6 +2,7 @@ alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Implementations
 alias Membrane.VideoCompositor.Test.Support.Utility
 alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
 caps = %RawVideo{
   aligned: true,
@@ -32,7 +33,7 @@ implementation =
 
 src = in_path
 
-options = %{
+options = %Options{
   inputs: [
     %InputStream{caps: caps, position: {0, 0}, input: src},
     %InputStream{caps: caps, position: {0, caps.height}, input: src}
@@ -43,7 +44,7 @@ options = %{
   encoder: encoder
 }
 
-{:ok, pid} = Membrane.VideoCompositor.Test.Support.Pipeline.H264.start(options)
+{:ok, pid} = Membrane.VideoCompositor.Demo.Support.Pipeline.H264.start(options)
 
 Process.monitor(pid)
 

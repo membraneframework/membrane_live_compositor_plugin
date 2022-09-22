@@ -1,9 +1,10 @@
-defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
+defmodule Membrane.VideoCompositor.Demo.Support.Pipeline.H264 do
   @moduledoc """
-  Pipeline for testing composing of many videos.
+  Pipeline for demo composing of many videos.
   """
 
   use Membrane.Pipeline
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @impl true
   def handle_init(options) do
