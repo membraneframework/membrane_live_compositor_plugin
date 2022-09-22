@@ -40,7 +40,7 @@ defmodule Membrane.VideoCompositor.Scene do
       scenes,
       {:ok, scenes},
       fn {id, scene}, {:ok, scenes} ->
-        case __MODULE__.update(scene, time) do
+        case update(scene, time) do
           {:ok, scene} -> {:cont, {:ok, Map.put(scenes, id, scene)}}
           {:error, error} -> {:halt, {:error, error}}
         end
@@ -54,7 +54,7 @@ defmodule Membrane.VideoCompositor.Scene do
          {:ok, scenes} <- update_sub_scenes(scene.scenes, time),
          {:ok, {scene, transformations}} <-
            Transformation.update_all(scene, scene.transformations, time) do
-      %__MODULE__{scene | videos: videos, transformations: transformations, scenes: scenes}
+      {:ok, %__MODULE__{scene | videos: videos, transformations: transformations, scenes: scenes}}
     else
       {:error, error} -> {:error, error}
     end

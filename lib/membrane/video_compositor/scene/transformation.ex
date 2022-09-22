@@ -24,8 +24,8 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
               | {:done, {target_state_t(), state_t()}}
               | {:error, error_t()}
 
-  @spec update(target_state_t(), __MODULE__.t(), number()) ::
-          {:ok, {target_state_t(), __MODULE__.t()}}
+  @spec update(target_state_t(), t(), number()) ::
+          {:ongoing | :done, {target_state_t(), t()}}
           | {:error, error_t()}
   def update(target_state, transformation_state, time) do
     case transformation_state.module.handle_update(target_state, transformation_state.state, time) do
@@ -43,8 +43,8 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   If any transformation returns `:error`,
   whole transformations chain will be halted and `{:error, error}` will be returned immediately.
   """
-  @spec update_all(target_state_t(), keyword(__MODULE__.t()), number()) ::
-          {:ok, {target_state_t(), keyword(__MODULE__.t())}}
+  @spec update_all(target_state_t(), keyword(t()), number()) ::
+          {:ok, {target_state_t(), keyword(t())}}
           | {:error, error_t()}
   def update_all(target_state, transformations_states, time) do
     states =
