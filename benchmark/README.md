@@ -11,17 +11,13 @@
 1.  Enter benchmark folder `cd benchmark`
 2.  Run `mix deps.get` command
 3.  Run command for benchmarks:
-    1. For running packs of benchee benchmarks: `mix run benchmark.exs` </br>
-        (You can customize number of merges per iteration in merge frames benchmark by passing an option like: 
-        `mix run benchmark.exs 2137` </br>
-        Default value of merges is 60 per iteration.)
+    1. For running packs of benchee benchmarks: `mix run benchmark.exs [<merges_per_iteration>]` </br>
+        (Default number of merges is 60 per iteration.)
     2. For running single benchmarks:
         - for measuring frame composition performance: `mix run lib/benchee/merge_frames.exs`
         - for measuring raw pipeline performance: `mix run lib/benchee/raw_pipeline.exs`
-        - for measuring h264 pipeline performance: `mix run lib/benchee/h264_pipeline.exs` </br>
-        (You can customize number of merges per iteration by passing an option like: 
-        `mix run lib\benchee\merge_frames.exs 2137` </br>
-        Default value of merges is 60 per iteration.)
+        - for measuring h264 pipeline performance: `mix run lib/benchee/h264_pipeline.exs [<merges_per_iteration>]` </br>
+        (Default number of merges is 60 per iteration.)
 4. Results will be displayed in console log and saved in html website saved at "results" directory
 
 ## How to modify test length:
