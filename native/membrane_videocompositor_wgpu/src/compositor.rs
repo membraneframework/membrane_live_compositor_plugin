@@ -113,22 +113,21 @@ impl State {
         let input_videos = [
             InputVideo::new(
                 &device,
-                upper_caps.width as u32,
-                upper_caps.height as u32,
+                upper_caps.width,
+                upper_caps.height,
                 &UPPER_VERTICES,
                 &texture_bind_group_layout,
             ),
             InputVideo::new(
                 &device,
-                lower_caps.width as u32,
-                lower_caps.height as u32,
+                lower_caps.width,
+                lower_caps.height,
                 &LOWER_VERTICES,
                 &texture_bind_group_layout,
             ),
         ];
 
-        let output_textures =
-            OutputTextures::new(&device, output_caps.width as u32, output_caps.height as u32);
+        let output_textures = OutputTextures::new(&device, output_caps.width, output_caps.height);
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("sampler"),

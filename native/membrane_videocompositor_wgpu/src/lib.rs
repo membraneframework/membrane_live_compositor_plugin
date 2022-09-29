@@ -5,8 +5,8 @@ mod compositor;
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
 pub struct RawVideo {
-    pub width: usize,
-    pub height: usize,
+    pub width: u32,
+    pub height: u32,
     pub pixel_format: rustler::Atom,
 }
 
@@ -81,9 +81,10 @@ fn join_frames<'a>(
 ) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
     let state = state.lock().unwrap();
 
-    let mut output =
-        rustler::OwnedBinary::new(state.output_caps.width * state.output_caps.height * 3 / 2)
-            .unwrap(); //FIXME: return an error instead of panicking here
+    let mut output = rustler::OwnedBinary::new(
+        state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+    )
+    .unwrap(); //FIXME: return an error instead of panicking here
 
     pollster::block_on(state.compositor.join_frames(
         upper.as_slice(),
