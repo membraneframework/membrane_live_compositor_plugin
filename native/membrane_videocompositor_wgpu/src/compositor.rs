@@ -231,7 +231,7 @@ impl State {
 
         for plane in [YUVPlane::Y, YUVPlane::U, YUVPlane::V] {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("i dont know yet"),
+                label: Some("render pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &self.output_textures[plane].view,
                     ops: wgpu::Operations {
