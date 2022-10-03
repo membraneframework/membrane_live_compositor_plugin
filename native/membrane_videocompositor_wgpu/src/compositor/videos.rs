@@ -9,11 +9,28 @@ const INDICES: [u16; 6] = [
     1, 2, 3
 ];
 
+struct IndexBuffer {
+    buffer: wgpu::Buffer,
+    len: u32,
+}
+
+impl IndexBuffer {
+    fn new(device: &wgpu::Device, indices: &[u16]) -> Self {
+        Self {
+            buffer: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("video index buffer"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            }),
+            len: indices.len() as u32,
+        }
+    }
+}
+
 pub struct InputVideo {
     textures: YUVTextures,
     vertices: wgpu::Buffer,
-    indices: wgpu::Buffer,
-    indices_len: u32,
+    indices: IndexBuffer,
 }
 
 impl InputVideo {
@@ -38,17 +55,12 @@ impl InputVideo {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("video index buffer"),
-            contents: bytemuck::cast_slice(&INDICES),
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let indices = IndexBuffer::new(device, &INDICES);
 
         Self {
             textures,
             vertices,
             indices,
-            indices_len: INDICES.len() as u32,
         }
     }
 
@@ -60,8 +72,8 @@ impl InputVideo {
 impl<'a> InputVideo {
     pub fn draw(&'a self, render_pass: &mut wgpu::RenderPass<'a>, plane: YUVPlane) {
         render_pass.set_bind_group(0, self.textures[plane].bind_group.as_ref().unwrap(), &[]);
-        render_pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint16);
+        render_pass.set_index_buffer(self.indices.buffer.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.set_vertex_buffer(0, self.vertices.slice(..));
-        render_pass.draw_indexed(0..self.indices_len, 0, 0..1);
+        render_pass.draw_indexed(0..self.indices.len, 0, 0..1);
     }
 }
