@@ -111,6 +111,10 @@ impl YUVTextures {
         let pixel_amount =
             (self[YUVPlane::Y].desc.size.width * self[YUVPlane::Y].desc.size.height) as usize;
 
+        // in YUV420p, the first `pixel_amount` of bytes represents the Y plane,
+        // the following `pixel_amount / 4` bytes represents the U plane,
+        // and the last `pixel_amount / 4` bytes represents the V plane.
+
         assert_eq!(data.len(), pixel_amount * 3 / 2);
 
         let planes = [
