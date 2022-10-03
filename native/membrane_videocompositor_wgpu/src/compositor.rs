@@ -163,7 +163,7 @@ impl State {
         let shader_module = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("pipeline"),
+            label: Some("pipeline layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &sampler_bind_group_layout],
             push_constant_ranges: &[],
         });

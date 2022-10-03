@@ -33,13 +33,13 @@ impl InputVideo {
         );
 
         let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
+            label: Some("video vertex buffer"),
             contents: bytemuck::cast_slice(position),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
         let indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
+            label: Some("video index buffer"),
             contents: bytemuck::cast_slice(&INDICES),
             usage: wgpu::BufferUsages::INDEX,
         });

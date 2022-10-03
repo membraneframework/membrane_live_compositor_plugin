@@ -50,7 +50,7 @@ impl Texture {
 
         let bind_group = bind_group_layout.map(|layout| {
             device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: None,
+                label: Some("texture bind group"),
                 layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
