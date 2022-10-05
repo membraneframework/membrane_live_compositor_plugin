@@ -14,8 +14,8 @@ pub struct RawVideo {
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
 struct Position {
-    x: usize,
-    y: usize,
+    x: u32,
+    y: u32,
 }
 
 mod atoms {
@@ -99,12 +99,9 @@ fn add_video(
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
     let placement = determine_video_placement(&state, &input_video, &position);
 
-    state.compositor.add_video(
-        id,
-        placement,
-        input_video.width as usize,
-        input_video.height as usize,
-    );
+    state
+        .compositor
+        .add_video(id, placement, input_video.width, input_video.height);
     Ok(atoms::ok())
 }
 
@@ -125,7 +122,7 @@ fn determine_video_placement(
 
     let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
     let right = lerp(
-        (position.x + input_video.width as usize) as f64,
+        (position.x + input_video.width) as f64,
         0.0,
         scene_width as f64,
         -1.0,
@@ -133,7 +130,7 @@ fn determine_video_placement(
     ) as f32;
     let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
     let bot = lerp(
-        (position.y + input_video.height as usize) as f64,
+        (position.y + input_video.height) as f64,
         0.0,
         scene_height as f64,
         1.0,

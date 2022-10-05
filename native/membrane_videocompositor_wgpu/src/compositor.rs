@@ -259,15 +259,15 @@ impl State {
         &mut self,
         idx: usize,
         placement: VideoPlacementTemplate,
-        width: usize,
-        height: usize,
+        width: u32,
+        height: u32,
     ) {
         self.input_videos.insert(
             idx,
             InputVideo::new(
                 &self.device,
-                width as u32,
-                height as u32,
+                width,
+                height,
                 &placement.into(),
                 &self.texture_bind_group_layout,
             ),
