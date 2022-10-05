@@ -138,10 +138,10 @@ fn determine_video_placement(
     ) as f32;
 
     compositor::VideoPlacementTemplate {
-        top_right: compositor::Point(right, top),
-        top_left: compositor::Point(left, top),
-        bot_left: compositor::Point(left, bot),
-        bot_right: compositor::Point(right, bot),
+        top_right: compositor::Point { x: right, y: top },
+        top_left: compositor::Point { x: left, y: top },
+        bot_left: compositor::Point { x: left, y: bot },
+        bot_right: compositor::Point { x: right, y: bot },
         z_value: 0.0,
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt::Display};
 
 mod textures;
 mod videos;
@@ -8,16 +8,27 @@ use videos::*;
 
 use crate::errors::CompositorError;
 
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
 /// A point in 2D space
-pub struct Point(pub f32, pub f32);
+pub struct Point<T> {
+    pub x: T,
+    pub y: T,
+}
+
+impl<T: Display> Display for Point<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
 
 /// Describes where a video should be located in the scene space.
 /// All coordinates have to be in the range [-1, 1].
 pub struct VideoPlacementTemplate {
-    pub top_right: Point,
-    pub top_left: Point,
-    pub bot_left: Point,
-    pub bot_right: Point,
+    pub top_right: Point<f32>,
+    pub top_left: Point<f32>,
+    pub bot_left: Point<f32>,
+    pub bot_right: Point<f32>,
     /// This value is supposed to be used for making some videos appear 'in front of' other videos.
     /// This is still WIP and may not work.
     pub z_value: f32, // don't really know if setting this will do anything.. I guess it shouldn't without a depth buffer? FIXME??
@@ -35,19 +46,19 @@ impl From<VideoPlacementTemplate> for [Vertex; 4] {
 
         [
             Vertex {
-                position: [top_right.0, top_right.1, 0.0],
+                position: [top_right.x, top_right.y, 0.0],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [top_left.0, top_left.1, 0.0],
+                position: [top_left.x, top_left.y, 0.0],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [bot_left.0, bot_left.1, 0.0],
+                position: [bot_left.x, bot_left.y, 0.0],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [bot_right.0, bot_right.1, 0.0],
+                position: [bot_right.x, bot_right.y, 0.0],
                 texture_coords: [1.0, 1.0],
             },
         ]
