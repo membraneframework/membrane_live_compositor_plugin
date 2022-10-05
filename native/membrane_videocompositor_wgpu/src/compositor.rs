@@ -38,14 +38,18 @@ impl Vertex {
     };
 }
 
+struct Sampler {
+    _sampler: wgpu::Sampler,
+    bind_group: wgpu::BindGroup,
+}
+
 pub struct State {
     device: wgpu::Device,
     input_videos: BTreeMap<usize, InputVideo>,
     output_textures: OutputTextures,
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
-    _sampler: wgpu::Sampler,
-    sampler_bind_group: wgpu::BindGroup,
+    sampler: Sampler,
     texture_bind_group_layout: wgpu::BindGroupLayout,
     output_caps: crate::RawVideo,
 }
@@ -173,8 +177,10 @@ impl State {
             output_textures,
             pipeline,
             queue,
-            _sampler: sampler,
-            sampler_bind_group,
+            sampler: Sampler {
+                _sampler: sampler,
+                bind_group: sampler_bind_group,
+            },
             texture_bind_group_layout,
             output_caps: output_caps.clone(),
         }
@@ -210,7 +216,7 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.pipeline);
-            render_pass.set_bind_group(1, &self.sampler_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
             for video in self.input_videos.values() {
                 video.draw(&self.queue, &mut render_pass, plane, &self.output_caps);
