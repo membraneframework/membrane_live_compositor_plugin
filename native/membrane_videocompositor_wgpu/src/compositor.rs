@@ -7,6 +7,7 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
+pub use videos::VideoPosition;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -89,6 +90,7 @@ pub struct State {
     _sampler: wgpu::Sampler,
     sampler_bind_group: wgpu::BindGroup,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+    output_caps: crate::RawVideo,
 }
 
 impl State {
@@ -217,6 +219,7 @@ impl State {
             _sampler: sampler,
             sampler_bind_group,
             texture_bind_group_layout,
+            output_caps: output_caps.clone(),
         }
     }
 
@@ -253,7 +256,7 @@ impl State {
             render_pass.set_bind_group(1, &self.sampler_bind_group, &[]);
 
             for video in self.input_videos.values() {
-                video.draw(&mut render_pass, plane)
+                video.draw(&self.queue, &mut render_pass, plane, &self.output_caps);
             }
         }
 
@@ -266,22 +269,10 @@ impl State {
             .await;
     }
 
-    pub fn add_video(
-        &mut self,
-        idx: usize,
-        placement: VideoPlacementTemplate,
-        width: u32,
-        height: u32,
-    ) {
+    pub fn add_video(&mut self, idx: usize, position: VideoPosition) {
         self.input_videos.insert(
             idx,
-            InputVideo::new(
-                &self.device,
-                width,
-                height,
-                &placement.into(),
-                &self.texture_bind_group_layout,
-            ),
+            InputVideo::new(&self.device, position, &self.texture_bind_group_layout),
         );
     }
 

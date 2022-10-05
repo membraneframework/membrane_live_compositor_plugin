@@ -3,7 +3,7 @@ use rustler::ResourceArc;
 mod compositor;
 mod errors;
 
-#[derive(Debug, rustler::NifStruct)]
+#[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
 pub struct RawVideo {
     pub width: u32,
@@ -97,53 +97,19 @@ fn add_video(
     position: Position,
 ) -> Result<rustler::Atom, rustler::Error> {
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-    let placement = determine_video_placement(&state, &input_video, &position);
 
-    state
-        .compositor
-        .add_video(id, placement, input_video.width, input_video.height);
+    state.compositor.add_video(
+        id,
+        compositor::VideoPosition {
+            top_left: compositor::Point {
+                x: position.x,
+                y: position.y,
+            },
+            width: input_video.width,
+            height: input_video.height,
+        },
+    );
     Ok(atoms::ok())
-}
-
-/// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
-///
-/// `x` outside the original domain will be extrapolated outside the targe domain.
-fn lerp(x: f64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
-    (x - x_min) / (x_max - x_min) * (y_max - y_min) + y_min
-}
-
-fn determine_video_placement(
-    state: &InnerState,
-    input_video: &RawVideo,
-    position: &Position,
-) -> compositor::VideoPlacementTemplate {
-    let scene_width = state.output_caps.width;
-    let scene_height = state.output_caps.height;
-
-    let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
-    let right = lerp(
-        (position.x + input_video.width) as f64,
-        0.0,
-        scene_width as f64,
-        -1.0,
-        1.0,
-    ) as f32;
-    let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
-    let bot = lerp(
-        (position.y + input_video.height) as f64,
-        0.0,
-        scene_height as f64,
-        1.0,
-        -1.0,
-    ) as f32;
-
-    compositor::VideoPlacementTemplate {
-        top_right: compositor::Point { x: right, y: top },
-        top_left: compositor::Point { x: left, y: top },
-        bot_left: compositor::Point { x: left, y: bot },
-        bot_right: compositor::Point { x: right, y: bot },
-        z_value: 0.0,
-    }
 }
 
 #[rustler::nif]
