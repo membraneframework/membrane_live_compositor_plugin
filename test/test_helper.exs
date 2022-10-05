@@ -1,5 +1,6 @@
 excluded = [
   long: true,
+  wgpu: true,
   opengl_rust: true
 ]
 

@@ -54,6 +54,9 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames do
 
 
 
+    # FIXME: Add wgpu when it's ready
+    # FIXME: Fixes like the above shouldn't be manual
+
     internal_states_720p = %{
       opengl_rust: opengl_rust_internal_state_720p,
     }

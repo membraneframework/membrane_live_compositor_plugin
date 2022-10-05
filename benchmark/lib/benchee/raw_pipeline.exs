@@ -62,6 +62,8 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.Raw do
 
     Benchee.run(
       %{
+        # FIXME: Add wgpu when it's ready.
+        # FIXME: Fixes like the above shouldn't be manual
         "OpenGL Rust - Two videos into one raw pipeline benchmark" => fn options ->
           run_raw_pipeline(%{options | implementation: :opengl_rust})
         end
