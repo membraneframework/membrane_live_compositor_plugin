@@ -1,3 +1,5 @@
+use super::color_converters::RGBAToYUVConverter;
+
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YUVPlane {
@@ -9,6 +11,7 @@ pub enum YUVPlane {
 pub struct Texture {
     desc: wgpu::TextureDescriptor<'static>,
     texture: wgpu::Texture,
+    bytes_per_pixel: u32,
     pub view: wgpu::TextureView,
     pub bind_group: Option<wgpu::BindGroup>,
 }
@@ -19,6 +22,7 @@ impl Texture {
         width: u32,
         height: u32,
         usage: wgpu::TextureUsages,
+        format: wgpu::TextureFormat,
         bind_group_layout: Option<&wgpu::BindGroupLayout>,
     ) -> Self {
         let desc = wgpu::TextureDescriptor {
@@ -29,7 +33,7 @@ impl Texture {
                 depth_or_array_layers: 1,
             },
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Unorm,
+            format,
             usage,
             mip_level_count: 1,
             sample_count: 1,
@@ -40,7 +44,7 @@ impl Texture {
         let view = texture.create_view(&wgpu::TextureViewDescriptor {
             label: Some("y texture view"),
             dimension: Some(wgpu::TextureViewDimension::D2),
-            format: Some(wgpu::TextureFormat::R8Unorm),
+            format: Some(format),
             mip_level_count: std::num::NonZeroU32::new(1),
             base_array_layer: 0,
             base_mip_level: 0,
@@ -59,11 +63,18 @@ impl Texture {
             })
         });
 
+        let bytes_per_pixel = match format {
+            wgpu::TextureFormat::R8Unorm => 1,
+            wgpu::TextureFormat::Rgba8Unorm => 4,
+            _ => unimplemented!(),
+        };
+
         Self {
             desc,
             texture,
             view,
             bind_group,
+            bytes_per_pixel,
         }
     }
 
@@ -78,7 +89,9 @@ impl Texture {
             data,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(self.desc.size.width),
+                bytes_per_row: std::num::NonZeroU32::new(
+                    self.desc.size.width * self.bytes_per_pixel,
+                ),
                 rows_per_image: std::num::NonZeroU32::new(self.desc.size.height),
             },
             self.desc.size,
@@ -88,6 +101,7 @@ impl Texture {
 
 pub struct YUVTextures {
     planes: [Texture; 3],
+    pub bind_group: Option<wgpu::BindGroup>,
 }
 
 impl YUVTextures {
@@ -96,15 +110,58 @@ impl YUVTextures {
         width: u32,
         height: u32,
         usage: wgpu::TextureUsages,
-        bind_group_layout: Option<&wgpu::BindGroupLayout>,
+        single_texture_bind_group_layout: Option<&wgpu::BindGroupLayout>,
+        all_textures_bind_group_layout: Option<&wgpu::BindGroupLayout>,
     ) -> Self {
-        Self {
-            planes: [
-                Texture::new(device, width, height, usage, bind_group_layout),
-                Texture::new(device, width / 2, height / 2, usage, bind_group_layout),
-                Texture::new(device, width / 2, height / 2, usage, bind_group_layout),
-            ],
-        }
+        let planes = [
+            Texture::new(
+                device,
+                width,
+                height,
+                usage,
+                wgpu::TextureFormat::R8Unorm,
+                single_texture_bind_group_layout,
+            ),
+            Texture::new(
+                device,
+                width / 2,
+                height / 2,
+                usage,
+                wgpu::TextureFormat::R8Unorm,
+                single_texture_bind_group_layout,
+            ),
+            Texture::new(
+                device,
+                width / 2,
+                height / 2,
+                usage,
+                wgpu::TextureFormat::R8Unorm,
+                single_texture_bind_group_layout,
+            ),
+        ];
+
+        let bind_group = all_textures_bind_group_layout.map(|layout| {
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("yuv all textures bind group"),
+                layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&planes[0].view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&planes[1].view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(&planes[2].view),
+                    },
+                ],
+            })
+        });
+
+        Self { planes, bind_group }
     }
 
     pub fn upload_data(&self, queue: &wgpu::Queue, data: &[u8]) {
@@ -134,30 +191,39 @@ impl std::ops::Index<YUVPlane> for YUVTextures {
 }
 
 pub struct OutputTextures {
-    textures: YUVTextures,
+    pub rgba_texture: RGBATexture,
+    yuv_textures: YUVTextures,
     buffers: [wgpu::Buffer; 3],
 }
 
-impl std::ops::Index<YUVPlane> for OutputTextures {
-    type Output = Texture;
+// impl std::ops::Index<YUVPlane> for OutputTextures {
+//     type Output = Texture;
 
-    fn index(&self, index: YUVPlane) -> &Self::Output {
-        &self.textures[index]
-    }
-}
+//     fn index(&self, index: YUVPlane) -> &Self::Output {
+//         &self.yuv_textures[index]
+//     }
+// }
 
 impl OutputTextures {
     fn padded(width: u32) -> u32 {
         width + (256 - (width % 256))
     }
 
-    pub fn new(device: &wgpu::Device, width: u32, height: u32) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> Self {
         Self {
-            textures: YUVTextures::new(
+            rgba_texture: RGBATexture::new(device, width, height, single_texture_bind_group_layout),
+
+            yuv_textures: YUVTextures::new(
                 device,
                 width,
                 height,
                 wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                None,
                 None,
             ),
             buffers: [
@@ -183,35 +249,48 @@ impl OutputTextures {
         }
     }
 
-    pub fn transfer_content_to_buffers(&self, encoder: &mut wgpu::CommandEncoder) {
+    pub fn transfer_content_to_buffers(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        converter: &RGBAToYUVConverter,
+    ) {
+        converter.convert(device, queue, &self.rgba_texture, &self.yuv_textures);
+
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("transfer result yuv texture to buffers encoder"),
+        });
+
         for plane in [YUVPlane::Y, YUVPlane::U, YUVPlane::V] {
             encoder.copy_texture_to_buffer(
                 wgpu::ImageCopyTexture {
                     aspect: wgpu::TextureAspect::All,
                     mip_level: 0,
                     origin: wgpu::Origin3d::ZERO,
-                    texture: &self.textures[plane].texture,
+                    texture: &self.yuv_textures[plane].texture,
                 },
                 wgpu::ImageCopyBuffer {
                     buffer: &self.buffers[plane as usize],
                     layout: wgpu::ImageDataLayout {
                         bytes_per_row: std::num::NonZeroU32::new(Self::padded(
-                            self.textures[plane].desc.size.width,
+                            self.yuv_textures[plane].desc.size.width,
                         )),
                         rows_per_image: std::num::NonZeroU32::new(
-                            self.textures[plane].desc.size.height,
+                            self.yuv_textures[plane].desc.size.height,
                         ),
                         offset: 0,
                     },
                 },
-                self.textures[plane].desc.size,
+                self.yuv_textures[plane].desc.size,
             )
         }
+
+        queue.submit(Some(encoder.finish()));
     }
 
     pub async fn download(&self, device: &wgpu::Device, buffer: &mut [u8]) {
-        let pixel_amount = self.textures[YUVPlane::Y].desc.size.width as usize
-            * self.textures[YUVPlane::Y].desc.size.height as usize;
+        let pixel_amount = self.yuv_textures[YUVPlane::Y].desc.size.width as usize
+            * self.yuv_textures[YUVPlane::Y].desc.size.height as usize;
         assert_eq!(buffer.len(), pixel_amount * 3 / 2);
 
         let (y, rest) = buffer.split_at_mut(pixel_amount);
@@ -229,10 +308,10 @@ impl OutputTextures {
 
             let buffer = self.buffers[plane as usize].slice(..).get_mapped_range();
             for (chunk, output) in buffer
-                .chunks(Self::padded(self.textures[plane].desc.size.width) as usize)
-                .zip(output.chunks_mut(self.textures[plane].desc.size.width as usize))
+                .chunks(Self::padded(self.yuv_textures[plane].desc.size.width) as usize)
+                .zip(output.chunks_mut(self.yuv_textures[plane].desc.size.width as usize))
             {
-                let chunk = &chunk[..self.textures[plane].desc.size.width as usize];
+                let chunk = &chunk[..self.yuv_textures[plane].desc.size.width as usize];
                 output.copy_from_slice(chunk)
             }
         }
@@ -240,5 +319,29 @@ impl OutputTextures {
         for plane in [YUVPlane::Y, YUVPlane::U, YUVPlane::V] {
             self.buffers[plane as usize].unmap();
         }
+    }
+}
+
+pub struct RGBATexture {
+    pub texture: Texture,
+}
+
+impl RGBATexture {
+    pub fn new(
+        device: &wgpu::Device,
+        width: u32,
+        height: u32,
+        bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> Self {
+        let texture = Texture::new(
+            device,
+            width,
+            height,
+            wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            wgpu::TextureFormat::Rgba8Unorm,
+            Some(bind_group_layout),
+        );
+
+        Self { texture }
     }
 }

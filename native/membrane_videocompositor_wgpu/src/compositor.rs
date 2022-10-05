@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+mod color_converters;
 mod textures;
 mod videos;
 
@@ -7,6 +8,8 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
+
+use self::color_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
 /// A point in 2D space
 pub struct Point(pub f32, pub f32);
@@ -77,7 +80,10 @@ pub struct State {
     queue: wgpu::Queue,
     _sampler: wgpu::Sampler,
     sampler_bind_group: wgpu::BindGroup,
-    texture_bind_group_layout: wgpu::BindGroupLayout,
+    single_texture_bind_group_layout: wgpu::BindGroupLayout,
+    all_yuv_textures_bind_group_layout: wgpu::BindGroupLayout,
+    yuv_to_rgba_converter: YUVToRGBAConverter,
+    rgba_to_yuv_converter: RGBAToYUVConverter,
 }
 
 impl State {
@@ -104,9 +110,9 @@ impl State {
             .await
             .unwrap();
 
-        let texture_bind_group_layout =
+        let single_texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("texture bind group layout"),
+                label: Some("single texture bind group layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     ty: wgpu::BindingType::Texture {
@@ -119,10 +125,51 @@ impl State {
                 }],
             });
 
+        let all_yuv_textures_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("yuv all textures bind group layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        count: None,
+                    },
+                ],
+            });
+
         let input_videos = BTreeMap::new();
 
-        let output_textures =
-            OutputTextures::new(&device, output_caps.width as u32, output_caps.height as u32);
+        let output_textures = OutputTextures::new(
+            &device,
+            output_caps.width as u32,
+            output_caps.height as u32,
+            &single_texture_bind_group_layout,
+        );
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("sampler"),
@@ -159,7 +206,10 @@ impl State {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("pipeline"),
-            bind_group_layouts: &[&texture_bind_group_layout, &sampler_bind_group_layout],
+            bind_group_layouts: &[
+                &single_texture_bind_group_layout,
+                &sampler_bind_group_layout,
+            ],
             push_constant_ranges: &[],
         });
 
@@ -185,8 +235,8 @@ impl State {
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     blend: None,
-                    write_mask: wgpu::ColorWrites::RED,
-                    format: wgpu::TextureFormat::R8Unorm,
+                    write_mask: wgpu::ColorWrites::all(),
+                    format: wgpu::TextureFormat::Rgba8Unorm,
                 })],
             }),
             multisample: wgpu::MultisampleState {
@@ -198,6 +248,11 @@ impl State {
             depth_stencil: None,
         });
 
+        let yuv_to_rgba_converter =
+            YUVToRGBAConverter::new(&device, &all_yuv_textures_bind_group_layout);
+        let rgba_to_yuv_converter =
+            RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
+
         Self {
             device,
             input_videos,
@@ -206,7 +261,10 @@ impl State {
             queue,
             _sampler: sampler,
             sampler_bind_group,
-            texture_bind_group_layout,
+            single_texture_bind_group_layout,
+            all_yuv_textures_bind_group_layout,
+            yuv_to_rgba_converter,
+            rgba_to_yuv_converter,
         }
     }
 
@@ -214,7 +272,12 @@ impl State {
         self.input_videos
             .get(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?
-            .upload_data(&self.queue, frame);
+            .upload_data(
+                &self.device,
+                &self.queue,
+                &self.yuv_to_rgba_converter,
+                frame,
+            );
         Ok(())
     }
 
@@ -225,11 +288,11 @@ impl State {
                 label: Some("encoder"),
             });
 
-        for plane in [YUVPlane::Y, YUVPlane::U, YUVPlane::V] {
+        {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("i dont know yet"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &self.output_textures[plane].view,
+                    view: &self.output_textures.rgba_texture.texture.view,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
@@ -243,13 +306,17 @@ impl State {
             render_pass.set_bind_group(1, &self.sampler_bind_group, &[]);
 
             for video in self.input_videos.values() {
-                video.draw(&mut render_pass, plane)
+                video.draw(&mut render_pass)
             }
         }
 
-        self.output_textures
-            .transfer_content_to_buffers(&mut encoder);
         self.queue.submit(Some(encoder.finish()));
+
+        self.output_textures.transfer_content_to_buffers(
+            &self.device,
+            &self.queue,
+            &self.rgba_to_yuv_converter,
+        );
 
         self.output_textures
             .download(&self.device, output_buffer)
@@ -270,7 +337,8 @@ impl State {
                 width as u32,
                 height as u32,
                 &placement.into(),
-                &self.texture_bind_group_layout,
+                &self.single_texture_bind_group_layout,
+                &self.all_yuv_textures_bind_group_layout,
             ),
         );
     }
