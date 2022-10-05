@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
 
   @impl true
   def merge_frames(internal_state, frames) do
-    {Native.join_frames(internal_state, frames), internal_state}
+    {Native.render_frame(internal_state, frames), internal_state}
   end
 
   @impl true

@@ -67,7 +67,7 @@ fn init(
 }
 
 #[rustler::nif]
-fn join_frames<'a>(
+fn render_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,
     frames: Vec<(usize, rustler::Binary)>,
@@ -134,7 +134,7 @@ fn remove_video(
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Implementations.Wgpu.Native",
-    [init, join_frames, add_video, remove_video, set_position],
+    [init, render_frame, add_video, remove_video, set_position],
     load = |env, _| {
         rustler::resource!(State, env);
         true

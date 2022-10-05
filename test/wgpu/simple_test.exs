@@ -46,7 +46,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  y: 360
                })
 
-      assert {:ok, out_frame} = Native.join_frames(state, [{0, frame}, {1, frame}])
+      assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)
