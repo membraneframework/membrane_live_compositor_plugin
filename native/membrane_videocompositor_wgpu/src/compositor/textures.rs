@@ -50,7 +50,7 @@ impl Texture {
 
         let bind_group = bind_group_layout.map(|layout| {
             device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: None,
+                label: Some("texture bind group"),
                 layout,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
@@ -110,6 +110,10 @@ impl YUVTextures {
     pub fn upload_data(&self, queue: &wgpu::Queue, data: &[u8]) {
         let pixel_amount =
             (self[YUVPlane::Y].desc.size.width * self[YUVPlane::Y].desc.size.height) as usize;
+
+        // in YUV420p, the first `pixel_amount` of bytes represents the Y plane,
+        // the following `pixel_amount / 4` bytes represents the U plane,
+        // and the last `pixel_amount / 4` bytes represents the V plane.
 
         assert_eq!(data.len(), pixel_amount * 3 / 2);
 

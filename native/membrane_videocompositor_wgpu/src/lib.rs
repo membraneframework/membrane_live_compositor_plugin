@@ -6,8 +6,8 @@ mod errors;
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
 pub struct RawVideo {
-    pub width: usize,
-    pub height: usize,
+    pub width: u32,
+    pub height: u32,
     pub pixel_format: rustler::Atom,
 }
 
@@ -78,9 +78,10 @@ fn join_frames<'a>(
         state.compositor.upload_texture(*i, frame)?
     }
 
-    let mut output =
-        rustler::OwnedBinary::new(state.output_caps.width * state.output_caps.height * 3 / 2)
-            .unwrap(); //FIXME: return an error instead of panicking here
+    let mut output = rustler::OwnedBinary::new(
+        state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+    )
+    .unwrap(); //FIXME: return an error instead of panicking here
 
     pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
 
@@ -98,9 +99,12 @@ fn add_video(
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
     let placement = determine_video_placement(&state, &input_video, &position);
 
-    state
-        .compositor
-        .add_video(id, placement, input_video.width, input_video.height);
+    state.compositor.add_video(
+        id,
+        placement,
+        input_video.width as usize,
+        input_video.height as usize,
+    );
     Ok(atoms::ok())
 }
 
@@ -121,7 +125,7 @@ fn determine_video_placement(
 
     let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
     let right = lerp(
-        (position.x + input_video.width) as f64,
+        (position.x + input_video.width as usize) as f64,
         0.0,
         scene_width as f64,
         -1.0,
@@ -129,7 +133,7 @@ fn determine_video_placement(
     ) as f32;
     let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
     let bot = lerp(
-        (position.y + input_video.height) as f64,
+        (position.y + input_video.height as usize) as f64,
         0.0,
         scene_height as f64,
         1.0,

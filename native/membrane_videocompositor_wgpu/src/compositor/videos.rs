@@ -18,9 +18,9 @@ impl IndexBuffer {
     fn new(device: &wgpu::Device, indices: &[u16]) -> Self {
         Self {
             buffer: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("index buffer"),
-                usage: wgpu::BufferUsages::INDEX,
+                label: Some("video index buffer"),
                 contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
             }),
             len: indices.len() as u32,
         }
@@ -50,7 +50,7 @@ impl InputVideo {
         );
 
         let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
+            label: Some("video vertex buffer"),
             contents: bytemuck::cast_slice(position),
             usage: wgpu::BufferUsages::VERTEX,
         });
