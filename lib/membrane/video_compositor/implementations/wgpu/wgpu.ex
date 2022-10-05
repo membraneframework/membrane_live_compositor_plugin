@@ -4,8 +4,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
 
   @impl true

@@ -4,8 +4,7 @@ defmodule Membrane.VideoCompositor.Implementations.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor_wgpu"
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
 
   @type internal_state_t :: any()
   @type error_t :: any()

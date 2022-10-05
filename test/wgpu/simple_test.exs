@@ -1,8 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
   alias Membrane.VideoCompositor.Test.Support.Utility
 

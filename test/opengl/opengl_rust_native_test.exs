@@ -1,6 +1,7 @@
 defmodule VideoCompositor.OpenGL.Rust.Test do
   use ExUnit.Case, async: false
 
+  alias Membrane.VideoCompositor.Implementations.Common
   alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
   alias Membrane.VideoCompositor.Test.Support.Utility
 
@@ -9,7 +10,7 @@ defmodule VideoCompositor.OpenGL.Rust.Test do
     @describetag opengl_rust: true
 
     test "inits" do
-      out_video = %Rust.RawVideo{width: 640, height: 720, pixel_format: :I420}
+      out_video = %Common.RawVideo{width: 640, height: 720, pixel_format: :I420}
 
       assert {:ok, _state} = Rust.init(out_video)
     end
@@ -19,21 +20,21 @@ defmodule VideoCompositor.OpenGL.Rust.Test do
       {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
       assert {:ok, frame} = File.read(in_path)
 
-      in_video = %Rust.RawVideo{
+      in_video = %Common.RawVideo{
         width: 640,
         height: 360,
         pixel_format: :I420
       }
 
       assert {:ok, state} =
-               Rust.init(%Rust.RawVideo{
+               Rust.init(%Common.RawVideo{
                  width: 640,
                  height: 720,
                  pixel_format: :I420
                })
 
-      assert :ok = Rust.add_video(state, 0, in_video, %Rust.Position{x: 0, y: 0})
-      assert :ok = Rust.add_video(state, 1, in_video, %Rust.Position{x: 0, y: in_video.height})
+      assert :ok = Rust.add_video(state, 0, in_video, %Common.Position{x: 0, y: 0})
+      assert :ok = Rust.add_video(state, 1, in_video, %Common.Position{x: 0, y: in_video.height})
 
       assert {:ok, out_frame} = Rust.join_frames(state, [{0, frame}, {1, frame}])
       assert {:ok, file} = File.open(out_path, [:write])

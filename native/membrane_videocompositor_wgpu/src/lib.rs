@@ -4,7 +4,7 @@ mod compositor;
 mod errors;
 
 #[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.Implementations.Common.RawVideo"]
 pub struct RawVideo {
     pub width: u32,
     pub height: u32,
@@ -12,7 +12,7 @@ pub struct RawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
+#[module = "Membrane.VideoCompositor.Implementations.Common.Position"]
 struct Position {
     x: u32,
     y: u32,
