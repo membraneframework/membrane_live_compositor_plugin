@@ -154,7 +154,7 @@ impl<'a> InputVideo {
 
 /// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
 ///
-/// `x` outside the original domain will be extrapolated outside the targe domain.
+/// `x` outside the original domain will be extrapolated outside the target domain.
 fn lerp(x: f64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
     (x - x_min) / (x_max - x_min) * (y_max - y_min) + y_min
 }
