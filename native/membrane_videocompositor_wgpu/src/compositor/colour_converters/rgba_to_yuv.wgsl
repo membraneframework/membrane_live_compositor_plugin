@@ -45,7 +45,7 @@ fn uv_pixel_iter(tex_coords: vec2<f32>, conversion: vec4<f32>) -> f32 {
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) f32 {
-    let color = textureSample(texture, sampler_, input.tex_coords);
+    let colour = textureSample(texture, sampler_, input.tex_coords);
     var conversion_weights: vec4<f32>;
     var conversion_bias: f32;
 
@@ -65,5 +65,5 @@ fn fs_main(input: VertexOutput) -> @location(0) f32 {
         conversion_weights = vec4<f32>();
     }
 
-    return clamp(dot(color, conversion_weights) + conversion_bias, 0.0, 1.0);
+    return clamp(dot(colour, conversion_weights) + conversion_bias, 0.0, 1.0);
 }

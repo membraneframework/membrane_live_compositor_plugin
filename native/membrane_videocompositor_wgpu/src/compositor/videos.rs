@@ -1,6 +1,6 @@
 use wgpu::util::DeviceExt;
 
-use super::color_converters::YUVToRGBAConverter;
+use super::colour_converters::YUVToRGBAConverter;
 use super::textures::{RGBATexture, YUVTextures};
 use super::{Point, Vertex};
 

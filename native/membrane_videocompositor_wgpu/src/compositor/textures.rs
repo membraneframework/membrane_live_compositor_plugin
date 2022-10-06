@@ -1,4 +1,4 @@
-use super::color_converters::RGBAToYUVConverter;
+use super::colour_converters::RGBAToYUVConverter;
 
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

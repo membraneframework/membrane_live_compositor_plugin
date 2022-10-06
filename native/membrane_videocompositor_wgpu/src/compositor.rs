@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt::Display};
 
-mod color_converters;
+mod colour_converters;
 mod textures;
 mod videos;
 
@@ -10,7 +10,7 @@ use videos::*;
 use crate::errors::CompositorError;
 pub use videos::VideoPosition;
 
-use self::color_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
+use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]

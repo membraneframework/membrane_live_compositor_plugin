@@ -43,7 +43,7 @@ impl YUVToRGBAConverter {
         let shader_module = device.create_shader_module(wgpu::include_wgsl!("yuv_to_rgba.wgsl"));
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("YUV to RGBA color converter render pipeline layout"),
+            label: Some("YUV to RGBA colour converter render pipeline layout"),
             bind_group_layouts: &[
                 yuv_textures_bind_group_layout,
                 &common.sampler_bind_group_layout,
@@ -52,7 +52,7 @@ impl YUVToRGBAConverter {
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("YUV to RGBA color converter render pipeline"),
+            label: Some("YUV to RGBA colour converter render pipeline"),
             layout: Some(&pipeline_layout),
             primitive: wgpu::PrimitiveState {
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -100,12 +100,12 @@ impl YUVToRGBAConverter {
         dst: &RGBATexture,
     ) {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("YUV to RGBA color converter encoder"),
+            label: Some("YUV to RGBA colour converter encoder"),
         });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("YUV to RGBA color converter render pass"),
+                label: Some("YUV to RGBA colour converter render pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
@@ -143,19 +143,19 @@ struct Common {
 impl Common {
     fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("color converter vertex buffer"),
+            label: Some("colour converter vertex buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&VERTICES),
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("color converter index buffer"),
+            label: Some("colour converter index buffer"),
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&INDICES),
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("color converter sampler"),
+            label: Some("colour converter sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -167,7 +167,7 @@ impl Common {
 
         let sampler_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("color converter sampler bind group layout"),
+                label: Some("colour converter sampler bind group layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -177,7 +177,7 @@ impl Common {
             });
 
         let sampler_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("color converter sampler bind group"),
+            label: Some("colour converter sampler bind group"),
             layout: &sampler_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -210,14 +210,14 @@ impl RGBAToYUVConverter {
         let common = Common::new(device);
 
         let plane_selector_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("RGBA to YUV color converter plane selector buffer"),
+            label: Some("RGBA to YUV colour converter plane selector buffer"),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&[0u32]),
         });
 
         let plane_selector_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("RGBA to YUV color converter plane selector bind group layout"),
+                label: Some("RGBA to YUV colour converter plane selector bind group layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     count: None,
@@ -231,7 +231,7 @@ impl RGBAToYUVConverter {
             });
 
         let plane_selector_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("RGBA to YUV color converter plane selector bind group layout"),
+            label: Some("RGBA to YUV colour converter plane selector bind group layout"),
             layout: &plane_selector_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -244,7 +244,7 @@ impl RGBAToYUVConverter {
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("RGBA to YUV color converter pipeline layout"),
+            label: Some("RGBA to YUV colour converter pipeline layout"),
             bind_group_layouts: &[
                 single_texture_bind_group_layout,
                 &common.sampler_bind_group_layout,
@@ -256,7 +256,7 @@ impl RGBAToYUVConverter {
         let shader_module = device.create_shader_module(wgpu::include_wgsl!("rgba_to_yuv.wgsl"));
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("RGBA to YUV color converter pipeline"),
+            label: Some("RGBA to YUV colour converter pipeline"),
             layout: Some(&pipeline_layout),
             primitive: wgpu::PrimitiveState {
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -315,12 +315,12 @@ impl RGBAToYUVConverter {
             );
 
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("RGBA to YUV color converter command encoder"),
+                label: Some("RGBA to YUV colour converter command encoder"),
             });
 
             {
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("YUV to RGBA color converter render pass"),
+                    label: Some("YUV to RGBA colour converter render pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
