@@ -3,6 +3,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
 
   alias Membrane.VideoCompositor.Position
   alias Membrane.VideoCompositor.Scene
+  alias Membrane.VideoCompositor.Scene.ComponentsManager, as: Manager
   alias Membrane.VideoCompositor.Test.Support.Scene.Mocks
 
   setup do
@@ -28,7 +29,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
       position: %Position{x: 10, y: 10}
     ]
 
-    manager = %{cached: %{}}
+    manager = %Manager{}
 
     %{scene_description: scene_description, manager: manager}
   end
@@ -65,7 +66,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
 
       assert scene == expected_scene_state
 
-      expected_manager_state = %{
+      expected_manager_state = %Manager{
         cached: %{
           Mocks.Stateful.Set => 20
         }

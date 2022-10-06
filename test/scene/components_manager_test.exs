@@ -7,9 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.ComponentsManager do
   test "Single mock component update" do
     target_state = %{}
 
-    manager = %{
-      cached: %{}
-    }
+    manager = %Manager{}
 
     assert {:ok, {manager, target_state}} =
              Manager.register(manager, target_state, Mocks.Stateless.Add, :add)

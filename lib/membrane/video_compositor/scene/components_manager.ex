@@ -10,7 +10,10 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
   @type target_state_t() :: any()
   @type error_t() :: any()
 
-  @type t() :: %{}
+  @type t() :: %{
+          cached: %{required(id :: atom()) => state_t()}
+        }
+  defstruct cached: %{}
 
   defp init_or_get_module(manager, module, options) do
     if module.use_caching? and
