@@ -1,7 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
   alias Membrane.VideoCompositor.Test.Support.Utility
 
@@ -10,10 +10,9 @@ defmodule VideoCompositor.Wgpu.Test do
     @describetag :wgpu
 
     test "inits" do
-      in_video = %RawVideo{width: 640, height: 360, pixel_format: :I420}
       out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420}
 
-      assert {:ok, _state} = Native.init(in_video, in_video, out_video)
+      assert {:ok, _state} = Native.init(out_video)
     end
 
     @tag timeout: :infinity
@@ -28,17 +27,25 @@ defmodule VideoCompositor.Wgpu.Test do
       }
 
       assert {:ok, state} =
-               Native.init(
-                 in_video,
-                 in_video,
-                 %RawVideo{
-                   width: 640,
-                   height: 720,
-                   pixel_format: :I420
-                 }
-               )
+               Native.init(%RawVideo{
+                 width: 640,
+                 height: 720,
+                 pixel_format: :I420
+               })
 
-      assert {:ok, out_frame} = Native.join_frames(state, frame, frame)
+      assert :ok =
+               Native.add_video(state, 0, in_video, %Position{
+                 x: 0,
+                 y: 0
+               })
+
+      assert :ok =
+               Native.add_video(state, 1, in_video, %Position{
+                 x: 0,
+                 y: 360
+               })
+
+      assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)

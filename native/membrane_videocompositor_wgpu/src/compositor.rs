@@ -1,14 +1,33 @@
+use std::{collections::BTreeMap, fmt::Display};
+
 mod textures;
 mod videos;
 
 use textures::*;
 use videos::*;
 
+use crate::errors::CompositorError;
+pub use videos::VideoPosition;
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+/// A point in 2D space
+pub struct Point<T> {
+    pub x: T,
+    pub y: T,
+}
+
+impl<T: Display> Display for Point<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    position: [f32; 3],
-    texture_coords: [f32; 2],
+    pub position: [f32; 3],
+    pub texture_coords: [f32; 2],
 }
 
 impl Vertex {
@@ -19,60 +38,24 @@ impl Vertex {
     };
 }
 
-const UPPER_VERTICES: [Vertex; 4] = [
-    Vertex {
-        position: [1.0, 1.0, 0.0],
-        texture_coords: [1.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 1.0, 0.0],
-        texture_coords: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 0.0, 0.0],
-        texture_coords: [0.0, 1.0],
-    },
-    Vertex {
-        position: [1.0, 0.0, 0.0],
-        texture_coords: [1.0, 1.0],
-    },
-];
-
-const LOWER_VERTICES: [Vertex; 4] = [
-    Vertex {
-        position: [1.0, 0.0, 0.0],
-        texture_coords: [1.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 0.0, 0.0],
-        texture_coords: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, -1.0, 0.0],
-        texture_coords: [0.0, 1.0],
-    },
-    Vertex {
-        position: [1.0, -1.0, 0.0],
-        texture_coords: [1.0, 1.0],
-    },
-];
+struct Sampler {
+    _sampler: wgpu::Sampler,
+    bind_group: wgpu::BindGroup,
+}
 
 pub struct State {
     device: wgpu::Device,
-    input_videos: [InputVideo; 2],
+    input_videos: BTreeMap<usize, InputVideo>,
     output_textures: OutputTextures,
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
-    _sampler: wgpu::Sampler,
-    sampler_bind_group: wgpu::BindGroup,
+    sampler: Sampler,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
+    output_caps: crate::RawVideo,
 }
 
 impl State {
-    pub async fn new(
-        upper_caps: &crate::RawVideo,
-        lower_caps: &crate::RawVideo,
-        output_caps: &crate::RawVideo,
-    ) -> State {
+    pub async fn new(output_caps: &crate::RawVideo) -> State {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -110,22 +93,7 @@ impl State {
                 }],
             });
 
-        let input_videos = [
-            InputVideo::new(
-                &device,
-                upper_caps.width,
-                upper_caps.height,
-                &UPPER_VERTICES,
-                &texture_bind_group_layout,
-            ),
-            InputVideo::new(
-                &device,
-                lower_caps.width,
-                lower_caps.height,
-                &LOWER_VERTICES,
-                &texture_bind_group_layout,
-            ),
-        ];
+        let input_videos = BTreeMap::new();
 
         let output_textures = OutputTextures::new(&device, output_caps.width, output_caps.height);
 
@@ -209,20 +177,24 @@ impl State {
             output_textures,
             pipeline,
             queue,
-            _sampler: sampler,
-            sampler_bind_group,
+            sampler: Sampler {
+                _sampler: sampler,
+                bind_group: sampler_bind_group,
+            },
+            texture_bind_group_layout,
+            output_caps: output_caps.clone(),
         }
     }
 
-    pub async fn join_frames(
-        &self,
-        upper_frame: &[u8],
-        lower_frame: &[u8],
-        output_buffer: &mut [u8],
-    ) {
-        self.input_videos[0].upload_data(&self.queue, upper_frame);
-        self.input_videos[1].upload_data(&self.queue, lower_frame);
+    pub fn upload_texture(&self, idx: usize, frame: &[u8]) -> Result<(), CompositorError> {
+        self.input_videos
+            .get(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?
+            .upload_data(&self.queue, frame);
+        Ok(())
+    }
 
+    pub async fn draw_into(&self, output_buffer: &mut [u8]) {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -244,10 +216,10 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.pipeline);
-            render_pass.set_bind_group(1, &self.sampler_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
-            for video in &self.input_videos {
-                video.draw(&mut render_pass, plane)
+            for video in self.input_videos.values() {
+                video.draw(&self.queue, &mut render_pass, plane, &self.output_caps);
             }
         }
 
@@ -258,5 +230,19 @@ impl State {
         self.output_textures
             .download(&self.device, output_buffer)
             .await;
+    }
+
+    pub fn add_video(&mut self, idx: usize, position: VideoPosition) {
+        self.input_videos.insert(
+            idx,
+            InputVideo::new(&self.device, position, &self.texture_bind_group_layout),
+        );
+    }
+
+    pub fn remove_video(&mut self, idx: usize) -> Result<(), CompositorError> {
+        self.input_videos
+            .remove(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?;
+        Ok(())
     }
 }

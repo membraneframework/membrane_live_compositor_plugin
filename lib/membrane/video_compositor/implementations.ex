@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Implementations do
   def get_implementation_module(implementation) do
     case implementation do
       :wgpu ->
-        raise ":wgpu is not implemented yet"
+        {:ok, Membrane.VideoCompositor.Wgpu}
 
       :opengl_rust ->
         {:ok, Membrane.VideoCompositor.OpenGL.Rust}
@@ -23,7 +23,7 @@ defmodule Membrane.VideoCompositor.Implementations do
 
   @spec get_all_implementations() :: list(implementation_t)
   def get_all_implementations() do
-    [:opengl_rust]
+    [:opengl_rust, :wgpu]
   end
 
   @spec get_implementation_atom_from_string(String.t()) :: implementation_t()
