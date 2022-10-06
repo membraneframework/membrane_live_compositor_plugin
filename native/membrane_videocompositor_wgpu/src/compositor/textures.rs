@@ -200,14 +200,6 @@ pub struct OutputTextures {
     buffers: [wgpu::Buffer; 3],
 }
 
-// impl std::ops::Index<YUVPlane> for OutputTextures {
-//     type Output = Texture;
-
-//     fn index(&self, index: YUVPlane) -> &Self::Output {
-//         &self.yuv_textures[index]
-//     }
-// }
-
 impl OutputTextures {
     fn padded(width: u32) -> u32 {
         width + (256 - (width % 256))
