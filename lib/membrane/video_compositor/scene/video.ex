@@ -2,26 +2,25 @@ defmodule Membrane.VideoCompositor.Scene.Video do
   @moduledoc """
   Properties and transformations of the video.
   """
-  alias Membrane.VideoCompositor.Scene.Transformation
+  alias Membrane.VideoCompositor.Position
+  alias Membrane.VideoCompositor.Scene.Component
+  alias Membrane.VideoCompositor.Scene.ComponentsManager, as: Manager
+  alias Membrane.VideoCompositor.Scene.Element
 
   @type error_t :: any()
+  @type state_t :: %{required(atom) => any()}
 
   @type t :: %__MODULE__{
-          position: Membrane.VideoCompositor.Position.t(),
-          transformations: keyword(Transformation.t()),
-          components: %{required(atom) => any()}
+          components: Element.components_t(),
+          state: state_t()
         }
-  @enforce_keys [:position]
-  defstruct position: nil, transformations: [], components: %{}
+  defstruct components: %{}, state: %{position: %Position{x: 0, y: 0}}
 
-  @spec update(__MODULE__.t(), number()) :: {:ok, __MODULE__.t()} | {:error, error_t()}
-  def update(video, time) do
-    case Transformation.update_all(video, video.transformations, time) do
-      {:ok, {video, transformations}} ->
-        {:ok, %__MODULE__{video | transformations: transformations}}
-
-      {:error, error} ->
-        {:error, error}
-    end
+  @spec init(Element.components_t(), state_t()) :: t()
+  def init(components, state \\ %{}) do
+    %__MODULE__{
+      components: components,
+      state: state
+    }
   end
 end

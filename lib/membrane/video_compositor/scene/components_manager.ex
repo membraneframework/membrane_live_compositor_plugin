@@ -4,6 +4,7 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
   """
 
   alias Membrane.VideoCompositor.Scene.Component
+  alias Membrane.VideoCompositor.Scene.ElementDescription
 
   @type state_t() :: any()
   @type target_state_t() :: any()
@@ -31,7 +32,7 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
 
   @spec register(t(), target_state_t(), module(), any()) ::
           {:ok, {t(), target_state_t()}} | {:error, error_t()}
-  def register(manager, target_state, module, options \\ nil) do
+  def register(manager, target_state, module, options \\ nil) when is_atom(module) do
     with {:ok, state} <- init_or_get_module(manager, module, options),
          {:ok, manager} <- update_cache(manager, module, state),
          {:ok, target_state} <- module.inject_into_target_state(target_state, state) do
@@ -39,6 +40,21 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
     else
       {:error, error} -> {:error, error}
     end
+  end
+
+  @spec register_element(manager :: t, ElementDescription.t()) ::
+          {:ok, {manager :: t, state :: any}} | {:error, error :: any}
+  def register_element(manager, element) do
+    Enum.reduce_while(
+      element.components,
+      {:ok, {manager, element.state}},
+      fn {_id, {module, options}}, {:ok, {manager, state}} ->
+        case register(manager, state, module, options) do
+          {:ok, {manager, state}} -> {:cont, {:ok, {manager, state}}}
+          {:error, error} -> {:halt, {:error, error}}
+        end
+      end
+    )
   end
 
   @spec get(t(), module()) :: {:ok, state_t()} | {:error, error_t()}
