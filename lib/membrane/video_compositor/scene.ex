@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor.Scene do
 
   # alias Membrane.VideoCompositor.Position
   alias Membrane.VideoCompositor.Scene.ComponentsManager, as: Manager
+  alias Membrane.VideoCompositor.Scene.Element
   alias Membrane.VideoCompositor.Scene.ElementDescription
   alias Membrane.VideoCompositor.Scene.Video
 
@@ -40,18 +41,17 @@ defmodule Membrane.VideoCompositor.Scene do
     scene_description = Keyword.drop(scene_description, [:videos, :scenes])
     scene = %__MODULE__{}
 
-    {:ok, {scene, manager}} = add_videos(scene, manager, videos)
-    {:ok, {scene, manager}} = add_scenes(scene, manager, scenes)
+    with {:ok, {scene, manager}} <- add_videos(scene, manager, videos),
+         {:ok, {scene, manager}} <- add_scenes(scene, manager, scenes),
+         element_description <- ElementDescription.init(scene_description),
+         {:ok, {manager, state}} <- Manager.register_element(manager, element_description) do
+      components = ElementDescription.get_components(element_description)
+      scene = %__MODULE__{scene | state: state, components: components}
 
-    element_description = ElementDescription.init(scene_description)
-    {:ok, {manager, state}} = Manager.register_element(manager, element_description)
-    components = ElementDescription.get_components(element_description)
-
-    {:ok,
-     {
-       %__MODULE__{scene | state: state, components: components},
-       manager
-     }}
+      {:ok, {scene, manager}}
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp add_videos(scene, manager, videos) do
@@ -75,7 +75,7 @@ defmodule Membrane.VideoCompositor.Scene do
     )
   end
 
-  @spec add_video(t(), id_t(), Video.components_t(), Video.state_t()) :: t()
+  @spec add_video(t(), id_t(), Element.components_t(), Video.state_t()) :: t()
   def add_video(scene, video_id, components \\ [], state \\ %{}) do
     video = Video.init(components, state)
 
@@ -85,12 +85,13 @@ defmodule Membrane.VideoCompositor.Scene do
     }
   end
 
-  @spec add_scene(t(), id_t(), ElementDescription.t(), Manager.t()) ::
+  @spec add_scene(t(), id :: atom(), scene_description_t(), Manager.t()) ::
           {:ok, {t(), Manager.t()}} | {:error, error_t()}
   def add_scene(scene, scene_id, scene_description, manager) do
     case init(scene_description, manager) do
       {:ok, {sub_scene, manager}} ->
-        {:ok, {%__MODULE__{scene | scenes: Map.put(scene.scenes, scene_id, sub_scene)}, manager}}
+        scene = %__MODULE__{scene | scenes: Map.put(scene.scenes, scene_id, sub_scene)}
+        {:ok, {scene, manager}}
 
       {:error, error} ->
         {:error, error}
