@@ -3,19 +3,19 @@ use rustler::ResourceArc;
 mod compositor;
 mod errors;
 
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
+#[derive(Debug, rustler::NifStruct, Clone)]
+#[module = "Membrane.VideoCompositor.Implementations.Common.RawVideo"]
 pub struct RawVideo {
-    pub width: usize,
-    pub height: usize,
+    pub width: u32,
+    pub height: u32,
     pub pixel_format: rustler::Atom,
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
+#[module = "Membrane.VideoCompositor.Implementations.Common.Position"]
 struct Position {
-    x: usize,
-    y: usize,
+    x: u32,
+    y: u32,
 }
 
 mod atoms {
@@ -67,7 +67,7 @@ fn init(
 }
 
 #[rustler::nif]
-fn join_frames<'a>(
+fn render_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,
     frames: Vec<(usize, rustler::Binary)>,
@@ -78,9 +78,10 @@ fn join_frames<'a>(
         state.compositor.upload_texture(*i, frame)?
     }
 
-    let mut output =
-        rustler::OwnedBinary::new(state.output_caps.width * state.output_caps.height * 3 / 2)
-            .unwrap(); //FIXME: return an error instead of panicking here
+    let mut output = rustler::OwnedBinary::new(
+        state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+    )
+    .unwrap(); //FIXME: return an error instead of panicking here
 
     pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
 
@@ -96,53 +97,19 @@ fn add_video(
     position: Position,
 ) -> Result<rustler::Atom, rustler::Error> {
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-    let placement = determine_video_placement(&state, &input_video, &position);
 
-    state
-        .compositor
-        .add_video(id, placement, input_video.width, input_video.height);
+    state.compositor.add_video(
+        id,
+        compositor::VideoPosition {
+            top_left: compositor::Point {
+                x: position.x,
+                y: position.y,
+            },
+            width: input_video.width,
+            height: input_video.height,
+        },
+    );
     Ok(atoms::ok())
-}
-
-/// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
-///
-/// `x` outside the original domain will be extrapolated outside the targe domain.
-fn lerp(x: f64, x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
-    (x - x_min) / (x_max - x_min) * (y_max - y_min) + y_min
-}
-
-fn determine_video_placement(
-    state: &InnerState,
-    input_video: &RawVideo,
-    position: &Position,
-) -> compositor::VideoPlacementTemplate {
-    let scene_width = state.output_caps.width;
-    let scene_height = state.output_caps.height;
-
-    let left = lerp(position.x as f64, 0.0, scene_width as f64, -1.0, 1.0) as f32;
-    let right = lerp(
-        (position.x + input_video.width) as f64,
-        0.0,
-        scene_width as f64,
-        -1.0,
-        1.0,
-    ) as f32;
-    let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
-    let bot = lerp(
-        (position.y + input_video.height) as f64,
-        0.0,
-        scene_height as f64,
-        1.0,
-        -1.0,
-    ) as f32;
-
-    compositor::VideoPlacementTemplate {
-        top_right: compositor::Point(right, top),
-        top_left: compositor::Point(left, top),
-        bot_left: compositor::Point(left, bot),
-        bot_right: compositor::Point(right, bot),
-        z_value: 0.0,
-    }
 }
 
 #[rustler::nif]
@@ -167,7 +134,7 @@ fn remove_video(
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Implementations.Wgpu.Native",
-    [init, join_frames, add_video, remove_video, set_position],
+    [init, render_frame, add_video, remove_video, set_position],
     load = |env, _| {
         rustler::resource!(State, env);
         true

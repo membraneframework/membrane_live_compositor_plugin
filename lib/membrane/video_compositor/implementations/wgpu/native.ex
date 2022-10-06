@@ -4,8 +4,7 @@ defmodule Membrane.VideoCompositor.Implementations.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor_wgpu"
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
 
   @type internal_state_t :: any()
   @type error_t :: any()
@@ -14,8 +13,9 @@ defmodule Membrane.VideoCompositor.Implementations.Wgpu.Native do
   @spec init(RawVideo.t()) :: {:ok, internal_state_t()} | {:error, error_t()}
   def init(_out_video), do: error()
 
-  @spec join_frames(any(), [{id_t(), binary()}]) :: {:ok, binary()} | {:error, error_t()}
-  def join_frames(_state, _input_videos), do: error()
+  @spec render_frame(internal_state_t(), [{id_t(), binary()}]) ::
+          {:ok, binary()} | {:error, error_t()}
+  def render_frame(_state, _input_videos), do: error()
 
   @spec add_video(internal_state_t(), id_t(), RawVideo.t(), Position.t()) ::
           :ok | {:error, error_t()}

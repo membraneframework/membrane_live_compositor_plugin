@@ -4,8 +4,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
 
   @impl true
@@ -16,7 +15,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
 
   @impl true
   def merge_frames(internal_state, frames) do
-    {Native.join_frames(internal_state, frames), internal_state}
+    {Native.render_frame(internal_state, frames), internal_state}
   end
 
   @impl true

@@ -49,7 +49,7 @@ mod atoms {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo"]
+#[module = "Membrane.VideoCompositor.Implementations.Common.RawVideo"]
 struct RawVideo {
     height: usize,
     width: usize,
@@ -58,7 +58,7 @@ struct RawVideo {
 
 /// Position relative to the top right corner of the viewport, in pixels
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position"]
+#[module = "Membrane.VideoCompositor.Implementations.Common.Position"]
 struct Position {
     x: usize,
     y: usize,

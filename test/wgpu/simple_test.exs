@@ -1,8 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.Position
-  alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust.RawVideo
+  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
   alias Membrane.VideoCompositor.Test.Support.Utility
 
@@ -46,7 +45,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  y: 360
                })
 
-      assert {:ok, out_frame} = Native.join_frames(state, [{0, frame}, {1, frame}])
+      assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)

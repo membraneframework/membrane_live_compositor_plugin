@@ -4,18 +4,19 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
+  alias Membrane.VideoCompositor.Implementations.Common
   alias Membrane.VideoCompositor.Implementations.OpenGL.Native.Rust
 
   @impl true
   def init(output_caps) do
-    {:ok, output_caps} = Rust.RawVideo.from_membrane_raw_video(output_caps)
+    {:ok, output_caps} = Common.RawVideo.from_membrane_raw_video(output_caps)
     Rust.init(output_caps)
   end
 
   @impl true
   def add_video(internal_state, id, input_caps, position) do
-    {:ok, input_caps} = Rust.RawVideo.from_membrane_raw_video(input_caps)
-    {:ok, position} = Rust.Position.from_tuple(position)
+    {:ok, input_caps} = Common.RawVideo.from_membrane_raw_video(input_caps)
+    {:ok, position} = Common.Position.from_tuple(position)
     {Rust.add_video(internal_state, id, input_caps, position), internal_state}
   end
 
@@ -31,7 +32,7 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
 
   @impl true
   def set_position(internal_state, id, position) do
-    {:ok, position} = Rust.Position.from_tuple(position)
+    {:ok, position} = Common.Position.from_tuple(position)
     {Rust.set_position(internal_state, id, position), internal_state}
   end
 end
