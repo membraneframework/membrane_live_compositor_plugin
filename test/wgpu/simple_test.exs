@@ -58,7 +58,7 @@ defmodule VideoCompositor.Wgpu.Test do
         "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
       )
 
-      Utility.compare_contents_with_error(out_path, ref_path, 0.005)
+      Utility.compare_contents_with_error(out_path, ref_path)
     end
   end
 end
