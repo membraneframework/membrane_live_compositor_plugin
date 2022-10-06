@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.Scene do
           scenes: %{required(atom()) => t()},
           state: %{}
         }
-  defstruct videos: %{}, components: [], state: %{}, videos_states: %{}, scenes: %{}
+  defstruct videos: %{}, components: [], scenes: %{}, state: %{}
 
   @spec init(scene_description_t(), Manager.t()) ::
           {:ok, {t(), Manager.t()}} | {:error, error_t()}

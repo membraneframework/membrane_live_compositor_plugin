@@ -30,12 +30,12 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
      end}
   end
 
-  @spec register(t(), target_state_t(), module(), any()) ::
+  @spec register(t(), target_state_t(), module(), id :: atom(), any()) ::
           {:ok, {t(), target_state_t()}} | {:error, error_t()}
-  def register(manager, target_state, module, options \\ nil) when is_atom(module) do
+  def register(manager, target_state, module, id, options \\ nil) when is_atom(module) do
     with {:ok, state} <- init_or_get_module(manager, module, options),
          {:ok, manager} <- update_cache(manager, module, state),
-         {:ok, target_state} <- module.inject_into_target_state(target_state, state) do
+         {:ok, target_state} <- module.inject_into_target_state(target_state, state, id) do
       {:ok, {manager, target_state}}
     else
       {:error, error} -> {:error, error}
@@ -48,8 +48,8 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
     Enum.reduce_while(
       element.components,
       {:ok, {manager, element.state}},
-      fn {_id, {module, options}}, {:ok, {manager, state}} ->
-        case register(manager, state, module, options) do
+      fn {id, {module, options}}, {:ok, {manager, state}} ->
+        case register(manager, state, module, id, options) do
           {:ok, {manager, state}} -> {:cont, {:ok, {manager, state}}}
           {:error, error} -> {:halt, {:error, error}}
         end
@@ -78,11 +78,11 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
          components_modules,
          component_id,
          component_module,
-         time
+         context
        ) do
     with {:ok, component_state} <- get(manager, component_module),
          {:ok, {component_status, target_state}} <-
-           component_module.handle_update(target_state, component_state, time) do
+           component_module.handle_update(target_state, component_state, component_id, context) do
       case component_status do
         :ongoing ->
           {:ok, {target_state, Keyword.put(components_modules, component_id, component_module)}}
@@ -95,9 +95,9 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
     end
   end
 
-  @spec update(target_state_t, keyword(Component), t(), Component.time_t()) ::
+  @spec update(target_state_t, keyword(Component), t(), Component.context_t()) ::
           {:ok, {target_state_t(), keyword(Component)}} | {:error, error_t()}
-  def update(target_state, components_modules, manager, time) do
+  def update(target_state, components_modules, manager, context) do
     {status, return} =
       Enum.reduce_while(components_modules, {:ok, {target_state, []}}, fn
         {id, component_module}, {:ok, {target_state, components_modules}} ->
@@ -107,7 +107,7 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
                  components_modules,
                  id,
                  component_module,
-                 time
+                 context
                ) do
             {:ok, {target_state, components_modules}} ->
               {:cont, {:ok, {target_state, components_modules}}}

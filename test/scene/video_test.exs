@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Video do
   use ExUnit.Case, async: true
 
   alias Membrane.VideoCompositor.Position
-  alias Membrane.VideoCompositor.Scene.Transformation
+  alias Membrane.VideoCompositor.Scene.Component
   alias Membrane.VideoCompositor.Scene.Video
 
   defmodule Mock.Position.SetTime do
