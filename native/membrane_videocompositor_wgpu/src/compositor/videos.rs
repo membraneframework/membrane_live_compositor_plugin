@@ -135,11 +135,9 @@ impl<'a> InputVideo {
         render_pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.set_vertex_buffer(0, self.vertices.slice(..));
 
-        render_pass.draw_indexed(
-            0..(self.indices.size() / std::mem::size_of::<u16>() as u64) as u32,
-            0,
-            0..1,
-        );
+        let indices_len = (self.indices.size() / std::mem::size_of::<u16>() as u64) as u32;
+
+        render_pass.draw_indexed(0..indices_len, 0, 0..1);
     }
 }
 
