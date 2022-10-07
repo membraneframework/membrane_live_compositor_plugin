@@ -22,27 +22,6 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 @group(1) @binding(0) var sampler_: sampler;
 @group(2) @binding(0) var<uniform> plane_selector: u32;
 
-fn uv_pixel_iter(tex_coords: vec2<f32>, conversion: vec4<f32>) -> f32 {
-    let dimensions = textureDimensions(texture);
-    let offset = vec2<f32>(0.5 / f32(dimensions.x), 0.5 / f32(dimensions.y));
-
-    var result: f32 = 0.0;
-
-    for(var i: i32 = -1; i <= 1; i++) {
-        if(i == 0) { continue; }
-        for(var j: i32 = -1; j < 1; j++) {
-            if(j == 0) { continue; }
-
-            let offset2 = vec2<f32>(f32(i) * offset.x, f32(j) * offset.y);
-
-            result += dot(textureSample(texture, sampler_, tex_coords + offset2), conversion) + 0.5;
-        }
-        
-    }
-
-    return result / 4.0;
-}
-
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) f32 {
     let colour = textureSample(texture, sampler_, input.tex_coords);
