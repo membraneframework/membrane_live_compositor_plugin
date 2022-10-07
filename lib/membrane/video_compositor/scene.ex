@@ -39,17 +39,20 @@ defmodule Membrane.VideoCompositor.Scene do
     videos = Keyword.get(scene_description, :videos, %{})
     scenes = Keyword.get(scene_description, :scenes, %{})
     scene_description = Keyword.drop(scene_description, [:videos, :scenes])
+
     scene = %__MODULE__{}
 
-    with {:ok, {scene, manager}} <- add_videos(scene, manager, videos),
+    with {:ok, _size} <- Keyword.fetch(scene_description, :size),
+         {:ok, {scene, manager}} <- add_videos(scene, manager, videos),
          {:ok, {scene, manager}} <- add_scenes(scene, manager, scenes),
-         element_description <- ElementDescription.init(scene_description),
+         element_description = ElementDescription.init(scene_description),
          {:ok, {manager, state}} <- Manager.register_element(manager, element_description) do
       components = ElementDescription.get_components(element_description)
       scene = %__MODULE__{scene | state: state, components: components}
 
       {:ok, {scene, manager}}
     else
+      :error -> {:error, "Scene must have `:size` property specified"}
       {:error, error} -> {:error, error}
     end
   end

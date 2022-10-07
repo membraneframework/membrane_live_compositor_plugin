@@ -29,9 +29,14 @@ defmodule Membrane.VideoCompositor.Scene.ElementDescription do
     {state, components} =
       Enum.reduce(entries, {state, []}, fn {id, entry}, {state, components} ->
         case entry do
-          property when is_struct(property) -> {inject.(state, id, property), components}
-          {module, options} -> {state, Keyword.put(components, id, {module, options})}
-          module when is_atom(module) -> {state, Keyword.put(components, id, {module, nil})}
+          property when is_struct(property) or is_map(property) ->
+            {inject.(state, id, property), components}
+
+          {module, options} ->
+            {state, Keyword.put(components, id, {module, options})}
+
+          module when is_atom(module) ->
+            {state, Keyword.put(components, id, {module, nil})}
         end
       end)
 

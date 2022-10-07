@@ -26,7 +26,8 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
       },
       setter: {Mocks.Stateful.Set, 20},
       adder: Mocks.Stateless.Add,
-      position: %Position{x: 10, y: 10}
+      position: %Position{x: 10, y: 10},
+      size: %{width: 1920, height: 1080}
     ]
 
     manager = %Manager{}
@@ -44,7 +45,12 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
           adder: Mocks.Stateless.Add
         ],
         scenes: %{},
-        state: %{adder: %{count: 0}, setter: 0, position: %Position{x: 10, y: 10}},
+        state: %{
+          adder: %{count: 0},
+          setter: 0,
+          position: %Position{x: 10, y: 10},
+          size: %{width: 1920, height: 1080}
+        },
         videos: %{
           0 => %Scene.Video{
             components: [
@@ -89,7 +95,8 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
         state: %{
           adder: %{count: 1},
           position: %Position{x: 10, y: 10},
-          setter: 20
+          setter: 20,
+          size: %{width: 1920, height: 1080}
         },
         videos: %{
           0 => %Scene.Video{
@@ -130,7 +137,8 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
         state: %{
           adder: %{count: 0},
           position: %Position{x: 10, y: 10},
-          setter: 0
+          setter: 0,
+          size: %{width: 1920, height: 1080}
         },
         videos: %{
           0 => %Scene.Video{
