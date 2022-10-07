@@ -35,11 +35,11 @@ fn fs_main(input: VertexOutput) -> @location(0) f32 {
     } else if(plane_selector == 1u) {
         // U
         conversion_weights = vec4<f32>(-0.168736, -0.331264, 0.5, 0.0);
-        conversion_bias = 0.5;
+        conversion_bias = 128.0 / 255.0;
     } else if(plane_selector == 2u) {
         // V
         conversion_weights = vec4<f32>(0.5, -0.418688, -0.081312, 0.0);
-        conversion_bias = 0.5;
+        conversion_bias = 128.0 / 255.0;
     } else {
         conversion_weights = vec4<f32>();
     }

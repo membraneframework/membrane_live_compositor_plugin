@@ -30,9 +30,9 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let u = textureSample(u_texture, sampler_, input.tex_coords).x;
     let v = textureSample(v_texture, sampler_, input.tex_coords).x;
     
-    let r = y + 1.40200 * (v - 0.5);
-    let g = y - 0.34414 * (u - 0.5) - 0.71414 * (v - 0.5);
-    let b = y + 1.77200 * (u - 0.5);
+    let r = y + 1.40200 * (v - 128.0 / 255.0);
+    let g = y - 0.34414 * (u - 128.0 / 255.0) - 0.71414 * (v - 128.0 / 255.0);
+    let b = y + 1.77200 * (u - 128.0 / 255.0);
 
     let r = clamp(r, 0.0, 1.0);
     let g = clamp(g, 0.0, 1.0);
