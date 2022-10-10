@@ -196,6 +196,7 @@ mod tests {
     use crate::test_utils;
 
     #[test]
+    #[ignore]
     fn upload_and_download() {
         let (device, queue) = test_utils::initialize_wgpu();
 
