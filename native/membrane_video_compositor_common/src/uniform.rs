@@ -77,6 +77,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn create_and_upload_single_struct() {
         let (device, _) = test_utils::initialize_wgpu();
 
@@ -84,6 +85,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn create_and_upload_array() {
         let (device, _) = test_utils::initialize_wgpu();
 
