@@ -323,7 +323,24 @@ impl RGBAToYUVConverter {
                     label: Some("YUV to RGBA colour converter render pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            // We want the background to be black. Black in YUV is y = 0, u = 0.5, v = 0.5
+                            // Therefore, we set the clear color to 0, 0, 0 when drawing the y plane
+                            // and to 0.5, 0.5, 0.5 when drawing the u and v planes.
+                            load: wgpu::LoadOp::Clear(if plane == YUVPlane::Y {
+                                wgpu::Color {
+                                    r: 0.0,
+                                    g: 0.0,
+                                    b: 0.0,
+                                    a: 1.0,
+                                }
+                            } else {
+                                wgpu::Color {
+                                    r: 0.5,
+                                    g: 0.5,
+                                    b: 0.5,
+                                    a: 1.0,
+                                }
+                            }),
                             store: true,
                         },
                         view: &dst[plane].view,
