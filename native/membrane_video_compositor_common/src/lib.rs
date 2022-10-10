@@ -5,6 +5,7 @@ pub mod errors;
 #[cfg(test)]
 pub mod test_utils;
 pub mod textures;
+pub mod uniform;
 
 /// This trait provides a common way to provide `BindingType` and `BindingResource` for various abstractions over wgpu types  
 pub trait BindGroupAttachment {
