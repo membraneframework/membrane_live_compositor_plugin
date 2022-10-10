@@ -1,0 +1,11 @@
+[package]
+name = "membrane_video_compositor_common"
+version = "0.1.0"
+authors = ["Membrane Team"]
+license = "Apache-2.0"
+homepage = "https://membrane.stream/"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
