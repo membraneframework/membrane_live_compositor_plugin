@@ -323,7 +323,21 @@ impl RGBAToYUVConverter {
                     label: Some("YUV to RGBA colour converter render pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            load: wgpu::LoadOp::Clear(if plane == YUVPlane::Y {
+                                wgpu::Color {
+                                    r: 0.0,
+                                    g: 0.0,
+                                    b: 0.0,
+                                    a: 1.0,
+                                }
+                            } else {
+                                wgpu::Color {
+                                    r: 0.5,
+                                    g: 0.5,
+                                    b: 0.5,
+                                    a: 1.0,
+                                }
+                            }),
                             store: true,
                         },
                         view: &dst[plane].view,
