@@ -36,14 +36,15 @@ defmodule Membrane.VideoCompositor.Implementations.Common.Position do
 
   @type t :: %__MODULE__{
           x: non_neg_integer(),
-          y: non_neg_integer()
+          y: non_neg_integer(),
+          z: float()
         }
 
-  @enforce_keys [:x, :y]
-  defstruct [:x, :y]
+  @enforce_keys [:x, :y, :z]
+  defstruct [:x, :y, :z]
 
-  @spec from_tuple({non_neg_integer(), non_neg_integer()}) :: {:ok, __MODULE__.t()}
-  def from_tuple({x, y}) do
-    {:ok, %__MODULE__{x: x, y: y}}
+  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) :: {:ok, __MODULE__.t()}
+  def from_tuple({x, y, z}) do
+    {:ok, %__MODULE__{x: x, y: y, z: z}}
   end
 end

@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               internal_state :: internal_state_t,
               id :: id_t(),
               input_caps :: RawVideo.t(),
-              position :: {x :: non_neg_integer(), y :: non_neg_integer()}
+              position :: {x :: non_neg_integer(), y :: non_neg_integer(), z :: float()}
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
@@ -44,6 +44,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   @callback set_position(
               internal_state :: internal_state_t,
               id :: id_t(),
-              position :: {x :: non_neg_integer(), y :: non_neg_integer()}
+              position :: {x :: non_neg_integer(), y :: non_neg_integer(), z :: float()}
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 end

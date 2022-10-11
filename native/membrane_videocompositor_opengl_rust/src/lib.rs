@@ -62,6 +62,7 @@ struct RawVideo {
 struct Position {
     x: usize,
     y: usize,
+    z: f32,
 }
 
 /// Contains structs used for holding the state of the compositor.

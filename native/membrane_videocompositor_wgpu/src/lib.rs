@@ -16,6 +16,7 @@ pub struct RawVideo {
 struct Position {
     x: u32,
     y: u32,
+    z: f32,
 }
 
 mod atoms {
@@ -107,6 +108,7 @@ fn add_video(
             },
             width: input_video.width,
             height: input_video.height,
+            z: position.z,
         },
     );
     Ok(atoms::ok())

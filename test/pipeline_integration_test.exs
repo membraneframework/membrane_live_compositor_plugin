@@ -62,10 +62,10 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
     positions = [
-      {0, 0},
-      {div(video_caps.width, 2), 0},
-      {0, div(video_caps.height, 2)},
-      {div(video_caps.width, 2), div(video_caps.height, 2)}
+      {0, 0, 0.0},
+      {div(video_caps.width, 2), 0, 0.0},
+      {0, div(video_caps.height, 2), 0.0},
+      {div(video_caps.width, 2), div(video_caps.height, 2), 0.0}
     ]
 
     inputs =

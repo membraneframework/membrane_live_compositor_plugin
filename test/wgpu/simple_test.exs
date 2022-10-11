@@ -36,13 +36,15 @@ defmodule VideoCompositor.Wgpu.Test do
       assert :ok =
                Native.add_video(state, 0, in_video, %Position{
                  x: 0,
-                 y: 0
+                 y: 0,
+                 z: 0.0
                })
 
       assert :ok =
                Native.add_video(state, 1, in_video, %Position{
                  x: 0,
-                 y: 360
+                 y: 360,
+                 z: 0.0
                })
 
       assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])

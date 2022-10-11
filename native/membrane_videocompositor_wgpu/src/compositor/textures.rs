@@ -66,6 +66,7 @@ impl Texture {
         let bytes_per_pixel = match format {
             wgpu::TextureFormat::R8Unorm => 1,
             wgpu::TextureFormat::Rgba8Unorm => 4,
+            wgpu::TextureFormat::Depth32Float => 4,
             _ => unimplemented!(),
         };
 
@@ -196,6 +197,7 @@ impl std::ops::Index<YUVPlane> for YUVTextures {
 
 pub struct OutputTextures {
     pub rgba_texture: RGBATexture,
+    pub depth_texture: Texture,
     yuv_textures: YUVTextures,
     buffers: [wgpu::Buffer; 3],
 }
@@ -213,6 +215,15 @@ impl OutputTextures {
     ) -> Self {
         Self {
             rgba_texture: RGBATexture::new(device, width, height, single_texture_bind_group_layout),
+
+            depth_texture: Texture::new(
+                device,
+                width,
+                height,
+                wgpu::TextureUsages::RENDER_ATTACHMENT,
+                wgpu::TextureFormat::Depth32Float,
+                None,
+            ),
 
             yuv_textures: YUVTextures::new(
                 device,
