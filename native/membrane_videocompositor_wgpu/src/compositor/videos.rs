@@ -5,7 +5,7 @@ use super::textures::{RGBATexture, YUVTextures};
 use super::{Point, Vertex};
 
 #[derive(Debug, Clone, Copy)]
-// All of the fields are in pixels, except of the `z`, which should be from the < -1, 1> range
+// All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
 pub struct VideoPosition {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`

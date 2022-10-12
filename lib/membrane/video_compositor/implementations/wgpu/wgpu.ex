@@ -19,16 +19,16 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @impl true
-  def add_video(internal_state, id, input_caps, position) do
+  def add_video(internal_state, id, input_caps, {x, y}, z \\ 0.0) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
-    {:ok, position} = Position.from_tuple(position)
+    {:ok, position} = Position.from_tuple({x, y, z})
     :ok = Native.add_video(internal_state, id, input_caps, position)
     {:ok, internal_state}
   end
 
   @impl true
-  def set_position(internal_state, id, position) do
-    {:ok, position} = Position.from_tuple(position)
+  def set_position(internal_state, id, {x, y}, z \\ 0.0) do
+    {:ok, position} = Position.from_tuple({x, y, z})
     {Native.set_position(internal_state, id, position), internal_state}
   end
 

@@ -32,6 +32,7 @@ defmodule Membrane.VideoCompositor.Implementations.Common.Position do
   @moduledoc """
   A Position struct describing the video position for use with the rust-based compositor implementation.
   Position relative to the top right corner of the viewport, in pixels.
+  The `z` value specifies priority: a lower `z` is 'in front' of higher `z` values.
   """
 
   @type t :: %__MODULE__{
@@ -43,8 +44,13 @@ defmodule Membrane.VideoCompositor.Implementations.Common.Position do
   @enforce_keys [:x, :y, :z]
   defstruct [:x, :y, :z]
 
-  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) :: {:ok, __MODULE__.t()}
+  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) ::
+          {:ok, __MODULE__.t()} | {:error, atom()}
   def from_tuple({x, y, z}) do
-    {:ok, %__MODULE__{x: x, y: y, z: z}}
+    if z < 0.0 or z > 1.0 do
+      {:error, :z_out_of_range}
+    else
+      {:ok, %__MODULE__{x: x, y: y, z: z}}
+    end
   end
 end
