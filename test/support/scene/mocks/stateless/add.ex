@@ -9,22 +9,22 @@ defmodule Membrane.VideoCompositor.Test.Support.Scene.Mocks.Stateless.Add do
 
   @impl true
   def handle_init(_options \\ nil, _context \\ nil) do
-    {:ok, nil}
+    nil
   end
 
   @impl true
   def inject_into_target_state(target, nil = _state, id) do
-    {:ok, Map.put(target, id, %{count: 0})}
+    Map.put(target, id, %{count: 0})
   end
 
   @impl true
   def handle_update(_target_state, nil = _state, _id, :error) do
-    {:error, "Error msg add"}
+    raise "Error msg add"
   end
 
   @impl true
   def handle_update(target_state, nil = _state, _id, :done) do
-    {:ok, {:done, target_state}}
+    {:done, target_state}
   end
 
   @impl true
@@ -36,6 +36,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Scene.Mocks.Stateless.Add do
         fn state -> Map.update!(state, :count, &(&1 + 1)) end
       )
 
-    {:ok, {:ongoing, target_state}}
+    {:ongoing, target_state}
   end
 end

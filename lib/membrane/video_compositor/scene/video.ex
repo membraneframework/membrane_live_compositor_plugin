@@ -24,15 +24,9 @@ defmodule Membrane.VideoCompositor.Scene.Video do
     }
   end
 
-  @spec update(t, Manager.t(), context :: any) :: {:ok, t} | {:error, error_t}
+  @spec update(t, Manager.t(), context :: any) :: t
   def update(video, manager, context) do
-    case Manager.update(video.state, video.components, manager, context) do
-      {:ok, {state, components}} ->
-        video = %Video{video | state: state, components: components}
-        {:ok, video}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {state, components} = Manager.update(video.state, video.components, manager, context)
+    %Video{video | state: state, components: components}
   end
 end
