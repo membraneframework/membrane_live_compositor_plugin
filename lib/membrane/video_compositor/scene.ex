@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor.Scene do
   defstruct videos: %{}, components: [], scenes: %{}, state: %{}
 
   @spec init(scene_description_t(), Manager.t()) ::
-          {:ok, {t(), Manager.t()}} | {:error, error_t()}
+          {t(), Manager.t()}
   def init(scene_description, manager) do
     videos = Keyword.get(scene_description, :videos, %{})
     scenes = Keyword.get(scene_description, :scenes, %{})
@@ -42,37 +42,43 @@ defmodule Membrane.VideoCompositor.Scene do
 
     scene = %__MODULE__{}
 
-    with {:ok, _size} <- Keyword.fetch(scene_description, :size),
-         {:ok, {scene, manager}} <- add_videos(scene, manager, videos),
-         {:ok, {scene, manager}} <- add_scenes(scene, manager, scenes),
-         element_description = ElementDescription.init(scene_description),
-         {:ok, {manager, state}} <- Manager.register_element(manager, element_description) do
-      components = ElementDescription.get_components(element_description)
-      scene = %__MODULE__{scene | state: state, components: components}
-
-      {:ok, {scene, manager}}
-    else
-      :error -> {:error, "Scene must have `:size` property specified"}
-      {:error, error} -> {:error, error}
+    unless Keyword.has_key?(scene_description, :size) do
+      raise ArgumentError,
+        message:
+          "Scene spec has to contain `size: {width :: integer, height :: integer}` attribute."
     end
+
+    {scene, manager} = add_videos(scene, manager, videos)
+
+    {scene, manager} = add_scenes(scene, manager, scenes)
+
+    element_description = ElementDescription.init(scene_description)
+
+    {manager, state} = Manager.register_element(manager, element_description)
+
+    components = ElementDescription.get_components(element_description)
+
+    scene = %__MODULE__{scene | state: state, components: components}
+
+    {scene, manager}
   end
 
   defp add_videos(scene, manager, videos) do
-    Enum.reduce(videos, {:ok, {scene, manager}}, fn {video_id, video_description},
-                                                    {:ok, {scene, manager}} ->
+    Enum.reduce(videos, {scene, manager}, fn {video_id, video_description}, {scene, manager} ->
       element_description = ElementDescription.init(video_description)
 
-      {:ok, {manager, state}} = Manager.register_element(manager, element_description)
+      {manager, state} = Manager.register_element(manager, element_description)
       components = ElementDescription.get_components(element_description)
-      {:ok, {add_video(scene, video_id, components, state), manager}}
+      scene = add_video(scene, video_id, components, state)
+      {scene, manager}
     end)
   end
 
   defp add_scenes(scene, manager, scenes) do
     Enum.reduce(
       scenes,
-      {:ok, {scene, manager}},
-      fn {id, scene_description}, {:ok, {scene, manager}} ->
+      {scene, manager},
+      fn {id, scene_description}, {scene, manager} ->
         add_scene(scene, id, scene_description, manager)
       end
     )
@@ -89,73 +95,50 @@ defmodule Membrane.VideoCompositor.Scene do
   end
 
   @spec add_scene(t(), id :: atom(), scene_description_t(), Manager.t()) ::
-          {:ok, {t(), Manager.t()}} | {:error, error_t()}
+          {t(), Manager.t()}
   def add_scene(scene, scene_id, scene_description, manager) do
-    case init(scene_description, manager) do
-      {:ok, {sub_scene, manager}} ->
-        scene = %__MODULE__{scene | scenes: Map.put(scene.scenes, scene_id, sub_scene)}
-        {:ok, {scene, manager}}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {sub_scene, manager} = init(scene_description, manager)
+    scene = %__MODULE__{scene | scenes: Map.put(scene.scenes, scene_id, sub_scene)}
+    {scene, manager}
   end
 
   defp update_videos(videos, manager, context) do
-    Enum.reduce_while(
+    Enum.reduce(
       videos,
-      {:ok, videos},
-      fn {id, video}, {:ok, videos} ->
-        case Video.update(video, manager, context) do
-          {:ok, video} ->
-            {:cont, {:ok, Map.put(videos, id, video)}}
-
-          {:error, error} ->
-            {:halt, {:error, error}}
-        end
+      videos,
+      fn {id, video}, videos ->
+        video = Video.update(video, manager, context)
+        Map.put(videos, id, video)
       end
     )
   end
 
   defp update_sub_scenes(scenes, manager, context) do
-    Enum.reduce_while(
+    Enum.reduce(
       scenes,
-      {:ok, scenes},
-      fn {id, scene}, {:ok, scenes} ->
-        case update(scene, manager, context) do
-          {:ok, scene} -> {:cont, {:ok, Map.put(scenes, id, scene)}}
-          {:error, error} -> {:halt, {:error, error}}
-        end
+      scenes,
+      fn {id, scene}, scenes ->
+        scene = update(scene, manager, context)
+        Map.put(scenes, id, scene)
       end
     )
   end
 
   defp handle_update(scene, manager, context) do
-    case Manager.update(scene.state, scene.components, manager, context) do
-      {:ok, {state, components}} ->
-        scene = %__MODULE__{scene | state: state, components: components}
-        {:ok, scene}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {state, components} = Manager.update(scene.state, scene.components, manager, context)
+    %__MODULE__{scene | state: state, components: components}
   end
 
-  @spec update(__MODULE__.t(), Manager.t(), context :: any()) ::
-          {:ok, __MODULE__.t()} | {:error, any()}
+  @spec update(t, Manager.t(), context :: any) :: t
   def update(scene, manager, context) do
-    with {:ok, videos} <- update_videos(scene.videos, manager, context),
-         {:ok, scenes} <- update_sub_scenes(scene.scenes, manager, context),
-         {:ok, scene} <- handle_update(scene, manager, context) do
-      scene = %__MODULE__{
-        scene
-        | videos: videos,
-          scenes: scenes
-      }
+    videos = update_videos(scene.videos, manager, context)
+    scenes = update_sub_scenes(scene.scenes, manager, context)
+    scene = handle_update(scene, manager, context)
 
-      {:ok, scene}
-    else
-      {:error, error} -> {:error, error}
-    end
+    %__MODULE__{
+      scene
+      | videos: videos,
+        scenes: scenes
+    }
   end
 end

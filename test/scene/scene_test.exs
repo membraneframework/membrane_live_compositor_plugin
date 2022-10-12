@@ -37,7 +37,7 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
 
   describe "Scene" do
     test "static initialization", %{scene_description: scene_description, manager: manager} do
-      assert {:ok, {scene, manager}} = Scene.init(scene_description, manager)
+      assert {scene, manager} = Scene.init(scene_description, manager)
 
       expected_scene_state = %Scene{
         components: [
@@ -82,9 +82,9 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
     end
 
     test "update ok", %{scene_description: scene_description, manager: manager} do
-      assert {:ok, {scene, manager}} = Scene.init(scene_description, manager)
+      assert {scene, manager} = Scene.init(scene_description, manager)
 
-      assert {:ok, scene} = Scene.update(scene, manager, 10)
+      assert scene = Scene.update(scene, manager, 10)
 
       expected_updated_scene = %Scene{
         components: [
@@ -121,15 +121,15 @@ defmodule Membrane.VideoCompositor.Test.Scene.Initialization do
     end
 
     test "update error", %{scene_description: scene_description, manager: manager} do
-      assert {:ok, {scene, manager}} = Scene.init(scene_description, manager)
+      assert {scene, manager} = Scene.init(scene_description, manager)
 
-      assert {:error, "Error msg set"} = Scene.update(scene, manager, :error)
+      assert_raise RuntimeError, "Error msg set", fn -> Scene.update(scene, manager, :error) end
     end
 
     test "update done", %{scene_description: scene_description, manager: manager} do
-      assert {:ok, {scene, manager}} = Scene.init(scene_description, manager)
+      assert {scene, manager} = Scene.init(scene_description, manager)
 
-      assert {:ok, scene} = Scene.update(scene, manager, :done)
+      assert scene = Scene.update(scene, manager, :done)
 
       expected_done_scene = %Scene{
         components: [],

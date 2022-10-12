@@ -12,8 +12,6 @@ defmodule Membrane.VideoCompositor.Scene.ElementDescription do
 
   @type components_t :: keyword({component_t(), options_t})
 
-  @type error_t :: any()
-
   @type t :: %__MODULE__{
           state: any(),
           components: components_t()

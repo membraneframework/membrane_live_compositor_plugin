@@ -18,60 +18,54 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
   defp init_or_get_module(manager, module, options) do
     if module.use_caching? and
          Map.has_key?(manager.cached, module) do
-      {:ok, Map.get(manager.cached, module)}
+      Map.get(manager.cached, module)
     else
       module.handle_init(options)
     end
   end
 
   defp update_cache(manager, module, state) do
-    {:ok,
-     if module.use_caching?() do
-       %{manager | cached: Map.put_new(manager.cached, module, state)}
-     else
-       manager
-     end}
-  end
-
-  @spec register(t(), target_state_t(), module(), id :: atom(), any()) ::
-          {:ok, {t(), target_state_t()}} | {:error, error_t()}
-  def register(manager, target_state, module, id, options \\ nil) when is_atom(module) do
-    with {:ok, state} <- init_or_get_module(manager, module, options),
-         {:ok, manager} <- update_cache(manager, module, state),
-         {:ok, target_state} <- module.inject_into_target_state(target_state, state, id) do
-      {:ok, {manager, target_state}}
+    if module.use_caching?() do
+      %{manager | cached: Map.put_new(manager.cached, module, state)}
     else
-      {:error, error} -> {:error, error}
+      manager
     end
   end
 
+  @spec register(t(), target_state_t(), module(), id :: atom(), any()) ::
+          {t(), target_state_t()}
+  def register(manager, target_state, module, id, options \\ nil) when is_atom(module) do
+    state = init_or_get_module(manager, module, options)
+    manager = update_cache(manager, module, state)
+    target_state = module.inject_into_target_state(target_state, state, id)
+    {manager, target_state}
+  end
+
   @spec register_element(manager :: t, ElementDescription.t()) ::
-          {:ok, {manager :: t, state :: any}} | {:error, error :: any}
+          {manager :: t, state :: any}
   def register_element(manager, element) do
-    Enum.reduce_while(
+    Enum.reduce(
       element.components,
-      {:ok, {manager, element.state}},
-      fn {id, {module, options}}, {:ok, {manager, state}} ->
-        case register(manager, state, module, id, options) do
-          {:ok, {manager, state}} -> {:cont, {:ok, {manager, state}}}
-          {:error, error} -> {:halt, {:error, error}}
-        end
+      {manager, element.state},
+      fn {id, {module, options}}, {manager, state} ->
+        register(manager, state, module, id, options)
       end
     )
   end
 
-  @spec get(t(), module()) :: {:ok, state_t()} | {:error, error_t()}
+  @spec get(t(), module()) :: state_t()
   def get(manager, component_module) do
     if component_module.use_caching? do
       cached = Map.get(manager, :cached)
 
       if Map.has_key?(cached, component_module) do
-        {:ok, Map.get(cached, component_module)}
+        Map.get(cached, component_module)
       else
-        {:error, {"Component module has not been registered", component_module}}
+        raise ArgumentError,
+          message: {"Component module has not been registered", component_module}
       end
     else
-      {:ok, nil}
+      nil
     end
   end
 
@@ -83,49 +77,36 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
          component_module,
          context
        ) do
-    with {:ok, component_state} <- get(manager, component_module),
-         {:ok, {component_status, target_state}} <-
-           component_module.handle_update(target_state, component_state, component_id, context) do
-      case component_status do
-        :ongoing ->
-          {:ok, {target_state, Keyword.put(components_modules, component_id, component_module)}}
+    component_state = get(manager, component_module)
 
-        :done ->
-          {:ok, {target_state, components_modules}}
-      end
-    else
-      {:error, error} -> {:error, error}
+    {component_status, target_state} =
+      component_module.handle_update(target_state, component_state, component_id, context)
+
+    case component_status do
+      :ongoing ->
+        {target_state, Keyword.put(components_modules, component_id, component_module)}
+
+      :done ->
+        {target_state, components_modules}
     end
   end
 
   @spec update(target_state_t, keyword(Component), t(), Component.context_t()) ::
-          {:ok, {target_state_t(), keyword(Component)}} | {:error, error_t()}
+          {target_state_t(), keyword(Component)}
   def update(target_state, components_modules, manager, context) do
-    {status, return} =
-      Enum.reduce_while(components_modules, {:ok, {target_state, []}}, fn
-        {id, component_module}, {:ok, {target_state, components_modules}} ->
-          case update_module(
-                 manager,
-                 target_state,
-                 components_modules,
-                 id,
-                 component_module,
-                 context
-               ) do
-            {:ok, {target_state, components_modules}} ->
-              {:cont, {:ok, {target_state, components_modules}}}
-
-            {:error, error} ->
-              {:halt, {:error, error}}
-          end
+    {target_state, components_modules} =
+      Enum.reduce(components_modules, {target_state, []}, fn
+        {id, component_module}, {target_state, components_modules} ->
+          update_module(
+            manager,
+            target_state,
+            components_modules,
+            id,
+            component_module,
+            context
+          )
       end)
 
-    case {status, return} do
-      {:ok, {target_state, components_modules}} ->
-        {:ok, {target_state, Enum.reverse(components_modules)}}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    {target_state, Enum.reverse(components_modules)}
   end
 end
