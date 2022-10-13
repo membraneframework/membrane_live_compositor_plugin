@@ -7,21 +7,26 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   @type id_t() :: non_neg_integer()
   @type internal_state_t() :: any()
   @type error_t() :: any()
+  @type frame_with_pts :: {binary(), Membrane.Time.t()}
 
   @callback init(output_caps :: RawVideo.t()) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
-  Frames are provided as tuples `{id, frame}` and given in the proper order of rendering (typically in ascending order of ids).
-  Providing frames with wrong ids may cause undefined behaviour.
+  Uploads a frame to the compositor.
+  If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
   """
-  @callback merge_frames(
-              internal_state :: internal_state_t,
-              frames :: [{id_t, binary()}]
-            ) :: {{:ok, merged_frames :: binary()}, internal_state_t} | {:error, error_t()}
+  @callback upload_frame({id_t(), frame_with_pts()}) :: :ok | {:ok, frame_with_pts()}
+
+  @doc """
+  Forcibly renders the composed frame, even if we are still waiting for some frames to arrive
+  """
+  @callback force_render(internal_state :: internal_state_t) ::
+              {{:ok, merged_frames :: binary()}, internal_state_t} | {:error, error_t()}
 
   @doc """
   Registers a new input video with the given numerical `id`.
-  Provided `id` should be unique within all previous ones, otherwise function may cause undefined behaviour.
+  Provided `id` should be unique within all previous ones, otherwise the compositor may or may not replace
+  the old video with this id with a new one.
   `x` and `y` are pixel coordinates specifying where the top-right corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
@@ -31,11 +36,12 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               id :: id_t(),
               input_caps :: RawVideo.t(),
               position :: {x :: non_neg_integer(), y :: non_neg_integer()},
-              z :: float()
+              z :: float(),
+              scale_factor :: float()
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
-  Video of the given `id` should be registered, removal of nonexistent video may cause undefined behaviour.
+  Video of the given `id` should be registered, removal of nonexistent video may panic the compositor.
   """
   @callback remove_video(
               internal_state :: internal_state_t,
@@ -43,7 +49,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
-  Video of the given `id` should be registered, using `id` of nonexistent video may cause undefined behaviour.
+  Video of the given `id` should be registered, using `id` of nonexistent video may panic the compositor.
   `x` and `y` are pixel coordinates specifying where the top-right corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
@@ -52,6 +58,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               internal_state :: internal_state_t,
               id :: id_t(),
               position :: {x :: non_neg_integer(), y :: non_neg_integer()},
-              z :: float()
+              z :: float(),
+              scale_factor :: float()
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 end

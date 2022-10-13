@@ -38,11 +38,12 @@ defmodule Membrane.VideoCompositor.Common.Position do
   @type t :: %__MODULE__{
           x: non_neg_integer(),
           y: non_neg_integer(),
-          z: float()
+          z: float(),
+          scale_factor: float()
         }
 
-  @enforce_keys [:x, :y, :z]
-  defstruct [:x, :y, :z]
+  @enforce_keys [:x, :y, :z, :scale_factor]
+  defstruct [:x, :y, z: 0.0, scale_factor: 1.0]
 
   @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) ::
           {:ok, __MODULE__.t()} | {:error, atom()}
