@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Implementations.Common.RawVideo do
+defmodule Membrane.VideoCompositor.Common.RawVideo do
   @moduledoc """
   A RawVideo struct describing the video format for use with the rust-based compositor implementation
   """
@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Implementations.Common.RawVideo do
   end
 end
 
-defmodule Membrane.VideoCompositor.Implementations.Common.Position do
+defmodule Membrane.VideoCompositor.Common.Position do
   @moduledoc """
   A Position struct describing the video position for use with the rust-based compositor implementation.
   Position relative to the top right corner of the viewport, in pixels.

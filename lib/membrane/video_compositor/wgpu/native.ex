@@ -1,10 +1,10 @@
-defmodule Membrane.VideoCompositor.Implementations.Wgpu.Native do
+defmodule Membrane.VideoCompositor.Wgpu.Native do
   @moduledoc false
   use Rustler,
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor_wgpu"
 
-  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
 
   @type internal_state_t :: any()
   @type error_t :: any()

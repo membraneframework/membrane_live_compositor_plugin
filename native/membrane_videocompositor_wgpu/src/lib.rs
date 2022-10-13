@@ -4,7 +4,7 @@ mod compositor;
 mod errors;
 
 #[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.Implementations.Common.RawVideo"]
+#[module = "Membrane.VideoCompositor.Common.RawVideo"]
 pub struct RawVideo {
     pub width: u32,
     pub height: u32,
@@ -12,7 +12,7 @@ pub struct RawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Implementations.Common.Position"]
+#[module = "Membrane.VideoCompositor.Common.Position"]
 struct Position {
     x: u32,
     y: u32,
@@ -135,7 +135,7 @@ fn remove_video(
 }
 
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Implementations.Wgpu.Native",
+    "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [init, render_frame, add_video, remove_video, set_position],
     load = |env, _| {
         rustler::resource!(State, env);
