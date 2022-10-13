@@ -4,12 +4,10 @@ defmodule Membrane.VideoCompositor.Track do
   alias Membrane.Buffer
 
   @type t :: %__MODULE__{
-          position: {non_neg_integer(), non_neg_integer()},
           buffers: Qex.t(Buffer.t()),
           status: :playing | :end_of_stream
         }
-  @enforce_keys [:position]
-  defstruct position: nil, buffers: Qex.new(), status: :playing
+  defstruct buffers: Qex.new(), status: :playing
 
   @doc """
   Checks whether track is empty and can be removed

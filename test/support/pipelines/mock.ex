@@ -31,12 +31,17 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Mock do
       source_children
       |> Enum.map(fn {source_id, _element} -> link(source_id) |> to(:composer) end)
 
+    scene = [
+      videos: 1..length(inputs) |> Map.new(&{&1, []})
+    ]
+
     children =
       source_children ++
         [
           composer: %VideoCompositor{
             implementation: {:mock, MockFrameComposer},
-            caps: @no_video
+            caps: @no_video,
+            scene: scene
           },
           sink: Testing.Sink
         ]

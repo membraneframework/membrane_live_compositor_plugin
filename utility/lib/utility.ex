@@ -156,6 +156,8 @@ defmodule Membrane.VideoCompositor.Test.Support.Utility do
     if exit_status != 0 do
       raise inspect(result)
     end
+
+    :ok
   end
 
   @doc """

@@ -94,6 +94,16 @@ defmodule Membrane.VideoCompositor.Scene do
     }
   end
 
+  @spec video_registered?(t(), id_t()) :: boolean()
+  def video_registered?(scene, id) do
+    Map.has_key?(scene.videos, id)
+  end
+
+  @spec video_position(t(), id_t()) :: Position.t()
+  def video_position(scene, id) do
+    Map.get(scene.videos, id).state |> Map.get(:position)
+  end
+
   @spec add_scene(t(), id :: atom(), scene_description_t(), Manager.t()) ::
           {t(), Manager.t()}
   def add_scene(scene, scene_id, scene_description, manager) do

@@ -8,16 +8,22 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Filter
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Implementations
+  alias Membrane.VideoCompositor.Scene
+  alias Membrane.VideoCompositor.Scene.ComponentsManager, as: Manager
+  alias Membrane.VideoCompositor.Scene.ElementDescription
   alias Membrane.VideoCompositor.Track
 
   def_options implementation: [
-                type: :atom,
                 spec: Implementations.implementation_t() | {:mock, module()},
                 description: "Implementation of video composer."
               ],
               caps: [
-                type: RawVideo,
+                spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
+              ],
+              scene: [
+                spec: ElementDescription.entries_t(),
+                description: "Description of the video composition"
               ]
 
   def_input_pad :input,
@@ -26,12 +32,10 @@ defmodule Membrane.VideoCompositor do
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420},
     options: [
-      position: [
-        type: :tuple,
-        spec: {integer(), integer()},
-        description:
-          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
-        default: {0, 0}
+      id: [
+        spec: pos_integer() | nil,
+        description: "ID used to distinguish input videos in the scene",
+        default: nil
       ]
     ]
 
@@ -46,13 +50,18 @@ defmodule Membrane.VideoCompositor do
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 
+    scene = Keyword.put(options.scene, :size, {options.caps.width, options.caps.height})
+    {:ok, {scene, manager}} = Scene.init(scene, %Manager{})
+
     state = %{
       ids_to_tracks: %{},
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
       pads_to_ids: %{},
-      new_pad_id: 0
+      new_pad_id: 0,
+      scene: scene,
+      manager: manager
     }
 
     {:ok, state}
@@ -65,14 +74,20 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_pad_added(pad, context, state) do
-    position = context.options.position
+    id = context.id
 
-    state = register_track(state, pad, position)
+    {:ok, state} = register_track(state, pad, id)
     {:ok, state}
   end
 
-  defp register_track(state, pad, position) do
-    new_id = state.new_pad_id
+  @impl true
+  def handle_other({:scene, scene}, _context, state) do
+    state = %{state | scene: scene, custom_scene?: true}
+    {:ok, state}
+  end
+
+  defp register_track(state, pad, id) do
+    new_id = if is_nil(id), do: state.new_pad_id, else: id
 
     state = %{
       state
@@ -80,7 +95,7 @@ defmodule Membrane.VideoCompositor do
         new_pad_id: new_id + 1
     }
 
-    %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{position: position})}
+    {:ok, %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}}
   end
 
   @impl true
@@ -88,16 +103,23 @@ defmodule Membrane.VideoCompositor do
     %{
       pads_to_ids: pads_to_ids,
       internal_state: internal_state,
-      ids_to_tracks: ids_to_tracks
+      ids_to_tracks: ids_to_tracks,
+      scene: scene
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    position = Map.get(ids_to_tracks, id).position
-    {:ok, internal_state} = state.compositor_module.add_video(internal_state, id, caps, position)
+    if Scene.video_registered?(scene, id) do
+      position = Scene.video_position(scene, id)
 
-    state = %{state | internal_state: internal_state}
-    {:ok, state}
+      {:ok, internal_state} =
+        state.compositor_module.add_video(internal_state, id, caps, position)
+
+      state = %{state | internal_state: internal_state}
+      {:ok, state}
+    else
+      {:ok, state}
+    end
   end
 
   @impl true
