@@ -4,10 +4,9 @@ defmodule Membrane.VideoCompositor.Scene do
   """
 
   # alias Membrane.VideoCompositor.Position
+  alias Membrane.VideoCompositor.Position
   alias Membrane.VideoCompositor.Scene.ComponentsManager, as: Manager
-  alias Membrane.VideoCompositor.Scene.Element
-  alias Membrane.VideoCompositor.Scene.ElementDescription
-  alias Membrane.VideoCompositor.Scene.Video
+  alias Membrane.VideoCompositor.Scene.{Element, ElementDescription, Video}
 
   @type error_t :: any()
   @type id_t :: non_neg_integer()
@@ -19,7 +18,8 @@ defmodule Membrane.VideoCompositor.Scene do
   """
   @type scene_description_t() :: [
           videos: %{required(id_t()) => ElementDescription.t()},
-          scenes: %{required(atom()) => t()}
+          scenes: %{required(atom()) => t()},
+          size: %{width: non_neg_integer(), height: non_neg_integer()}
         ]
 
   @typedoc """

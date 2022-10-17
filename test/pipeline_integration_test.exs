@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.Implementations
+  alias Membrane.VideoCompositor.{Implementations, Position}
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
@@ -55,23 +55,24 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   end)
 
   defp test_h264_pipeline(video_caps, duration, implementation, sub_dir_name, tmp_dir) do
-    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-    alias Membrane.VideoCompositor.Pipeline.Utility.Options
+    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
 
     {input_path, output_path, _ref_file_name} =
       TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
-    positions = [
-      {0, 0},
-      {div(video_caps.width, 2), 0},
-      {0, div(video_caps.height, 2)},
-      {div(video_caps.width, 2), div(video_caps.height, 2)}
+    scene = [
+      videos: %{
+        0 => [position: %Position{x: 0, y: 0}],
+        1 => [position: %Position{x: div(video_caps.width, 2), y: 0}],
+        2 => [position: %Position{x: 0, y: div(video_caps.height, 2)}],
+        3 => [position: %Position{x: div(video_caps.width, 2), y: div(video_caps.height, 2)}]
+      }
     ]
 
     inputs =
-      for pos <- positions,
+      for {id, _properties} <- Keyword.get(scene, :videos),
           do: %InputStream{
-            position: pos,
+            id: id,
             caps: video_caps,
             input: input_path
           }
@@ -82,7 +83,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       inputs: inputs,
       output: output_path,
       caps: out_caps,
-      implementation: implementation
+      implementation: implementation,
+      scene: scene
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineH264, custom_args: options)

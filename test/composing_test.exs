@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.Implementations
+  alias Membrane.VideoCompositor.{Implementations, Position}
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
@@ -40,8 +40,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), atom, binary(), binary()) ::
           nil
   defp test_raw_composing(video_caps, duration, implementation, tmp_dir, sub_dir_name) do
-    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-    alias Membrane.VideoCompositor.Pipeline.Utility.Options
+    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
 
     {input_path, output_path, reference_path} =
       TestingUtility.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
@@ -54,18 +53,20 @@ defmodule Membrane.VideoCompositor.Test.Composing do
         @filter_description
       )
 
-    positions = [
-      {0, 0},
-      {video_caps.width, 0},
-      {0, video_caps.height},
-      {video_caps.width, video_caps.height}
+    scene = [
+      videos: %{
+        0 => [position: %Position{x: 0, y: 0}],
+        1 => [position: %Position{x: video_caps.width, y: 0}],
+        2 => [position: %Position{x: 0, y: video_caps.height}],
+        3 => [position: %Position{x: video_caps.width, y: video_caps.height}]
+      }
     ]
 
     inputs =
       for(
-        pos <- positions,
+        {id, _properties} <- Keyword.get(scene, :videos),
         do: %InputStream{
-          position: pos,
+          id: id,
           caps: video_caps,
           input: input_path
         }
@@ -77,7 +78,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       inputs: inputs,
       output: output_path,
       caps: out_caps,
-      implementation: implementation
+      implementation: implementation,
+      scene: scene
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)

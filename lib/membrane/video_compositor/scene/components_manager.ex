@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.Scene.ComponentsManager do
   @type target_state_t() :: any()
   @type error_t() :: any()
 
-  @type t() :: %{
+  @type t() :: %__MODULE__{
           cached: %{required(id :: atom()) => state_t()}
         }
   defstruct cached: %{}

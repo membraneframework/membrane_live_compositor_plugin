@@ -29,10 +29,15 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Mock do
 
     source_links =
       source_children
-      |> Enum.map(fn {source_id, _element} -> link(source_id) |> to(:composer) end)
+      |> Enum.with_index()
+      |> Enum.map(fn {{source_id, _element}, id} ->
+        link(source_id)
+        |> via_in(:input, options: [id: id])
+        |> to(:composer)
+      end)
 
     scene = [
-      videos: 1..length(inputs) |> Map.new(&{&1, []})
+      videos: 0..(length(inputs) - 1) |> Map.new(&{&1, []})
     ]
 
     children =

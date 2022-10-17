@@ -3,6 +3,8 @@ defmodule Membrane.VideoCompositor.Pipeline.Utility.Options do
   Options for the testing pipeline.
   """
 
+  alias Membrane.VideoCompositor.Scene
+
   @typedoc """
   Specifications of the input video sources
   """
@@ -45,8 +47,9 @@ defmodule Membrane.VideoCompositor.Pipeline.Utility.Options do
           compositor: compositor_t(),
           implementation: implementation_t(),
           decoder: decoder_t(),
-          encoder: encoder_t()
+          encoder: encoder_t(),
+          scene: Scene.scene_description_t()
         }
-  @enforce_keys [:inputs, :output, :caps]
-  defstruct [:inputs, :output, :caps, :compositor, :implementation, :decoder, :encoder]
+  @enforce_keys [:inputs, :output, :caps, :scene]
+  defstruct [:inputs, :output, :caps, :compositor, :implementation, :decoder, :encoder, :scene]
 end

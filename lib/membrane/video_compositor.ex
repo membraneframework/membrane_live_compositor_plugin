@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor do
     options: [
       id: [
         spec: pos_integer() | nil,
-        description: "ID used to distinguish input videos in the scene",
+        description: "ID used to distinguish input videos on the scene",
         default: nil
       ]
     ]
@@ -50,18 +50,26 @@ defmodule Membrane.VideoCompositor do
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 
-    scene = Keyword.put(options.scene, :size, {options.caps.width, options.caps.height})
-    {:ok, {scene, manager}} = Scene.init(scene, %Manager{})
+    if Keyword.has_key?(options.scene, :size) do
+      raise ArgumentError,
+        message:
+          "Top scene given to the compositor should not have `:size` property initialized. It is automatically set to the caps' dimensions."
+    end
+
+    scene =
+      Keyword.put(options.scene, :size, %{width: options.caps.width, height: options.caps.height})
+
+    {scene, manager} = Scene.init(scene, %Manager{})
 
     state = %{
-      ids_to_tracks: %{},
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
-      pads_to_ids: %{},
-      new_pad_id: 0,
       scene: scene,
-      manager: manager
+      manager: manager,
+      pads_to_ids: %{},
+      ids_to_tracks: %{},
+      ignored_ids_to_tracks: %{}
     }
 
     {:ok, state}
@@ -74,28 +82,33 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_pad_added(pad, context, state) do
-    id = context.id
+    id = context.options.id
 
-    {:ok, state} = register_track(state, pad, id)
-    {:ok, state}
-  end
-
-  @impl true
-  def handle_other({:scene, scene}, _context, state) do
-    state = %{state | scene: scene, custom_scene?: true}
+    state = register_track(state, pad, id)
     {:ok, state}
   end
 
   defp register_track(state, pad, id) do
-    new_id = if is_nil(id), do: state.new_pad_id, else: id
-
     state = %{
       state
-      | pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
-        new_pad_id: new_id + 1
+      | pads_to_ids: Map.put(state.pads_to_ids, pad, id)
     }
 
-    {:ok, %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{})}}
+    if Scene.video_registered?(state.scene, id) do
+      %{state | ids_to_tracks: Map.put(state.ids_to_tracks, id, %Track{})}
+    else
+      %{state | ignored_ids_to_tracks: Map.put(state.ignored_ids_to_tracks, id, %Track{})}
+    end
+  end
+
+  @impl true
+  def handle_other({:scene, scene}, _context, state) do
+    state = set_scene(state, scene)
+    {:ok, state}
+  end
+
+  defp set_scene(_state, _scene) do
+    # raise "not_implemented"
   end
 
   @impl true
@@ -103,7 +116,6 @@ defmodule Membrane.VideoCompositor do
     %{
       pads_to_ids: pads_to_ids,
       internal_state: internal_state,
-      ids_to_tracks: ids_to_tracks,
       scene: scene
     } = state
 
@@ -131,14 +143,23 @@ defmodule Membrane.VideoCompositor do
       ) do
     %{
       ids_to_tracks: ids_to_tracks,
-      pads_to_ids: pads_to_ids
+      pads_to_ids: pads_to_ids,
+      scene: scene
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    ids_to_tracks = push_frame(ids_to_tracks, id, buffer)
+    ids_to_tracks =
+      if Scene.video_registered?(scene, id) do
+        push_frame(ids_to_tracks, id, buffer)
+      else
+        ids_to_tracks
+      end
 
-    state = %{state | ids_to_tracks: ids_to_tracks}
+    state = %{
+      state
+      | ids_to_tracks: ids_to_tracks
+    }
 
     case merge_frames(state) do
       {{:merged, buffers}, state} -> {{:ok, buffer: {:output, buffers}}, state}

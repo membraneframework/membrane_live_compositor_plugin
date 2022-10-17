@@ -4,9 +4,9 @@ defmodule Membrane.VideoCompositor.Pipeline.Utility.InputStream do
   """
   @type t() :: %__MODULE__{
           caps: Membrane.RawVideo.t(),
-          position: {non_neg_integer(), non_neg_integer()},
+          id: non_neg_integer(),
           input: String.t() | Membrane.Source
         }
-  @enforce_keys [:caps, :position, :input]
-  defstruct caps: nil, position: nil, input: nil
+  @enforce_keys [:caps, :id, :input]
+  defstruct caps: nil, id: nil, input: nil
 end
