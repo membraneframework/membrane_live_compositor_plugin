@@ -14,21 +14,34 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @impl true
-  def merge_frames(internal_state, frames) do
-    {Native.render_frame(internal_state, frames), internal_state}
+  def upload_frame(state, id, {frame, pts}) do
+    result = Native.upload_frame(state, id, frame, pts)
+
+    if match?(:ok, result) do
+      {:ok, state}
+    else
+      {:ok, frame} = result
+      {{:ok, frame}, state}
+    end
   end
 
   @impl true
-  def add_video(internal_state, id, input_caps, {x, y}, z \\ 0.0) do
+  def force_render(state) do
+    {:ok, frame} = Native.force_render(state)
+    {{:ok, frame}, state}
+  end
+
+  @impl true
+  def add_video(internal_state, id, input_caps, {x, y}, z \\ 0.0, scale_factor \\ 1.0) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
-    {:ok, position} = Position.from_tuple({x, y, z})
+    {:ok, position} = Position.from_tuple({x, y, z, scale_factor})
     :ok = Native.add_video(internal_state, id, input_caps, position)
     {:ok, internal_state}
   end
 
   @impl true
-  def set_position(internal_state, id, {x, y}, z \\ 0.0) do
-    {:ok, position} = Position.from_tuple({x, y, z})
+  def set_position(internal_state, id, {x, y}, z \\ 0.0, scale_factor \\ 1.0) do
+    {:ok, position} = Position.from_tuple({x, y, z, scale_factor})
     {Native.set_position(internal_state, id, position), internal_state}
   end
 

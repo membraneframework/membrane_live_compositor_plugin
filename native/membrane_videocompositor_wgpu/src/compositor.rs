@@ -58,6 +58,7 @@ pub struct State {
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_caps: crate::RawVideo,
+    last_pts: Option<u64>,
 }
 
 impl State {
@@ -248,28 +249,52 @@ impl State {
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
             output_caps: output_caps.clone(),
+            last_pts: None,
         }
     }
 
-    pub fn upload_texture(&self, idx: usize, frame: &[u8]) -> Result<(), CompositorError> {
+    pub fn upload_texture(
+        &mut self,
+        idx: usize,
+        frame: &[u8],
+        pts: u64,
+    ) -> Result<(), CompositorError> {
         self.input_videos
-            .get(&idx)
+            .get_mut(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?
             .upload_data(
                 &self.device,
                 &self.queue,
                 &self.yuv_to_rgba_converter,
+                &self.single_texture_bind_group_layout,
                 frame,
+                pts,
+                self.last_pts,
             );
         Ok(())
     }
 
-    pub async fn draw_into(&self, output_buffer: &mut [u8]) {
+    pub fn all_frames_ready(&self, frame_period: f64) -> bool {
+        let start_pts = self.last_pts;
+        let end_pts = start_pts.map(|pts| (pts as f64 + frame_period) as u64);
+
+        self.input_videos.values().all(|v| {
+            v.front_pts().is_some()
+                && (start_pts.is_none()
+                    || (start_pts.unwrap() <= v.front_pts().unwrap()
+                        && v.front_pts().unwrap() < end_pts.unwrap()))
+        })
+    }
+
+    /// This returns the pts of the new frame
+    pub async fn draw_into(&mut self, output_buffer: &mut [u8]) -> u64 {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("encoder"),
             });
+
+        let mut pts = 0;
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -295,8 +320,11 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
-            for video in self.input_videos.values() {
-                video.draw(&self.queue, &mut render_pass, &self.output_caps);
+            for video in self.input_videos.values_mut() {
+                if let Some(new_pts) = video.draw(&self.queue, &mut render_pass, &self.output_caps)
+                {
+                    pts = pts.max(new_pts);
+                }
             }
         }
 
@@ -311,6 +339,8 @@ impl State {
         self.output_textures
             .download(&self.device, output_buffer)
             .await;
+
+        pts
     }
 
     pub fn add_video(&mut self, idx: usize, position: VideoPosition) {

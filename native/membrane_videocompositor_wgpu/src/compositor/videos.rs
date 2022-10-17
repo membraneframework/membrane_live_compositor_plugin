@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
@@ -14,6 +16,12 @@ pub struct VideoPosition {
     pub width: u32,
     pub height: u32,
     pub z: f32,
+    pub scale: f64,
+}
+
+pub struct Frame {
+    pub pts: u64,
+    pub frame: RGBATexture,
 }
 
 #[rustfmt::skip]
@@ -23,11 +31,12 @@ const INDICES: [u16; 6] = [
 ];
 
 pub struct InputVideo {
+    frames: VecDeque<Frame>,
     yuv_textures: YUVTextures,
-    rgba_texture: RGBATexture,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
     position: VideoPosition,
+    previous_frame: Option<Frame>,
 }
 
 impl InputVideo {
@@ -46,12 +55,7 @@ impl InputVideo {
             Some(all_textures_bind_group_layout),
         );
 
-        let rgba_texture = RGBATexture::new(
-            device,
-            position.width,
-            position.height,
-            single_texture_bind_group_layout,
-        );
+        let frames = VecDeque::new();
 
         let vertices = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("video vertex buffer"),
@@ -68,22 +72,39 @@ impl InputVideo {
 
         Self {
             yuv_textures,
-            rgba_texture,
+            frames,
             vertices,
             indices,
             position,
+            previous_frame: None,
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn upload_data(
-        &self,
+        &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         converter: &YUVToRGBAConverter,
+        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
         data: &[u8],
+        pts: u64,
+        last_rendered_pts: Option<u64>,
     ) {
         self.yuv_textures.upload_data(queue, data);
-        converter.convert(device, queue, &self.yuv_textures, &self.rgba_texture);
+        let frame = RGBATexture::new(
+            device,
+            self.position.width,
+            self.position.height,
+            single_texture_bind_group_layout,
+        );
+        converter.convert(device, queue, &self.yuv_textures, &frame);
+
+        if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
+            self.frames.push_back(Frame { frame, pts });
+        } else if self.previous_frame.as_ref().unwrap().pts < pts {
+            self.previous_frame = Some(Frame { frame, pts });
+        }
     }
 
     pub fn vertex_data(&self, output_caps: &crate::RawVideo) -> [Vertex; 4] {
@@ -102,7 +123,7 @@ impl InputVideo {
             1.0,
         ) as f32;
         let right = lerp(
-            (position.x + width) as f64,
+            position.x as f64 + width as f64 * self.position.scale,
             0.0,
             scene_width as f64,
             -1.0,
@@ -110,7 +131,7 @@ impl InputVideo {
         ) as f32;
         let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
         let bot = lerp(
-            (position.y + height) as f64,
+            position.y as f64 + height as f64 * self.position.scale,
             0.0,
             scene_height as f64,
             1.0,
@@ -136,32 +157,53 @@ impl InputVideo {
             },
         ]
     }
-}
 
-impl<'a> InputVideo {
-    pub fn draw(
-        &'a self,
+    pub fn front_pts(&self) -> Option<u64> {
+        self.frames.front().map(|f| f.pts)
+    }
+
+    /// This returns pts of the used frame
+    pub fn draw<'a>(
+        &'a mut self,
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
         output_caps: &crate::RawVideo,
-    ) {
+    ) -> Option<u64> {
+        if self.frames.front().is_none() && self.previous_frame.is_none() {
+            return None;
+        }
+
         queue.write_buffer(
             &self.vertices,
             0,
             bytemuck::cast_slice(&self.vertex_data(output_caps)),
         );
 
+        if self.frames.front().is_some() {
+            self.previous_frame = self.frames.pop_front();
+        }
+
         render_pass.set_bind_group(
             0,
-            self.rgba_texture.texture.bind_group.as_ref().unwrap(),
+            self.previous_frame
+                .as_ref()
+                .unwrap()
+                .frame
+                .texture
+                .bind_group
+                .as_ref()
+                .unwrap(),
             &[],
         );
+
         render_pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.set_vertex_buffer(0, self.vertices.slice(..));
 
         let indices_len = (self.indices.size() / std::mem::size_of::<u16>() as u64) as u32;
 
         render_pass.draw_indexed(0..indices_len, 0, 0..1);
+
+        Some(self.previous_frame.as_ref().unwrap().pts)
     }
 }
 

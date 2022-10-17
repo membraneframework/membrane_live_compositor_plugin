@@ -9,13 +9,17 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @type internal_state_t :: any()
   @type error_t :: any()
   @type id_t() :: non_neg_integer()
+  @type frame_with_pts() :: {binary(), Membrane.Time.t()}
 
   @spec init(RawVideo.t()) :: {:ok, internal_state_t()} | {:error, error_t()}
   def init(_out_video), do: error()
 
-  @spec render_frame(internal_state_t(), [{id_t(), binary()}]) ::
-          {:ok, binary()} | {:error, error_t()}
-  def render_frame(_state, _input_videos), do: error()
+  @spec upload_frame(internal_state_t(), id_t(), binary(), Membrane.Time.t()) ::
+          :ok | {:ok, frame_with_pts()} | {:error, atom()}
+  def upload_frame(_state, _id, _frame, _pts), do: error()
+
+  @spec force_render(internal_state_t()) :: {:ok, frame_with_pts()} | {:error, atom()}
+  def force_render(_state), do: error()
 
   @spec add_video(internal_state_t(), id_t(), RawVideo.t(), Position.t()) ::
           :ok | {:error, error_t()}

@@ -11,11 +11,12 @@ defmodule Membrane.VideoCompositor.Common.RawVideo do
   @type t :: %__MODULE__{
           width: non_neg_integer(),
           height: non_neg_integer(),
-          pixel_format: pixel_format_t()
+          pixel_format: pixel_format_t(),
+          framerate: {pos_integer(), pos_integer()}
         }
 
-  @enforce_keys [:width, :height, :pixel_format]
-  defstruct [:width, :height, :pixel_format]
+  @enforce_keys [:width, :height, :pixel_format, :framerate]
+  defstruct [:width, :height, :pixel_format, :framerate]
 
   @spec from_membrane_raw_video(Membrane.RawVideo.t()) :: {:ok, __MODULE__.t()}
   def from_membrane_raw_video(%Membrane.RawVideo{} = raw_video) do
@@ -23,7 +24,8 @@ defmodule Membrane.VideoCompositor.Common.RawVideo do
      %__MODULE__{
        width: raw_video.width,
        height: raw_video.height,
-       pixel_format: raw_video.pixel_format
+       pixel_format: raw_video.pixel_format,
+       framerate: raw_video.framerate
      }}
   end
 end
@@ -45,13 +47,13 @@ defmodule Membrane.VideoCompositor.Common.Position do
   @enforce_keys [:x, :y, :z, :scale_factor]
   defstruct [:x, :y, z: 0.0, scale_factor: 1.0]
 
-  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) ::
+  @spec from_tuple({non_neg_integer(), non_neg_integer(), float(), float()}) ::
           {:ok, __MODULE__.t()} | {:error, atom()}
-  def from_tuple({x, y, z}) do
+  def from_tuple({x, y, z, scale}) do
     if z < 0.0 or z > 1.0 do
       {:error, :z_out_of_range}
     else
-      {:ok, %__MODULE__{x: x, y: y, z: z}}
+      {:ok, %__MODULE__{x: x, y: y, z: z, scale_factor: scale}}
     end
   end
 end

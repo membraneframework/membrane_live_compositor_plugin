@@ -9,6 +9,7 @@ pub struct RawVideo {
     pub width: u32,
     pub height: u32,
     pub pixel_format: rustler::Atom,
+    pub framerate: (u64, u64),
 }
 
 #[derive(Debug, rustler::NifStruct)]
@@ -17,6 +18,7 @@ struct Position {
     x: u32,
     y: u32,
     z: f32,
+    scale_factor: f64,
 }
 
 mod atoms {
@@ -67,26 +69,62 @@ fn init(
     ))
 }
 
+enum UploadFrameResult<'a> {
+    WithoutFrame,
+    WithFrame(rustler::Binary<'a>, u64),
+}
+
+impl rustler::Encoder for UploadFrameResult<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        match self {
+            Self::WithoutFrame => atoms::ok().encode(env),
+            Self::WithFrame(frame, pts) => (atoms::ok(), (frame.to_term(env), pts)).encode(env),
+        }
+    }
+}
+
 #[rustler::nif]
-fn render_frame<'a>(
+fn upload_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,
-    frames: Vec<(usize, rustler::Binary)>,
-) -> Result<(rustler::Atom, rustler::Term<'a>), rustler::Error> {
-    let state = state.lock().unwrap();
+    id: usize,
+    frame: rustler::Binary,
+    pts: u64,
+) -> Result<UploadFrameResult<'a>, rustler::Error> {
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    for (i, frame) in &frames {
-        state.compositor.upload_texture(*i, frame)?
+    state.compositor.upload_texture(id, &frame, pts)?;
+
+    if state.compositor.all_frames_ready(
+        state.output_caps.framerate.1 as f64 / state.output_caps.framerate.0 as f64,
+    ) {
+        let mut output = rustler::OwnedBinary::new(
+            state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+        )
+        .unwrap();
+        let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
+
+        Ok(UploadFrameResult::WithFrame(output.release(env), pts))
+    } else {
+        Ok(UploadFrameResult::WithoutFrame)
     }
+}
+
+#[rustler::nif]
+fn force_render(
+    env: rustler::Env<'_>,
+    state: ResourceArc<State>,
+) -> Result<(rustler::Atom, (rustler::Term<'_>, u64)), rustler::Error> {
+    let mut state = state.lock().unwrap();
 
     let mut output = rustler::OwnedBinary::new(
         state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
     )
     .unwrap(); //FIXME: return an error instead of panicking here
 
-    pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
+    let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
 
-    Ok((atoms::ok(), output.release(env).to_term(env)))
+    Ok((atoms::ok(), (output.release(env).to_term(env), pts)))
 }
 
 #[rustler::nif]
@@ -109,6 +147,7 @@ fn add_video(
             width: input_video.width,
             height: input_video.height,
             z: position.z,
+            scale: position.scale_factor,
         },
     );
     Ok(atoms::ok())
@@ -136,7 +175,14 @@ fn remove_video(
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
-    [init, render_frame, add_video, remove_video, set_position],
+    [
+        init,
+        force_render,
+        add_video,
+        remove_video,
+        set_position,
+        upload_frame
+    ],
     load = |env, _| {
         rustler::resource!(State, env);
         true
