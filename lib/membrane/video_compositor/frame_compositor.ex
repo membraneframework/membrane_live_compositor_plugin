@@ -40,7 +40,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               input_caps :: RawVideo.t(),
               position :: {x :: non_neg_integer(), y :: non_neg_integer()},
               z :: float(),
-              scale_factor :: float()
+              scale :: float()
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
@@ -63,6 +63,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               id :: id_t(),
               position :: {x :: non_neg_integer(), y :: non_neg_integer()},
               z :: float(),
-              scale_factor :: float()
+              scale :: float()
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 end

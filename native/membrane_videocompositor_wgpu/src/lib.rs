@@ -18,7 +18,7 @@ struct Position {
     x: u32,
     y: u32,
     z: f32,
-    scale_factor: f64,
+    scale: f64,
 }
 
 mod atoms {
@@ -147,7 +147,7 @@ fn add_video(
             width: input_video.width,
             height: input_video.height,
             z: position.z,
-            scale: position.scale_factor,
+            scale: position.scale,
         },
     );
     Ok(atoms::ok())

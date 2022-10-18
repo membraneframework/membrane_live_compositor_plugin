@@ -39,7 +39,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  x: 0,
                  y: 0,
                  z: 0.0,
-                 scale_factor: 1.0
+                 scale: 1.0
                })
 
       assert :ok =
@@ -47,7 +47,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  x: 0,
                  y: 360,
                  z: 0.0,
-                 scale_factor: 1.0
+                 scale: 1.0
                })
 
       assert :ok = Native.upload_frame(state, 0, frame, 1)
@@ -85,7 +85,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  x: 0,
                  y: 0,
                  z: 0.5,
-                 scale_factor: 1.0
+                 scale: 1.0
                })
 
       assert :ok =
@@ -93,7 +93,7 @@ defmodule VideoCompositor.Wgpu.Test do
                  x: 0,
                  y: 0,
                  z: 0.0,
-                 scale_factor: 1.0
+                 scale: 1.0
                })
 
       s = bit_size(frame)

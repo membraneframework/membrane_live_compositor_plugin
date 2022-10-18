@@ -41,11 +41,11 @@ defmodule Membrane.VideoCompositor.Common.Position do
           x: non_neg_integer(),
           y: non_neg_integer(),
           z: float(),
-          scale_factor: float()
+          scale: float()
         }
 
-  @enforce_keys [:x, :y, :z, :scale_factor]
-  defstruct [:x, :y, z: 0.0, scale_factor: 1.0]
+  @enforce_keys [:x, :y, :z, :scale]
+  defstruct [:x, :y, z: 0.0, scale: 1.0]
 
   @spec from_tuple({non_neg_integer(), non_neg_integer(), float(), float()}) ::
           {:ok, __MODULE__.t()} | {:error, atom()}
@@ -53,7 +53,7 @@ defmodule Membrane.VideoCompositor.Common.Position do
     if z < 0.0 or z > 1.0 do
       {:error, :z_out_of_range}
     else
-      {:ok, %__MODULE__{x: x, y: y, z: z, scale_factor: scale}}
+      {:ok, %__MODULE__{x: x, y: y, z: z, scale: scale}}
     end
   end
 end
