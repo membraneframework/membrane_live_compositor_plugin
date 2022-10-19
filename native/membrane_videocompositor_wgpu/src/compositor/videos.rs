@@ -19,24 +19,31 @@ pub struct VideoPosition {
     pub scale: f64,
 }
 
-pub struct Frame {
-    pub pts: u64,
-    pub frame: RGBATexture,
+pub enum Message {
+    Frame { pts: u64, frame: RGBATexture },
+    EndOfStream,
+}
+
+pub enum DrawResult {
+    /// Contains the pts of the rendered frame
+    Rendered(u64),
+    NotRendered,
+    EndOfStream,
 }
 
 #[rustfmt::skip]
 const INDICES: [u16; 6] = [
-    0, 1, 3, 
+    0, 1, 3,
     1, 2, 3
 ];
 
 pub struct InputVideo {
-    frames: VecDeque<Frame>,
+    frames: VecDeque<Message>,
     yuv_textures: YUVTextures,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
     position: VideoPosition,
-    previous_frame: Option<Frame>,
+    previous_frame: Option<Message>,
 }
 
 impl InputVideo {
@@ -100,10 +107,17 @@ impl InputVideo {
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
 
+        // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
         if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
-            self.frames.push_back(Frame { frame, pts });
-        } else if self.previous_frame.as_ref().unwrap().pts < pts {
-            self.previous_frame = Some(Frame { frame, pts });
+            // then we can add the frame to the queue (we assume the frames come in order)
+            self.frames.push_back(Message::Frame { frame, pts });
+        }
+        // otherwise, our frame is too old to be added to the queue, so we check if it is newer than the previously used frame,
+        // which is our fallback in case we are forced to render before a new enough frame arrives.
+        else if let Message::Frame { pts: prev_pts, .. } = self.previous_frame.as_ref().unwrap() {
+            if *prev_pts < pts {
+                self.previous_frame = Some(Message::Frame { frame, pts });
+            }
         }
     }
 
@@ -159,7 +173,11 @@ impl InputVideo {
     }
 
     pub fn front_pts(&self) -> Option<u64> {
-        self.frames.front().map(|f| f.pts)
+        if let Some(Message::Frame { pts, .. }) = self.frames.front() {
+            Some(*pts)
+        } else {
+            None
+        }
     }
 
     /// This returns pts of the used frame
@@ -168,33 +186,28 @@ impl InputVideo {
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
         output_caps: &crate::RawVideo,
-    ) -> Option<u64> {
-        if self.frames.front().is_none() && self.previous_frame.is_none() {
-            return None;
-        }
-
+    ) -> DrawResult {
         queue.write_buffer(
             &self.vertices,
             0,
             bytemuck::cast_slice(&self.vertex_data(output_caps)),
         );
 
-        if self.frames.front().is_some() {
-            self.previous_frame = self.frames.pop_front();
-        }
+        let (frame, pts) = match self.frames.front() {
+            Some(Message::Frame { frame, pts }) => (frame, *pts),
 
-        render_pass.set_bind_group(
-            0,
-            self.previous_frame
-                .as_ref()
-                .unwrap()
-                .frame
-                .texture
-                .bind_group
-                .as_ref()
-                .unwrap(),
-            &[],
-        );
+            Some(Message::EndOfStream) => return DrawResult::EndOfStream,
+
+            None => match self.previous_frame.as_ref() {
+                Some(Message::Frame { pts, frame }) => (frame, *pts),
+
+                Some(Message::EndOfStream) => return DrawResult::EndOfStream,
+
+                None => return DrawResult::NotRendered,
+            },
+        };
+
+        render_pass.set_bind_group(0, frame.texture.bind_group.as_ref().unwrap(), &[]);
 
         render_pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.set_vertex_buffer(0, self.vertices.slice(..));
@@ -203,7 +216,17 @@ impl InputVideo {
 
         render_pass.draw_indexed(0..indices_len, 0, 0..1);
 
-        Some(self.previous_frame.as_ref().unwrap().pts)
+        DrawResult::Rendered(pts)
+    }
+
+    pub fn pop_frame(&mut self) {
+        if let Some(Message::Frame { pts, frame }) = self.frames.pop_front() {
+            self.previous_frame = Some(Message::Frame { pts, frame });
+        }
+    }
+
+    pub fn send_end_of_stream(&mut self) {
+        self.frames.push_back(Message::EndOfStream);
     }
 }
 

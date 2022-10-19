@@ -1,3 +1,4 @@
+use errors::CompositorError;
 use rustler::ResourceArc;
 
 mod compositor;
@@ -31,8 +32,8 @@ mod atoms {
 struct State(std::sync::Mutex<InnerState>);
 
 impl State {
-    fn new(output_caps: RawVideo) -> Self {
-        Self(std::sync::Mutex::new(InnerState::new(output_caps)))
+    fn new(output_caps: RawVideo) -> Result<Self, CompositorError> {
+        Ok(Self(std::sync::Mutex::new(InnerState::new(output_caps)?)))
     }
 }
 
@@ -50,11 +51,11 @@ struct InnerState {
 }
 
 impl InnerState {
-    fn new(output_caps: RawVideo) -> Self {
-        Self {
-            compositor: pollster::block_on(compositor::State::new(&output_caps)),
+    fn new(output_caps: RawVideo) -> Result<Self, CompositorError> {
+        Ok(Self {
+            compositor: pollster::block_on(compositor::State::new(&output_caps))?,
             output_caps,
-        }
+        })
     }
 }
 
@@ -65,7 +66,7 @@ fn init(
 ) -> Result<(rustler::Atom, rustler::ResourceArc<State>), rustler::Error> {
     Ok((
         atoms::ok(),
-        rustler::ResourceArc::new(State::new(output_caps)),
+        rustler::ResourceArc::new(State::new(output_caps)?),
     ))
 }
 
@@ -173,6 +174,17 @@ fn remove_video(
     Ok(atoms::ok())
 }
 
+#[rustler::nif]
+fn send_end_of_stream(
+    #[allow(unused)] env: rustler::Env<'_>,
+    state: ResourceArc<State>,
+    id: usize,
+) -> Result<rustler::Atom, rustler::Error> {
+    state.lock().unwrap().compositor.send_end_of_stream(id)?;
+
+    Ok(atoms::ok())
+}
+
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [
@@ -181,7 +193,8 @@ rustler::init!(
         add_video,
         remove_video,
         set_position,
-        upload_frame
+        upload_frame,
+        send_end_of_stream
     ],
     load = |env, _| {
         rustler::resource!(State, env);

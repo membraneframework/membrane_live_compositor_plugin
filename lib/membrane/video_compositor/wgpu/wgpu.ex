@@ -50,4 +50,10 @@ defmodule Membrane.VideoCompositor.Wgpu do
     :ok = Native.remove_video(internal_state, id)
     {:ok, internal_state}
   end
+
+  @impl true
+  def send_end_of_stream(internal_state, id) do
+    :ok = Native.send_end_of_stream(internal_state, id)
+    {:ok, internal_state}
+  end
 end

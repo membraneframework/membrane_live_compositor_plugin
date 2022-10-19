@@ -62,7 +62,11 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(output_caps: &crate::RawVideo) -> State {
+    pub async fn new(output_caps: &crate::RawVideo) -> Result<State, CompositorError> {
+        if output_caps.framerate.0 == 0 {
+            return Err(CompositorError::BadFramerate);
+        }
+
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -234,7 +238,7 @@ impl State {
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
 
-        Self {
+        Ok(Self {
             device,
             input_videos,
             output_textures,
@@ -250,7 +254,7 @@ impl State {
             rgba_to_yuv_converter,
             output_caps: output_caps.clone(),
             last_pts: None,
-        }
+        })
     }
 
     pub fn upload_texture(
@@ -295,6 +299,7 @@ impl State {
             });
 
         let mut pts = 0;
+        let mut ended_ids = Vec::new();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -320,13 +325,19 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
-            for video in self.input_videos.values_mut() {
-                if let Some(new_pts) = video.draw(&self.queue, &mut render_pass, &self.output_caps)
-                {
-                    pts = pts.max(new_pts);
+            for (&id, video) in self.input_videos.iter_mut() {
+                match video.draw(&self.queue, &mut render_pass, &self.output_caps) {
+                    DrawResult::Rendered(new_pts) => pts = pts.max(new_pts),
+                    DrawResult::NotRendered => {}
+                    DrawResult::EndOfStream => ended_ids.push(id),
                 }
             }
         }
+
+        ended_ids.iter().for_each(|id| {
+            self.input_videos.remove(id);
+        });
+        self.input_videos.values_mut().for_each(|v| v.pop_frame());
 
         self.queue.submit(Some(encoder.finish()));
 
@@ -359,6 +370,14 @@ impl State {
         self.input_videos
             .remove(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?;
+        Ok(())
+    }
+
+    pub fn send_end_of_stream(&mut self, idx: usize) -> Result<(), CompositorError> {
+        self.input_videos
+            .get_mut(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?
+            .send_end_of_stream();
         Ok(())
     }
 }

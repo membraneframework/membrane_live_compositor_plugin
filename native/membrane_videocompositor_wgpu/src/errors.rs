@@ -6,6 +6,8 @@ pub enum CompositorError {
     NotImplemented,
     #[error("bad video index: {0}")]
     BadVideoIndex(usize),
+    #[error("bad framerate")]
+    BadFramerate,
 }
 
 impl rustler::Encoder for CompositorError {
@@ -20,6 +22,9 @@ impl rustler::Encoder for CompositorError {
                 rustler::Atom::from_str(env, "bad_video_index").unwrap(),
                 *idx,
             )
+                .encode(env),
+            CompositorError::BadFramerate => rustler::Atom::from_str(env, "bad_framerate")
+                .unwrap()
                 .encode(env),
         }
     }

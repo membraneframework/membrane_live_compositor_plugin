@@ -52,6 +52,14 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
+  Send an end of stream to a video with the given `id`.
+
+  This causes the video to be deleted after it's enqueued frames are used up.
+  """
+  @callback send_end_of_stream(internal_state_t(), id_t()) ::
+              {:ok, internal_state_t()} | {:error, error_t()}
+
+  @doc """
   Video of the given `id` should be registered, using `id` of nonexistent video may panic the compositor.
 
   `x` and `y` are pixel coordinates specifying where the top-right corner of the video should be.
