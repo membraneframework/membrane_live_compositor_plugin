@@ -398,7 +398,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "membrane_videocompositor_wgpu"
+name = "membrane_videocompositor"
 version = "0.1.0"
 dependencies = [
  "bytemuck",

@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @moduledoc false
   use Rustler,
     otp_app: :membrane_video_compositor_plugin,
-    crate: "membrane_videocompositor_wgpu"
+    crate: "membrane_videocompositor"
 
   alias Membrane.VideoCompositor.Common.{Position, RawVideo}
 
