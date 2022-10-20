@@ -18,12 +18,13 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
       pixel_format: in_caps.pixel_format
     }
 
-    options = %Options{options |
-      decoder: parser,
-      compositor: %Membrane.VideoCompositor{
-        implementation: options.implementation,
-        caps: options.caps
-      }
+    options = %Options{
+      options
+      | decoder: parser,
+        compositor: %Membrane.VideoCompositor{
+          implementation: options.implementation,
+          caps: options.caps
+        }
     }
 
     Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)

@@ -45,47 +45,60 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames do
     {:ok, frame_4k} = File.read(raw_4k_frame_path)
 
     frames_720p = [{0, frame_720p}, {1, frame_720p}]
-    frames_1080p = [ {0, frame_1080p}, {1, frame_1080p}]
+    frames_1080p = [{0, frame_1080p}, {1, frame_1080p}]
     frames_4k = [{0, frame_4k}, {1, frame_4k}]
 
-    {:ok, opengl_rust_internal_state_720p} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_720p)
-    {:ok, opengl_rust_internal_state_1080p} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_1080p)
-    {:ok, opengl_rust_internal_state_4k} = Membrane.VideoCompositor.OpenGL.Rust.init(caps_4k)
-
-
-
-    # FIXME: Add wgpu when it's ready
-    # FIXME: Fixes like the above shouldn't be manual
+    {:ok, internal_state_720p} = Membrane.VideoCompositor.Wgpu.init(caps_720p)
+    {:ok, internal_state_1080p} = Membrane.VideoCompositor.Wgpu.init(caps_1080p)
+    {:ok, internal_state_4k} = Membrane.VideoCompositor.Wgpu.init(caps_4k)
 
     internal_states_720p = %{
-      opengl_rust: opengl_rust_internal_state_720p,
+      wgpu: internal_state_720p
     }
 
     internal_states_1080p = %{
-      opengl_rust: opengl_rust_internal_state_1080p,
+      wgpu: internal_state_1080p
     }
 
     internal_states_4k = %{
-      opengl_rust: opengl_rust_internal_state_4k,
+      wgpu: internal_state_4k
     }
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_720p.opengl_rust, 0, caps_720p, {0, 0})
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_720p.opengl_rust, 1, caps_720p, {0, caps_720p.height})
+    Membrane.VideoCompositor.Wgpu.add_video(internal_states_720p.wgpu, 0, caps_720p, {0, 0})
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_1080p.opengl_rust, 0, caps_1080p, {0, 0})
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_1080p.opengl_rust, 1, caps_1080p, {0, caps_1080p.height})
+    Membrane.VideoCompositor.Wgpu.add_video(
+      internal_states_720p.wgpu,
+      1,
+      caps_720p,
+      {0, caps_720p.height}
+    )
 
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_4k.opengl_rust, 0, caps_4k, {0, 0})
-    Membrane.VideoCompositor.OpenGL.Rust.add_video(internal_states_4k.opengl_rust, 1, caps_4k, {0, caps_4k.height})
+    Membrane.VideoCompositor.Wgpu.add_video(internal_states_1080p.wgpu, 0, caps_1080p, {0, 0})
+
+    Membrane.VideoCompositor.Wgpu.add_video(
+      internal_states_1080p.wgpu,
+      1,
+      caps_1080p,
+      {0, caps_1080p.height}
+    )
+
+    Membrane.VideoCompositor.Wgpu.add_video(internal_states_4k.wgpu, 0, caps_4k, {0, 0})
+
+    Membrane.VideoCompositor.Wgpu.add_video(
+      internal_states_4k.wgpu,
+      1,
+      caps_4k,
+      {0, caps_4k.height}
+    )
 
     range = 1..merges_per_iteration
 
     Benchee.run(
       %{
-        "OpenGL Rust - Merge two frames to one - #{merges_per_iteration} merges per iteration" =>
+        "wgpu - Merge two frames to one - #{merges_per_iteration} merges per iteration" =>
           fn {frames, internal_states} ->
-            for _ <- range, do:
-              Membrane.VideoCompositor.OpenGL.Rust.merge_frames(internal_states.opengl_rust, frames)
+            for _ <- range,
+                do: Membrane.VideoCompositor.Wgpu.merge_frames(internal_states.wgpu, frames)
           end
       },
       inputs: %{
@@ -118,6 +131,7 @@ case benchmark_options do
   [merges_per_iteration] ->
     {merges_per_iteration, _} = Integer.parse(merges_per_iteration)
     Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames.benchmark(merges_per_iteration)
+
   _other ->
     Membrane.VideoCompositor.Benchmark.Benchee.MergeFrames.benchmark(default_merges_per_iteration)
 end

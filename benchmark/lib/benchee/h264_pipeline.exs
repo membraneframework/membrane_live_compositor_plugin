@@ -61,10 +61,9 @@ defmodule Membrane.VideoCompositor.Benchmark.Benchee.H264 do
 
     Benchee.run(
       %{
-        # FIXME: Add wgpu when it's ready
-        # FIXME: Fixes like the above shouldn't be manual
-        "OpenGL Rust - Two videos into one h264 pipeline benchmark" => fn options ->
-          run_h264_pipeline(%{options | implementation: :opengl_rust})
+        # FIXME: inputting the implementations manually is a really bad design and I hate it ~jerzy
+        "wgpu - Two videos into one h264 pipeline benchmark" => fn options ->
+          run_h264_pipeline(%{options | implementation: :wgpu})
         end
       },
       inputs: %{
