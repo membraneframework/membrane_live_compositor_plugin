@@ -46,11 +46,11 @@ defmodule Membrane.VideoCompositor.Implementations.Common.Position do
 
   @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) ::
           {:ok, __MODULE__.t()} | {:error, atom()}
+  def from_tuple({_x, _y, z}) when z < 0.0 or z > 1.0 do
+    {:error, :z_out_of_range}
+  end
+
   def from_tuple({x, y, z}) do
-    if z < 0.0 or z > 1.0 do
-      {:error, :z_out_of_range}
-    else
-      {:ok, %__MODULE__{x: x, y: y, z: z}}
-    end
+    {:ok, %__MODULE__{x: x, y: y, z: z}}
   end
 end
