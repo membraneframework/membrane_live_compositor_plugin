@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   @doc """
   Registers a new input video with the given numerical `id`.
   Provided `id` should be unique within all previous ones, otherwise function may cause undefined behaviour.
-  `x` and `y` are pixel coordinates specifying where the top-right corner of the video should be.
+  `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
   """
@@ -44,7 +44,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
 
   @doc """
   Video of the given `id` should be registered, using `id` of nonexistent video may cause undefined behaviour.
-  `x` and `y` are pixel coordinates specifying where the top-right corner of the video should be.
+  `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
   """
