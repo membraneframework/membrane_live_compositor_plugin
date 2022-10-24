@@ -78,14 +78,14 @@ defmodule VideoCompositor.Wgpu.Test do
                Native.add_video(state, 0, caps, %Position{
                  x: 0,
                  y: 0,
-                 z: 0.5
+                 z: 0.0
                })
 
       assert :ok =
                Native.add_video(state, 1, caps, %Position{
                  x: 0,
                  y: 0,
-                 z: 0.0
+                 z: 0.5
                })
 
       s = bit_size(frame)

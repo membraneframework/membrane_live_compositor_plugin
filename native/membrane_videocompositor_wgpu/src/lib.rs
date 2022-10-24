@@ -108,7 +108,13 @@ fn add_video(
             },
             width: input_video.width,
             height: input_video.height,
-            z: position.z,
+            // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
+            // which is outside of the wgpu clip space
+            z: if position.z == 0.0 {
+                1.0 - 1e-7
+            } else {
+                1.0 - position.z
+            },
         },
     );
     Ok(atoms::ok())

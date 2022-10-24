@@ -24,7 +24,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   Provided `id` should be unique within all previous ones, otherwise function may cause undefined behaviour.
   `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
-  A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
+  A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
   """
   @callback add_video(
               internal_state :: internal_state_t,
@@ -46,7 +46,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   Video of the given `id` should be registered, using `id` of nonexistent video may cause undefined behaviour.
   `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
-  A video with a lower `z` coordinate will cover videos with higher `z` coordinates.
+  A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
   """
   @callback set_position(
               internal_state :: internal_state_t,
