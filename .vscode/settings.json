@@ -21,7 +21,6 @@
         "parseutils.h": "c"
     },
     "rust-analyzer.linkedProjects": [
-        "native/membrane_videocompositor_opengl_rust/Cargo.toml",
-        "native/membrane_videocompositor_wgpu/Cargo.toml"
+        "native/membrane_videocompositor/Cargo.toml"
     ]
 }

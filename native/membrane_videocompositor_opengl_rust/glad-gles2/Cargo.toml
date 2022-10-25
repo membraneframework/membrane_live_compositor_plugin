@@ -1,7 +1,0 @@
-# Bindings generated using https://gen.glad.sh/
-[package]
-name = "glad-gles2"
-version = "2.0.0-beta"
-authors = ["David Herberth <github@dav1d.de>"]
-
-[features]

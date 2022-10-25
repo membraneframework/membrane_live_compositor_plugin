@@ -4,8 +4,8 @@ defmodule Membrane.VideoCompositor.Wgpu do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
-  alias Membrane.VideoCompositor.Implementations.Wgpu.Native
+  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Wgpu.Native
 
   @impl true
   def init(output_caps) do

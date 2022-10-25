@@ -22,7 +22,7 @@ out_path = Path.join(demo_path, "out-#{basename}")
 Utility.generate_testing_video(in_path, caps, video_duration)
 
 implementation =
-  Implementations.get_implementation_atom_from_string(System.get_env("IMPL", "opengl_rust"))
+  Implementations.get_implementation_atom_from_string(System.get_env("IMPL", "wgpu"))
 
 {sink, encoder} =
   case s = System.get_env("SINK", "file") do

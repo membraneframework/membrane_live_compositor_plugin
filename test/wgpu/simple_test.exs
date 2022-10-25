@@ -1,9 +1,9 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Implementations.Common.{Position, RawVideo}
-  alias Membrane.VideoCompositor.Implementations.Wgpu.Native
+  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
   alias Membrane.VideoCompositor.Test.Support.Utility
+  alias Membrane.VideoCompositor.Wgpu.Native
 
   describe "wgpu native test on" do
     @describetag :tmp_dir

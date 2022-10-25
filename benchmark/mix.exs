@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Mixfile do
       version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
+      deps: deps()
     ]
   end
 

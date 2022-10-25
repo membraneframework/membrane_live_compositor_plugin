@@ -8,7 +8,7 @@
 
 ```elixir
 defmodule Membrane.VideoCompositor.Wgpu do
-    use Rustler, otp_app: :membrane_video_compositor_plugin, crate: "membrane_videocompositor_wgpu"
+    use Rustler, otp_app: :membrane_video_compositor_plugin, crate: "membrane_videocompositor"
 
     # When your NIF is loaded, it will override this function.
     def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
