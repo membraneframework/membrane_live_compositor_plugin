@@ -33,8 +33,14 @@ defmodule VideoCompositor.OpenGL.Rust.Test do
                  pixel_format: :I420
                })
 
-      assert :ok = Rust.add_video(state, 0, in_video, %Common.Position{x: 0, y: 0})
-      assert :ok = Rust.add_video(state, 1, in_video, %Common.Position{x: 0, y: in_video.height})
+      assert :ok = Rust.add_video(state, 0, in_video, %Common.Position{x: 0, y: 0, z: 0.0})
+
+      assert :ok =
+               Rust.add_video(state, 1, in_video, %Common.Position{
+                 x: 0,
+                 y: in_video.height,
+                 z: 0.0
+               })
 
       assert {:ok, out_frame} = Rust.join_frames(state, [{0, frame}, {1, frame}])
       assert {:ok, file} = File.open(out_path, [:write])

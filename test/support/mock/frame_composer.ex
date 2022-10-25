@@ -31,7 +31,8 @@ defmodule Membrane.VideoCompositor.Test.Support.Mock.FrameComposer do
         %{inputs: inputs} = internal_state,
         id,
         input_caps,
-        _position
+        _position,
+        _z \\ 0.0
       ) do
     internal_state = %{internal_state | inputs: Map.put(inputs, id, input_caps)}
     {:ok, internal_state}
@@ -47,7 +48,8 @@ defmodule Membrane.VideoCompositor.Test.Support.Mock.FrameComposer do
   def set_position(
         internal_state,
         _id,
-        _position
+        _position,
+        _z \\ 0.0
       ) do
     {:ok, internal_state}
   end

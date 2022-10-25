@@ -5,7 +5,7 @@ defmodule VideoCompositor.Wgpu.Test do
   alias Membrane.VideoCompositor.Implementations.Wgpu.Native
   alias Membrane.VideoCompositor.Test.Support.Utility
 
-  describe "wgpu native test on " do
+  describe "wgpu native test on" do
     @describetag :tmp_dir
     @describetag :wgpu
 
@@ -15,7 +15,6 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, _state} = Native.init(out_video)
     end
 
-    @tag timeout: :infinity
     test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
       {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
       assert {:ok, frame} = File.read(in_path)
@@ -36,13 +35,15 @@ defmodule VideoCompositor.Wgpu.Test do
       assert :ok =
                Native.add_video(state, 0, in_video, %Position{
                  x: 0,
-                 y: 0
+                 y: 0,
+                 z: 0.0
                })
 
       assert :ok =
                Native.add_video(state, 1, in_video, %Position{
                  x: 0,
-                 y: 360
+                 y: 360,
+                 z: 0.0
                })
 
       assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])
@@ -59,6 +60,44 @@ defmodule VideoCompositor.Wgpu.Test do
       )
 
       Utility.compare_contents_with_error(out_path, ref_path)
+    end
+
+    test "z value affects composition", %{tmp_dir: tmp_dir} do
+      {in_path, out_path, _ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
+      assert {:ok, frame} = File.read(in_path)
+
+      caps = %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420
+      }
+
+      assert {:ok, state} = Native.init(caps)
+
+      assert :ok =
+               Native.add_video(state, 0, caps, %Position{
+                 x: 0,
+                 y: 0,
+                 z: 0.0
+               })
+
+      assert :ok =
+               Native.add_video(state, 1, caps, %Position{
+                 x: 0,
+                 y: 0,
+                 z: 0.5
+               })
+
+      s = bit_size(frame)
+      empty_frame = <<0::size(s)>>
+
+      assert {:ok, out_frame} = Native.render_frame(state, [{0, empty_frame}, {1, frame}])
+
+      assert {:ok, file} = File.open(out_path, [:write])
+      IO.binwrite(file, out_frame)
+      File.close(file)
+
+      Utility.compare_contents_with_error(in_path, out_path)
     end
   end
 end

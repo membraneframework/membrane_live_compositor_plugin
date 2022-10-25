@@ -16,6 +16,7 @@ pub struct RawVideo {
 struct Position {
     x: u32,
     y: u32,
+    z: f32,
 }
 
 mod atoms {
@@ -107,6 +108,9 @@ fn add_video(
             },
             width: input_video.width,
             height: input_video.height,
+            // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
+            // which is outside of the wgpu clip space
+            z: 1.0 - position.z.max(1e-7),
         },
     );
     Ok(atoms::ok())

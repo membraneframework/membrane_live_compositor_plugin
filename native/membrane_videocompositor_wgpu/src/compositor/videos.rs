@@ -5,7 +5,7 @@ use super::textures::{RGBATexture, YUVTextures};
 use super::{Point, Vertex};
 
 #[derive(Debug, Clone, Copy)]
-// All of the fields are in pixels
+// All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
 pub struct VideoPosition {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`
@@ -13,6 +13,7 @@ pub struct VideoPosition {
     pub top_left: Point<u32>,
     pub width: u32,
     pub height: u32,
+    pub z: f32,
 }
 
 #[rustfmt::skip]
@@ -118,19 +119,19 @@ impl InputVideo {
 
         [
             Vertex {
-                position: [right, top, 0.0],
+                position: [right, top, self.position.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, 0.0],
+                position: [left, top, self.position.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, 0.0],
+                position: [left, bot, self.position.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, 0.0],
+                position: [right, bot, self.position.z],
                 texture_coords: [1.0, 1.0],
             },
         ]
