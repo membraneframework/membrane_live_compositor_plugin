@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
   @impl true
   def add_video(internal_state, id, input_caps, {x, y}, z \\ 0.0) do
     {:ok, input_caps} = Common.RawVideo.from_membrane_raw_video(input_caps)
-    {:ok, position} = Common.Position.from_tuple({x, y, z})
+    position = Common.Position.from_tuple({x, y, z})
     {Rust.add_video(internal_state, id, input_caps, position), internal_state}
   end
 
@@ -32,7 +32,7 @@ defmodule Membrane.VideoCompositor.OpenGL.Rust do
 
   @impl true
   def set_position(internal_state, id, {x, y}, z \\ 0.0) do
-    {:ok, position} = Common.Position.from_tuple({x, y, z})
+    position = Common.Position.from_tuple({x, y, z})
     {Rust.set_position(internal_state, id, position), internal_state}
   end
 end

@@ -44,13 +44,12 @@ defmodule Membrane.VideoCompositor.Implementations.Common.Position do
   @enforce_keys [:x, :y, :z]
   defstruct [:x, :y, :z]
 
-  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) ::
-          {:ok, __MODULE__.t()} | {:error, atom()}
+  @spec from_tuple({non_neg_integer(), non_neg_integer(), float()}) :: __MODULE__.t()
   def from_tuple({_x, _y, z}) when z < 0.0 or z > 1.0 do
-    {:error, :z_out_of_range}
+    raise "z = #{z} is out of the (0.0, 1.0) range"
   end
 
   def from_tuple({x, y, z}) do
-    {:ok, %__MODULE__{x: x, y: y, z: z}}
+    %__MODULE__{x: x, y: y, z: z}
   end
 end
