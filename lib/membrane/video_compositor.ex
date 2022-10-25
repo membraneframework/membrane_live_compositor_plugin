@@ -66,11 +66,11 @@ defmodule Membrane.VideoCompositor do
   def handle_pad_added(pad, context, state) do
     position = context.options.position
 
-    state = register_track(state, pad, position)
+    state = register_pad(state, pad, position)
     {:ok, state}
   end
 
-  defp register_track(state, pad, position) do
+  defp register_pad(state, pad, position) do
     new_id = state.new_pad_id
 
     %{
