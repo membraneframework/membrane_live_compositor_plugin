@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Common.RawVideo do
         }
 
   @enforce_keys [:width, :height, :pixel_format, :framerate]
-  defstruct [:width, :height, :pixel_format, :framerate]
+  defstruct @enforce_keys
 
   @spec from_membrane_raw_video(Membrane.RawVideo.t()) :: {:ok, __MODULE__.t()}
   def from_membrane_raw_video(%Membrane.RawVideo{} = raw_video) do
@@ -45,7 +45,7 @@ defmodule Membrane.VideoCompositor.Common.Position do
         }
 
   @enforce_keys [:x, :y, :z, :scale]
-  defstruct [:x, :y, z: 0.0, scale: 1.0]
+  defstruct @enforce_keys
 
   @spec from_tuple({non_neg_integer(), non_neg_integer(), float(), float()}) :: __MODULE__.t()
   def from_tuple({_x, _y, z, _scale}) when z < 0.0 or z > 1.0 do
