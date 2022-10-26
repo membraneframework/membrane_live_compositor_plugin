@@ -298,7 +298,7 @@ impl State {
             });
 
         let mut pts = 0;
-        let mut ended_ids = Vec::new();
+        let mut ended_video_ids = Vec::new();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -328,12 +328,12 @@ impl State {
                 match video.draw(&self.queue, &mut render_pass, &self.output_caps) {
                     DrawResult::Rendered(new_pts) => pts = pts.max(new_pts),
                     DrawResult::NotRendered => {}
-                    DrawResult::EndOfStream => ended_ids.push(id),
+                    DrawResult::EndOfStream => ended_video_ids.push(id),
                 }
             }
         }
 
-        ended_ids.iter().for_each(|id| {
+        ended_video_ids.iter().for_each(|id| {
             self.input_videos.remove(id);
         });
         self.input_videos.values_mut().for_each(|v| v.pop_frame());

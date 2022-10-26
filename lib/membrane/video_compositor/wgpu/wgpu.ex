@@ -17,11 +17,9 @@ defmodule Membrane.VideoCompositor.Wgpu do
   def upload_frame(state, id, {frame, pts}) do
     result = Native.upload_frame(state, id, frame, pts)
 
-    if match?(:ok, result) do
-      {:ok, state}
-    else
-      {:ok, frame} = result
-      {{:ok, frame}, state}
+    case result do
+      :ok -> {:ok, state}
+      {:ok, frame} -> {{:ok, frame}, state}
     end
   end
 
