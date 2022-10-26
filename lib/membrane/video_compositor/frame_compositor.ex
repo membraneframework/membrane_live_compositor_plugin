@@ -46,7 +46,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
             ) :: {:ok, internal_state_t} | {:error, error_t()}
 
   @doc """
-  Video of the given `id` should be registered, removal of nonexistent video may panic the compositor.
+  If the video doesn't exist this will return an error.
   """
   @callback remove_video(
               internal_state :: internal_state_t,
@@ -62,8 +62,6 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
               {:ok, internal_state_t()} | {:error, error_t()}
 
   @doc """
-  Video of the given `id` should be registered, using `id` of nonexistent video may panic the compositor.
-
   `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
