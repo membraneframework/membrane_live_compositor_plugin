@@ -6,7 +6,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder do
   alias Membrane.RawVideo
 
   def_options framerate: [
-                type: :framerate,
                 spec: H264.framerate_t() | nil,
                 default: nil,
                 description: """
