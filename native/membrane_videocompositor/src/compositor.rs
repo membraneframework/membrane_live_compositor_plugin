@@ -281,12 +281,9 @@ impl State {
         let start_pts = self.last_pts;
         let end_pts = start_pts.map(|pts| (pts as f64 + frame_period) as u64);
 
-        self.input_videos.values().all(|v| {
-            v.front_pts().is_some()
-                && (start_pts.is_none()
-                    || (start_pts.unwrap() <= v.front_pts().unwrap()
-                        && v.front_pts().unwrap() < end_pts.unwrap()))
-        })
+        self.input_videos
+            .values()
+            .all(|v| v.is_front_pts_between(start_pts, end_pts))
     }
 
     /// This returns the pts of the new frame

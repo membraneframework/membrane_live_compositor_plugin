@@ -229,6 +229,13 @@ impl InputVideo {
     pub fn send_end_of_stream(&mut self) {
         self.frames.push_back(Message::EndOfStream);
     }
+
+    pub fn is_front_pts_between(&self, start: Option<u64>, end: Option<u64>) -> bool {
+        self.front_pts().is_some()
+            && (start.is_none()
+                || (start.unwrap() <= self.front_pts().unwrap()
+                    && self.front_pts().unwrap() < end.unwrap()))
+    }
 }
 
 /// Maps point `x` from the domain \[`x_min`, `x_max`\] to the point in the \[`y_min, y_max`\] line segment, using linear interpolation.
