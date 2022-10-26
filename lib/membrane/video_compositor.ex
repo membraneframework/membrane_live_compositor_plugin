@@ -150,12 +150,16 @@ defmodule Membrane.VideoCompositor do
     {:ok, internal_state} = state.compositor_module.send_end_of_stream(internal_state, id)
     state = %{state | internal_state: internal_state}
 
-    if Map.to_list(context.pads)
-       |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end) do
+    if all_input_pads_received_end_of_stream?(context.pads) do
       {{:ok, end_of_stream: :output}, state}
     else
       {:ok, state}
     end
+  end
+
+  defp all_input_pads_received_end_of_stream?(pads) do
+    Map.to_list(pads)
+    |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
   end
 
   defp determine_compositor_module(implementation) do
