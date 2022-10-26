@@ -7,7 +7,9 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   @type id_t() :: non_neg_integer()
   @type internal_state_t() :: any()
   @type error_t() :: any()
-  @type frame_with_pts :: {binary(), Membrane.Time.t()}
+  @type frame_t() :: binary()
+  @type pts_t() :: Membrane.Time.t()
+  @type frame_with_pts_t :: {binary(), pts_t()}
 
   @callback init(output_caps :: RawVideo.t()) :: {:ok, internal_state_t} | {:error, error_t()}
 
@@ -16,14 +18,14 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
 
   If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
   """
-  @callback upload_frame(internal_state_t(), id_t(), frame_with_pts()) ::
-              {:ok | {:ok, frame_with_pts()}, internal_state_t()}
+  @callback upload_frame(internal_state_t(), id_t(), frame_with_pts_t()) ::
+              {:ok | {:ok, frame_with_pts_t()}, internal_state_t()}
 
   @doc """
   Forcibly renders the composed frame, even if we are still waiting for some frames to arrive
   """
   @callback force_render(internal_state :: internal_state_t) ::
-              {{:ok, merged_frames :: frame_with_pts()}, internal_state_t} | {:error, error_t()}
+              {{:ok, merged_frames :: frame_with_pts_t()}, internal_state_t} | {:error, error_t()}
 
   @doc """
   Registers a new input video with the given numerical `id`.
