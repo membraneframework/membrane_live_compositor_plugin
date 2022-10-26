@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
@@ -44,12 +45,13 @@ pub struct InputVideo {
     indices: wgpu::Buffer,
     position: VideoPosition,
     previous_frame: Option<Message>,
+    single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl InputVideo {
     pub fn new(
         device: &wgpu::Device,
-        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
+        single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         position: VideoPosition,
     ) -> Self {
@@ -58,7 +60,7 @@ impl InputVideo {
             position.width,
             position.height,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            Some(single_texture_bind_group_layout),
+            Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
         );
 
@@ -84,16 +86,15 @@ impl InputVideo {
             indices,
             position,
             previous_frame: None,
+            single_texture_bind_group_layout,
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn upload_data(
         &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         converter: &YUVToRGBAConverter,
-        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
@@ -103,7 +104,7 @@ impl InputVideo {
             device,
             self.position.width,
             self.position.height,
-            single_texture_bind_group_layout,
+            &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
 

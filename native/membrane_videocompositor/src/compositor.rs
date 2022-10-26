@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display};
+use std::{collections::BTreeMap, fmt::Display, sync::Arc};
 
 mod colour_converters;
 mod textures;
@@ -53,8 +53,8 @@ pub struct State {
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
     sampler: Sampler,
-    single_texture_bind_group_layout: wgpu::BindGroupLayout,
-    all_yuv_textures_bind_group_layout: wgpu::BindGroupLayout,
+    single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
+    all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_caps: crate::RawVideo,
@@ -248,8 +248,8 @@ impl State {
                 _sampler: sampler,
                 bind_group: sampler_bind_group,
             },
-            single_texture_bind_group_layout,
-            all_yuv_textures_bind_group_layout,
+            single_texture_bind_group_layout: Arc::new(single_texture_bind_group_layout),
+            all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
             output_caps: output_caps.clone(),
@@ -270,7 +270,6 @@ impl State {
                 &self.device,
                 &self.queue,
                 &self.yuv_to_rgba_converter,
-                &self.single_texture_bind_group_layout,
                 frame,
                 pts,
                 self.last_pts,
@@ -359,7 +358,7 @@ impl State {
             idx,
             InputVideo::new(
                 &self.device,
-                &self.single_texture_bind_group_layout,
+                self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
                 position,
             ),
