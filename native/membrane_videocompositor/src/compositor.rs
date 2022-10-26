@@ -63,7 +63,7 @@ pub struct State {
 
 impl State {
     pub async fn new(output_caps: &crate::RawVideo) -> Result<State, CompositorError> {
-        if output_caps.framerate.0 == 0 {
+        if output_caps.framerate.0 == 0 || output_caps.framerate.1 == 0 {
             return Err(CompositorError::BadFramerate);
         }
 
