@@ -133,22 +133,22 @@ impl InputVideo {
         let left = lerp(
             self.position.top_left.x as f64,
             0.0,
-            scene_width as f64,
+            scene_width.get() as f64,
             -1.0,
             1.0,
         ) as f32;
         let right = lerp(
             position.x as f64 + width as f64 * self.position.scale,
             0.0,
-            scene_width as f64,
+            scene_width.get() as f64,
             -1.0,
             1.0,
         ) as f32;
-        let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
+        let top = lerp(position.y as f64, 0.0, scene_height.get() as f64, 1.0, -1.0) as f32;
         let bot = lerp(
             position.y as f64 + height as f64 * self.position.scale,
             0.0,
-            scene_height as f64,
+            scene_height.get() as f64,
             1.0,
             -1.0,
         ) as f32;

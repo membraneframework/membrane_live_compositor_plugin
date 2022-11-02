@@ -6,11 +6,58 @@ mod errors;
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.Common.RawVideo"]
-pub struct RawVideo {
+pub struct ElixirRawVideo {
     pub width: u32,
     pub height: u32,
     pub pixel_format: rustler::Atom,
     pub framerate: (u64, u64),
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum PixelFormat {
+    I420,
+}
+
+impl TryFrom<rustler::Atom> for PixelFormat {
+    type Error = CompositorError;
+
+    fn try_from(value: rustler::Atom) -> Result<Self, Self::Error> {
+        if value == atoms::I420() {
+            Ok(PixelFormat::I420)
+        } else {
+            Err(CompositorError::UnsupportedPixelFormat)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct RawVideo {
+    pub width: std::num::NonZeroU32,
+    pub height: std::num::NonZeroU32,
+    pub pixel_format: PixelFormat,
+    pub framerate: (std::num::NonZeroU64, std::num::NonZeroU64),
+}
+
+impl TryFrom<ElixirRawVideo> for RawVideo {
+    type Error = CompositorError;
+
+    fn try_from(value: ElixirRawVideo) -> Result<Self, Self::Error> {
+        Ok(RawVideo {
+            width: std::num::NonZeroU32::new(value.width).ok_or(
+                CompositorError::BadVideoResolution(value.width, value.height),
+            )?,
+            height: std::num::NonZeroU32::new(value.height).ok_or(
+                CompositorError::BadVideoResolution(value.width, value.height),
+            )?,
+            pixel_format: value.pixel_format.try_into()?,
+            framerate: (
+                std::num::NonZeroU64::new(value.framerate.0)
+                    .ok_or(CompositorError::BadFramerate)?,
+                std::num::NonZeroU64::new(value.framerate.1)
+                    .ok_or(CompositorError::BadFramerate)?,
+            ),
+        })
+    }
 }
 
 #[derive(Debug, rustler::NifStruct)]
@@ -26,6 +73,7 @@ mod atoms {
     rustler::atoms! {
         ok,
         error,
+        #[allow(non_snake_case)] I420,
     }
 }
 
@@ -62,11 +110,11 @@ impl InnerState {
 #[rustler::nif]
 fn init(
     #[allow(unused)] env: rustler::Env,
-    output_caps: RawVideo,
+    output_caps: ElixirRawVideo,
 ) -> Result<(rustler::Atom, rustler::ResourceArc<State>), rustler::Error> {
     Ok((
         atoms::ok(),
-        rustler::ResourceArc::new(State::new(output_caps)?),
+        rustler::ResourceArc::new(State::new(output_caps.try_into()?)?),
     ))
 }
 
@@ -97,10 +145,12 @@ fn upload_frame<'a>(
     state.compositor.upload_texture(id, &frame, pts)?;
 
     if state.compositor.all_frames_ready(
-        state.output_caps.framerate.1 as f64 / state.output_caps.framerate.0 as f64,
+        state.output_caps.framerate.1.get() as f64 / state.output_caps.framerate.0.get() as f64
+            * 1_000_000_000.0,
     ) {
         let mut output = rustler::OwnedBinary::new(
-            state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+            state.output_caps.width.get() as usize * state.output_caps.height.get() as usize * 3
+                / 2,
         )
         .unwrap();
         let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
@@ -119,7 +169,7 @@ fn force_render(
     let mut state = state.lock().unwrap();
 
     let mut output = rustler::OwnedBinary::new(
-        state.output_caps.width as usize * state.output_caps.height as usize * 3 / 2,
+        state.output_caps.width.get() as usize * state.output_caps.height.get() as usize * 3 / 2,
     )
     .unwrap(); //FIXME: return an error instead of panicking here
 
@@ -133,9 +183,11 @@ fn add_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    input_video: RawVideo,
+    input_video: ElixirRawVideo,
     position: Position,
 ) -> Result<rustler::Atom, rustler::Error> {
+    let input_video: RawVideo = input_video.try_into()?;
+
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
     state.compositor.add_video(
@@ -145,8 +197,8 @@ fn add_video(
                 x: position.x,
                 y: position.y,
             },
-            width: input_video.width,
-            height: input_video.height,
+            width: input_video.width.get(),
+            height: input_video.height.get(),
             // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
             // which is outside of the wgpu clip space
             z: 1.0 - position.z.max(1e-7),

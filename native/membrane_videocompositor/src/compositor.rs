@@ -63,10 +63,6 @@ pub struct State {
 
 impl State {
     pub async fn new(output_caps: &crate::RawVideo) -> Result<State, CompositorError> {
-        if output_caps.framerate.0 == 0 || output_caps.framerate.1 == 0 {
-            return Err(CompositorError::BadFramerate);
-        }
-
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -145,8 +141,8 @@ impl State {
 
         let output_textures = OutputTextures::new(
             &device,
-            output_caps.width,
-            output_caps.height,
+            output_caps.width.get(),
+            output_caps.height.get(),
             &single_texture_bind_group_layout,
         );
 
@@ -252,7 +248,7 @@ impl State {
             all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
-            output_caps: output_caps.clone(),
+            output_caps: *output_caps,
             last_pts: None,
         })
     }
@@ -277,9 +273,9 @@ impl State {
         Ok(())
     }
 
-    pub fn all_frames_ready(&self, frame_period: f64) -> bool {
+    pub fn all_frames_ready(&self, frame_period_in_nanos: f64) -> bool {
         let start_pts = self.last_pts;
-        let end_pts = start_pts.map(|pts| (pts as f64 + frame_period) as u64);
+        let end_pts = start_pts.map(|pts| (pts as f64 + frame_period_in_nanos) as u64);
 
         self.input_videos
             .values()
