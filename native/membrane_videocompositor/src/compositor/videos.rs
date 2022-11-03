@@ -115,7 +115,7 @@ impl InputVideo {
         }
         // otherwise, our frame is too old to be added to the queue, so we check if it is newer than the previously used frame,
         // which is our fallback in case we are forced to render before a new enough frame arrives.
-        else if let Message::Frame { pts: prev_pts, .. } = self.previous_frame.as_ref().unwrap() {
+        else if let Some(Message::Frame { pts: prev_pts, .. }) = self.previous_frame.as_ref() {
             if *prev_pts < pts {
                 self.previous_frame = Some(Message::Frame { frame, pts });
             }
