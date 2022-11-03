@@ -340,6 +340,8 @@ impl State {
             .download(&self.device, output_buffer)
             .await;
 
+        self.last_pts = Some(pts);
+
         pts
     }
 
