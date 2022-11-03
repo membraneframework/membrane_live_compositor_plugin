@@ -273,13 +273,10 @@ impl State {
         Ok(())
     }
 
-    pub fn all_frames_ready(&self, frame_period_in_nanos: f64) -> bool {
-        let start_pts = self.last_pts;
-        let end_pts = start_pts.map(|pts| (pts as f64 + frame_period_in_nanos) as u64);
-
+    pub fn all_frames_ready(&self) -> bool {
         self.input_videos
             .values()
-            .all(|v| v.is_front_pts_between(start_pts, end_pts))
+            .all(|v| v.is_frame_ready(self.frame_interval()))
     }
 
     /// This returns the pts of the new frame
@@ -371,5 +368,33 @@ impl State {
             .ok_or(CompositorError::BadVideoIndex(idx))?
             .send_end_of_stream();
         Ok(())
+    }
+
+    /// This is in nanoseconds
+    pub fn frame_time(&self) -> f64 {
+        self.output_caps.framerate.1.get() as f64 / self.output_caps.framerate.0.get() as f64
+            * 1_000_000_000.0
+    }
+
+    pub fn frame_interval(&self) -> Option<(u64, u64)> {
+        self.last_pts.map(|start| {
+            (
+                start,
+                (((start as f64 + self.frame_time()) / 1_000_000.0).ceil() * 1_000_000.0) as u64,
+            )
+        })
+    }
+
+    #[allow(unused)]
+    pub fn dump_queue_state(&self) {
+        println!("[rust compositor queue dump]");
+        println!(
+            "interval: {:?}, frame_time: {}",
+            self.frame_interval(),
+            self.frame_time()
+        );
+        for (key, val) in &self.input_videos {
+            println!("vid {key} => front pts {:?}", val.front_pts());
+        }
     }
 }

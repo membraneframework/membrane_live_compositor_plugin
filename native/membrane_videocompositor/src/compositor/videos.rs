@@ -230,11 +230,15 @@ impl InputVideo {
         self.frames.push_back(Message::EndOfStream);
     }
 
-    pub fn is_front_pts_between(&self, start: Option<u64>, end: Option<u64>) -> bool {
-        self.front_pts().is_some()
-            && (start.is_none()
-                || (start.unwrap() <= self.front_pts().unwrap()
-                    && self.front_pts().unwrap() < end.unwrap()))
+    pub fn is_frame_ready(&self, interval: Option<(u64, u64)>) -> bool {
+        if let Some(Message::EndOfStream) = self.frames.front() {
+            return true;
+        }
+
+        self.front_pts().is_some() // if the stream hasn't ended then we have to have a frame in the queue, then either:
+            && (interval.is_none() // this is the first frame, which means a frame with any pts is good
+                || (interval.unwrap().0 <= self.front_pts().unwrap()
+                    && self.front_pts().unwrap() <= interval.unwrap().1)) // or we have to fit between the start and end pts
     }
 }
 

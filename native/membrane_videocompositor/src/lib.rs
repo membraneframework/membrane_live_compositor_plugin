@@ -144,17 +144,13 @@ fn upload_frame<'a>(
 
     state.compositor.upload_texture(id, &frame, pts)?;
 
-    if state.compositor.all_frames_ready(
-        state.output_caps.framerate.1.get() as f64 / state.output_caps.framerate.0.get() as f64
-            * 1_000_000_000.0,
-    ) {
+    if state.compositor.all_frames_ready() {
         let mut output = rustler::OwnedBinary::new(
             state.output_caps.width.get() as usize * state.output_caps.height.get() as usize * 3
                 / 2,
         )
         .unwrap();
         let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
-
         Ok(UploadFrameResult::WithFrame(output.release(env), pts))
     } else {
         Ok(UploadFrameResult::WithoutFrame)
