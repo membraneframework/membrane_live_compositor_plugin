@@ -400,3 +400,97 @@ impl State {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::num::{NonZeroU32, NonZeroU64};
+
+    impl Default for crate::RawVideo {
+        fn default() -> Self {
+            Self {
+                width: NonZeroU32::new(2).unwrap(),
+                height: NonZeroU32::new(2).unwrap(),
+                pixel_format: crate::PixelFormat::I420,
+                framerate: (NonZeroU64::new(1).unwrap(), NonZeroU64::new(1).unwrap()),
+            }
+        }
+    }
+
+    const FRAME: &[u8; 6] = &[0x30, 0x40, 0x30, 0x40, 0x80, 0xb0];
+
+    fn setup_videos(n: usize) -> State {
+        let caps = crate::RawVideo {
+            width: NonZeroU32::new(2 * n as u32).unwrap(),
+            height: NonZeroU32::new(2).unwrap(),
+            ..Default::default()
+        };
+
+        let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
+
+        for i in 0..n {
+            compositor.add_video(
+                i,
+                VideoPosition {
+                    top_left: Point {
+                        x: 2 * i as u32,
+                        y: 0,
+                    },
+                    width: 2,
+                    height: 2,
+                    z: 0.5,
+                    scale: 1.0,
+                },
+            );
+        }
+
+        compositor
+    }
+
+    #[test]
+    fn ends_streams_on_eos() {
+        let mut compositor = setup_videos(2);
+
+        compositor.upload_texture(0, FRAME, 0).unwrap();
+        compositor.upload_texture(1, FRAME, 0).unwrap();
+
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 12]));
+
+        compositor.send_end_of_stream(1).unwrap();
+        compositor.upload_texture(0, FRAME, 500_000_000).unwrap();
+
+        assert!(compositor.all_frames_ready());
+    }
+
+    #[test]
+    fn is_ready_after_receiving_all_frames() {
+        let mut compositor = setup_videos(3);
+
+        compositor.upload_texture(0, FRAME, 0).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(1, FRAME, 0).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(2, FRAME, 0).unwrap();
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 18]));
+
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 1_500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(1, FRAME, 500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(2, FRAME, 500_000_000).unwrap();
+        assert!(compositor.all_frames_ready());
+    }
+}
