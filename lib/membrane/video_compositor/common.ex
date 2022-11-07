@@ -47,7 +47,7 @@ defmodule Membrane.VideoCompositor.Common.Position do
   @enforce_keys [:x, :y, :z, :scale]
   defstruct @enforce_keys
 
-  @spec from_tuple({non_neg_integer(), non_neg_integer(), float(), float()}) :: __MODULE__.t()
+  @spec from_tuple({non_neg_integer(), non_neg_integer(), float(), float()}) :: t()
   def from_tuple({_x, _y, z, _scale}) when z < 0.0 or z > 1.0 do
     raise "z = #{z} is out of the (0.0, 1.0) range"
   end
