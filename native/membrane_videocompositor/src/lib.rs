@@ -1,17 +1,10 @@
+use elixir_structs::*;
 use errors::CompositorError;
 use rustler::ResourceArc;
 
 mod compositor;
+mod elixir_structs;
 mod errors;
-
-#[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.Common.RawVideo"]
-pub struct ElixirRawVideo {
-    pub width: u32,
-    pub height: u32,
-    pub pixel_format: rustler::Atom,
-    pub framerate: (u64, u64),
-}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {
@@ -58,15 +51,6 @@ impl TryFrom<ElixirRawVideo> for RawVideo {
             ),
         })
     }
-}
-
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Common.Position"]
-struct Position {
-    x: u32,
-    y: u32,
-    z: f32,
-    scale: f64,
 }
 
 mod atoms {
