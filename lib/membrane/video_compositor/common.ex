@@ -30,9 +30,9 @@ defmodule Membrane.VideoCompositor.Common.RawVideo do
   end
 end
 
-defmodule Membrane.VideoCompositor.Common.Position do
+defmodule Membrane.VideoCompositor.Common.VideoProperties do
   @moduledoc """
-  A Position struct describing the video position for use with the rust-based compositor implementation.
+  A properties struct describing the video position, scale and z-value for use with the rust-based compositor implementation.
   Position relative to the top right corner of the viewport, in pixels.
   The `z` value specifies priority: a lower `z` is 'in front' of higher `z` values.
   """

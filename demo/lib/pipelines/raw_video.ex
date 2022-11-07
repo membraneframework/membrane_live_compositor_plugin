@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Demo.Support.Pipeline.Raw do
   @moduledoc """
-  Pipeline for demo composing of many videos.
+  Pipeline for testing composing of many videos.
   """
   use Membrane.Pipeline
 

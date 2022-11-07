@@ -10,8 +10,8 @@ pub struct ElixirRawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Common.Position"]
-pub struct Position {
+#[module = "Membrane.VideoCompositor.Common.VideoProperties"]
+pub struct VideoProperties {
     pub x: u32,
     pub y: u32,
     pub z: f32,

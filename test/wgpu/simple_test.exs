@@ -1,7 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Common.{RawVideo, VideoProperties}
   alias Membrane.VideoCompositor.Test.Support.Utility
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -35,7 +35,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 0, in_video, %Position{
+               Native.add_video(state, 0, in_video, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.0,
@@ -43,7 +43,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 1, in_video, %Position{
+               Native.add_video(state, 1, in_video, %VideoProperties{
                  x: 0,
                  y: 360,
                  z: 0.0,
@@ -81,7 +81,7 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %Position{
+               Native.add_video(state, 0, caps, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.0,
@@ -89,7 +89,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 1, caps, %Position{
+               Native.add_video(state, 1, caps, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.5,

@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor"
 
-  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Common.{RawVideo, VideoProperties}
 
   @type internal_state_t :: any()
   @type error_t :: any()
@@ -21,11 +21,11 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec force_render(internal_state_t()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()
 
-  @spec add_video(internal_state_t(), id_t(), RawVideo.t(), Position.t()) ::
+  @spec add_video(internal_state_t(), id_t(), RawVideo.t(), VideoProperties.t()) ::
           :ok | {:error, error_t()}
   def add_video(_state, _id, _in_video, _position), do: error()
 
-  @spec set_position(internal_state_t(), id_t(), Position.t()) ::
+  @spec set_position(internal_state_t(), id_t(), VideoProperties.t()) ::
           :ok | {:error, error_t()}
   def set_position(_state, _id, _position), do: error()
 

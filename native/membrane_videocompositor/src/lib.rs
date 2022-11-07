@@ -164,7 +164,7 @@ fn add_video(
     state: rustler::ResourceArc<State>,
     id: usize,
     input_video: ElixirRawVideo,
-    position: Position,
+    properties: VideoProperties,
 ) -> Result<rustler::Atom, rustler::Error> {
     let input_video: RawVideo = input_video.try_into()?;
 
@@ -174,15 +174,15 @@ fn add_video(
         id,
         compositor::VideoPosition {
             top_left: compositor::Point {
-                x: position.x,
-                y: position.y,
+                x: properties.x,
+                y: properties.y,
             },
             width: input_video.width.get(),
             height: input_video.height.get(),
             // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
             // which is outside of the wgpu clip space
-            z: 1.0 - position.z.max(1e-7),
-            scale: position.scale,
+            z: 1.0 - properties.z.max(1e-7),
+            scale: properties.scale,
         },
     );
     Ok(atoms::ok())
@@ -193,7 +193,7 @@ fn set_position(
     #[allow(unused_variables)] env: rustler::Env<'_>,
     _state: rustler::ResourceArc<State>,
     _id: usize,
-    _position: Position,
+    _properties: VideoProperties,
 ) -> Result<rustler::Atom, rustler::Error> {
     Err(errors::CompositorError::NotImplemented.into())
 }

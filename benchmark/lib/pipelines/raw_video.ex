@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
   alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @impl true
-  def handle_init(%Options{} = options) do
+  def handle_init(options) do
     [%InputStream{caps: in_caps} | _tail] = options.inputs
 
     parser = %Membrane.RawVideo.Parser{

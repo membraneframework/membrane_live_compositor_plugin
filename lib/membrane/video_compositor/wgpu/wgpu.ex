@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   """
   @behaviour Membrane.VideoCompositor.FrameCompositor
 
-  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Common.{RawVideo, VideoProperties}
   alias Membrane.VideoCompositor.Wgpu.Native
 
   @impl true
@@ -38,7 +38,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   @impl true
   def add_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
-    position = Position.from_tuple({x, y, z, scale})
+    position = VideoProperties.from_tuple({x, y, z, scale})
 
     case Native.add_video(state, id, input_caps, position) do
       :ok -> {:ok, state}
@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
 
   @impl true
   def set_position(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
-    position = Position.from_tuple({x, y, z, scale})
+    position = VideoProperties.from_tuple({x, y, z, scale})
 
     case Native.set_position(state, id, position) do
       :ok -> {:ok, state}

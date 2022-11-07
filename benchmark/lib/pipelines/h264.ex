@@ -4,12 +4,14 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
   """
 
   use Membrane.Pipeline
-
   alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @impl true
-  def handle_init(%Options{} = options) do
-    decoder = Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder
+  def handle_init(options) do
+    decoder = %Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder{
+      framerate: options.caps.framerate
+    }
+
     encoder = Membrane.H264.FFmpeg.Encoder
 
     options = %Options{
