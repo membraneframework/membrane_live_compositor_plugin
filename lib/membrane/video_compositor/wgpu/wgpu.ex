@@ -15,43 +15,63 @@ defmodule Membrane.VideoCompositor.Wgpu do
 
   @impl true
   def upload_frame(state, id, {frame, pts}) do
-    result = Native.upload_frame(state, id, frame, pts)
+    case Native.upload_frame(state, id, frame, pts) do
+      :ok ->
+        {:ok, state}
 
-    case result do
-      :ok -> {:ok, state}
-      {:ok, frame} -> {{:ok, frame}, state}
+      {:ok, frame} ->
+        {{:ok, frame}, state}
+
+      {:error, reason} ->
+        raise "Error while uploading/composing frame, reason: #{inspect(reason)}"
     end
   end
 
   @impl true
   def force_render(state) do
-    {:ok, frame} = Native.force_render(state)
-    {{:ok, frame}, state}
+    case Native.force_render(state) do
+      {:ok, frame} -> {{:ok, frame}, state}
+      {:error, reason} -> raise "Error while force rendering, reason: #{inspect(reason)}"
+    end
   end
 
   @impl true
-  def add_video(internal_state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
+  def add_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
     position = Position.from_tuple({x, y, z, scale})
-    :ok = Native.add_video(internal_state, id, input_caps, position)
-    {:ok, internal_state}
+
+    case Native.add_video(state, id, input_caps, position) do
+      :ok -> {:ok, state}
+      {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
+    end
   end
 
   @impl true
-  def set_position(internal_state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
+  def set_position(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
     position = Position.from_tuple({x, y, z, scale})
-    {Native.set_position(internal_state, id, position), internal_state}
+
+    case Native.set_position(state, id, position) do
+      :ok -> {:ok, state}
+      {:error, reason} -> raise "Error while setting a video position, reason: #{inspect(reason)}"
+    end
   end
 
   @impl true
-  def remove_video(internal_state, id) do
-    :ok = Native.remove_video(internal_state, id)
-    {:ok, internal_state}
+  def remove_video(state, id) do
+    case Native.remove_video(state, id) do
+      :ok -> {:ok, state}
+      {:error, reason} -> raise "Error while removing a video, reason: #{inspect(reason)}"
+    end
   end
 
   @impl true
-  def send_end_of_stream(internal_state, id) do
-    :ok = Native.send_end_of_stream(internal_state, id)
-    {:ok, internal_state}
+  def send_end_of_stream(state, id) do
+    case Native.send_end_of_stream(state, id) do
+      :ok ->
+        {:ok, state}
+
+      {:error, reason} ->
+        raise "Error while sending an end of stream message to a video, reason: #{inspect(reason)}"
+    end
   end
 end
