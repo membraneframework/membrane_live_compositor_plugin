@@ -8,7 +8,7 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
-pub use videos::VideoPosition;
+pub use videos::VideoProperties;
 
 use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
@@ -345,14 +345,14 @@ impl State {
         pts
     }
 
-    pub fn add_video(&mut self, idx: usize, position: VideoPosition) {
+    pub fn add_video(&mut self, idx: usize, properties: VideoProperties) {
         self.input_videos.insert(
             idx,
             InputVideo::new(
                 &self.device,
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
-                position,
+                properties,
             ),
         );
     }
@@ -431,7 +431,7 @@ mod tests {
         for i in 0..n {
             compositor.add_video(
                 i,
-                VideoPosition {
+                VideoProperties {
                     top_left: Point {
                         x: 2 * i as u32,
                         y: 0,

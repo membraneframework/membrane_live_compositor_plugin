@@ -66,7 +66,7 @@ defmodule Membrane.VideoCompositor.FrameCompositor do
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
   """
-  @callback set_position(
+  @callback set_properties(
               internal_state :: internal_state_t,
               id :: id_t(),
               position :: {x :: non_neg_integer(), y :: non_neg_integer()},

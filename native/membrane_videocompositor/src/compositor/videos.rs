@@ -9,7 +9,7 @@ use super::{Point, Vertex};
 
 #[derive(Debug, Clone, Copy)]
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
-pub struct VideoPosition {
+pub struct VideoProperties {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
@@ -43,7 +43,7 @@ pub struct InputVideo {
     yuv_textures: YUVTextures,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
-    position: VideoPosition,
+    properties: VideoProperties,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
 }
@@ -53,12 +53,12 @@ impl InputVideo {
         device: &wgpu::Device,
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        position: VideoPosition,
+        properties: VideoProperties,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            position.width,
-            position.height,
+            properties.width,
+            properties.height,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -84,7 +84,7 @@ impl InputVideo {
             frames,
             vertices,
             indices,
-            position,
+            properties,
             previous_frame: None,
             single_texture_bind_group_layout,
         }
@@ -102,8 +102,8 @@ impl InputVideo {
         self.yuv_textures.upload_data(queue, data);
         let frame = RGBATexture::new(
             device,
-            self.position.width,
-            self.position.height,
+            self.properties.width,
+            self.properties.height,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
@@ -126,19 +126,19 @@ impl InputVideo {
         let scene_width = output_caps.width;
         let scene_height = output_caps.height;
 
-        let position = self.position.top_left;
-        let width = self.position.width;
-        let height = self.position.height;
+        let position = self.properties.top_left;
+        let width = self.properties.width;
+        let height = self.properties.height;
 
         let left = lerp(
-            self.position.top_left.x as f64,
+            self.properties.top_left.x as f64,
             0.0,
             scene_width.get() as f64,
             -1.0,
             1.0,
         ) as f32;
         let right = lerp(
-            position.x as f64 + width as f64 * self.position.scale,
+            position.x as f64 + width as f64 * self.properties.scale,
             0.0,
             scene_width.get() as f64,
             -1.0,
@@ -146,7 +146,7 @@ impl InputVideo {
         ) as f32;
         let top = lerp(position.y as f64, 0.0, scene_height.get() as f64, 1.0, -1.0) as f32;
         let bot = lerp(
-            position.y as f64 + height as f64 * self.position.scale,
+            position.y as f64 + height as f64 * self.properties.scale,
             0.0,
             scene_height.get() as f64,
             1.0,
@@ -155,19 +155,19 @@ impl InputVideo {
 
         [
             Vertex {
-                position: [right, top, self.position.z],
+                position: [right, top, self.properties.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, self.position.z],
+                position: [left, top, self.properties.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, self.position.z],
+                position: [left, bot, self.properties.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, self.position.z],
+                position: [right, bot, self.properties.z],
                 texture_coords: [1.0, 1.0],
             },
         ]
