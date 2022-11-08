@@ -24,17 +24,6 @@ defmodule Membrane.VideoCompositor do
           "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
         default: {0, 0}
       ]
-      # comment this out for now and add this feature later after I get this working
-      # z: [
-      #   spec: float(),
-      #   description: "A value between 0.0 and 1.0. Videos with higher z-values will be drawn 'in front of' videos with lower z-values",
-      #   default: 0.0
-      # ],
-      # scale: [
-      #   spec: float(),
-      #   description: "A value determining how big the video is on the output stream",
-      #   default: 1.0
-      # ]
     ]
 
   def_output_pad :output,
