@@ -22,7 +22,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
       options
       | decoder: parser,
         compositor: %Membrane.VideoCompositor{
-          implementation: options.implementation,
           caps: options.caps
         }
     }
