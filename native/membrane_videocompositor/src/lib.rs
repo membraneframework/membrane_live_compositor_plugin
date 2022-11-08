@@ -172,7 +172,7 @@ fn add_video(
 
     state.compositor.add_video(
         id,
-        compositor::VideoPosition {
+        compositor::VideoProperties {
             top_left: compositor::Point {
                 x: properties.x,
                 y: properties.y,
@@ -189,7 +189,7 @@ fn add_video(
 }
 
 #[rustler::nif]
-fn set_position(
+fn set_properties(
     #[allow(unused_variables)] env: rustler::Env<'_>,
     _state: rustler::ResourceArc<State>,
     _id: usize,
@@ -226,7 +226,7 @@ rustler::init!(
         force_render,
         add_video,
         remove_video,
-        set_position,
+        set_properties,
         upload_frame,
         send_end_of_stream
     ],

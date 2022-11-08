@@ -23,11 +23,11 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
 
   @spec add_video(internal_state_t(), id_t(), RawVideo.t(), VideoProperties.t()) ::
           :ok | {:error, error_t()}
-  def add_video(_state, _id, _in_video, _position), do: error()
+  def add_video(_state, _id, _in_video, _properties), do: error()
 
-  @spec set_position(internal_state_t(), id_t(), VideoProperties.t()) ::
+  @spec set_properties(internal_state_t(), id_t(), VideoProperties.t()) ::
           :ok | {:error, error_t()}
-  def set_position(_state, _id, _position), do: error()
+  def set_properties(_state, _id, _properties), do: error()
 
   @spec remove_video(internal_state_t(), id_t()) ::
           :ok | {:error, error_t()}

@@ -38,21 +38,21 @@ defmodule Membrane.VideoCompositor.Wgpu do
   @impl true
   def add_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
     {:ok, input_caps} = RawVideo.from_membrane_raw_video(input_caps)
-    position = VideoProperties.from_tuple({x, y, z, scale})
+    properties = VideoProperties.from_tuple({x, y, z, scale})
 
-    case Native.add_video(state, id, input_caps, position) do
+    case Native.add_video(state, id, input_caps, properties) do
       :ok -> {:ok, state}
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
   end
 
   @impl true
-  def set_position(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
-    position = VideoProperties.from_tuple({x, y, z, scale})
+  def set_properties(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
+    properties = VideoProperties.from_tuple({x, y, z, scale})
 
-    case Native.set_position(state, id, position) do
+    case Native.set_properties(state, id, properties) do
       :ok -> {:ok, state}
-      {:error, reason} -> raise "Error while setting a video position, reason: #{inspect(reason)}"
+      {:error, reason} -> raise "Error while setting video properties, reason: #{inspect(reason)}"
     end
   end
 
