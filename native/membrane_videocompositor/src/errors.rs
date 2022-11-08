@@ -6,6 +6,12 @@ pub enum CompositorError {
     NotImplemented,
     #[error("bad video index: {0}")]
     BadVideoIndex(usize),
+    #[error("bad framerate")]
+    BadFramerate,
+    #[error("unsupported pixel format")]
+    UnsupportedPixelFormat,
+    #[error("bad video resolution: {0}x{1}")]
+    BadVideoResolution(u32, u32),
 }
 
 impl rustler::Encoder for CompositorError {
@@ -21,6 +27,19 @@ impl rustler::Encoder for CompositorError {
                 *idx,
             )
                 .encode(env),
+            CompositorError::BadFramerate => rustler::Atom::from_str(env, "bad_framerate")
+                .unwrap()
+                .encode(env),
+            CompositorError::UnsupportedPixelFormat => {
+                rustler::Atom::from_str(env, "unsupported_pixel_format")
+                    .unwrap()
+                    .encode(env)
+            }
+            CompositorError::BadVideoResolution(_, _) => {
+                rustler::Atom::from_str(env, "bad_video_resolution")
+                    .unwrap()
+                    .encode(env)
+            }
         }
     }
 }

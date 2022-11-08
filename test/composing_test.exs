@@ -87,6 +87,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    assert TestingUtility.compare_contents_with_error(reference_path, output_path)
+    assert TestingUtility.compare_contents_with_error(output_path, reference_path)
   end
 end

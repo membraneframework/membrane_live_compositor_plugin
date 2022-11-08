@@ -8,7 +8,6 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Filter
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Implementations
-  alias Membrane.VideoCompositor.Track
 
   def_options implementation: [
                 type: :atom,
@@ -47,7 +46,7 @@ defmodule Membrane.VideoCompositor do
     {:ok, internal_state} = compositor_module.init(options.caps)
 
     state = %{
-      ids_to_tracks: %{},
+      video_positions_waiting_for_caps: %{},
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
@@ -67,20 +66,20 @@ defmodule Membrane.VideoCompositor do
   def handle_pad_added(pad, context, state) do
     position = context.options.position
 
-    state = register_track(state, pad, position)
+    state = register_pad(state, pad, position)
     {:ok, state}
   end
 
-  defp register_track(state, pad, position) do
+  defp register_pad(state, pad, position) do
     new_id = state.new_pad_id
 
-    state = %{
+    %{
       state
-      | pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
+      | video_positions_waiting_for_caps:
+          Map.put(state.video_positions_waiting_for_caps, new_id, position),
+        pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
-
-    %{state | ids_to_tracks: Map.put(state.ids_to_tracks, new_id, %Track{position: position})}
   end
 
   @impl true
@@ -88,15 +87,20 @@ defmodule Membrane.VideoCompositor do
     %{
       pads_to_ids: pads_to_ids,
       internal_state: internal_state,
-      ids_to_tracks: ids_to_tracks
+      video_positions_waiting_for_caps: video_positions_waiting_for_caps
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    position = Map.get(ids_to_tracks, id).position
+    {position, video_positions_waiting_for_caps} = Map.pop!(video_positions_waiting_for_caps, id)
     {:ok, internal_state} = state.compositor_module.add_video(internal_state, id, caps, position)
 
-    state = %{state | internal_state: internal_state}
+    state = %{
+      state
+      | internal_state: internal_state,
+        video_positions_waiting_for_caps: video_positions_waiting_for_caps
+    }
+
     {:ok, state}
   end
 
@@ -108,156 +112,54 @@ defmodule Membrane.VideoCompositor do
         state
       ) do
     %{
-      ids_to_tracks: ids_to_tracks,
-      pads_to_ids: pads_to_ids
+      pads_to_ids: pads_to_ids,
+      internal_state: internal_state
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    ids_to_tracks = push_frame(ids_to_tracks, id, buffer)
+    %Membrane.Buffer{payload: frame, pts: pts} = buffer
 
-    state = %{state | ids_to_tracks: ids_to_tracks}
+    case state.compositor_module.upload_frame(internal_state, id, {frame, pts}) do
+      {{:ok, {frame, pts}}, internal_state} ->
+        {
+          {
+            :ok,
+            buffer: {
+              :output,
+              %Membrane.Buffer{payload: frame, pts: pts}
+            }
+          },
+          %{state | internal_state: internal_state}
+        }
 
-    case merge_frames(state) do
-      {{:merged, buffers}, state} -> {{:ok, buffer: {:output, buffers}}, state}
-      {{:empty, _empty}, state} -> {:ok, state}
-    end
-  end
-
-  defp merge_frames(state) do
-    %{
-      ids_to_tracks: ids_to_tracks,
-      internal_state: internal_state
-    } = state
-
-    if all_tracks_ready_to_merge?(ids_to_tracks) do
-      ids_to_frames = get_ids_to_frames(ids_to_tracks)
-
-      {{:ok, merged_frame_binary}, internal_state} =
-        state.compositor_module.merge_frames(internal_state, ids_to_frames)
-
-      ids_to_tracks = pop_frames(ids_to_tracks)
-
-      state = %{
-        state
-        | ids_to_tracks: ids_to_tracks,
-          internal_state: internal_state
-      }
-
-      state = remove_finished_tracks(state)
-
-      {{_status, tail}, state} = merge_frames(state)
-      merged = [%Membrane.Buffer{payload: merged_frame_binary}] ++ tail
-
-      {{:merged, merged}, state}
-    else
-      {{:empty, []}, state}
-    end
-  end
-
-  defp push_frame(ids_to_tracks, id, frame) do
-    Map.update!(ids_to_tracks, id, fn track ->
-      Track.push_frame(track, frame)
-    end)
-  end
-
-  defp all_tracks_ready_to_merge?(ids_to_tracks) when map_size(ids_to_tracks) == 0 do
-    false
-  end
-
-  defp all_tracks_ready_to_merge?(ids_to_tracks) do
-    ids_to_tracks
-    |> Map.values()
-    |> Enum.all?(&Track.has_frame?/1)
-  end
-
-  defp get_ids_to_frames(ids_to_tracks) do
-    ids_to_tracks
-    |> Enum.map(fn {id, %Track{} = track} -> {id, Track.first_frame(track)} end)
-    |> Enum.sort()
-  end
-
-  defp pop_frames(ids_to_tracks) do
-    ids_to_tracks
-    |> Enum.map(fn {id, %Track{} = track} ->
-      {id, Track.pop_frame(track)}
-    end)
-    |> Map.new()
-  end
-
-  defp remove_finished_tracks(state) do
-    state.ids_to_tracks
-    |> Enum.reduce(
-      state,
-      fn {id, %Track{} = track}, state ->
-        if Track.finished?(track) do
-          remove_track(state, id)
-        else
-          state
-        end
-      end
-    )
-  end
-
-  defp track_finished?(ids_to_tracks, id) do
-    track = Map.get(ids_to_tracks, id)
-    Track.finished?(track)
-  end
-
-  defp remove_track(state, id) do
-    %{ids_to_tracks: ids_to_tracks, internal_state: internal_state} = state
-    ids_to_tracks = Map.delete(ids_to_tracks, id)
-    {:ok, internal_state} = state.compositor_module.remove_video(internal_state, id)
-    %{state | ids_to_tracks: ids_to_tracks, internal_state: internal_state}
-  end
-
-  defp update_track_status(ids_to_tracks, id, status) do
-    ids_to_tracks
-    |> Map.update!(id, fn track -> %Track{track | status: status} end)
-  end
-
-  defp tracks_status(ids_to_tracks) do
-    if Map.values(ids_to_tracks) |> Enum.all?(&Track.finished?/1) do
-      :all_finished
-    else
-      :still_ongoing
+      {:ok, internal_state} ->
+        {:ok, %{state | internal_state: internal_state}}
     end
   end
 
   @impl true
   def handle_end_of_stream(
         pad,
-        _context,
+        context,
         state
       ) do
-    %{ids_to_tracks: ids_to_tracks, pads_to_ids: pads_to_ids} = state
+    %{pads_to_ids: pads_to_ids, internal_state: internal_state} = state
     id = Map.get(pads_to_ids, pad)
 
-    ids_to_tracks = ids_to_tracks |> update_track_status(id, :end_of_stream)
-    state = %{state | ids_to_tracks: ids_to_tracks}
+    {:ok, internal_state} = state.compositor_module.send_end_of_stream(internal_state, id)
+    state = %{state | internal_state: internal_state}
 
-    state =
-      if track_finished?(ids_to_tracks, id) do
-        remove_track(state, id)
-      else
-        state
-      end
-
-    {{buffers_status, buffers}, state} = merge_frames(state)
-
-    case {buffers_status, tracks_status(state.ids_to_tracks)} do
-      {:empty, :still_ongoing} ->
-        {:ok, state}
-
-      {:empty, :all_finished} ->
-        {{:ok, end_of_stream: :output}, state}
-
-      {:merged, :still_ongoing} ->
-        {{:ok, buffer: {:output, buffers}}, state}
-
-      {:merged, :all_finished} ->
-        {{:ok, buffer: {:output, buffers}, end_of_stream: :output}, state}
+    if all_input_pads_received_end_of_stream?(context.pads) do
+      {{:ok, end_of_stream: :output}, state}
+    else
+      {:ok, state}
     end
+  end
+
+  defp all_input_pads_received_end_of_stream?(pads) do
+    Map.to_list(pads)
+    |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
   end
 
   defp determine_compositor_module(implementation) do

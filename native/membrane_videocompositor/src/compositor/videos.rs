@@ -1,3 +1,6 @@
+use std::collections::VecDeque;
+use std::sync::Arc;
+
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
@@ -6,7 +9,7 @@ use super::{Point, Vertex};
 
 #[derive(Debug, Clone, Copy)]
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
-pub struct VideoPosition {
+pub struct VideoProperties {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
@@ -14,44 +17,54 @@ pub struct VideoPosition {
     pub width: u32,
     pub height: u32,
     pub z: f32,
+    pub scale: f64,
+}
+
+pub enum Message {
+    Frame { pts: u64, frame: RGBATexture },
+    EndOfStream,
+}
+
+pub enum DrawResult {
+    /// Contains the pts of the rendered frame
+    Rendered(u64),
+    NotRendered,
+    EndOfStream,
 }
 
 #[rustfmt::skip]
 const INDICES: [u16; 6] = [
-    0, 1, 3, 
+    0, 1, 3,
     1, 2, 3
 ];
 
 pub struct InputVideo {
+    frames: VecDeque<Message>,
     yuv_textures: YUVTextures,
-    rgba_texture: RGBATexture,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
-    position: VideoPosition,
+    properties: VideoProperties,
+    previous_frame: Option<Message>,
+    single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
 }
 
 impl InputVideo {
     pub fn new(
         device: &wgpu::Device,
-        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
+        single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        position: VideoPosition,
+        properties: VideoProperties,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            position.width,
-            position.height,
+            properties.width,
+            properties.height,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            Some(single_texture_bind_group_layout),
+            Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
         );
 
-        let rgba_texture = RGBATexture::new(
-            device,
-            position.width,
-            position.height,
-            single_texture_bind_group_layout,
-        );
+        let frames = VecDeque::new();
 
         let vertices = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("video vertex buffer"),
@@ -68,100 +81,164 @@ impl InputVideo {
 
         Self {
             yuv_textures,
-            rgba_texture,
+            frames,
             vertices,
             indices,
-            position,
+            properties,
+            previous_frame: None,
+            single_texture_bind_group_layout,
         }
     }
 
     pub fn upload_data(
-        &self,
+        &mut self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         converter: &YUVToRGBAConverter,
         data: &[u8],
+        pts: u64,
+        last_rendered_pts: Option<u64>,
     ) {
         self.yuv_textures.upload_data(queue, data);
-        converter.convert(device, queue, &self.yuv_textures, &self.rgba_texture);
+        let frame = RGBATexture::new(
+            device,
+            self.properties.width,
+            self.properties.height,
+            &self.single_texture_bind_group_layout,
+        );
+        converter.convert(device, queue, &self.yuv_textures, &frame);
+
+        // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
+        if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
+            // then we can add the frame to the queue (we assume the frames come in order)
+            self.frames.push_back(Message::Frame { frame, pts });
+        }
+        // otherwise, our frame is too old to be added to the queue, so we check if it is newer than the previously used frame,
+        // which is our fallback in case we are forced to render before a new enough frame arrives.
+        else if let Some(Message::Frame { pts: prev_pts, .. }) = self.previous_frame.as_ref() {
+            if *prev_pts < pts {
+                self.previous_frame = Some(Message::Frame { frame, pts });
+            }
+        }
     }
 
     pub fn vertex_data(&self, output_caps: &crate::RawVideo) -> [Vertex; 4] {
         let scene_width = output_caps.width;
         let scene_height = output_caps.height;
 
-        let position = self.position.top_left;
-        let width = self.position.width;
-        let height = self.position.height;
+        let position = self.properties.top_left;
+        let width = self.properties.width;
+        let height = self.properties.height;
 
         let left = lerp(
-            self.position.top_left.x as f64,
+            self.properties.top_left.x as f64,
             0.0,
-            scene_width as f64,
+            scene_width.get() as f64,
             -1.0,
             1.0,
         ) as f32;
         let right = lerp(
-            (position.x + width) as f64,
+            position.x as f64 + width as f64 * self.properties.scale,
             0.0,
-            scene_width as f64,
+            scene_width.get() as f64,
             -1.0,
             1.0,
         ) as f32;
-        let top = lerp(position.y as f64, 0.0, scene_height as f64, 1.0, -1.0) as f32;
+        let top = lerp(position.y as f64, 0.0, scene_height.get() as f64, 1.0, -1.0) as f32;
         let bot = lerp(
-            (position.y + height) as f64,
+            position.y as f64 + height as f64 * self.properties.scale,
             0.0,
-            scene_height as f64,
+            scene_height.get() as f64,
             1.0,
             -1.0,
         ) as f32;
 
         [
             Vertex {
-                position: [right, top, self.position.z],
+                position: [right, top, self.properties.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, self.position.z],
+                position: [left, top, self.properties.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, self.position.z],
+                position: [left, bot, self.properties.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, self.position.z],
+                position: [right, bot, self.properties.z],
                 texture_coords: [1.0, 1.0],
             },
         ]
     }
-}
 
-impl<'a> InputVideo {
-    pub fn draw(
-        &'a self,
+    pub fn front_pts(&self) -> Option<u64> {
+        if let Some(Message::Frame { pts, .. }) = self.frames.front() {
+            Some(*pts)
+        } else {
+            None
+        }
+    }
+
+    /// This returns pts of the used frame
+    pub fn draw<'a>(
+        &'a mut self,
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
         output_caps: &crate::RawVideo,
-    ) {
+    ) -> DrawResult {
         queue.write_buffer(
             &self.vertices,
             0,
             bytemuck::cast_slice(&self.vertex_data(output_caps)),
         );
 
-        render_pass.set_bind_group(
-            0,
-            self.rgba_texture.texture.bind_group.as_ref().unwrap(),
-            &[],
-        );
+        let (frame, pts) = match self.frames.front() {
+            Some(Message::Frame { frame, pts }) => (frame, *pts),
+
+            Some(Message::EndOfStream) => return DrawResult::EndOfStream,
+
+            None => match self.previous_frame.as_ref() {
+                Some(Message::Frame { pts, frame }) => (frame, *pts),
+
+                Some(Message::EndOfStream) => return DrawResult::EndOfStream,
+
+                None => return DrawResult::NotRendered,
+            },
+        };
+
+        render_pass.set_bind_group(0, frame.texture.bind_group.as_ref().unwrap(), &[]);
+
         render_pass.set_index_buffer(self.indices.slice(..), wgpu::IndexFormat::Uint16);
         render_pass.set_vertex_buffer(0, self.vertices.slice(..));
 
         let indices_len = (self.indices.size() / std::mem::size_of::<u16>() as u64) as u32;
 
         render_pass.draw_indexed(0..indices_len, 0, 0..1);
+
+        DrawResult::Rendered(pts)
+    }
+
+    pub fn pop_frame(&mut self) {
+        if let Some(Message::Frame { pts, frame }) = self.frames.pop_front() {
+            self.previous_frame = Some(Message::Frame { pts, frame });
+        }
+    }
+
+    pub fn send_end_of_stream(&mut self) {
+        self.frames.push_back(Message::EndOfStream);
+    }
+
+    pub fn is_frame_ready(&self, interval: Option<(u64, u64)>) -> bool {
+        if let Some(Message::EndOfStream) = self.frames.front() {
+            return true;
+        }
+
+        self.front_pts().is_some() // if the stream hasn't ended then we have to have a frame in the queue, then either:
+            && (interval.is_none() // this is the first frame, which means a frame with any pts is good
+                || (interval.unwrap().0 <= self.front_pts().unwrap()
+                    && self.front_pts().unwrap() <= interval.unwrap().1)) // or we have to fit between the start and end pts
     }
 }
 

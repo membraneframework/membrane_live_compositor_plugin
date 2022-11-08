@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display};
+use std::{collections::BTreeMap, fmt::Display, sync::Arc};
 
 mod colour_converters;
 mod textures;
@@ -8,7 +8,7 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
-pub use videos::VideoPosition;
+pub use videos::VideoProperties;
 
 use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
@@ -53,15 +53,16 @@ pub struct State {
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
     sampler: Sampler,
-    single_texture_bind_group_layout: wgpu::BindGroupLayout,
-    all_yuv_textures_bind_group_layout: wgpu::BindGroupLayout,
+    single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
+    all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_caps: crate::RawVideo,
+    last_pts: Option<u64>,
 }
 
 impl State {
-    pub async fn new(output_caps: &crate::RawVideo) -> State {
+    pub async fn new(output_caps: &crate::RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -140,8 +141,8 @@ impl State {
 
         let output_textures = OutputTextures::new(
             &device,
-            output_caps.width,
-            output_caps.height,
+            output_caps.width.get(),
+            output_caps.height.get(),
             &single_texture_bind_group_layout,
         );
 
@@ -233,7 +234,7 @@ impl State {
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
 
-        Self {
+        Ok(Self {
             device,
             input_videos,
             output_textures,
@@ -243,33 +244,51 @@ impl State {
                 _sampler: sampler,
                 bind_group: sampler_bind_group,
             },
-            single_texture_bind_group_layout,
-            all_yuv_textures_bind_group_layout,
+            single_texture_bind_group_layout: Arc::new(single_texture_bind_group_layout),
+            all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
-            output_caps: output_caps.clone(),
-        }
+            output_caps: *output_caps,
+            last_pts: None,
+        })
     }
 
-    pub fn upload_texture(&self, idx: usize, frame: &[u8]) -> Result<(), CompositorError> {
+    pub fn upload_texture(
+        &mut self,
+        idx: usize,
+        frame: &[u8],
+        pts: u64,
+    ) -> Result<(), CompositorError> {
         self.input_videos
-            .get(&idx)
+            .get_mut(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?
             .upload_data(
                 &self.device,
                 &self.queue,
                 &self.yuv_to_rgba_converter,
                 frame,
+                pts,
+                self.last_pts,
             );
         Ok(())
     }
 
-    pub async fn draw_into(&self, output_buffer: &mut [u8]) {
+    pub fn all_frames_ready(&self) -> bool {
+        self.input_videos
+            .values()
+            .all(|v| v.is_frame_ready(self.frame_interval()))
+    }
+
+    /// This returns the pts of the new frame
+    pub async fn draw_into(&mut self, output_buffer: &mut [u8]) -> u64 {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("encoder"),
             });
+
+        let mut pts = 0;
+        let mut ended_video_ids = Vec::new();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -295,10 +314,19 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
-            for video in self.input_videos.values() {
-                video.draw(&self.queue, &mut render_pass, &self.output_caps);
+            for (&id, video) in self.input_videos.iter_mut() {
+                match video.draw(&self.queue, &mut render_pass, &self.output_caps) {
+                    DrawResult::Rendered(new_pts) => pts = pts.max(new_pts),
+                    DrawResult::NotRendered => {}
+                    DrawResult::EndOfStream => ended_video_ids.push(id),
+                }
             }
         }
+
+        ended_video_ids.iter().for_each(|id| {
+            self.input_videos.remove(id);
+        });
+        self.input_videos.values_mut().for_each(|v| v.pop_frame());
 
         self.queue.submit(Some(encoder.finish()));
 
@@ -311,16 +339,20 @@ impl State {
         self.output_textures
             .download(&self.device, output_buffer)
             .await;
+
+        self.last_pts = Some(pts);
+
+        pts
     }
 
-    pub fn add_video(&mut self, idx: usize, position: VideoPosition) {
+    pub fn add_video(&mut self, idx: usize, properties: VideoProperties) {
         self.input_videos.insert(
             idx,
             InputVideo::new(
                 &self.device,
-                &self.single_texture_bind_group_layout,
+                self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
-                position,
+                properties,
             ),
         );
     }
@@ -330,5 +362,135 @@ impl State {
             .remove(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?;
         Ok(())
+    }
+
+    pub fn send_end_of_stream(&mut self, idx: usize) -> Result<(), CompositorError> {
+        self.input_videos
+            .get_mut(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?
+            .send_end_of_stream();
+        Ok(())
+    }
+
+    /// This is in nanoseconds
+    pub fn frame_time(&self) -> f64 {
+        self.output_caps.framerate.1.get() as f64 / self.output_caps.framerate.0.get() as f64
+            * 1_000_000_000.0
+    }
+
+    pub fn frame_interval(&self) -> Option<(u64, u64)> {
+        self.last_pts.map(|start| {
+            (
+                start,
+                (((start as f64 + self.frame_time()) / 1_000_000.0).ceil() * 1_000_000.0) as u64,
+            )
+        })
+    }
+
+    #[allow(unused)]
+    pub fn dump_queue_state(&self) {
+        println!("[rust compositor queue dump]");
+        println!(
+            "interval: {:?}, frame_time: {}",
+            self.frame_interval(),
+            self.frame_time()
+        );
+        for (key, val) in &self.input_videos {
+            println!("vid {key} => front pts {:?}", val.front_pts());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::num::{NonZeroU32, NonZeroU64};
+
+    impl Default for crate::RawVideo {
+        fn default() -> Self {
+            Self {
+                width: NonZeroU32::new(2).unwrap(),
+                height: NonZeroU32::new(2).unwrap(),
+                pixel_format: crate::PixelFormat::I420,
+                framerate: (NonZeroU64::new(1).unwrap(), NonZeroU64::new(1).unwrap()),
+            }
+        }
+    }
+
+    const FRAME: &[u8; 6] = &[0x30, 0x40, 0x30, 0x40, 0x80, 0xb0];
+
+    fn setup_videos(n: usize) -> State {
+        let caps = crate::RawVideo {
+            width: NonZeroU32::new(2 * n as u32).unwrap(),
+            height: NonZeroU32::new(2).unwrap(),
+            ..Default::default()
+        };
+
+        let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
+
+        for i in 0..n {
+            compositor.add_video(
+                i,
+                VideoProperties {
+                    top_left: Point {
+                        x: 2 * i as u32,
+                        y: 0,
+                    },
+                    width: 2,
+                    height: 2,
+                    z: 0.5,
+                    scale: 1.0,
+                },
+            );
+        }
+
+        compositor
+    }
+
+    #[test]
+    fn ends_streams_on_eos() {
+        let mut compositor = setup_videos(2);
+
+        compositor.upload_texture(0, FRAME, 0).unwrap();
+        compositor.upload_texture(1, FRAME, 0).unwrap();
+
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 12]));
+
+        compositor.send_end_of_stream(1).unwrap();
+        compositor.upload_texture(0, FRAME, 500_000_000).unwrap();
+
+        assert!(compositor.all_frames_ready());
+    }
+
+    #[test]
+    fn is_ready_after_receiving_all_frames() {
+        let mut compositor = setup_videos(3);
+
+        compositor.upload_texture(0, FRAME, 0).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(1, FRAME, 0).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(2, FRAME, 0).unwrap();
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 18]));
+
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 1_500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(1, FRAME, 500_000_000).unwrap();
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(2, FRAME, 500_000_000).unwrap();
+        assert!(compositor.all_frames_ready());
     }
 }

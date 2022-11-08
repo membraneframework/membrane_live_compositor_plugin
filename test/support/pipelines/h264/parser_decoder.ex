@@ -5,6 +5,14 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder do
   use Membrane.Bin
   alias Membrane.RawVideo
 
+  def_options framerate: [
+                spec: H264.framerate_t() | nil,
+                default: nil,
+                description: """
+                Framerate of video stream, see `t:Membrane.H264.framerate_t/0`
+                """
+              ]
+
   def_input_pad :input,
     demand_unit: :buffers,
     demand_mode: :auto,
@@ -15,9 +23,9 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder do
     caps: {RawVideo, pixel_format: one_of([:I420, :I422]), aligned: true}
 
   @impl true
-  def handle_init(_opts) do
+  def handle_init(opts) do
     children = %{
-      parser: Membrane.H264.FFmpeg.Parser,
+      parser: %Membrane.H264.FFmpeg.Parser{framerate: opts.framerate},
       decoder: Membrane.H264.FFmpeg.Decoder
     }
 

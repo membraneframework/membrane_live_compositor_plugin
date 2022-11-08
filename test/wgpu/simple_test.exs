@@ -1,7 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.Common.{Position, RawVideo}
+  alias Membrane.VideoCompositor.Common.{RawVideo, VideoProperties}
   alias Membrane.VideoCompositor.Test.Support.Utility
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -10,7 +10,7 @@ defmodule VideoCompositor.Wgpu.Test do
     @describetag :wgpu
 
     test "inits" do
-      out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420}
+      out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420, framerate: {60, 1}}
 
       assert {:ok, _state} = Native.init(out_video)
     end
@@ -22,31 +22,36 @@ defmodule VideoCompositor.Wgpu.Test do
       in_video = %RawVideo{
         width: 640,
         height: 360,
-        pixel_format: :I420
+        pixel_format: :I420,
+        framerate: {60, 1}
       }
 
       assert {:ok, state} =
                Native.init(%RawVideo{
                  width: 640,
                  height: 720,
-                 pixel_format: :I420
+                 pixel_format: :I420,
+                 framerate: {60, 1}
                })
 
       assert :ok =
-               Native.add_video(state, 0, in_video, %Position{
+               Native.add_video(state, 0, in_video, %VideoProperties{
                  x: 0,
                  y: 0,
-                 z: 0.0
+                 z: 0.0,
+                 scale: 1.0
                })
 
       assert :ok =
-               Native.add_video(state, 1, in_video, %Position{
+               Native.add_video(state, 1, in_video, %VideoProperties{
                  x: 0,
                  y: 360,
-                 z: 0.0
+                 z: 0.0,
+                 scale: 1.0
                })
 
-      assert {:ok, out_frame} = Native.render_frame(state, [{0, frame}, {1, frame}])
+      assert :ok = Native.upload_frame(state, 0, frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)
@@ -69,29 +74,33 @@ defmodule VideoCompositor.Wgpu.Test do
       caps = %RawVideo{
         width: 640,
         height: 360,
-        pixel_format: :I420
+        pixel_format: :I420,
+        framerate: {60, 1}
       }
 
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %Position{
+               Native.add_video(state, 0, caps, %VideoProperties{
                  x: 0,
                  y: 0,
-                 z: 0.0
+                 z: 0.0,
+                 scale: 1.0
                })
 
       assert :ok =
-               Native.add_video(state, 1, caps, %Position{
+               Native.add_video(state, 1, caps, %VideoProperties{
                  x: 0,
                  y: 0,
-                 z: 0.5
+                 z: 0.5,
+                 scale: 1.0
                })
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
 
-      assert {:ok, out_frame} = Native.render_frame(state, [{0, empty_frame}, {1, frame}])
+      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
