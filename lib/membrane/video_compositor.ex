@@ -7,14 +7,8 @@ defmodule Membrane.VideoCompositor do
 
   use Membrane.Filter
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Implementations
 
-  def_options implementation: [
-                type: :atom,
-                spec: Implementations.implementation_t() | {:mock, module()},
-                description: "Implementation of video composer."
-              ],
-              caps: [
+  def_options caps: [
                 type: RawVideo,
                 description: "Struct with video width, height, framerate and pixel format."
               ]
@@ -41,7 +35,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(options) do
-    compositor_module = determine_compositor_module(options.implementation)
+    compositor_module = Membrane.VideoCompositor.Wgpu
 
     {:ok, internal_state} = compositor_module.init(options.caps)
 
@@ -160,18 +154,5 @@ defmodule Membrane.VideoCompositor do
   defp all_input_pads_received_end_of_stream?(pads) do
     Map.to_list(pads)
     |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
-  end
-
-  defp determine_compositor_module(implementation) do
-    case implementation do
-      {:mock, module} ->
-        module
-
-      implementation ->
-        case Implementations.get_implementation_module(implementation) do
-          {:ok, module} -> module
-          {:error, error} -> raise error
-        end
-    end
   end
 end

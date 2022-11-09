@@ -7,7 +7,6 @@ defmodule VideoCompositor.Wgpu.Test do
 
   describe "wgpu native test on" do
     @describetag :tmp_dir
-    @describetag :wgpu
 
     test "inits" do
       out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420, framerate: {60, 1}}

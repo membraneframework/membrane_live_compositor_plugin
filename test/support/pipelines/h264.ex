@@ -19,7 +19,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
       | decoder: decoder,
         encoder: encoder,
         compositor: %Membrane.VideoCompositor{
-          implementation: options.implementation,
           caps: options.caps
         }
     }

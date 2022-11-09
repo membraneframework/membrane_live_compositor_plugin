@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Mock do
   @moduledoc """
-  Pipeline for testing core functionalities of VideoCompositor. Uses mock frame composer.
+  Pipeline for testing core functionalities of VideoCompositor.
   """
 
   import Membrane.ParentSpec
@@ -8,7 +8,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Mock do
   alias Membrane.RawVideo
   alias Membrane.Testing
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.Test.Support.Mock.FrameComposer, as: MockFrameComposer
 
   @no_video %RawVideo{
     width: 0,
@@ -35,7 +34,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Mock do
       source_children ++
         [
           composer: %VideoCompositor{
-            implementation: {:mock, MockFrameComposer},
             caps: @no_video
           },
           sink: Testing.Sink

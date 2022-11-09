@@ -6,12 +6,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.Implementations
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
-  @implementation Implementations.get_all_implementations()
 
   @hd_video %RawVideo{
     width: 1280,
@@ -21,25 +19,24 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
-  Enum.map(@implementation, fn implementation ->
-    describe "Checks #{implementation} composition and raw video pipeline on" do
-      @describetag :tmp_dir
 
-      @tag implementation
-      test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-        test_raw_composing(@hd_video, 3, unquote(implementation), tmp_dir, "short_videos")
-      end
+  describe "Checks composition and raw video pipeline on" do
+    @describetag :tmp_dir
 
-      @tag long: true
-      test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
-        test_raw_composing(@hd_video, 10, unquote(implementation), tmp_dir, "long_videos")
-      end
+    test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+      test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
-  end)
 
-  @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), atom, binary(), binary()) ::
+    @tag long: true
+    test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+      test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
+    end
+  end
+
+
+  @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
           nil
-  defp test_raw_composing(video_caps, duration, implementation, tmp_dir, sub_dir_name) do
+  defp test_raw_composing(video_caps, duration, tmp_dir, sub_dir_name) do
     alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
@@ -77,7 +74,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       inputs: inputs,
       output: output_path,
       caps: out_caps,
-      implementation: implementation
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
