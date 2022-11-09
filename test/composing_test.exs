@@ -22,11 +22,12 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   describe "Checks composition and raw video pipeline on" do
     @describetag :tmp_dir
 
+    @tag wgpu: true
     test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
 
-    @tag long: true
+    @tag long: true, wgpu: true
     test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end

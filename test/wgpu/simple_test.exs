@@ -8,12 +8,14 @@ defmodule VideoCompositor.Wgpu.Test do
   describe "wgpu native test on" do
     @describetag :tmp_dir
 
+    @tag wgpu: true
     test "inits" do
       out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420, framerate: {60, 1}}
 
       assert {:ok, _state} = Native.init(out_video)
     end
 
+    @tag wgpu: true
     test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
       {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
       assert {:ok, frame} = File.read(in_path)
@@ -66,6 +68,7 @@ defmodule VideoCompositor.Wgpu.Test do
       Utility.compare_contents_with_error(out_path, ref_path)
     end
 
+    @tag wgpu: true
     test "z value affects composition", %{tmp_dir: tmp_dir} do
       {in_path, out_path, _ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
       assert {:ok, frame} = File.read(in_path)
