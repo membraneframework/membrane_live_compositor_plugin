@@ -296,7 +296,7 @@ impl State {
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &self.output_textures.rgba_texture.texture.view,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
                         store: true,
                     },
                     resolve_target: None,
