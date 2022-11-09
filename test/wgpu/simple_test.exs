@@ -17,7 +17,9 @@ defmodule VideoCompositor.Wgpu.Test do
 
     @tag wgpu: true
     test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, ref_path} = FFmpegVideoGenerator.prepare_paths("1frame.yuv", tmp_dir, "native")
+      {in_path, out_path, ref_path} =
+        FFmpegVideoGenerator.prepare_paths("1frame.yuv", tmp_dir, "native")
+
       assert {:ok, frame} = File.read(in_path)
 
       in_video = %RawVideo{
@@ -70,7 +72,9 @@ defmodule VideoCompositor.Wgpu.Test do
 
     @tag wgpu: true
     test "z value affects composition", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, _ref_path} = FFmpegVideoGenerator.prepare_paths("1frame.yuv", tmp_dir, "native")
+      {in_path, out_path, _ref_path} =
+        FFmpegVideoGenerator.prepare_paths("1frame.yuv", tmp_dir, "native")
+
       assert {:ok, frame} = File.read(in_path)
 
       caps = %RawVideo{

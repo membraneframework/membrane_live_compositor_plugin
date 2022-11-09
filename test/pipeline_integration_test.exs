@@ -53,7 +53,14 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
-    {input_path, output_path, _ref_file_name} = FFmpegVideoGenerator.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
+    {input_path, output_path, _ref_file_name} =
+      FFmpegVideoGenerator.prepare_testing_video(
+        video_caps,
+        duration,
+        "h264",
+        tmp_dir,
+        sub_dir_name
+      )
 
     positions = [
       {0, 0},

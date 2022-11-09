@@ -40,7 +40,13 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
     {input_path, output_path, reference_path} =
-      FFmpegVideoGenerator.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
+      FFmpegVideoGenerator.prepare_testing_video(
+        video_caps,
+        duration,
+        "raw",
+        tmp_dir,
+        sub_dir_name
+      )
 
     :ok =
       FFmpegVideoGenerator.generate_raw_ffmpeg_reference(
