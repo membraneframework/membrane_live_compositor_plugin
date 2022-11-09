@@ -37,12 +37,12 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       test_h264_pipeline(@full_hd_video, 1, "short_videos", tmp_dir)
     end
 
-    @tag long: true
+    @tag long: true, timeout: 1_000_000
     test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@hd_video, 30, "long_videos", tmp_dir)
     end
 
-    @tag long: true, timeout: 100_000
+    @tag long: true, timeout: 1_000_000
     test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@full_hd_video, 30, "long_videos", tmp_dir)
     end
