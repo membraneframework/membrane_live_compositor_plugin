@@ -9,7 +9,6 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
 
-
   @hd_video %RawVideo{
     width: 2 * 1280,
     height: 2 * 720,
@@ -48,7 +47,6 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     end
   end
 
-
   defp test_h264_pipeline(video_caps, duration, sub_dir_name, tmp_dir) do
     alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
@@ -76,7 +74,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     options = %Options{
       inputs: inputs,
       output: output_path,
-      caps: out_caps,
+      caps: out_caps
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineH264, custom_args: options)

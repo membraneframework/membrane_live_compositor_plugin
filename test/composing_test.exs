@@ -19,7 +19,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
-
   describe "Checks composition and raw video pipeline on" do
     @describetag :tmp_dir
 
@@ -32,7 +31,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end
   end
-
 
   @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
           nil
@@ -73,7 +71,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     options = %Options{
       inputs: inputs,
       output: output_path,
-      caps: out_caps,
+      caps: out_caps
     }
 
     assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
