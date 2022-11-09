@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
 
-    @tag long: true, wgpu: true
+    @tag long_wgpu: true
     test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end
@@ -68,6 +68,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
         pos <- positions,
         do: %InputStream{
           position: pos,
+          z_value: 0.0,
+          scale: 1.0,
           caps: video_caps,
           input: input_path
         }

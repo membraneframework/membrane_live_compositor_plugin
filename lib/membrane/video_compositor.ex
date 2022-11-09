@@ -25,6 +25,19 @@ defmodule Membrane.VideoCompositor do
         description:
           "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
         default: {0, 0}
+      ],
+      z_value: [
+        type: :float,
+        spec: float(),
+        description:
+          "Specify which video should be on top of the others. Should be in (0, 1) range. Videos with higher z_value will be displayed on top.",
+        default: 0.0
+      ],
+      scale: [
+        type: :float,
+        spec: float(),
+        description: "Video scale factor.",
+        default: 1.0
       ]
     ]
 
@@ -41,6 +54,8 @@ defmodule Membrane.VideoCompositor do
 
     state = %{
       video_positions_waiting_for_caps: %{},
+      video_z_values_waiting_for_caps: %{},
+      video_scales_waiting_for_caps: %{},
       caps: options.caps,
       compositor_module: compositor_module,
       internal_state: internal_state,
@@ -59,18 +74,24 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_pad_added(pad, context, state) do
     position = context.options.position
+    z_value = context.options.z_value
+    scale = context.options.scale
 
-    state = register_pad(state, pad, position)
+    state = register_pad(state, pad, position, z_value, scale)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position) do
+  defp register_pad(state, pad, position, z_value, scale) do
     new_id = state.new_pad_id
 
     %{
       state
       | video_positions_waiting_for_caps:
           Map.put(state.video_positions_waiting_for_caps, new_id, position),
+        video_z_values_waiting_for_caps:
+          Map.put(state.video_z_values_waiting_for_caps, new_id, z_value),
+        video_scales_waiting_for_caps:
+          Map.put(state.video_scales_waiting_for_caps, new_id, scale),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -81,18 +102,26 @@ defmodule Membrane.VideoCompositor do
     %{
       pads_to_ids: pads_to_ids,
       internal_state: internal_state,
-      video_positions_waiting_for_caps: video_positions_waiting_for_caps
+      video_positions_waiting_for_caps: video_positions_waiting_for_caps,
+      video_z_values_waiting_for_caps: video_z_values_waiting_for_caps,
+      video_scales_waiting_for_caps: video_scales_waiting_for_caps
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     {position, video_positions_waiting_for_caps} = Map.pop!(video_positions_waiting_for_caps, id)
-    {:ok, internal_state} = state.compositor_module.add_video(internal_state, id, caps, position)
+    {z_value, video_z_values_waiting_for_caps} = Map.pop!(video_z_values_waiting_for_caps, id)
+    {scale, video_scales_waiting_for_caps} = Map.pop!(video_scales_waiting_for_caps, id)
+
+    {:ok, internal_state} =
+      state.compositor_module.add_video(internal_state, id, caps, position, z_value, scale)
 
     state = %{
       state
       | internal_state: internal_state,
-        video_positions_waiting_for_caps: video_positions_waiting_for_caps
+        video_positions_waiting_for_caps: video_positions_waiting_for_caps,
+        video_z_values_waiting_for_caps: video_z_values_waiting_for_caps,
+        video_scales_waiting_for_caps: video_scales_waiting_for_caps
     }
 
     {:ok, state}
