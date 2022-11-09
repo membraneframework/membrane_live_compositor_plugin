@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Test.Support.Utility.FFmpegVideoGenerator
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
@@ -40,10 +40,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
     {input_path, output_path, reference_path} =
-      TestingUtility.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
+      FFmpegVideoGenerator.prepare_testing_video(video_caps, duration, "raw", tmp_dir, sub_dir_name)
 
     :ok =
-      TestingUtility.generate_raw_ffmpeg_reference(
+      FFmpegVideoGenerator.generate_raw_ffmpeg_reference(
         input_path,
         video_caps,
         reference_path,
@@ -82,6 +82,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    assert TestingUtility.compare_contents_with_error(output_path, reference_path)
+    assert FFmpegVideoGenerator.compare_contents_with_error(output_path, reference_path)
   end
 end

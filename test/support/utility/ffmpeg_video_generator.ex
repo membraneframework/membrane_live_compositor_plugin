@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Support.Utility do
+defmodule Membrane.VideoCompositor.Test.Support.Utility.FFmpegVideoGenerator do
   @moduledoc false
   import ExUnit.Assertions
 

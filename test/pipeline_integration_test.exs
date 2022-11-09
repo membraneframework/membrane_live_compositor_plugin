@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Test.Support.Utility, as: TestingUtility
+  alias Membrane.VideoCompositor.Test.Support.Utility.FFmpegVideoGenerator
 
   @hd_video %RawVideo{
     width: 2 * 1280,
@@ -53,8 +53,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
     alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
-    {input_path, output_path, _ref_file_name} =
-      TestingUtility.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
+    {input_path, output_path, _ref_file_name} = FFmpegVideoGenerator.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
 
     positions = [
       {0, 0},
