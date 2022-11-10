@@ -7,8 +7,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-  alias Membrane.VideoCompositor.Pipeline.Utility.Options
+  alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
 
   @impl true
   def handle_init(%Options{} = options) do

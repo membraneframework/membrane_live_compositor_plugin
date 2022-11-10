@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Test.Support.Utility.FFmpegVideoGenerator
+  alias Membrane.VideoCompositor.Test.Support.Utility
 
   @hd_video %RawVideo{
     width: 2 * 1280,
@@ -38,23 +38,22 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       test_h264_pipeline(@full_hd_video, 1, "short_videos", tmp_dir)
     end
 
-    @tag long: true, wgpu: true, timeout: 1_000_000
+    @tag long_wgpu: true, timeout: 1_000_000
     test "30s 720p 30fps video", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@hd_video, 30, "long_videos", tmp_dir)
     end
 
-    @tag long: true, wgpu: true, timeout: 1_000_000
+    @tag long_wgpu: true, timeout: 1_000_000
     test "60s 1080p 30fps video", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@full_hd_video, 30, "long_videos", tmp_dir)
     end
   end
 
   defp test_h264_pipeline(video_caps, duration, sub_dir_name, tmp_dir) do
-    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-    alias Membrane.VideoCompositor.Pipeline.Utility.Options
+    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
 
     {input_path, output_path, _ref_file_name} =
-      FFmpegVideoGenerator.prepare_testing_video(
+      Utility.prepare_testing_video(
         video_caps,
         duration,
         "h264",

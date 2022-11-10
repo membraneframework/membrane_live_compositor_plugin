@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utility.FFmpegVideoGenerator
+  alias Membrane.VideoCompositor.Test.Support.Utility
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
 
-    @tag long: true, wgpu: true
+    @tag long_wgpu: true
     test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end
@@ -36,11 +36,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
           nil
   defp test_raw_composing(video_caps, duration, tmp_dir, sub_dir_name) do
-    alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
-    alias Membrane.VideoCompositor.Pipeline.Utility.Options
+    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
 
     {input_path, output_path, reference_path} =
-      FFmpegVideoGenerator.prepare_testing_video(
+      Utility.prepare_testing_video(
         video_caps,
         duration,
         "raw",
@@ -49,7 +48,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       )
 
     :ok =
-      FFmpegVideoGenerator.generate_raw_ffmpeg_reference(
+      Utility.generate_raw_ffmpeg_reference(
         input_path,
         video_caps,
         reference_path,
@@ -88,6 +87,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    assert FFmpegVideoGenerator.compare_contents_with_error(output_path, reference_path)
+    assert Utility.compare_contents_with_error(output_path, reference_path)
   end
 end

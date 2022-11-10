@@ -1,5 +1,5 @@
 excluded = [
-  long: true,
+  long_wgpu: true,
   wgpu: true
 ]
 
