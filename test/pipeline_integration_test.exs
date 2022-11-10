@@ -72,6 +72,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       for pos <- positions,
           do: %InputStream{
             position: pos,
+            z_value: 0.0,
+            scale: 1.0,
             caps: video_caps,
             input: input_path
           }
