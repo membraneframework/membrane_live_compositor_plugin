@@ -21,8 +21,12 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         decoder = options.decoder
         decoder_name = String.to_atom("decoder_#{i}")
 
+        input_filter = options.input_filter
+        input_filter_name = String.to_atom("input_filter_#{i}")
+
         link(source_name, source)
         |> then(if not is_nil(decoder), do: &to(&1, decoder_name, decoder), else: & &1)
+        |> then(if not is_nil(input_filter), do: &to(&1, input_filter_name, input_filter), else: & &1)
         |> via_in(:input, options: [position: position])
         |> to(:compositor)
       end)
