@@ -21,9 +21,6 @@ defmodule Membrane.VideoCompositor.Benchmark.Mixfile do
 
   defp deps do
     [
-      {:benchee, "~> 1.1.0"},
-      {:benchee_html, "~> 1.0"},
-      {:beamchmark, "~> 1.4.0"},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
       {:membrane_raw_video_format, "~> 0.2.0"},
       {:membrane_h264_ffmpeg_plugin, "~> 0.21.0"},

@@ -1,10 +1,11 @@
 defmodule Membrane.VideoCompositor.Benchmark.Support.Pipeline.Raw do
   @moduledoc """
-  Pipeline for testing composing of many videos.
+  Pipeline for demo composing of many videos.
   """
   use Membrane.Pipeline
 
-  alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
+  alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
+  alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
   @impl true
   def handle_init(options) do

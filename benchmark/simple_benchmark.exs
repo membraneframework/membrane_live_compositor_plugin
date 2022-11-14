@@ -1,0 +1,89 @@
+defmodule Membrane.VideoCompositor.Benchmark.Composing do
+  @moduledoc false
+
+  alias Membrane.RawVideo
+  alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.Benchmark.Support.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Benchmark.Support.Utility
+
+  @hd_video %RawVideo{
+    width: 1280,
+    height: 720,
+    framerate: {1, 1},
+    pixel_format: :I420,
+    aligned: true
+  }
+
+  describe "Checks composition and raw video pipeline on" do
+    @describetag :tmp_dir
+
+    @tag wgpu: true
+    test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+      test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
+    end
+
+    @tag long_wgpu: true
+    test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+      test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
+    end
+  end
+
+  @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
+          nil
+  defp test_raw_composing(video_caps, duration, tmp_dir, sub_dir_name) do
+    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
+
+    {input_path, output_path, reference_path} =
+      Utility.prepare_testing_video(
+        video_caps,
+        duration,
+        "raw",
+        tmp_dir,
+        sub_dir_name
+      )
+
+    :ok =
+      Utility.generate_raw_ffmpeg_reference(
+        input_path,
+        video_caps,
+        reference_path,
+        @filter_description
+      )
+
+    positions = [
+      {0, 0},
+      {video_caps.width, 0},
+      {0, video_caps.height},
+      {video_caps.width, video_caps.height}
+    ]
+
+    inputs =
+      for(
+        pos <- positions,
+        do: %InputStream{
+          position: pos,
+          z_value: 0.0,
+          scale: 1.0,
+          caps: video_caps,
+          input: input_path
+        }
+      )
+
+    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
+
+    options = %Options{
+      inputs: inputs,
+      output: output_path,
+      caps: out_caps
+    }
+
+    assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
+
+    assert_pipeline_playback_changed(pid, _, :playing)
+
+    assert_end_of_stream(pid, :sink, :input, 1_000_000)
+    TestingPipeline.terminate(pid, blocking?: true)
+
+    assert Utility.compare_contents_with_error(output_path, reference_path)
+  end
+end

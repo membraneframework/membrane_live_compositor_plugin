@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Benchmark.Support.Pipeline.H264 do
   @moduledoc """
-  Pipeline for testing composing of many videos.
+  Pipeline for demo composing of many videos.
   """
 
   use Membrane.Pipeline
@@ -8,10 +8,7 @@ defmodule Membrane.VideoCompositor.Benchmark.Support.Pipeline.H264 do
 
   @impl true
   def handle_init(options) do
-    decoder = %Membrane.VideoCompositor.Benchmark.Support.Pipeline.H264.ParserDecoder{
-      framerate: options.caps.framerate
-    }
-
+    decoder = Membrane.VideoCompositor.Benchmark.Support.Pipeline.H264.ParserDecoder
     encoder = Membrane.H264.FFmpeg.Encoder
 
     options = %Options{

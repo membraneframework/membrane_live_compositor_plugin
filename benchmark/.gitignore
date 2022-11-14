@@ -2,7 +2,7 @@ compile_commands.json
 .gdb_history
 bundlex.sh
 bundlex.bat
-/tmp_dir
+/lib/tmp
 
 # tests
 test/fixtures/tmp_dir
