@@ -24,14 +24,16 @@ defmodule Membrane.VideoCompositor do
         type: :tuple,
         spec: {integer(), integer()},
         description:
-          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
+          "Initial position of the video on the screen, given in the pixels,
+          relative to the upper left corner of the screen",
         default: {0, 0}
       ],
       z_value: [
         type: :float,
         spec: float(),
         description:
-          "Specify which video should be on top of the others. Should be in (0, 1) range. Videos with higher z_value will be displayed on top.",
+          "Specify which video should be on top of the others. Should be in (0, 1) range.
+          Videos with higher z_value will be displayed on top.",
         default: 0.0
       ],
       scale: [
