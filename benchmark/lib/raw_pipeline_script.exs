@@ -1,3 +1,4 @@
+require Logger
 alias Membrane.RawVideo
 alias Membrane.VideoCompositor.Benchmark.Support.Utility
 alias Membrane.VideoCompositor.Pipeline.Utility.InputStream
@@ -13,19 +14,12 @@ caps = %RawVideo{
 
 video_duration = 120
 
-basename = Utility.get_file_base_name(caps, video_duration, "h264")
+basename = Utility.get_file_base_name(caps, video_duration, "raw")
 demo_path = Path.join([File.cwd!(), "lib", "tmp", "fixtures"])
 in_path = Path.join(demo_path, "in-#{basename}")
 out_path = Path.join(demo_path, "out-#{basename}")
 
 Utility.generate_testing_video(in_path, caps, video_duration)
-
-sink =
-  case s = System.get_env("SINK", "file") do
-    "file" -> out_path
-    "play" -> Membrane.SDL.Player
-    _unsupported -> raise "unsupported sink #{s}"
-  end
 
 src = in_path
 
@@ -60,12 +54,13 @@ options = %Options{
       input: src
     }
   ],
-  output: sink,
+  output: out_path,
   caps: %RawVideo{caps | width: caps.width * 2, height: caps.height * 2},
-  encoder: Membrane.H264.FFmpeg.Encoder
 }
 
+Logger.info("Starting benchmark")
 {:ok, pid} = Membrane.VideoCompositor.Benchmark.Support.Pipeline.Raw.start(options)
+
 
 Process.monitor(pid)
 
