@@ -6,12 +6,18 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   """
 
   use Membrane.Filter
+  alias Membrane.Buffer
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Wgpu
 
   def_options caps: [
-                type: RawVideo,
+                spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
+              ],
+              live: [
+                spec: boolean(),
+                description: "Set the compositor to live mode",
+                default: false
               ]
 
   def_input_pad :input,
@@ -41,6 +47,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{
       video_positions_waiting_for_caps: %{},
       caps: options.caps,
+      live: options.live,
       internal_state: internal_state,
       pads_to_ids: %{},
       new_pad_id: 0
@@ -51,7 +58,24 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_prepared_to_playing(_ctx, state) do
-    {{:ok, caps: {:output, state.caps}}, state}
+    spf = spf_from_framerate(state.caps.framerate)
+
+    actions =
+      if state.live do
+        [start_timer: {:render_frame, spf}, caps: {:output, state.caps}]
+      else
+        [caps: {:output, state.caps}]
+      end
+
+    {{:ok, actions}, state}
+  end
+
+  @impl true
+  def handle_tick(:render_frame, _ctx, state) do
+    {{:ok, {frame, pts}}, internal_state} = Wgpu.force_render(state.internal_state)
+
+    {{:ok, buffer: {:output, %Buffer{payload: frame, pts: pts}}},
+     %{state | internal_state: internal_state}}
   end
 
   @impl true
@@ -117,16 +141,32 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         {
           {
             :ok,
-            buffer: {
-              :output,
-              %Membrane.Buffer{payload: frame, pts: pts}
-            }
+            [
+              buffer: {
+                :output,
+                %Membrane.Buffer{payload: frame, pts: pts}
+              }
+            ] ++ restart_timer_action_if_necessary(state)
           },
           %{state | internal_state: internal_state}
         }
 
       {:ok, internal_state} ->
         {:ok, %{state | internal_state: internal_state}}
+    end
+  end
+
+  defp spf_from_framerate({frames, seconds}) do
+    Ratio.new(frames, seconds)
+  end
+
+  defp restart_timer_action_if_necessary(state) do
+    spf = spf_from_framerate(state.caps.framerate)
+
+    if state.live do
+      [stop_timer: :render_frame, start_timer: {:render_frame, spf}]
+    else
+      []
     end
   end
 
@@ -143,7 +183,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{state | internal_state: internal_state}
 
     if all_input_pads_received_end_of_stream?(context.pads) do
-      {{:ok, end_of_stream: :output}, state}
+      if state.live do
+        {{:ok, end_of_stream: :output, stop_timer: :render_frame}, state}
+      else
+        {{:ok, end_of_stream: :output}, state}
+      end
     else
       {:ok, state}
     end

@@ -220,6 +220,12 @@ impl InputVideo {
         DrawResult::Rendered(pts)
     }
 
+    pub fn remove_stale_frames(&mut self, interval: Option<(u64, u64)>) {
+        while self.is_front_frame_too_old(interval) {
+            self.pop_frame();
+        }
+    }
+
     pub fn pop_frame(&mut self) {
         if let Some(Message::Frame { pts, frame }) = self.frames.pop_front() {
             self.previous_frame = Some(Message::Frame { pts, frame });
@@ -228,6 +234,22 @@ impl InputVideo {
 
     pub fn send_end_of_stream(&mut self) {
         self.frames.push_back(Message::EndOfStream);
+    }
+
+    pub fn is_front_frame_too_old(&self, interval: Option<(u64, u64)>) -> bool {
+        if let Some(Message::EndOfStream) = self.frames.front() {
+            return false;
+        }
+
+        if interval.is_none() {
+            return false;
+        }
+
+        if self.front_pts().is_none() {
+            return false;
+        }
+
+        self.front_pts().is_some() && interval.unwrap().0 > self.front_pts().unwrap()
     }
 
     pub fn is_frame_ready(&self, interval: Option<(u64, u64)>) -> bool {
