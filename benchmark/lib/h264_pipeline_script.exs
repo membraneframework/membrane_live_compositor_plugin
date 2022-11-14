@@ -5,15 +5,15 @@ alias Membrane.VideoCompositor.Pipeline.Utility.Options
 
 caps = %RawVideo{
   aligned: true,
-  framerate: {30, 1},
+  framerate: {60, 1},
   width: 1920,
   height: 1080,
   pixel_format: :I420
 }
 
-video_duration = 60
+video_duration = 120
 
-basename = Utility.get_file_base_name(caps, video_duration, "raw")
+basename = Utility.get_file_base_name(caps, video_duration, "h264")
 demo_path = Path.join([File.cwd!(), "lib", "tmp", "fixtures"])
 in_path = Path.join(demo_path, "in-#{basename}")
 out_path = Path.join(demo_path, "out-#{basename}")
@@ -62,6 +62,7 @@ options = %Options{
   ],
   output: sink,
   caps: %RawVideo{caps | width: caps.width * 2, height: caps.height * 2},
+  encoder: Membrane.H264.FFmpeg.Encoder
 }
 
 {:ok, pid} = Membrane.VideoCompositor.Benchmark.Support.Pipeline.Raw.start(options)
