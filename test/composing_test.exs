@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utility
+  alias Membrane.VideoCompositor.Test.Support.Utils
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
@@ -36,10 +36,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
           nil
   defp test_raw_composing(video_caps, duration, tmp_dir, sub_dir_name) do
-    alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
+    alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
     {input_path, output_path, reference_path} =
-      Utility.prepare_testing_video(
+      Utils.prepare_testing_video(
         video_caps,
         duration,
         "raw",
@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       )
 
     :ok =
-      Utility.generate_raw_ffmpeg_reference(
+      Utils.generate_raw_ffmpeg_reference(
         input_path,
         video_caps,
         reference_path,
@@ -87,6 +87,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pid, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pid, blocking?: true)
 
-    assert Utility.compare_contents_with_error(output_path, reference_path)
+    assert Utils.compare_contents_with_error(output_path, reference_path)
   end
 end

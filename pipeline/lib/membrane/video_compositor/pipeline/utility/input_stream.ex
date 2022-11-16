@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline.Utility.InputStream do
+defmodule Membrane.VideoCompositor.Pipeline.Utils.InputStream do
   @doc """
   Specification of input video stream for a testing pipeline
   """
