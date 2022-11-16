@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Support.Utility do
+defmodule Membrane.VideoCompositor.Test.Support.Utils do
   @moduledoc """
   Module with tests functions, that simplify test creation.
   """

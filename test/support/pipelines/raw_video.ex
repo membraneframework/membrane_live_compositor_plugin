@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
   """
   use Membrane.Pipeline
 
-  alias Membrane.VideoCompositor.Pipeline.Utility.{InputStream, Options}
+  alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
   @impl true
   def handle_init(options) do

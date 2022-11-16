@@ -2,7 +2,7 @@ defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
   alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoProperties}
-  alias Membrane.VideoCompositor.Test.Support.Utility
+  alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
   describe "wgpu native test on" do
@@ -17,7 +17,7 @@ defmodule VideoCompositor.Wgpu.Test do
 
     @tag wgpu: true
     test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
+      {in_path, out_path, ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       assert {:ok, frame} = File.read(in_path)
 
@@ -60,18 +60,18 @@ defmodule VideoCompositor.Wgpu.Test do
 
       reference_input_path = String.replace_suffix(in_path, "yuv", "h264")
 
-      Utility.generate_ffmpeg_reference(
+      Utils.generate_ffmpeg_reference(
         reference_input_path,
         ref_path,
         "split[b], pad=iw:ih*2[src], [src][b]overlay=0:h"
       )
 
-      Utility.compare_contents_with_error(out_path, ref_path)
+      Utils.compare_contents_with_error(out_path, ref_path)
     end
 
     @tag wgpu: true
     test "z value affects composition", %{tmp_dir: tmp_dir} do
-      {in_path, out_path, _ref_path} = Utility.prepare_paths("1frame.yuv", tmp_dir, "native")
+      {in_path, out_path, _ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       assert {:ok, frame} = File.read(in_path)
 
@@ -110,7 +110,7 @@ defmodule VideoCompositor.Wgpu.Test do
       IO.binwrite(file, out_frame)
       File.close(file)
 
-      Utility.compare_contents_with_error(in_path, out_path)
+      Utils.compare_contents_with_error(in_path, out_path)
     end
   end
 end

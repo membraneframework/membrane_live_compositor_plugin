@@ -23,8 +23,7 @@ defmodule Membrane.VideoCompositor do
       position: [
         type: :tuple,
         spec: {integer(), integer()},
-        description:
-          "Initial position of the video on the screen, given in the pixels,
+        description: "Initial position of the video on the screen, given in the pixels,
           relative to the upper left corner of the screen",
         default: {0, 0}
       ],

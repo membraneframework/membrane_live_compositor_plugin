@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline.Utility.Options do
+defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   @moduledoc """
   Options for the testing pipeline.
   """
