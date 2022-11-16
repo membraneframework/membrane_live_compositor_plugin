@@ -66,6 +66,10 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
       raise "End of the delay interval has to be greater than the start"
     end
 
+    if a < 0.0 do
+      raise "The delay interval cannot contain negative numbers"
+    end
+
     state = %{
       packet_loss: packet_loss,
       delay_chance: delay_chance,
