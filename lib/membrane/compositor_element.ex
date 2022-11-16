@@ -16,7 +16,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
               ],
               live: [
                 spec: boolean(),
-                description: "Set the compositor to live mode",
+                description: """
+                Set the compositor to live mode.
+                This causes it to render frames at most every seconds / frame.
+                This approach can drop frames if they are delivered after the frame they correspond to was rendered.
+                """,
                 default: false
               ]
 
