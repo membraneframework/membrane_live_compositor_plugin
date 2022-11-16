@@ -241,11 +241,7 @@ impl InputVideo {
             return false;
         }
 
-        if interval.is_none() {
-            return false;
-        }
-
-        if self.front_pts().is_none() {
+        if interval.is_none() || self.front_pts().is_none() {
             return false;
         }
 
