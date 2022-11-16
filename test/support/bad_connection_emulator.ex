@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
   @moduledoc """
   An element emulating a bad connection.
-  Tt allows to introduce artificial packet loss and simple delays in transmissions.
+  It allows the introduction of artificial packet loss and simple delays in transmissions.
   """
 
   use Membrane.Filter
