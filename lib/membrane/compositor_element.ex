@@ -1,8 +1,17 @@
 defmodule Membrane.VideoCompositor.CompositorElement do
   @moduledoc """
-  The element responsible for placing the first received frame
-  above the other and sending forward buffer with
-  merged frame binary in the payload.
+  The element responsible for composing frames.
+
+  It is capable of operating in one of two modes:
+
+   * offline compositing:
+     The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
+
+   * live compositing:
+     In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
+     If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
+     If the frames arrive later, they will be dropped.
+
   """
 
   use Membrane.Filter
@@ -18,8 +27,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
                 spec: boolean(),
                 description: """
                 Set the compositor to live mode.
-                This causes it to render frames at most every seconds / frame.
-                This approach can drop frames if they are delivered after the frame they correspond to was rendered.
                 """,
                 default: false
               ]
