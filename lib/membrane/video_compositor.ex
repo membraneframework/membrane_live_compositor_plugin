@@ -88,8 +88,8 @@ defmodule Membrane.VideoCompositor do
     :ok = Wgpu.add_video(wgpu_state, id, caps, position)
 
     state = %{
-      state |
-      video_positions_waiting_for_caps: video_positions_waiting_for_caps
+      state
+      | video_positions_waiting_for_caps: video_positions_waiting_for_caps
     }
 
     {:ok, state}
