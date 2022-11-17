@@ -36,12 +36,12 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_init(options) do
-    {:ok, internal_state} = Wgpu.init(options.caps)
+    {:ok, wgpu_state} = Wgpu.init(options.caps)
 
     state = %{
       video_positions_waiting_for_caps: %{},
       caps: options.caps,
-      internal_state: internal_state,
+      wgpu_state: wgpu_state,
       pads_to_ids: %{},
       new_pad_id: 0
     }
@@ -78,19 +78,18 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_caps(pad, caps, _context, state) do
     %{
       pads_to_ids: pads_to_ids,
-      internal_state: internal_state,
+      wgpu_state: wgpu_state,
       video_positions_waiting_for_caps: video_positions_waiting_for_caps
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     {position, video_positions_waiting_for_caps} = Map.pop!(video_positions_waiting_for_caps, id)
-    {:ok, internal_state} = Wgpu.add_video(internal_state, id, caps, position)
+    :ok = Wgpu.add_video(wgpu_state, id, caps, position)
 
     state = %{
       state
-      | internal_state: internal_state,
-        video_positions_waiting_for_caps: video_positions_waiting_for_caps
+      | video_positions_waiting_for_caps: video_positions_waiting_for_caps
     }
 
     {:ok, state}
@@ -105,15 +104,15 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       ) do
     %{
       pads_to_ids: pads_to_ids,
-      internal_state: internal_state
+      wgpu_state: wgpu_state
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
 
-    case Wgpu.upload_frame(internal_state, id, {frame, pts}) do
-      {{:ok, {frame, pts}}, internal_state} ->
+    case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
+      {:ok, {frame, pts}} ->
         {
           {
             :ok,
@@ -122,11 +121,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
               %Membrane.Buffer{payload: frame, pts: pts}
             }
           },
-          %{state | internal_state: internal_state}
+          state
         }
 
-      {:ok, internal_state} ->
-        {:ok, %{state | internal_state: internal_state}}
+      :ok ->
+        {:ok, state}
     end
   end
 
@@ -136,11 +135,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         context,
         state
       ) do
-    %{pads_to_ids: pads_to_ids, internal_state: internal_state} = state
+    %{pads_to_ids: pads_to_ids, wgpu_state: wgpu_state} = state
     id = Map.get(pads_to_ids, pad)
 
-    {:ok, internal_state} = Wgpu.send_end_of_stream(internal_state, id)
-    state = %{state | internal_state: internal_state}
+    :ok = Wgpu.send_end_of_stream(wgpu_state, id)
 
     if all_input_pads_received_end_of_stream?(context.pads) do
       {{:ok, end_of_stream: :output}, state}

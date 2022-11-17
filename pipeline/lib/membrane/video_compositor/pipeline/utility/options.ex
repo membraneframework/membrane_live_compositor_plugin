@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline.Utility.Options do
+defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   @moduledoc """
   Options for the testing pipeline.
   """
@@ -33,20 +33,14 @@ defmodule Membrane.VideoCompositor.Pipeline.Utility.Options do
   """
   @type encoder_t :: Membrane.Filter.t() | nil
 
-  @typedoc """
-  Atom describing FrameComposer implementation
-  """
-  @type implementation_t :: atom()
-
   @type t() :: %__MODULE__{
           inputs: inputs_t(),
           output: output_t(),
           caps: caps_t(),
           compositor: compositor_t(),
-          implementation: implementation_t(),
           decoder: decoder_t(),
           encoder: encoder_t()
         }
   @enforce_keys [:inputs, :output, :caps]
-  defstruct [:inputs, :output, :caps, :compositor, :implementation, :decoder, :encoder]
+  defstruct [:inputs, :output, :caps, :compositor, :decoder, :encoder]
 end

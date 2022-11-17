@@ -1,7 +1,7 @@
 #![allow(clippy::needless_borrow)]
 
 #[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.Common.RawVideo"]
+#[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
 pub struct ElixirRawVideo {
     pub width: u32,
     pub height: u32,
@@ -10,7 +10,7 @@ pub struct ElixirRawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Common.VideoProperties"]
+#[module = "Membrane.VideoCompositor.RustStructs.VideoProperties"]
 pub struct VideoProperties {
     pub x: u32,
     pub y: u32,
