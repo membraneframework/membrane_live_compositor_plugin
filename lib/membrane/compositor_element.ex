@@ -85,8 +85,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_tick(:render_frame, _ctx, state) do
     {{:ok, {frame, pts}}, internal_state} = Wgpu.force_render(state.internal_state)
 
-    {{:ok, buffer: {:output, %Buffer{payload: frame, pts: pts}}},
-     %{state | internal_state: internal_state}}
+    state = %{state | internal_state: internal_state}
+    actions = [buffer: {:output, %Buffer{payload: frame, pts: pts}}]
+
+    {{:ok, actions}, state}
   end
 
   @impl true
@@ -193,15 +195,15 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     {:ok, internal_state} = Wgpu.send_end_of_stream(internal_state, id)
     state = %{state | internal_state: internal_state}
 
-    if all_input_pads_received_end_of_stream?(context.pads) do
-      if state.live do
-        {{:ok, end_of_stream: :output, stop_timer: :render_frame}, state}
+    actions =
+      if all_input_pads_received_end_of_stream?(context.pads) do
+        stop = if state.live, do: [stop_timer: :render_frame], else: []
+        [end_of_stream: :output] ++ stop
       else
-        {{:ok, end_of_stream: :output}, state}
+        []
       end
-    else
-      {:ok, state}
-    end
+
+    {{:ok, actions}, state}
   end
 
   defp all_input_pads_received_end_of_stream?(pads) do
