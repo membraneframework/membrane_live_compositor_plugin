@@ -25,14 +25,14 @@ defmodule Membrane.VideoCompositor.Wgpu do
   If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
   """
   @spec upload_frame(wgpu_state_t(), id_t(), frame_with_pts_t()) ::
-          {:ok | {:ok, frame_with_pts_t()}, wgpu_state_t()}
+          :ok | {:ok, frame_with_pts_t()}
   def upload_frame(state, id, {frame, pts}) do
     case Native.upload_frame(state, id, frame, pts) do
       :ok ->
-        {:ok, state}
+        :ok
 
       {:ok, frame} ->
-        {{:ok, frame}, state}
+        {:ok, frame}
 
       {:error, reason} ->
         raise "Error while uploading/composing frame, reason: #{inspect(reason)}"
@@ -43,11 +43,11 @@ defmodule Membrane.VideoCompositor.Wgpu do
   Forcibly renders the composed frame, even if we are still waiting for some frames to arrive
   """
   @spec force_render(state :: wgpu_state_t()) ::
-          {{:ok, merged_frames :: frame_with_pts_t()}, wgpu_state_t()} | {:error, error_t()}
+          {:ok, merged_frames :: frame_with_pts_t()} | {:error, error_t()}
 
   def force_render(state) do
     case Native.force_render(state) do
-      {:ok, frame} -> {{:ok, frame}, state}
+      {:ok, frame} -> {:ok, frame}
       {:error, reason} -> raise "Error while force rendering, reason: #{inspect(reason)}"
     end
   end
@@ -68,13 +68,13 @@ defmodule Membrane.VideoCompositor.Wgpu do
           position :: {x :: non_neg_integer(), y :: non_neg_integer()},
           z :: float(),
           scale :: float()
-        ) :: {:ok, wgpu_state_t()} | {:error, error_t()}
+        ) :: :ok | {:error, error_t()}
   def add_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
     {:ok, input_caps} = RustStructs.RawVideo.from_membrane_raw_video(input_caps)
     properties = RustStructs.VideoProperties.from_tuple({x, y, z, scale})
 
     case Native.add_video(state, id, input_caps, properties) do
-      :ok -> {:ok, state}
+      :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
   end
@@ -90,12 +90,12 @@ defmodule Membrane.VideoCompositor.Wgpu do
           position :: {x :: non_neg_integer(), y :: non_neg_integer()},
           z :: float(),
           scale :: float()
-        ) :: {:ok, wgpu_state_t()} | {:error, error_t()}
+        ) :: :ok | {:error, error_t()}
   def set_properties(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
     properties = RustStructs.VideoProperties.from_tuple({x, y, z, scale})
 
     case Native.set_properties(state, id, properties) do
-      :ok -> {:ok, state}
+      :ok -> :ok
       {:error, reason} -> raise "Error while setting video properties, reason: #{inspect(reason)}"
     end
   end
@@ -106,10 +106,10 @@ defmodule Membrane.VideoCompositor.Wgpu do
   @spec remove_video(
           state :: wgpu_state_t(),
           id :: id_t()
-        ) :: {:ok, wgpu_state_t()} | {:error, error_t()}
+        ) :: :ok | {:error, error_t()}
   def remove_video(state, id) do
     case Native.remove_video(state, id) do
-      :ok -> {:ok, state}
+      :ok -> :ok
       {:error, reason} -> raise "Error while removing a video, reason: #{inspect(reason)}"
     end
   end
@@ -120,11 +120,11 @@ defmodule Membrane.VideoCompositor.Wgpu do
   This causes the video to be deleted after it's enqueued frames are used up.
   """
   @spec send_end_of_stream(wgpu_state_t(), id_t()) ::
-          {:ok, wgpu_state_t()} | {:error, error_t()}
+          :ok | {:error, error_t()}
   def send_end_of_stream(state, id) do
     case Native.send_end_of_stream(state, id) do
       :ok ->
-        {:ok, state}
+        :ok
 
       {:error, reason} ->
         raise "Error while sending an end of stream message to a video, reason: #{inspect(reason)}"

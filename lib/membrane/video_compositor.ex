@@ -85,12 +85,11 @@ defmodule Membrane.VideoCompositor do
     id = Map.get(pads_to_ids, pad)
 
     {position, video_positions_waiting_for_caps} = Map.pop!(video_positions_waiting_for_caps, id)
-    {:ok, wgpu_state} = Wgpu.add_video(wgpu_state, id, caps, position)
+    :ok = Wgpu.add_video(wgpu_state, id, caps, position)
 
     state = %{
-      state
-      | wgpu_state: wgpu_state,
-        video_positions_waiting_for_caps: video_positions_waiting_for_caps
+      state |
+      video_positions_waiting_for_caps: video_positions_waiting_for_caps
     }
 
     {:ok, state}
@@ -113,7 +112,7 @@ defmodule Membrane.VideoCompositor do
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
 
     case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
-      {{:ok, {frame, pts}}, wgpu_state} ->
+      {:ok, {frame, pts}} ->
         {
           {
             :ok,
@@ -122,11 +121,11 @@ defmodule Membrane.VideoCompositor do
               %Membrane.Buffer{payload: frame, pts: pts}
             }
           },
-          %{state | wgpu_state: wgpu_state}
+          state
         }
 
-      {:ok, wgpu_state} ->
-        {:ok, %{state | wgpu_state: wgpu_state}}
+      :ok ->
+        {:ok, state}
     end
   end
 
@@ -139,8 +138,7 @@ defmodule Membrane.VideoCompositor do
     %{pads_to_ids: pads_to_ids, wgpu_state: wgpu_state} = state
     id = Map.get(pads_to_ids, pad)
 
-    {:ok, wgpu_state} = Wgpu.send_end_of_stream(wgpu_state, id)
-    state = %{state | wgpu_state: wgpu_state}
+    :ok = Wgpu.send_end_of_stream(wgpu_state, id)
 
     if all_input_pads_received_end_of_stream?(context.pads) do
       {{:ok, end_of_stream: :output}, state}
