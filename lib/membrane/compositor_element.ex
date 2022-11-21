@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
    * offline compositing:
      The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
 
-   * live compositing:
+   * real-time compositing:
      In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
      If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
      If the frames arrive later, they will be dropped.
@@ -23,10 +23,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
               ],
-              live: [
+              real_time: [
                 spec: boolean(),
                 description: """
-                Set the compositor to live mode.
+                Set the compositor to real-time mode.
                 """,
                 default: false
               ]
@@ -58,7 +58,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{
       video_positions_waiting_for_caps: %{},
       caps: options.caps,
-      live: options.live,
+      real_time: options.real_time,
       internal_state: internal_state,
       pads_to_ids: %{},
       new_pad_id: 0
@@ -72,7 +72,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     spf = spf_from_framerate(state.caps.framerate)
 
     actions =
-      if state.live do
+      if state.real_time do
         [start_timer: {:render_frame, spf}, caps: {:output, state.caps}]
       else
         [caps: {:output, state.caps}]
@@ -176,7 +176,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   defp restart_timer_action_if_necessary(state) do
     spf = spf_from_framerate(state.caps.framerate)
 
-    if state.live do
+    if state.real_time do
       [stop_timer: :render_frame, start_timer: {:render_frame, spf}]
     else
       []
@@ -197,7 +197,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     actions =
       if all_input_pads_received_end_of_stream?(context.pads) do
-        stop = if state.live, do: [stop_timer: :render_frame], else: []
+        stop = if state.real_time, do: [stop_timer: :render_frame], else: []
         [end_of_stream: :output] ++ stop
       else
         []

@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.PacketLoss do
         input_filter: bad_connection_emulator,
         compositor: %Membrane.VideoCompositor{
           caps: options.caps,
-          live: true
+          real_time: true
         }
     }
 

@@ -12,9 +12,9 @@ defmodule Membrane.VideoCompositor do
                 spec: RawVideo.t(),
                 description: "Caps for the output video of the compositor"
               ],
-              live: [
+              real_time: [
                 spec: boolean(),
-                description: "Set compositor into live mode",
+                description: "Set compositor into real_time mode",
                 default: false
               ]
 
@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_init(options) do
     children = %{
-      compositor: %CompositorElement{caps: options.caps, live: options.live}
+      compositor: %CompositorElement{caps: options.caps, real_time: options.real_time}
     }
 
     links = [
