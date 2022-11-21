@@ -1,17 +1,34 @@
 defmodule Membrane.VideoCompositor.CompositorElement do
   @moduledoc """
-  The element responsible for placing the first received frame
-  above the other and sending forward buffer with
-  merged frame binary in the payload.
+  The element responsible for composing frames.
+
+  It is capable of operating in one of two modes:
+
+   * offline compositing:
+     The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
+
+   * real-time compositing:
+     In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
+     If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
+     If the frames arrive later, they will be dropped. The newest dropped frame will become the new fallback frame.
+
   """
 
   use Membrane.Filter
+  alias Membrane.Buffer
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Wgpu
 
   def_options caps: [
-                type: RawVideo,
+                spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
+              ],
+              real_time: [
+                spec: boolean(),
+                description: """
+                Set the compositor to real-time mode.
+                """,
+                default: false
               ]
 
   def_input_pad :input,
@@ -41,6 +58,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{
       video_positions_waiting_for_caps: %{},
       caps: options.caps,
+      real_time: options.real_time,
       wgpu_state: wgpu_state,
       pads_to_ids: %{},
       new_pad_id: 0
@@ -51,7 +69,25 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_prepared_to_playing(_ctx, state) do
-    {{:ok, caps: {:output, state.caps}}, state}
+    spf = spf_from_framerate(state.caps.framerate)
+
+    actions =
+      if state.real_time do
+        [start_timer: {:render_frame, spf}, caps: {:output, state.caps}]
+      else
+        [caps: {:output, state.caps}]
+      end
+
+    {{:ok, actions}, state}
+  end
+
+  @impl true
+  def handle_tick(:render_frame, _ctx, state) do
+    {:ok, {frame, pts}} = Wgpu.force_render(state.wgpu_state)
+
+    actions = [buffer: {:output, %Buffer{payload: frame, pts: pts}}]
+
+    {{:ok, actions}, state}
   end
 
   @impl true
@@ -116,16 +152,32 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         {
           {
             :ok,
-            buffer: {
-              :output,
-              %Membrane.Buffer{payload: frame, pts: pts}
-            }
+            [
+              buffer: {
+                :output,
+                %Membrane.Buffer{payload: frame, pts: pts}
+              }
+            ] ++ restart_timer_action_if_necessary(state)
           },
           state
         }
 
       :ok ->
         {:ok, state}
+    end
+  end
+
+  defp spf_from_framerate({frames, seconds}) do
+    Ratio.new(frames, seconds)
+  end
+
+  defp restart_timer_action_if_necessary(state) do
+    spf = spf_from_framerate(state.caps.framerate)
+
+    if state.real_time do
+      [stop_timer: :render_frame, start_timer: {:render_frame, spf}]
+    else
+      []
     end
   end
 
@@ -140,11 +192,15 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     :ok = Wgpu.send_end_of_stream(wgpu_state, id)
 
-    if all_input_pads_received_end_of_stream?(context.pads) do
-      {{:ok, end_of_stream: :output}, state}
-    else
-      {:ok, state}
-    end
+    actions =
+      if all_input_pads_received_end_of_stream?(context.pads) do
+        stop = if state.real_time, do: [stop_timer: :render_frame], else: []
+        [end_of_stream: :output] ++ stop
+      else
+        []
+      end
+
+    {{:ok, actions}, state}
   end
 
   defp all_input_pads_received_end_of_stream?(pads) do

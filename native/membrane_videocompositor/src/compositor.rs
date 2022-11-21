@@ -281,6 +281,11 @@ impl State {
 
     /// This returns the pts of the new frame
     pub async fn draw_into(&mut self, output_buffer: &mut [u8]) -> u64 {
+        let interval = self.frame_interval();
+        self.input_videos
+            .values_mut()
+            .for_each(|v| v.remove_stale_frames(interval));
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {

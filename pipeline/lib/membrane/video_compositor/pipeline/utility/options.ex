@@ -33,14 +33,20 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   """
   @type encoder_t :: Membrane.Filter.t() | nil
 
+  @typedoc """
+  An additional plugin that sits between the decoder (or source if there is no decoder) and the compositor.
+  """
+  @type input_filter_t :: Membrane.Filter.t() | nil
+
   @type t() :: %__MODULE__{
           inputs: inputs_t(),
           output: output_t(),
           caps: caps_t(),
           compositor: compositor_t(),
           decoder: decoder_t(),
-          encoder: encoder_t()
+          encoder: encoder_t(),
+          input_filter: input_filter_t()
         }
   @enforce_keys [:inputs, :output, :caps]
-  defstruct [:inputs, :output, :caps, :compositor, :decoder, :encoder]
+  defstruct [:inputs, :output, :caps, :compositor, :decoder, :encoder, :input_filter]
 end
