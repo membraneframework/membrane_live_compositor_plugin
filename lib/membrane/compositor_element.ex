@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
    * real-time compositing:
      In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
      If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
-     If the frames arrive later, they will be dropped.
+     If the frames arrive later, they will be dropped. The newest dropped frame will become the new fallback frame.
 
   """
 
