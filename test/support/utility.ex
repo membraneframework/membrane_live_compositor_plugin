@@ -1,5 +1,7 @@
-defmodule Membrane.VideoCompositor.Test.Support.Utility do
-  @moduledoc false
+defmodule Membrane.VideoCompositor.Test.Support.Utils do
+  @moduledoc """
+  Module with tests functions, that simplify test creation.
+  """
   import ExUnit.Assertions
 
   require Membrane.Logger

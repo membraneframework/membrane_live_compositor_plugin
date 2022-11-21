@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Pipeline.Utility.Options
+  alias Membrane.VideoCompositor.Pipeline.Utils.Options
 
   @impl true
   def handle_init(options) do
