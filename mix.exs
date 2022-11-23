@@ -43,8 +43,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_caps_video_raw, "~> 0.1.0"},
       {:membrane_framerate_converter_plugin, "~> 0.5.0"},
       {:membrane_raw_video_format, "~> 0.2.0"},
-      {:membrane_common_c, "~> 0.13.0"},
-      {:nx, "~> 0.2"},
       {:qex, "~> 0.5.1"},
       {:rustler, "~> 0.26.0"},
       # Testing
