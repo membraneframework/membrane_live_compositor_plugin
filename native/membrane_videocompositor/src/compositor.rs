@@ -362,6 +362,18 @@ impl State {
         );
     }
 
+    pub fn set_properties(&mut self, idx: usize, properties: VideoProperties) {
+        self.input_videos.insert(
+            idx, 
+            InputVideo::new(
+                &self.device,
+                self.single_texture_bind_group_layout.clone(),
+                &self.all_yuv_textures_bind_group_layout,
+                properties,
+            ),
+        );
+    }
+
     pub fn remove_video(&mut self, idx: usize) -> Result<(), CompositorError> {
         self.input_videos
             .remove(&idx)

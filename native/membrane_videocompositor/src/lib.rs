@@ -191,11 +191,31 @@ fn add_video(
 #[rustler::nif]
 fn set_properties(
     #[allow(unused_variables)] env: rustler::Env<'_>,
-    _state: rustler::ResourceArc<State>,
-    _id: usize,
-    _properties: VideoProperties,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    input_video: ElixirRawVideo,
+    properties: VideoProperties,
 ) -> Result<rustler::Atom, rustler::Error> {
-    Err(errors::CompositorError::NotImplemented.into())
+    let input_video: RawVideo = input_video.try_into()?;
+
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
+
+    state.compositor.set_properties(
+        id,
+        compositor::VideoProperties {
+            top_left: compositor::Point {
+                x: properties.x,
+                y: properties.y,
+            },
+            width: input_video.width.get(),
+            height: input_video.height.get(),
+            // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
+            // which is outside of the wgpu clip space
+            z: 1.0 - properties.z.max(1e-7),
+            scale: properties.scale,
+        },
+    ); 
+    Ok(atoms::ok())
 }
 
 #[rustler::nif]
