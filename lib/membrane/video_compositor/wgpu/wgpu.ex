@@ -53,7 +53,8 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @doc """
-  Registers a new input video with the given numerical `id`.
+  Set input video with the given numerical `id`.
+  Used for adding new input videos as well as updating properties of existing ones.
 
   Provided `id` should be unique within all previous ones, otherwise the compositor may or may not replace
   the old video with this id with a new one.
@@ -61,7 +62,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
   A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
   """
-  @spec add_video(
+  @spec put_video(
           state :: wgpu_state_t(),
           id :: id_t(),
           input_caps :: Membrane.RawVideo.t(),
@@ -69,34 +70,13 @@ defmodule Membrane.VideoCompositor.Wgpu do
           z :: float(),
           scale :: float()
         ) :: :ok | {:error, error_t()}
-  def add_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
+  def put_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
     {:ok, input_caps} = RustStructs.RawVideo.from_membrane_raw_video(input_caps)
     properties = RustStructs.VideoProperties.from_tuple({x, y, z, scale})
 
-    case Native.add_video(state, id, input_caps, properties) do
+    case Native.put_video(state, id, input_caps, properties) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
-    end
-  end
-
-  @doc """
-  `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
-  `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
-  A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
-  """
-  @spec set_properties(
-          state :: wgpu_state_t(),
-          id :: id_t(),
-          position :: {x :: non_neg_integer(), y :: non_neg_integer()},
-          z :: float(),
-          scale :: float()
-        ) :: :ok | {:error, error_t()}
-  def set_properties(state, id, {x, y}, z \\ 0.0, scale \\ 1.0) do
-    properties = RustStructs.VideoProperties.from_tuple({x, y, z, scale})
-
-    case Native.set_properties(state, id, properties) do
-      :ok -> :ok
-      {:error, reason} -> raise "Error while setting video properties, reason: #{inspect(reason)}"
     end
   end
 

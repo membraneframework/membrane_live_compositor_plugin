@@ -350,7 +350,7 @@ impl State {
         pts
     }
 
-    pub fn add_video(&mut self, idx: usize, properties: VideoProperties) {
+    pub fn put_video(&mut self, idx: usize, properties: VideoProperties) {
         self.input_videos.insert(
             idx,
             InputVideo::new(
@@ -434,7 +434,7 @@ mod tests {
         let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
 
         for i in 0..n {
-            compositor.add_video(
+            compositor.put_video(
                 i,
                 VideoProperties {
                     top_left: Point {
