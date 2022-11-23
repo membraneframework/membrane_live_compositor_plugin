@@ -19,19 +19,21 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Wgpu
 
-  def_options caps: [
-                spec: RawVideo.t(),
-                description: "Struct with video width, height, framerate and pixel format."
-              ],
-              real_time: [
-                spec: boolean(),
-                description: """
-                Set the compositor to real-time mode.
-                """,
-                default: false
-              ]
+  def_options(
+    caps: [
+      spec: RawVideo.t(),
+      description: "Struct with video width, height, framerate and pixel format."
+    ],
+    real_time: [
+      spec: boolean(),
+      description: """
+      Set the compositor to real-time mode.
+      """,
+      default: false
+    ]
+  )
 
-  def_input_pad :input,
+  def_input_pad(:input,
     demand_unit: :buffers,
     availability: :on_request,
     demand_mode: :auto,
@@ -45,18 +47,20 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         default: {0, 0}
       ]
     ]
+  )
 
-  def_output_pad :output,
+  def_output_pad(:output,
     demand_unit: :buffers,
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420}
+  )
 
   @impl true
   def handle_init(options) do
     {:ok, wgpu_state} = Wgpu.init(options.caps)
 
     state = %{
-      video_positions_waiting_for_caps: %{},
+      videos_positions: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -103,8 +107,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     %{
       state
-      | video_positions_waiting_for_caps:
-          Map.put(state.video_positions_waiting_for_caps, new_id, position),
+      | videos_positions: Map.put(state.videos_positions, new_id, position),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -115,18 +118,13 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      video_positions_waiting_for_caps: video_positions_waiting_for_caps
+      videos_positions: videos_positions
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    {position, video_positions_waiting_for_caps} = Map.pop!(video_positions_waiting_for_caps, id)
-    :ok = Wgpu.add_video(wgpu_state, id, caps, position)
-
-    state = %{
-      state
-      | video_positions_waiting_for_caps: video_positions_waiting_for_caps
-    }
+    position = Map.get(videos_positions, id)
+    :ok = Wgpu.put_video(wgpu_state, id, caps, position)
 
     {:ok, state}
   end
