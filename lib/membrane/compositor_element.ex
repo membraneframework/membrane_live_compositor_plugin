@@ -19,21 +19,19 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Wgpu
 
-  def_options(
-    caps: [
-      spec: RawVideo.t(),
-      description: "Struct with video width, height, framerate and pixel format."
-    ],
-    real_time: [
-      spec: boolean(),
-      description: """
-      Set the compositor to real-time mode.
-      """,
-      default: false
-    ]
-  )
+  def_options caps: [
+                spec: RawVideo.t(),
+                description: "Struct with video width, height, framerate and pixel format."
+              ],
+              real_time: [
+                spec: boolean(),
+                description: """
+                Set the compositor to real-time mode.
+                """,
+                default: false
+              ]
 
-  def_input_pad(:input,
+  def_input_pad :input,
     demand_unit: :buffers,
     availability: :on_request,
     demand_mode: :auto,
@@ -47,13 +45,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         default: {0, 0}
       ]
     ]
-  )
 
-  def_output_pad(:output,
+  def_output_pad :output,
     demand_unit: :buffers,
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420}
-  )
 
   @impl true
   def handle_init(options) do
