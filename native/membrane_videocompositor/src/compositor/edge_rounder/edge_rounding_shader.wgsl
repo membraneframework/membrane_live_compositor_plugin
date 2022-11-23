@@ -1,4 +1,3 @@
-// TO TEST
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) texture_coords: vec2<f32>
@@ -40,9 +39,9 @@ fn get_nearest_inner_corner_coords(left_border: bool, right_border: bool, top_bo
     if (left_border && top_border) {
         return vec2<f32>(edge_rounding_radius, edge_rounding_radius);
     } else if (right_border && top_border) {
-        return vec2<f32>(video_resolution.width - edge_rounding_radius, edge_rounding_radius);
+        return vec2<f32>(video_resolution.height - edge_rounding_radius, edge_rounding_radius);
     } else if (right_border && bot_border) {
-        return vec2<f32>(video_resolution.width - edge_rounding_radius, video_resolution.height - edge_rounding_radius);
+        return vec2<f32>(video_resolution.height - edge_rounding_radius, video_resolution.height - edge_rounding_radius);
     } else {
         return vec2<f32>(edge_rounding_radius, video_resolution.height - edge_rounding_radius);
     }
@@ -50,11 +49,11 @@ fn get_nearest_inner_corner_coords(left_border: bool, right_border: bool, top_bo
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let tex_coords_in_pixels = vec2<f32>(input.texture_coords.x * video_resolution.width, 
+    let tex_coords_in_pixels = vec2<f32>(input.texture_coords.x * video_resolution.height, 
         input.texture_coords.y * video_resolution.height);
 
     let left_border = (tex_coords_in_pixels.x < edge_rounding_radius);
-    let right_border = (tex_coords_in_pixels.x > video_resolution.width - edge_rounding_radius);
+    let right_border = (tex_coords_in_pixels.x > video_resolution.height - edge_rounding_radius);
     let top_border = (tex_coords_in_pixels.y < edge_rounding_radius);
     let bot_border = (tex_coords_in_pixels.y > video_resolution.height - edge_rounding_radius);
 
@@ -67,12 +66,11 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
         if (sqrt(
                     pow(tex_coords_in_pixels.x - corner_coords_in_pixel.x, 2.0) + 
                     pow(tex_coords_in_pixels.y - corner_coords_in_pixel.y, 2.0)
-            ) < edge_rounding_radius) {
-            return vec4<f32>(colour.x, colour.y, colour.z, 1.0);
+            ) > edge_rounding_radius) {
+            return vec4<f32>(1.0, 1.0, 1.0, 1.0);
         }
         return colour;
     } else {
         return colour;
     }
-
 }

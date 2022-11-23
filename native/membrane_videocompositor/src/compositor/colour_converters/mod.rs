@@ -74,9 +74,20 @@ impl YUVToRGBAConverter {
                 module: &shader_module,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
+                    blend: Some(wgpu::BlendState {
+                        color: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::SrcAlpha,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            operation: wgpu::BlendOperation::Add
+                        },
+                        alpha: wgpu::BlendComponent {
+                            src_factor: wgpu::BlendFactor::One,
+                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                            operation: wgpu::BlendOperation::Add
+                        },
+                    }),
                     format: wgpu::TextureFormat::Rgba8Unorm,
-                    write_mask: wgpu::ColorWrites::all(),
-                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
 
@@ -108,7 +119,7 @@ impl YUVToRGBAConverter {
                 label: Some("YUV to RGBA colour converter render pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
                         store: true,
                     },
                     view: &dst.texture.view,
