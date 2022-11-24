@@ -37,7 +37,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 0, in_video, %VideoProperties{
+               Native.put_video(state, 0, in_video, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.0,
@@ -45,7 +45,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 1, in_video, %VideoProperties{
+               Native.put_video(state, 1, in_video, %VideoProperties{
                  x: 0,
                  y: 360,
                  z: 0.0,
@@ -85,7 +85,7 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %VideoProperties{
+               Native.put_video(state, 0, caps, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.0,
@@ -93,7 +93,7 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 1, caps, %VideoProperties{
+               Native.put_video(state, 1, caps, %VideoProperties{
                  x: 0,
                  y: 0,
                  z: 0.5,

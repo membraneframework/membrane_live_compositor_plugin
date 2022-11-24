@@ -159,7 +159,7 @@ fn force_render(
 }
 
 #[rustler::nif]
-fn add_video(
+fn put_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
@@ -170,7 +170,7 @@ fn add_video(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.add_video(
+    state.compositor.put_video(
         id,
         compositor::VideoProperties {
             top_left: compositor::Point {
@@ -186,16 +186,6 @@ fn add_video(
         },
     );
     Ok(atoms::ok())
-}
-
-#[rustler::nif]
-fn set_properties(
-    #[allow(unused_variables)] env: rustler::Env<'_>,
-    _state: rustler::ResourceArc<State>,
-    _id: usize,
-    _properties: VideoProperties,
-) -> Result<rustler::Atom, rustler::Error> {
-    Err(errors::CompositorError::NotImplemented.into())
 }
 
 #[rustler::nif]
@@ -224,9 +214,8 @@ rustler::init!(
     [
         init,
         force_render,
-        add_video,
+        put_video,
         remove_video,
-        set_properties,
         upload_frame,
         send_end_of_stream
     ],
