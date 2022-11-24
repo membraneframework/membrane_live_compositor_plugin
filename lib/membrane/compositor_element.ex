@@ -57,6 +57,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: float(),
         description: "Video scale factor.",
         default: 1.0
+      ],
+      pts_offset: [
+        spec: Membrane.Time.t(),
+        description: "Input stream PTS offset in nanoseconds",
+        default: 0
       ]
     ]
 
@@ -73,6 +78,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       videos_positions: %{},
       videos_z_values: %{},
       videos_scales: %{},
+      pts_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -111,12 +117,13 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     position = context.options.position
     z_value = context.options.z_value
     scale = context.options.scale
+    pts_offset = context.options.pts_offset
 
-    state = register_pad(state, pad, position, z_value, scale)
+    state = register_pad(state, pad, position, z_value, scale, pts_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position, z_value, scale) do
+  defp register_pad(state, pad, position, z_value, scale, pts_offset) do
     new_id = state.new_pad_id
 
     %{
@@ -124,6 +131,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       | videos_positions: Map.put(state.videos_positions, new_id, position),
         videos_z_values: Map.put(state.videos_z_values, new_id, z_value),
         videos_scales: Map.put(state.videos_scales, new_id, scale),
+        pts_offsets: Map.put(state.pts_offsets, new_id, pts_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -158,12 +166,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       ) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      pts_offsets: pts_offsets
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
+    pts = pts + Map.get(pts_offsets, id)
 
     case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->

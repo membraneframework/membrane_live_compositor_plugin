@@ -57,7 +57,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
     positions = [
       {0, 0},
-      #{video_caps.width, 0},
+      {video_caps.width, 0},
       {0, video_caps.height},
       {video_caps.width, video_caps.height}
     ]
