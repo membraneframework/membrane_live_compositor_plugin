@@ -144,7 +144,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       wgpu_state: wgpu_state,
       videos_positions: videos_positions,
       videos_z_values: videos_z_values,
-      videos_scales: videos_scales,
+      videos_scales: videos_scales
     } = state
 
     id = Map.get(pads_to_ids, pad)
