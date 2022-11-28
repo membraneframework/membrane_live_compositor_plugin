@@ -44,9 +44,9 @@ defmodule Membrane.VideoCompositor.CompositorElement do
           "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
         default: {0, 0}
       ],
-      pts_offset: [
-        spec: Membrane.Time.t(),
-        description: "Input stream PTS offset in nanoseconds",
+      offset: [
+        spec: Membrane.Time.non_neg_t(),
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ]
     ]
@@ -62,7 +62,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     state = %{
       videos_positions: %{},
-      pts_offsets: %{},
+      offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -99,19 +99,19 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   @impl true
   def handle_pad_added(pad, context, state) do
     position = context.options.position
-    pts_offset = context.options.pts_offset
+    offset = context.options.offset
 
-    state = register_pad(state, pad, position, pts_offset)
+    state = register_pad(state, pad, position, offset)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position, pts_offset) do
+  defp register_pad(state, pad, position, offset) do
     new_id = state.new_pad_id
 
     %{
       state
       | videos_positions: Map.put(state.videos_positions, new_id, position),
-        pts_offsets: Map.put(state.pts_offsets, new_id, pts_offset),
+        offsets: Map.put(state.offsets, new_id, offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -143,13 +143,13 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      pts_offsets: pts_offsets
+      offsets: offsets
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
-    pts = pts + Map.get(pts_offsets, id)
+    pts = pts + Map.get(offsets, id)
 
     case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
