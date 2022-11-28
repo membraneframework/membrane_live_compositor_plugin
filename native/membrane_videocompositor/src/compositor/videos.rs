@@ -90,6 +90,25 @@ impl InputVideo {
         }
     }
 
+    pub fn update_properties(
+        &mut self,
+        device: &wgpu::Device,
+        single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
+        all_textures_bind_group_layout: &wgpu::BindGroupLayout,
+        properties: VideoProperties,
+    ) {
+        let yuv_textures = YUVTextures::new(
+            device,
+            properties.width,
+            properties.height,
+            wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            Some(&single_texture_bind_group_layout),
+            Some(all_textures_bind_group_layout),
+        );
+        self.yuv_textures = yuv_textures;
+        self.properties = properties;
+    }
+
     pub fn upload_data(
         &mut self,
         device: &wgpu::Device,
