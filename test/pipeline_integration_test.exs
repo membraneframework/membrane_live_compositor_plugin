@@ -11,16 +11,16 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.VideoCompositor.Test.Support.Utils
 
   @hd_video %RawVideo{
-    width: 2 * 1280,
-    height: 2 * 720,
+    width: 1280,
+    height: 720,
     framerate: {30, 1},
     pixel_format: :I420,
     aligned: true
   }
 
   @full_hd_video %RawVideo{
-    width: 2 * 1920,
-    height: 2 * 1080,
+    width: 1920,
+    height: 1080,
     framerate: {30, 1},
     pixel_format: :I420,
     aligned: true
