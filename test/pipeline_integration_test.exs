@@ -26,26 +26,26 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     aligned: true
   }
 
-  describe "Checks h264 pipeline on merging four" do
+  describe "Checks h264 pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
     @tag wgpu: true
-    test "2s 720p 30fps videos", %{tmp_dir: tmp_dir} do
+    test "2s 720p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@hd_video, 2, "short_videos", tmp_dir)
     end
 
     @tag wgpu: true
-    test "1s 1080p 30fps videos", %{tmp_dir: tmp_dir} do
+    test "1s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@full_hd_video, 1, "short_videos", tmp_dir)
     end
 
     @tag long_wgpu: true, timeout: 1_000_000
-    test "30s 720p 30fps videos", %{tmp_dir: tmp_dir} do
+    test "30s 720p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@hd_video, 30, "long_videos", tmp_dir)
     end
 
     @tag long_wgpu: true, timeout: 1_000_000
-    test "60s 1080p 30fps videos", %{tmp_dir: tmp_dir} do
+    test "60s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@full_hd_video, 30, "long_videos", tmp_dir)
     end
   end
@@ -103,11 +103,11 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     TestingPipeline.terminate(pid, blocking?: true)
   end
 
-  describe "Checks packet loss pipeline on" do
+  describe "Checks packet loss pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
     @tag wgpu: true
-    test "2s 720p 30fps video", %{tmp_dir: tmp_dir} do
+    test "2s 720p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline_with_packet_loss(
         @hd_video,
         2,
@@ -117,7 +117,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     end
 
     @tag wgpu: true
-    test "1s 1080p 30fps video", %{tmp_dir: tmp_dir} do
+    test "1s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline_with_packet_loss(
         @full_hd_video,
         1,

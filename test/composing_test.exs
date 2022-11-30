@@ -19,16 +19,16 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
-  describe "Checks composition and raw video pipeline on merging four" do
+  describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
     @tag wgpu: true
-    test "3s 720p 1fps raw videos", %{tmp_dir: tmp_dir} do
+    test "3s 720p 1fps raw", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
 
     @tag long_wgpu: true
-    test "10s 720p 1fps raw videos", %{tmp_dir: tmp_dir} do
+    test "10s 720p 1fps raw", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end
   end
