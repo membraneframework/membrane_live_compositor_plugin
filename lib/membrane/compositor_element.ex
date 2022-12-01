@@ -98,8 +98,18 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_pad_added(pad, context, state) do
+    timestamp_offset =
+      case context.options.timestamp_offset do
+        timestamp_offset when timestamp_offset < 0 ->
+          raise ArgumentError,
+            message:
+              "Invalid timestamp_offset option for pad: #{Pad.name_by_ref(pad)}. timestamp_offset can't be negative."
+
+        timestamp_offset ->
+          timestamp_offset
+      end
+
     position = context.options.position
-    timestamp_offset = context.options.timestamp_offset
 
     state = register_pad(state, pad, position, timestamp_offset)
     {:ok, state}
