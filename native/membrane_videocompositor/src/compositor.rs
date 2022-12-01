@@ -350,26 +350,26 @@ impl State {
         pts
     }
 
-    pub fn put_video(&mut self, idx: usize, properties: VideoProperties) {
-        match self.input_videos.get_mut(&idx) {
-            Some(input_video) => input_video.update_properties(
+    pub fn add_video(
+        &mut self,
+        idx: usize,
+        properties: VideoProperties,
+    ) -> Result<(), CompositorError> {
+        if self.input_videos.contains_key(&idx) {
+            return Err(CompositorError::VideoIndexAlreadyTaken(idx));
+        }
+
+        self.input_videos.insert(
+            idx,
+            InputVideo::new(
                 &self.device,
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
                 properties,
             ),
-            None => {
-                self.input_videos.insert(
-                    idx,
-                    InputVideo::new(
-                        &self.device,
-                        self.single_texture_bind_group_layout.clone(),
-                        &self.all_yuv_textures_bind_group_layout,
-                        properties,
-                    ),
-                );
-            }
-        }
+        );
+
+        Ok(())
     }
 
     pub fn update_properties(
@@ -475,20 +475,22 @@ mod tests {
         let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
 
         for i in 0..n {
-            compositor.put_video(
-                i,
-                VideoProperties {
-                    resolution: Vec2d { x: 2, y: 2 },
-                    layout: VideoLayout {
-                        position: Vec2d {
-                            x: 2 * i as u32,
-                            y: 0,
+            compositor
+                .add_video(
+                    i,
+                    VideoProperties {
+                        resolution: Vec2d { x: 2, y: 2 },
+                        layout: VideoLayout {
+                            position: Vec2d {
+                                x: 2 * i as u32,
+                                y: 0,
+                            },
+                            size: Vec2d { x: 2, y: 2 },
+                            z: 0.5,
                         },
-                        size: Vec2d { x: 2, y: 2 },
-                        z: 0.5,
                     },
-                },
-            );
+                )
+                .unwrap();
         }
 
         compositor

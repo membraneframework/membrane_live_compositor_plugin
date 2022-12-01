@@ -23,9 +23,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec force_render(wgpu_state()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()
 
-  @spec put_video(wgpu_state(), id_t(), RawVideo.t(), VideoLayout.t()) ::
+  @spec add_video(wgpu_state(), id_t(), RawVideo.t(), VideoLayout.t()) ::
           :ok | {:error, error_t()}
-  def put_video(_state, _id, _caps, _layout), do: error()
+  def add_video(_state, _id, _caps, _layout), do: error()
 
   @spec update_caps(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
   def update_caps(_state, _id, _caps), do: error()

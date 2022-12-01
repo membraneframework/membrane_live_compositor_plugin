@@ -160,7 +160,7 @@ fn force_render(
 }
 
 #[rustler::nif]
-fn put_video(
+fn add_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
@@ -171,7 +171,7 @@ fn put_video(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.put_video(
+    state.compositor.add_video(
         id,
         compositor::VideoProperties {
             resolution: Vec2d {
@@ -193,7 +193,8 @@ fn put_video(
                 z: 1.0 - layout.z_value.max(1e-7),
             },
         },
-    );
+    )?;
+
     Ok(atoms::ok())
 }
 
@@ -269,7 +270,7 @@ rustler::init!(
     [
         init,
         force_render,
-        put_video,
+        add_video,
         remove_video,
         upload_frame,
         send_end_of_stream,

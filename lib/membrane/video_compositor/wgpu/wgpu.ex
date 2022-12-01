@@ -53,25 +53,20 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @doc """
-  Set input video with the given numerical `id`.
-  Used for adding new input videos as well as updating properties of existing ones.
+  Add an input video with the given numerical `id`.
 
-  Provided `id` should be unique within all previous ones, otherwise the compositor may or may not replace
-  the old video with this id with a new one.
-  `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
-  `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
-  A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
+  Provided `id` should be unique within all previous ones. If a video with a given id already exists in the compositor, this will raise.
   """
-  @spec put_video(
+  @spec add_video(
           state :: wgpu_state_t(),
           id :: id_t(),
           caps :: Membrane.RawVideo.t(),
           layout :: RustStructs.VideoLayout.t()
         ) :: :ok | {:error, error_t()}
-  def put_video(state, id, caps, layout) do
+  def add_video(state, id, caps, layout) do
     {:ok, caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
-    case Native.put_video(state, id, caps, layout) do
+    case Native.add_video(state, id, caps, layout) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
@@ -94,9 +89,11 @@ defmodule Membrane.VideoCompositor.Wgpu do
   @doc """
   Update input caps for the given video.
   """
-  @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: RustStructs.RawVideo.t()) ::
+  @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: Membrane.RawVideo.t()) ::
           :ok
   def update_caps(state, id, caps) do
+    {:ok, caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+
     case Native.update_caps(state, id, caps) do
       :ok -> :ok
       {:error, reason} -> raise "Error while updating video caps, reason: #{inspect(reason)}"

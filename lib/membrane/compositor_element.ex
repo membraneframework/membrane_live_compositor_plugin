@@ -125,10 +125,17 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     id = Map.get(pads_to_ids, pad)
 
-    layout = Map.get(initial_video_layouts, id)
-    :ok = Wgpu.put_video(wgpu_state, id, caps, layout)
+    {layout, initial_video_layouts} = Map.pop(initial_video_layouts, id)
 
-    {:ok, state}
+    # this video was added before
+    # this video was waiting for caps to be added to the compositor
+    if layout == nil do
+      :ok = Wgpu.update_caps(wgpu_state, id, caps)
+    else
+      :ok = Wgpu.add_video(wgpu_state, id, caps, layout)
+    end
+
+    {:ok, %{state | initial_video_layouts: initial_video_layouts}}
   end
 
   @impl true
