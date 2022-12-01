@@ -1,3 +1,4 @@
+use compositor::Vec2d;
 use elixir_structs::*;
 use errors::CompositorError;
 use rustler::ResourceArc;
@@ -173,14 +174,18 @@ fn put_video(
     state.compositor.put_video(
         id,
         compositor::VideoProperties {
-            top_left: compositor::Point {
+            top_left: compositor::Vec2d {
                 x: layout.position.0,
                 y: layout.position.1,
             },
-            input_width: caps.width.get(),
-            input_height: caps.height.get(),
-            display_width: layout.display_size.0,
-            display_height: layout.display_size.1,
+            resolution: Vec2d {
+                x: caps.width.get(),
+                y: caps.height.get(),
+            },
+            display_size: Vec2d {
+                x: layout.display_size.0,
+                y: layout.display_size.1,
+            },
             // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
             // which is outside of the wgpu clip space
             z: 1.0 - layout.z_value.max(1e-7),

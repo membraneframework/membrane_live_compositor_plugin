@@ -5,7 +5,7 @@ use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
 use super::textures::{RGBATexture, YUVTextures};
-use super::{Point, Vertex};
+use super::{Vec2d, Vertex};
 
 #[derive(Debug, Clone, Copy)]
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
@@ -13,11 +13,9 @@ pub struct VideoProperties {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
-    pub top_left: Point<u32>,
-    pub input_width: u32,
-    pub input_height: u32,
-    pub display_width: u32,
-    pub display_height: u32,
+    pub top_left: Vec2d<u32>,
+    pub resolution: Vec2d<u32>,
+    pub display_size: Vec2d<u32>,
     pub z: f32,
 }
 
@@ -58,8 +56,8 @@ impl InputVideo {
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.input_width,
-            properties.input_height,
+            properties.resolution.x,
+            properties.resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -100,8 +98,8 @@ impl InputVideo {
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.input_width,
-            properties.input_height,
+            properties.resolution.x,
+            properties.resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -122,8 +120,8 @@ impl InputVideo {
         self.yuv_textures.upload_data(queue, data);
         let frame = RGBATexture::new(
             device,
-            self.properties.input_width,
-            self.properties.input_height,
+            self.properties.resolution.x,
+            self.properties.resolution.y,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
@@ -147,8 +145,8 @@ impl InputVideo {
         let scene_height = output_caps.height;
 
         let position = self.properties.top_left;
-        let width = self.properties.display_width;
-        let height = self.properties.display_height;
+        let width = self.properties.display_size.x;
+        let height = self.properties.display_size.y;
 
         let left = lerp(
             self.properties.top_left.x as f64,

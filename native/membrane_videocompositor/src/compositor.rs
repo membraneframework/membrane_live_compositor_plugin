@@ -15,12 +15,12 @@ use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 /// A point in 2D space
-pub struct Point<T> {
+pub struct Vec2d<T> {
     pub x: T,
     pub y: T,
 }
 
-impl<T: Display> Display for Point<T> {
+impl<T: Display> Display for Vec2d<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
@@ -447,14 +447,12 @@ mod tests {
             compositor.put_video(
                 i,
                 VideoProperties {
-                    top_left: Point {
+                    top_left: Vec2d {
                         x: 2 * i as u32,
                         y: 0,
                     },
-                    input_width: 2,
-                    input_height: 2,
-                    display_width: 2,
-                    display_height: 2,
+                    resolution: Vec2d { x: 2, y: 2 },
+                    display_size: Vec2d { x: 2, y: 2 },
                     z: 0.5,
                 },
             );
