@@ -8,7 +8,7 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
-pub use videos::VideoProperties;
+pub use videos::{VideoLayout, VideoProperties};
 
 use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
@@ -372,6 +372,37 @@ impl State {
         }
     }
 
+    pub fn update_properties(
+        &mut self,
+        idx: usize,
+        caps: Option<Vec2d<u32>>,
+        layout: Option<VideoLayout>,
+    ) -> Result<(), CompositorError> {
+        let video = self
+            .input_videos
+            .get_mut(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?;
+
+        let mut properties = *video.properties();
+
+        if let Some(caps) = caps {
+            properties.resolution = caps;
+        }
+
+        if let Some(layout) = layout {
+            properties.layout = layout;
+        }
+
+        video.update_properties(
+            &self.device,
+            self.single_texture_bind_group_layout.clone(),
+            &self.all_yuv_textures_bind_group_layout,
+            properties,
+        );
+
+        Ok(())
+    }
+
     pub fn remove_video(&mut self, idx: usize) -> Result<(), CompositorError> {
         self.input_videos
             .remove(&idx)
@@ -447,13 +478,15 @@ mod tests {
             compositor.put_video(
                 i,
                 VideoProperties {
-                    top_left: Vec2d {
-                        x: 2 * i as u32,
-                        y: 0,
-                    },
                     resolution: Vec2d { x: 2, y: 2 },
-                    display_size: Vec2d { x: 2, y: 2 },
-                    z: 0.5,
+                    layout: VideoLayout {
+                        position: Vec2d {
+                            x: 2 * i as u32,
+                            y: 0,
+                        },
+                        size: Vec2d { x: 2, y: 2 },
+                        z: 0.5,
+                    },
                 },
             );
         }

@@ -92,6 +92,33 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @doc """
+  Update input caps for the given video.
+  """
+  @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: RustStructs.RawVideo.t()) ::
+          :ok
+  def update_caps(state, id, caps) do
+    case Native.update_caps(state, id, caps) do
+      :ok -> :ok
+      {:error, reason} -> raise "Error while updating video caps, reason: #{inspect(reason)}"
+    end
+  end
+
+  @doc """
+  Update layout for the given video.
+  """
+  @spec update_layout(
+          state :: wgpu_state_t(),
+          id :: id_t(),
+          layout :: RustStructs.VideoLayout.t()
+        ) :: :ok
+  def update_layout(state, id, layout) do
+    case Native.update_layout(state, id, layout) do
+      :ok -> :ok
+      {:error, reason} -> raise "Error while updating video layout, reason: #{inspect(reason)}"
+    end
+  end
+
+  @doc """
   Send an end of stream to a video with the given `id`.
 
   This causes the video to be deleted after it's enqueued frames are used up.

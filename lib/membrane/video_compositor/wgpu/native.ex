@@ -27,6 +27,12 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           :ok | {:error, error_t()}
   def put_video(_state, _id, _caps, _layout), do: error()
 
+  @spec update_caps(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
+  def update_caps(_state, _id, _caps), do: error()
+
+  @spec update_layout(wgpu_state(), id_t(), VideoLayout.t()) :: :ok | {:error, error_t()}
+  def update_layout(_state, _id, _layout), do: error()
+
   @spec remove_video(wgpu_state(), id_t()) ::
           :ok | {:error, error_t()}
   def remove_video(_state, _id), do: error()
