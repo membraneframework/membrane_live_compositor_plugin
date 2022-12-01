@@ -451,10 +451,11 @@ mod tests {
                         x: 2 * i as u32,
                         y: 0,
                     },
-                    width: 2,
-                    height: 2,
+                    input_width: 2,
+                    input_height: 2,
+                    display_width: 2,
+                    display_height: 2,
                     z: 0.5,
-                    scale: 1.0,
                 },
             );
         }

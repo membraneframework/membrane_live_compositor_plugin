@@ -17,6 +17,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.RustStructs.VideoLayout
   alias Membrane.VideoCompositor.Wgpu
 
   def_options caps: [
@@ -37,12 +38,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420},
     options: [
-      position: [
-        type: :tuple,
-        spec: {integer(), integer()},
-        description:
-          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
-        default: {0, 0}
+      initial_layout: [
+        spec: VideoLayout.t(),
+        description: "Initial layout of the video on the screen"
+      ],
+      name: [
+        spec: any(),
+        description: "A unique identifier for the video coming through this pad",
+        default: nil
       ]
     ]
 
@@ -56,7 +59,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     {:ok, wgpu_state} = Wgpu.init(options.caps)
 
     state = %{
-      videos_positions: %{},
+      initial_video_layouts: %{},
+      names_to_pads: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -92,18 +96,20 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_pad_added(pad, context, state) do
-    position = context.options.position
+    initial_layout = context.options.initial_layout
+    name = if context.options.name != nil, do: context.options.name, else: make_ref()
 
-    state = register_pad(state, pad, position)
+    state = register_pad(state, name, pad, initial_layout)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position) do
+  defp register_pad(state, name, pad, layout) do
     new_id = state.new_pad_id
 
     %{
       state
-      | videos_positions: Map.put(state.videos_positions, new_id, position),
+      | initial_video_layouts: Map.put(state.initial_video_layouts, new_id, layout),
+        names_to_pads: Map.put(state.names_to_pads, name, pad),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -114,13 +120,13 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      videos_positions: videos_positions
+      initial_video_layouts: initial_video_layouts
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    position = Map.get(videos_positions, id)
-    :ok = Wgpu.put_video(wgpu_state, id, caps, position)
+    layout = Map.get(initial_video_layouts, id)
+    :ok = Wgpu.put_video(wgpu_state, id, caps, layout)
 
     {:ok, state}
   end

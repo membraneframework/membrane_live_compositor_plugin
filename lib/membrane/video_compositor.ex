@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.FramerateConverter
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
+  alias Membrane.VideoCompositor.RustStructs.VideoLayout
 
   def_options caps: [
                 spec: RawVideo.t(),
@@ -23,11 +24,14 @@ defmodule Membrane.VideoCompositor do
     demand_unit: :buffers,
     availability: :on_request,
     options: [
-      position: [
-        spec: {integer(), integer()},
-        description:
-          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
-        default: {0, 0}
+      initial_layout: [
+        spec: VideoLayout.t(),
+        description: "Initial layout of the video on the screen"
+      ],
+      name: [
+        spec: any(),
+        description: "A unique identifier for the video coming through this pad",
+        default: nil
       ]
     ]
 
@@ -66,7 +70,9 @@ defmodule Membrane.VideoCompositor do
     links = [
       link_bin_input(pad)
       |> to(converter)
-      |> via_in(:input, options: [position: context.options.position])
+      |> via_in(:input,
+        options: [initial_layout: context.options.initial_layout, name: context.options.name]
+      )
       |> to(:compositor)
     ]
 

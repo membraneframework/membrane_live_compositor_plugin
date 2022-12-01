@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.RustStructs.VideoLayout
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Test.Support.Utils
 
@@ -66,7 +67,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       for(
         pos <- positions,
         do: %InputStream{
-          position: pos,
+          layout: %VideoLayout{
+            position: pos,
+            display_size: {video_caps.width, video_caps.height}
+          },
           caps: video_caps,
           input: input_path
         }

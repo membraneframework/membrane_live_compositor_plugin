@@ -14,10 +14,11 @@ pub struct VideoProperties {
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
     pub top_left: Point<u32>,
-    pub width: u32,
-    pub height: u32,
+    pub input_width: u32,
+    pub input_height: u32,
+    pub display_width: u32,
+    pub display_height: u32,
     pub z: f32,
-    pub scale: f64,
 }
 
 pub enum Message {
@@ -57,8 +58,8 @@ impl InputVideo {
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.width,
-            properties.height,
+            properties.input_width,
+            properties.input_height,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -99,8 +100,8 @@ impl InputVideo {
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.width,
-            properties.height,
+            properties.input_width,
+            properties.input_height,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -121,8 +122,8 @@ impl InputVideo {
         self.yuv_textures.upload_data(queue, data);
         let frame = RGBATexture::new(
             device,
-            self.properties.width,
-            self.properties.height,
+            self.properties.input_width,
+            self.properties.input_height,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
@@ -146,8 +147,8 @@ impl InputVideo {
         let scene_height = output_caps.height;
 
         let position = self.properties.top_left;
-        let width = self.properties.width;
-        let height = self.properties.height;
+        let width = self.properties.display_width;
+        let height = self.properties.display_height;
 
         let left = lerp(
             self.properties.top_left.x as f64,
@@ -157,7 +158,7 @@ impl InputVideo {
             1.0,
         ) as f32;
         let right = lerp(
-            position.x as f64 + width as f64 * self.properties.scale,
+            position.x as f64 + width as f64,
             0.0,
             scene_width.get() as f64,
             -1.0,
@@ -165,7 +166,7 @@ impl InputVideo {
         ) as f32;
         let top = lerp(position.y as f64, 0.0, scene_height.get() as f64, 1.0, -1.0) as f32;
         let bot = lerp(
-            position.y as f64 + height as f64 * self.properties.scale,
+            position.y as f64 + height as f64,
             0.0,
             scene_height.get() as f64,
             1.0,

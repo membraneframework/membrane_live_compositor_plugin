@@ -9,11 +9,10 @@ pub struct ElixirRawVideo {
     pub framerate: (u64, u64),
 }
 
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.RustStructs.VideoProperties"]
-pub struct VideoProperties {
-    pub x: u32,
-    pub y: u32,
-    pub z: f32,
-    pub scale: f64,
+#[derive(Debug, rustler::NifStruct, Clone, Copy)]
+#[module = "Membrane.VideoCompositor.RustStructs.VideoLayout"]
+pub struct VideoLayout {
+    pub position: (u32, u32),
+    pub display_size: (u32, u32),
+    pub z_value: f32,
 }

@@ -163,10 +163,10 @@ fn put_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    input_video: ElixirRawVideo,
-    properties: VideoProperties,
+    caps: ElixirRawVideo,
+    layout: VideoLayout,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let input_video: RawVideo = input_video.try_into()?;
+    let caps: RawVideo = caps.try_into()?;
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
@@ -174,15 +174,16 @@ fn put_video(
         id,
         compositor::VideoProperties {
             top_left: compositor::Point {
-                x: properties.x,
-                y: properties.y,
+                x: layout.position.0,
+                y: layout.position.1,
             },
-            width: input_video.width.get(),
-            height: input_video.height.get(),
+            input_width: caps.width.get(),
+            input_height: caps.height.get(),
+            display_width: layout.display_size.0,
+            display_height: layout.display_size.1,
             // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
             // which is outside of the wgpu clip space
-            z: 1.0 - properties.z.max(1e-7),
-            scale: properties.scale,
+            z: 1.0 - layout.z_value.max(1e-7),
         },
     );
     Ok(atoms::ok())

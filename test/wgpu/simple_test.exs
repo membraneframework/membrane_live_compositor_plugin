@@ -1,7 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoProperties}
+  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoLayout}
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -37,19 +37,15 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.put_video(state, 0, in_video, %VideoProperties{
-                 x: 0,
-                 y: 0,
-                 z: 0.0,
-                 scale: 1.0
+               Native.put_video(state, 0, in_video, %VideoLayout{
+                 position: {0, 0},
+                 display_size: {in_video.width, in_video.height}
                })
 
       assert :ok =
-               Native.put_video(state, 1, in_video, %VideoProperties{
-                 x: 0,
-                 y: 360,
-                 z: 0.0,
-                 scale: 1.0
+               Native.put_video(state, 1, in_video, %VideoLayout{
+                 position: {0, 360},
+                 display_size: {in_video.width, in_video.height}
                })
 
       assert :ok = Native.upload_frame(state, 0, frame, 1)
@@ -85,19 +81,17 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.put_video(state, 0, caps, %VideoProperties{
-                 x: 0,
-                 y: 0,
-                 z: 0.0,
-                 scale: 1.0
+               Native.put_video(state, 0, caps, %VideoLayout{
+                 position: {0, 0},
+                 display_size: {caps.width, caps.height},
+                 z_value: 0.0
                })
 
       assert :ok =
-               Native.put_video(state, 1, caps, %VideoProperties{
-                 x: 0,
-                 y: 0,
-                 z: 0.5,
-                 scale: 1.0
+               Native.put_video(state, 1, caps, %VideoLayout{
+                 position: {0, 0},
+                 display_size: {caps.width, caps.height},
+                 z_value: 0.5
                })
 
       s = bit_size(frame)
