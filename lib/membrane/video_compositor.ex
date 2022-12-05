@@ -28,6 +28,11 @@ defmodule Membrane.VideoCompositor do
         description:
           "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
         default: {0, 0}
+      ],
+      timestamp_offset: [
+        spec: Membrane.Time.non_neg_t(),
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
+        default: 0
       ]
     ]
 
@@ -66,7 +71,12 @@ defmodule Membrane.VideoCompositor do
     links = [
       link_bin_input(pad)
       |> to(converter)
-      |> via_in(:input, options: [position: context.options.position])
+      |> via_in(:input,
+        options: [
+          position: context.options.position,
+          timestamp_offset: context.options.timestamp_offset
+        ]
+      )
       |> to(:compositor)
     ]
 

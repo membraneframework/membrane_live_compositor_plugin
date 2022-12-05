@@ -43,6 +43,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         description:
           "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
         default: {0, 0}
+      ],
+      timestamp_offset: [
+        spec: Membrane.Time.non_neg_t(),
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
+        default: 0
       ]
     ]
 
@@ -57,6 +62,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     state = %{
       videos_positions: %{},
+      timestamp_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -92,18 +98,30 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_pad_added(pad, context, state) do
+    timestamp_offset =
+      case context.options.timestamp_offset do
+        timestamp_offset when timestamp_offset < 0 ->
+          raise ArgumentError,
+            message:
+              "Invalid timestamp_offset option for pad: #{Pad.name_by_ref(pad)}. timestamp_offset can't be negative."
+
+        timestamp_offset ->
+          timestamp_offset
+      end
+
     position = context.options.position
 
-    state = register_pad(state, pad, position)
+    state = register_pad(state, pad, position, timestamp_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position) do
+  defp register_pad(state, pad, position, timestamp_offset) do
     new_id = state.new_pad_id
 
     %{
       state
       | videos_positions: Map.put(state.videos_positions, new_id, position),
+        timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -134,12 +152,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       ) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      timestamp_offsets: timestamp_offsets
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
+    pts = pts + Map.get(timestamp_offsets, id)
 
     case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
