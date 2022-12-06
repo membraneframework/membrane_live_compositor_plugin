@@ -37,6 +37,11 @@ defmodule Membrane.VideoCompositor do
         spec: CompositorElement.name_t(),
         description: "A unique identifier for the video coming through this pad",
         default: nil
+      ],
+      timestamp_offset: [
+        spec: Membrane.Time.non_neg_t(),
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
+        default: 0
       ]
     ]
 
@@ -76,7 +81,11 @@ defmodule Membrane.VideoCompositor do
       link_bin_input(pad)
       |> to(converter)
       |> via_in(:input,
-        options: [initial_layout: context.options.initial_layout, name: context.options.name]
+        options: [
+          initial_layout: context.options.initial_layout,
+          name: context.options.name,
+          timestamp_offset: context.options.timestamp_offset
+        ]
       )
       |> to(:compositor)
     ]

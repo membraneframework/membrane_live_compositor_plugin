@@ -20,16 +20,16 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
-  describe "Checks composition and raw video pipeline on" do
+  describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
     @tag wgpu: true
-    test "3s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+    test "3s 720p 1fps raw", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 3, tmp_dir, "short_videos")
     end
 
     @tag long_wgpu: true
-    test "10s 720p 1fps raw video", %{tmp_dir: tmp_dir} do
+    test "10s 720p 1fps raw", %{tmp_dir: tmp_dir} do
       test_raw_composing(@hd_video, 10, tmp_dir, "long_videos")
     end
   end
@@ -39,13 +39,31 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   defp test_raw_composing(video_caps, duration, tmp_dir, sub_dir_name) do
     alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
-    {input_path, output_path, reference_path} =
+    {input_path, _output_path, _reference_path} =
       Utils.prepare_testing_video(
         video_caps,
         duration,
         "raw",
         tmp_dir,
         sub_dir_name
+      )
+
+    out_caps = %RawVideo{
+      video_caps
+      | width: video_caps.width * 2,
+        height: video_caps.height * 2
+    }
+
+    output_path =
+      Path.join(
+        tmp_dir,
+        "out_#{duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
+      )
+
+    reference_path =
+      Path.join(
+        tmp_dir,
+        "ref_#{duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
       )
 
     :ok =
@@ -75,8 +93,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
           input: input_path
         }
       )
-
-    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
 
     options = %Options{
       inputs: inputs,

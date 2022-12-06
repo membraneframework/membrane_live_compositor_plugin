@@ -13,7 +13,11 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   def handle_init(%Options{} = options) do
     source_links =
       Enum.with_index(options.inputs)
-      |> Enum.map(fn {%InputStream{input: input, layout: layout}, i} ->
+      |> Enum.map(fn {%InputStream{
+                        input: input,
+                        layout: layout,
+                        timestamp_offset: timestamp_offset
+                      }, i} ->
         source = get_src(input)
         source_name = String.to_atom("source_#{i}")
 
@@ -26,7 +30,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         link(source_name, source)
         |> then(if not is_nil(decoder), do: &to(&1, decoder_name, decoder), else: & &1)
         |> then(if not is_nil(input_filter), do: &to(&1, input_filter_name, input_filter), else: & &1)
-        |> via_in(:input, options: [initial_layout: layout])
+        |> via_in(:input, options: [initial_layout: layout, timestamp_offset: timestamp_offset])
         |> to(:compositor)
       end)
 

@@ -51,6 +51,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: name_t(),
         description: "A unique identifier for the video coming through this pad",
         default: nil
+      ],
+      timestamp_offset: [
+        spec: Membrane.Time.non_neg_t(),
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
+        default: 0
       ]
     ]
 
@@ -66,6 +71,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{
       initial_video_layouts: %{},
       names_to_pads: %{},
+      timestamp_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
@@ -101,20 +107,32 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_pad_added(pad, context, state) do
+    timestamp_offset =
+      case context.options.timestamp_offset do
+        timestamp_offset when timestamp_offset < 0 ->
+          raise ArgumentError,
+            message:
+              "Invalid timestamp_offset option for pad: #{Pad.name_by_ref(pad)}. timestamp_offset can't be negative."
+
+        timestamp_offset ->
+          timestamp_offset
+      end
+
     initial_layout = context.options.initial_layout
     name = if context.options.name != nil, do: context.options.name, else: make_ref()
 
-    state = register_pad(state, name, pad, initial_layout)
+    state = register_pad(state, name, pad, initial_layout, timestamp_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, name, pad, layout) do
+  defp register_pad(state, name, pad, layout, timestamp_offset) do
     new_id = state.new_pad_id
 
     %{
       state
       | initial_video_layouts: Map.put(state.initial_video_layouts, new_id, layout),
         names_to_pads: Map.put(state.names_to_pads, name, pad),
+        timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
     }
@@ -152,12 +170,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       ) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      timestamp_offsets: timestamp_offsets
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
+    pts = pts + Map.get(timestamp_offsets, id)
 
     case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
