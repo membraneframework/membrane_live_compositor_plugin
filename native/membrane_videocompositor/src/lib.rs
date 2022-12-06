@@ -188,14 +188,18 @@ fn add_video(
                     x: layout.display_size.0,
                     y: layout.display_size.1,
                 },
-                // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
-                // which is outside of the wgpu clip space
-                z: 1.0 - layout.z_value.max(1e-7),
+                z: convert_z(layout.z_value),
             },
         },
     )?;
 
     Ok(atoms::ok())
+}
+
+fn convert_z(z: f32) -> f32 {
+    // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
+    // which is outside of the wgpu clip space
+    1.0 - z.max(1e-7)
 }
 
 #[rustler::nif]
@@ -234,7 +238,7 @@ fn update_layout(
             x: layout.display_size.0,
             y: layout.display_size.1,
         },
-        z: layout.z_value,
+        z: convert_z(layout.z_value),
     };
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
