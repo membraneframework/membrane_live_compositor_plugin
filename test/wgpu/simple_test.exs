@@ -5,18 +5,18 @@ defmodule VideoCompositor.Wgpu.Test do
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
-  describe "wgpu native test on" do
+  describe "wgpu" do
     @describetag :tmp_dir
 
     @tag wgpu: true
-    test "inits" do
+    test "init" do
       out_video = %RawVideo{width: 640, height: 720, pixel_format: :I420, framerate: {60, 1}}
 
       assert {:ok, _state} = Native.init(out_video)
     end
 
     @tag wgpu: true
-    test "compose doubled raw video frame on top of each other", %{tmp_dir: tmp_dir} do
+    test "simple compose", %{tmp_dir: tmp_dir} do
       {in_path, out_path, ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       assert {:ok, frame} = File.read(in_path)
@@ -66,7 +66,7 @@ defmodule VideoCompositor.Wgpu.Test do
     end
 
     @tag wgpu: true
-    test "z value affects composition", %{tmp_dir: tmp_dir} do
+    test "z value", %{tmp_dir: tmp_dir} do
       {in_path, out_path, _ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       assert {:ok, frame} = File.read(in_path)
@@ -99,6 +99,64 @@ defmodule VideoCompositor.Wgpu.Test do
 
       assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
       assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+
+      assert {:ok, file} = File.open(out_path, [:write])
+      IO.binwrite(file, out_frame)
+      File.close(file)
+
+      Utils.compare_contents_with_error(in_path, out_path)
+    end
+
+    @tag wgpu: true
+    test "update layout", %{tmp_dir: tmp_dir} do
+      {in_path, out_path, _ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
+
+      assert {:ok, frame} = File.read(in_path)
+
+      caps = %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: {1, 1}
+      }
+
+      assert {:ok, state} = Native.init(caps)
+
+      assert :ok =
+               Native.add_video(state, 0, caps, %VideoLayout{
+                 position: {0, 0},
+                 display_size: {caps.width, caps.height},
+                 z_value: 0.0
+               })
+
+      assert :ok =
+               Native.add_video(state, 1, caps, %VideoLayout{
+                 position: {0, 0},
+                 display_size: {caps.width, caps.height},
+                 z_value: 0.5
+               })
+
+      s = bit_size(frame)
+      empty_frame = <<0::size(s)>>
+
+      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+
+      assert {:ok, file} = File.open(out_path, [:write])
+      IO.binwrite(file, out_frame)
+      File.close(file)
+
+      Utils.compare_contents_with_error(in_path, out_path)
+
+      Native.update_layout(state, 0, %VideoLayout{
+        position: {0, 0},
+        display_size: {caps.width, caps.height},
+        z_value: 1.0
+      })
+
+      second = Membrane.Time.second()
+      assert :ok = Native.upload_frame(state, 0, frame, second)
+      assert {:ok, {out_frame, ^second}} = Native.upload_frame(state, 1, empty_frame, second)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
