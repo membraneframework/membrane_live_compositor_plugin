@@ -9,6 +9,11 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.VideoCompositor.CompositorElement
   alias Membrane.VideoCompositor.RustStructs.VideoLayout
 
+  @typedoc """
+  A message describing a compositor layout update
+  """
+  @type update_layout_t :: {:update_layout, [{CompositorElement.name_t(), VideoLayout.t()}]}
+
   def_options caps: [
                 spec: RawVideo.t(),
                 description: "Caps for the output video of the compositor"
@@ -29,7 +34,7 @@ defmodule Membrane.VideoCompositor do
         description: "Initial layout of the video on the screen"
       ],
       name: [
-        spec: any(),
+        spec: CompositorElement.name_t(),
         description: "A unique identifier for the video coming through this pad",
         default: nil
       ]
@@ -79,5 +84,10 @@ defmodule Membrane.VideoCompositor do
     spec = %ParentSpec{children: children, links: links}
 
     {{:ok, spec: spec}, state}
+  end
+
+  @impl true
+  def handle_other({:update_layout, layouts}, _ctx, state) do
+    {{:ok, forward: {:compositor, {:update_layout, layouts}}}, state}
   end
 end

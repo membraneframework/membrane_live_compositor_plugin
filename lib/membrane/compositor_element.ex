@@ -20,6 +20,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.VideoCompositor.RustStructs.VideoLayout
   alias Membrane.VideoCompositor.Wgpu
 
+  @typedoc """
+  A unique name used to identify videos.
+  """
+  @type name_t :: any()
+
   def_options caps: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
@@ -43,7 +48,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         description: "Initial layout of the video on the screen"
       ],
       name: [
-        spec: any(),
+        spec: name_t(),
         description: "A unique identifier for the video coming through this pad",
         default: nil
       ]
@@ -127,11 +132,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     {layout, initial_video_layouts} = Map.pop(initial_video_layouts, id)
 
-    # this video was added before
-    # this video was waiting for caps to be added to the compositor
     if layout == nil do
+      # this video was added before
       :ok = Wgpu.update_caps(wgpu_state, id, caps)
     else
+      # this video was waiting for first caps to be added to the compositor
       :ok = Wgpu.add_video(wgpu_state, id, caps, layout)
     end
 
@@ -213,5 +218,23 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   defp all_input_pads_received_end_of_stream?(pads) do
     Map.to_list(pads)
     |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
+  end
+
+  @impl true
+  def handle_other({:update_layout, layouts}, _ctx, state) do
+    %{
+      names_to_pads: names_to_pads,
+      pads_to_ids: pads_to_ids,
+      wgpu_state: wgpu_state
+    } = state
+
+    for {name, layout} <- layouts do
+      pad = Map.get(names_to_pads, name)
+      id = Map.get(pads_to_ids, pad)
+
+      Wgpu.update_layout(wgpu_state, id, layout)
+    end
+
+    {:ok, state}
   end
 end
