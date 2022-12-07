@@ -7,12 +7,13 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.FramerateConverter
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
-  alias Membrane.VideoCompositor.RustStructs.VideoLayout
+  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
 
   @typedoc """
-  A message describing a compositor layout update
+  A message describing a compositor video placement update
   """
-  @type update_layout_t :: {:update_layout, [{CompositorElement.name_t(), VideoLayout.t()}]}
+  @type update_placement_t ::
+          {:update_placement, [{CompositorElement.name_t(), VideoPlacement.t()}]}
 
   def_options caps: [
                 spec: RawVideo.t(),
@@ -29,9 +30,9 @@ defmodule Membrane.VideoCompositor do
     demand_unit: :buffers,
     availability: :on_request,
     options: [
-      initial_layout: [
-        spec: VideoLayout.t(),
-        description: "Initial layout of the video on the screen"
+      initial_placement: [
+        spec: VideoPlacement.t(),
+        description: "Initial placement of the video on the screen"
       ],
       name: [
         spec: CompositorElement.name_t(),
@@ -82,7 +83,7 @@ defmodule Membrane.VideoCompositor do
       |> to(converter)
       |> via_in(:input,
         options: [
-          initial_layout: context.options.initial_layout,
+          initial_placement: context.options.initial_placement,
           name: context.options.name,
           timestamp_offset: context.options.timestamp_offset
         ]
@@ -96,7 +97,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_other({:update_layout, layouts}, _ctx, state) do
-    {{:ok, forward: {:compositor, {:update_layout, layouts}}}, state}
+  def handle_other({:update_placement, placements}, _ctx, state) do
+    {{:ok, forward: {:compositor, {:update_placement, placements}}}, state}
   end
 end

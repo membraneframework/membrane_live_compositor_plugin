@@ -10,8 +10,8 @@ pub struct ElixirRawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.RustStructs.VideoLayout"]
-pub struct ElixirVideoLayout {
+#[module = "Membrane.VideoCompositor.RustStructs.VideoPlacement"]
+pub struct ElixirVideoPlacement {
     pub position: (u32, u32),
     pub display_size: (u32, u32),
     pub z_value: f32,

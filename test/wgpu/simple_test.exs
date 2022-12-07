@@ -1,7 +1,7 @@
 defmodule VideoCompositor.Wgpu.Test do
   use ExUnit.Case, async: false
 
-  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoLayout}
+  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -37,13 +37,13 @@ defmodule VideoCompositor.Wgpu.Test do
                })
 
       assert :ok =
-               Native.add_video(state, 0, in_video, %VideoLayout{
+               Native.add_video(state, 0, in_video, %VideoPlacement{
                  position: {0, 0},
                  display_size: {in_video.width, in_video.height}
                })
 
       assert :ok =
-               Native.add_video(state, 1, in_video, %VideoLayout{
+               Native.add_video(state, 1, in_video, %VideoPlacement{
                  position: {0, 360},
                  display_size: {in_video.width, in_video.height}
                })
@@ -81,14 +81,14 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %VideoLayout{
+               Native.add_video(state, 0, caps, %VideoPlacement{
                  position: {0, 0},
                  display_size: {caps.width, caps.height},
                  z_value: 0.0
                })
 
       assert :ok =
-               Native.add_video(state, 1, caps, %VideoLayout{
+               Native.add_video(state, 1, caps, %VideoPlacement{
                  position: {0, 0},
                  display_size: {caps.width, caps.height},
                  z_value: 0.5
@@ -108,7 +108,7 @@ defmodule VideoCompositor.Wgpu.Test do
     end
 
     @tag wgpu: true
-    test "update layout", %{tmp_dir: tmp_dir} do
+    test "update placement", %{tmp_dir: tmp_dir} do
       {in_path, out_path, _ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
 
       assert {:ok, frame} = File.read(in_path)
@@ -123,14 +123,14 @@ defmodule VideoCompositor.Wgpu.Test do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %VideoLayout{
+               Native.add_video(state, 0, caps, %VideoPlacement{
                  position: {0, 0},
                  display_size: {caps.width, caps.height},
                  z_value: 0.0
                })
 
       assert :ok =
-               Native.add_video(state, 1, caps, %VideoLayout{
+               Native.add_video(state, 1, caps, %VideoPlacement{
                  position: {0, 0},
                  display_size: {caps.width, caps.height},
                  z_value: 0.5
@@ -148,7 +148,7 @@ defmodule VideoCompositor.Wgpu.Test do
 
       Utils.compare_contents_with_error(in_path, out_path)
 
-      Native.update_layout(state, 0, %VideoLayout{
+      Native.update_placement(state, 0, %VideoPlacement{
         position: {0, 0},
         display_size: {caps.width, caps.height},
         z_value: 1.0
