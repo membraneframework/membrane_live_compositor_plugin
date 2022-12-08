@@ -20,11 +20,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
   alias Membrane.VideoCompositor.Wgpu
 
-  @typedoc """
-  A unique name used to identify videos.
-  """
-  @type name_t :: any()
-
   def_options caps: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
@@ -47,11 +42,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: VideoPlacement.t(),
         description: "Initial placement of the video on the screen"
       ],
-      name: [
-        spec: name_t(),
-        description: "A unique identifier for the video coming through this pad",
-        default: nil
-      ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
@@ -70,7 +60,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     state = %{
       initial_video_placements: %{},
-      names_to_pads: %{},
       timestamp_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
@@ -119,19 +108,17 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       end
 
     initial_placement = context.options.initial_placement
-    name = if context.options.name != nil, do: context.options.name, else: make_ref()
 
-    state = register_pad(state, name, pad, initial_placement, timestamp_offset)
+    state = register_pad(state, pad, initial_placement, timestamp_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, name, pad, placement, timestamp_offset) do
+  defp register_pad(state, pad, placement, timestamp_offset) do
     new_id = state.new_pad_id
 
     %{
       state
       | initial_video_placements: Map.put(state.initial_video_placements, new_id, placement),
-        names_to_pads: Map.put(state.names_to_pads, name, pad),
         timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
@@ -246,13 +233,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   @impl true
   def handle_other({:update_placement, placements}, _ctx, state) do
     %{
-      names_to_pads: names_to_pads,
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state
     } = state
 
-    for {name, placement} <- placements do
-      pad = Map.get(names_to_pads, name)
+    for {pad, placement} <- placements do
       id = Map.get(pads_to_ids, pad)
 
       Wgpu.update_placement(wgpu_state, id, placement)

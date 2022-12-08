@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor do
   A message describing a compositor video placement update
   """
   @type update_placement_t ::
-          {:update_placement, [{CompositorElement.name_t(), VideoPlacement.t()}]}
+          {:update_placement, [{Membrane.Pad.ref_t(), VideoPlacement.t()}]}
 
   def_options caps: [
                 spec: RawVideo.t(),
@@ -33,11 +33,6 @@ defmodule Membrane.VideoCompositor do
       initial_placement: [
         spec: VideoPlacement.t(),
         description: "Initial placement of the video on the screen"
-      ],
-      name: [
-        spec: CompositorElement.name_t(),
-        description: "A unique identifier for the video coming through this pad",
-        default: nil
       ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
@@ -84,7 +79,6 @@ defmodule Membrane.VideoCompositor do
       |> via_in(:input,
         options: [
           initial_placement: context.options.initial_placement,
-          name: context.options.name,
           timestamp_offset: context.options.timestamp_offset
         ]
       )
