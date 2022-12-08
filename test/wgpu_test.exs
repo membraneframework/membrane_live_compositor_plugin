@@ -1,4 +1,4 @@
-defmodule VideoCompositor.Wgpu.Test do
+defmodule Membrane.VideoCompositor.Test.Wgpu do
   use ExUnit.Case, async: false
 
   alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
