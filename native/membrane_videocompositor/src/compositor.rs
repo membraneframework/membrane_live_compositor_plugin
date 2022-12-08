@@ -209,7 +209,7 @@ impl State {
                 module: &shader_module,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
-                    blend: None,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::all(),
                     format: wgpu::TextureFormat::Rgba8Unorm,
                 })],
