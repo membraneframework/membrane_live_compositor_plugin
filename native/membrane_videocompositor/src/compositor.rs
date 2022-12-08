@@ -296,6 +296,14 @@ impl State {
         let mut ended_video_ids = Vec::new();
         let mut rendered_video_ids = Vec::new();
 
+        let mut videos_sorted_by_z_value = self.input_videos.iter_mut().collect::<Vec<_>>();
+        videos_sorted_by_z_value.sort_by(|(_, vid1), (_, vid2)| {
+            vid2.properties()
+                .placement
+                .z
+                .total_cmp(&vid1.properties().placement.z)
+        });
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("render pass"),
@@ -319,7 +327,8 @@ impl State {
 
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
-            for (&id, video) in self.input_videos.iter_mut() {
+
+            for (&id, video) in videos_sorted_by_z_value.iter_mut() {
                 match video.draw(&self.queue, &mut render_pass, &self.output_caps, interval) {
                     DrawResult::Rendered(new_pts) => {
                         pts = pts.max(new_pts);
