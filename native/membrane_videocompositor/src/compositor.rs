@@ -565,7 +565,7 @@ mod tests {
             1,
             VideoProperties {
                 resolution: Vec2d { x: 2, y: 2 },
-                layout: VideoLayout {
+                placement: VideoPlacement {
                     position: Vec2d { x: 2, y: 0 },
                     size: Vec2d { x: 2, y: 2 },
                     z: 0.0,
