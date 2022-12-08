@@ -14,11 +14,11 @@ pub struct VideoProperties {
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
     pub resolution: Vec2d<u32>,
-    pub layout: VideoLayout,
+    pub placement: VideoPlacement,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct VideoLayout {
+pub struct VideoPlacement {
     pub position: Vec2d<u32>,
     pub size: Vec2d<u32>,
     pub z: f32,
@@ -157,12 +157,12 @@ impl InputVideo {
         let scene_width = output_caps.width;
         let scene_height = output_caps.height;
 
-        let position = self.properties.layout.position;
-        let width = self.properties.layout.size.x;
-        let height = self.properties.layout.size.y;
+        let position = self.properties.placement.position;
+        let width = self.properties.placement.size.x;
+        let height = self.properties.placement.size.y;
 
         let left = lerp(
-            self.properties.layout.position.x as f64,
+            self.properties.placement.position.x as f64,
             0.0,
             scene_width.get() as f64,
             -1.0,
@@ -186,19 +186,19 @@ impl InputVideo {
 
         [
             Vertex {
-                position: [right, top, self.properties.layout.z],
+                position: [right, top, self.properties.placement.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, self.properties.layout.z],
+                position: [left, top, self.properties.placement.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, self.properties.layout.z],
+                position: [left, bot, self.properties.placement.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, self.properties.layout.z],
+                position: [right, bot, self.properties.placement.z],
                 texture_coords: [1.0, 1.0],
             },
         ]

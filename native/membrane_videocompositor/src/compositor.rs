@@ -8,7 +8,7 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
-pub use videos::{VideoLayout, VideoProperties};
+pub use videos::{VideoPlacement, VideoProperties};
 
 use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
@@ -381,8 +381,8 @@ impl State {
     pub fn update_properties(
         &mut self,
         idx: usize,
-        caps: Option<Vec2d<u32>>,
-        layout: Option<VideoLayout>,
+        resolution: Option<Vec2d<u32>>,
+        placement: Option<VideoPlacement>,
     ) -> Result<(), CompositorError> {
         let video = self
             .input_videos
@@ -391,12 +391,12 @@ impl State {
 
         let mut properties = *video.properties();
 
-        if let Some(caps) = caps {
+        if let Some(caps) = resolution {
             properties.resolution = caps;
         }
 
-        if let Some(layout) = layout {
-            properties.layout = layout;
+        if let Some(placement) = placement {
+            properties.placement = placement;
         }
 
         video.update_properties(
@@ -486,7 +486,7 @@ mod tests {
                     i,
                     VideoProperties {
                         resolution: Vec2d { x: 2, y: 2 },
-                        layout: VideoLayout {
+                        placement: VideoPlacement {
                             position: Vec2d {
                                 x: 2 * i as u32,
                                 y: 0,

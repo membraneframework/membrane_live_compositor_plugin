@@ -165,7 +165,7 @@ fn add_video(
     state: rustler::ResourceArc<State>,
     id: usize,
     caps: ElixirRawVideo,
-    layout: ElixirVideoLayout,
+    placement: ElixirVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
     let caps: RawVideo = caps.try_into()?;
 
@@ -179,16 +179,16 @@ fn add_video(
                 y: caps.height.get(),
             },
 
-            layout: compositor::VideoLayout {
+            placement: compositor::VideoPlacement {
                 position: compositor::Vec2d {
-                    x: layout.position.0,
-                    y: layout.position.1,
+                    x: placement.position.0,
+                    y: placement.position.1,
                 },
                 size: Vec2d {
-                    x: layout.display_size.0,
-                    y: layout.display_size.1,
+                    x: placement.display_size.0,
+                    y: placement.display_size.1,
                 },
-                z: convert_z(layout.z_value),
+                z: convert_z(placement.z_value),
             },
         },
     )?;
@@ -223,27 +223,29 @@ fn update_caps(
 }
 
 #[rustler::nif]
-fn update_layout(
+fn update_placement(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    layout: ElixirVideoLayout,
+    placement: ElixirVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let layout = compositor::VideoLayout {
+    let placement = compositor::VideoPlacement {
         position: Vec2d {
-            x: layout.position.0,
-            y: layout.position.1,
+            x: placement.position.0,
+            y: placement.position.1,
         },
         size: Vec2d {
-            x: layout.display_size.0,
-            y: layout.display_size.1,
+            x: placement.display_size.0,
+            y: placement.display_size.1,
         },
-        z: convert_z(layout.z_value),
+        z: convert_z(placement.z_value),
     };
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.update_properties(id, None, Some(layout))?;
+    state
+        .compositor
+        .update_properties(id, None, Some(placement))?;
 
     Ok(atoms::ok())
 }
@@ -279,7 +281,7 @@ rustler::init!(
         upload_frame,
         send_end_of_stream,
         update_caps,
-        update_layout
+        update_placement,
     ],
     load = |env, _| {
         rustler::resource!(State, env);

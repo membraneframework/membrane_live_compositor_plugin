@@ -61,12 +61,12 @@ defmodule Membrane.VideoCompositor.Wgpu do
           state :: wgpu_state_t(),
           id :: id_t(),
           caps :: Membrane.RawVideo.t(),
-          layout :: RustStructs.VideoLayout.t()
+          placement :: RustStructs.VideoPlacement.t()
         ) :: :ok | {:error, error_t()}
-  def add_video(state, id, caps, layout) do
-    {:ok, caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+  def add_video(state, id, caps, placement) do
+    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
-    case Native.add_video(state, id, caps, layout) do
+    case Native.add_video(state, id, rust_caps, placement) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
@@ -92,26 +92,26 @@ defmodule Membrane.VideoCompositor.Wgpu do
   @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: Membrane.RawVideo.t()) ::
           :ok
   def update_caps(state, id, caps) do
-    {:ok, caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
-    case Native.update_caps(state, id, caps) do
+    case Native.update_caps(state, id, rust_caps) do
       :ok -> :ok
       {:error, reason} -> raise "Error while updating video caps, reason: #{inspect(reason)}"
     end
   end
 
   @doc """
-  Update layout for the given video.
+  Update placement for the given video.
   """
-  @spec update_layout(
+  @spec update_placement(
           state :: wgpu_state_t(),
           id :: id_t(),
-          layout :: RustStructs.VideoLayout.t()
+          placement :: RustStructs.VideoPlacement.t()
         ) :: :ok
-  def update_layout(state, id, layout) do
-    case Native.update_layout(state, id, layout) do
+  def update_placement(state, id, placement) do
+    case Native.update_placement(state, id, placement) do
       :ok -> :ok
-      {:error, reason} -> raise "Error while updating video layout, reason: #{inspect(reason)}"
+      {:error, reason} -> raise "Error while updating video placement, reason: #{inspect(reason)}"
     end
   end
 

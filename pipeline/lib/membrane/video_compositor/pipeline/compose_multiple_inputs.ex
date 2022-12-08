@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
       Enum.with_index(options.inputs)
       |> Enum.map(fn {%InputStream{
                         input: input,
-                        layout: layout,
+                        placement: placement,
                         timestamp_offset: timestamp_offset
                       }, i} ->
         source = get_src(input)
@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         link(source_name, source)
         |> then(if not is_nil(decoder), do: &to(&1, decoder_name, decoder), else: & &1)
         |> then(if not is_nil(input_filter), do: &to(&1, input_filter_name, input_filter), else: & &1)
-        |> via_in(:input, options: [initial_layout: layout, timestamp_offset: timestamp_offset])
+        |> via_in(:input, options: [initial_placement: placement, timestamp_offset: timestamp_offset])
         |> to(:compositor)
       end)
 
