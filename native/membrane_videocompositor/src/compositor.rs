@@ -294,6 +294,7 @@ impl State {
 
         let mut pts = 0;
         let mut ended_video_ids = Vec::new();
+        let mut rendered_video_ids = Vec::new();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -318,10 +319,12 @@ impl State {
 
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
-
             for (&id, video) in self.input_videos.iter_mut() {
-                match video.draw(&self.queue, &mut render_pass, &self.output_caps) {
-                    DrawResult::Rendered(new_pts) => pts = pts.max(new_pts),
+                match video.draw(&self.queue, &mut render_pass, &self.output_caps, interval) {
+                    DrawResult::Rendered(new_pts) => {
+                        pts = pts.max(new_pts);
+                        rendered_video_ids.push(id);
+                    }
                     DrawResult::NotRendered => {}
                     DrawResult::EndOfStream => ended_video_ids.push(id),
                 }
@@ -331,7 +334,10 @@ impl State {
         ended_video_ids.iter().for_each(|id| {
             self.input_videos.remove(id);
         });
-        self.input_videos.values_mut().for_each(|v| v.pop_frame());
+
+        rendered_video_ids
+            .iter()
+            .for_each(|id| self.input_videos.get_mut(id).unwrap().pop_frame());
 
         self.queue.submit(Some(encoder.finish()));
 
@@ -541,5 +547,58 @@ mod tests {
 
         compositor.upload_texture(2, FRAME, 500_000_000).unwrap();
         assert!(compositor.all_frames_ready());
+    }
+
+    #[test]
+    fn just_added_video_with_too_new_frames() -> Result<(), CompositorError> {
+        let mut compositor = setup_videos(2);
+
+        // first, we remove vid 1, since for this test we need a video that was used in
+        // composition already and one that wasn't. Next couple lines set this state up.
+        compositor.remove_video(1)?;
+
+        compositor.upload_texture(0, FRAME, 0)?;
+        assert!(compositor.all_frames_ready());
+        pollster::block_on(compositor.draw_into(&mut [0; 12]));
+
+        compositor.add_video(
+            1,
+            VideoProperties {
+                resolution: Vec2d { x: 2, y: 2 },
+                placement: VideoPlacement {
+                    position: Vec2d { x: 2, y: 0 },
+                    size: Vec2d { x: 2, y: 2 },
+                    z: 0.0,
+                },
+            },
+        )?;
+
+        compositor.upload_texture(0, FRAME, 500_000_000)?;
+        // vid 1 was just added. Before the compositor sees any frames from vid 1,
+        // it has to assume that those may be needed for composing current frames.
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(1, FRAME, 1_250_000_000)?;
+        // now that the compositor has seen a vid 1 frame and decided it is 'too new'
+        // to be used now, it shouldn't block on waiting for vid 1 frames.
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 12]));
+        // now a frame for vid 0 is missing.
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 1_250_000_000)?;
+        // now vids 0 and 1 have same timestamps
+        assert!(compositor.all_frames_ready());
+
+        pollster::block_on(compositor.draw_into(&mut [0; 12]));
+        // now there are no frames
+        assert!(!compositor.all_frames_ready());
+
+        compositor.upload_texture(0, FRAME, 2_000_000_000)?;
+        // now the compositor should block on waiting for vid 1 frames.
+        assert!(!compositor.all_frames_ready());
+
+        Ok(())
     }
 }
