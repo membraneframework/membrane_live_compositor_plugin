@@ -53,28 +53,20 @@ defmodule Membrane.VideoCompositor.Wgpu do
   end
 
   @doc """
-  Set input video with the given numerical `id`.
-  Used for adding new input videos as well as updating properties of existing ones.
+  Add an input video with the given numerical `id`.
 
-  Provided `id` should be unique within all previous ones, otherwise the compositor may or may not replace
-  the old video with this id with a new one.
-  `x` and `y` are pixel coordinates specifying where the top-left corner of the video should be.
-  `z` must be a float between 0.0 and 1.0, and it determines which videos are drawn in front of others.
-  A video with a higher `z` coordinate will cover videos with lower `z` coordinates.
+  Provided `id` should be unique within all previous ones. If a video with a given id already exists in the compositor, this will raise.
   """
-  @spec put_video(
+  @spec add_video(
           state :: wgpu_state_t(),
           id :: id_t(),
-          input_caps :: Membrane.RawVideo.t(),
-          position :: {x :: non_neg_integer(), y :: non_neg_integer()},
-          z :: float(),
-          scale :: float()
+          caps :: Membrane.RawVideo.t(),
+          placement :: RustStructs.VideoPlacement.t()
         ) :: :ok | {:error, error_t()}
-  def put_video(state, id, input_caps, {x, y}, z \\ 0.0, scale \\ 1.0) do
-    {:ok, input_caps} = RustStructs.RawVideo.from_membrane_raw_video(input_caps)
-    properties = RustStructs.VideoProperties.from_tuple({x, y, z, scale})
+  def add_video(state, id, caps, placement) do
+    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
-    case Native.put_video(state, id, input_caps, properties) do
+    case Native.add_video(state, id, rust_caps, placement) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
@@ -91,6 +83,35 @@ defmodule Membrane.VideoCompositor.Wgpu do
     case Native.remove_video(state, id) do
       :ok -> :ok
       {:error, reason} -> raise "Error while removing a video, reason: #{inspect(reason)}"
+    end
+  end
+
+  @doc """
+  Update input caps for the given video.
+  """
+  @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: Membrane.RawVideo.t()) ::
+          :ok
+  def update_caps(state, id, caps) do
+    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+
+    case Native.update_caps(state, id, rust_caps) do
+      :ok -> :ok
+      {:error, reason} -> raise "Error while updating video caps, reason: #{inspect(reason)}"
+    end
+  end
+
+  @doc """
+  Update placement for the given video.
+  """
+  @spec update_placement(
+          state :: wgpu_state_t(),
+          id :: id_t(),
+          placement :: RustStructs.VideoPlacement.t()
+        ) :: :ok
+  def update_placement(state, id, placement) do
+    case Native.update_placement(state, id, placement) do
+      :ok -> :ok
+      {:error, reason} -> raise "Error while updating video placement, reason: #{inspect(reason)}"
     end
   end
 

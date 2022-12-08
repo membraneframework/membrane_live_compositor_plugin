@@ -4,10 +4,10 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.InputStream do
   """
   @type t() :: %__MODULE__{
           caps: Membrane.RawVideo.t(),
-          position: {non_neg_integer(), non_neg_integer()},
+          placement: Membrane.VideoCompositor.RustStructs.VideoPlacement,
           timestamp_offset: Membrane.Time.non_neg_t(),
           input: String.t() | Membrane.Source
         }
-  @enforce_keys [:caps, :position, :input]
-  defstruct caps: nil, position: nil, timestamp_offset: 0, input: nil
+  @enforce_keys [:caps, :placement, :input]
+  defstruct caps: nil, placement: nil, timestamp_offset: 0, input: nil
 end

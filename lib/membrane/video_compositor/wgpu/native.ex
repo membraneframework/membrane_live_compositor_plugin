@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor"
 
-  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoProperties}
+  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
 
   @type wgpu_state() :: any()
   @type error_t() :: any()
@@ -23,9 +23,15 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec force_render(wgpu_state()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()
 
-  @spec put_video(wgpu_state(), id_t(), RawVideo.t(), VideoProperties.t()) ::
+  @spec add_video(wgpu_state(), id_t(), RawVideo.t(), VideoPlacement.t()) ::
           :ok | {:error, error_t()}
-  def put_video(_state, _id, _in_video, _properties), do: error()
+  def add_video(_state, _id, _caps, _placement), do: error()
+
+  @spec update_caps(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
+  def update_caps(_state, _id, _caps), do: error()
+
+  @spec update_placement(wgpu_state(), id_t(), VideoPlacement.t()) :: :ok | {:error, error_t()}
+  def update_placement(_state, _id, _placement), do: error()
 
   @spec remove_video(wgpu_state(), id_t()) ::
           :ok | {:error, error_t()}

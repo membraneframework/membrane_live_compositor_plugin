@@ -1,3 +1,4 @@
+use compositor::Vec2d;
 use elixir_structs::*;
 use errors::CompositorError;
 use rustler::ResourceArc;
@@ -159,32 +160,93 @@ fn force_render(
 }
 
 #[rustler::nif]
-fn put_video(
+fn add_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    input_video: ElixirRawVideo,
-    properties: VideoProperties,
+    caps: ElixirRawVideo,
+    placement: ElixirVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let input_video: RawVideo = input_video.try_into()?;
+    let caps: RawVideo = caps.try_into()?;
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.put_video(
+    state.compositor.add_video(
         id,
         compositor::VideoProperties {
-            top_left: compositor::Point {
-                x: properties.x,
-                y: properties.y,
+            resolution: Vec2d {
+                x: caps.width.get(),
+                y: caps.height.get(),
             },
-            width: input_video.width.get(),
-            height: input_video.height.get(),
-            // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
-            // which is outside of the wgpu clip space
-            z: 1.0 - properties.z.max(1e-7),
-            scale: properties.scale,
+
+            placement: compositor::VideoPlacement {
+                position: compositor::Vec2d {
+                    x: placement.position.0,
+                    y: placement.position.1,
+                },
+                size: Vec2d {
+                    x: placement.display_size.0,
+                    y: placement.display_size.1,
+                },
+                z: convert_z(placement.z_value),
+            },
         },
-    );
+    )?;
+
+    Ok(atoms::ok())
+}
+
+fn convert_z(z: f32) -> f32 {
+    // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
+    // which is outside of the wgpu clip space
+    1.0 - z.max(1e-7)
+}
+
+#[rustler::nif]
+fn update_caps(
+    #[allow(unused)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    caps: ElixirRawVideo,
+) -> Result<rustler::Atom, rustler::Error> {
+    let caps: RawVideo = caps.try_into()?;
+    let caps = Vec2d {
+        x: caps.width.get(),
+        y: caps.height.get(),
+    };
+
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
+
+    state.compositor.update_properties(id, Some(caps), None)?;
+
+    Ok(atoms::ok())
+}
+
+#[rustler::nif]
+fn update_placement(
+    #[allow(unused)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    placement: ElixirVideoPlacement,
+) -> Result<rustler::Atom, rustler::Error> {
+    let placement = compositor::VideoPlacement {
+        position: Vec2d {
+            x: placement.position.0,
+            y: placement.position.1,
+        },
+        size: Vec2d {
+            x: placement.display_size.0,
+            y: placement.display_size.1,
+        },
+        z: convert_z(placement.z_value),
+    };
+
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
+
+    state
+        .compositor
+        .update_properties(id, None, Some(placement))?;
+
     Ok(atoms::ok())
 }
 
@@ -214,10 +276,12 @@ rustler::init!(
     [
         init,
         force_render,
-        put_video,
+        add_video,
         remove_video,
         upload_frame,
-        send_end_of_stream
+        send_end_of_stream,
+        update_caps,
+        update_placement,
     ],
     load = |env, _| {
         rustler::resource!(State, env);

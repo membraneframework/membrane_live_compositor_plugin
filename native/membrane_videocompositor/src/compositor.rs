@@ -8,19 +8,19 @@ use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
-pub use videos::VideoProperties;
+pub use videos::{VideoPlacement, VideoProperties};
 
 use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 /// A point in 2D space
-pub struct Point<T> {
+pub struct Vec2d<T> {
     pub x: T,
     pub y: T,
 }
 
-impl<T: Display> Display for Point<T> {
+impl<T: Display> Display for Vec2d<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
@@ -350,26 +350,57 @@ impl State {
         pts
     }
 
-    pub fn put_video(&mut self, idx: usize, properties: VideoProperties) {
-        match self.input_videos.get_mut(&idx) {
-            Some(input_video) => input_video.update_properties(
+    pub fn add_video(
+        &mut self,
+        idx: usize,
+        properties: VideoProperties,
+    ) -> Result<(), CompositorError> {
+        if self.input_videos.contains_key(&idx) {
+            return Err(CompositorError::VideoIndexAlreadyTaken(idx));
+        }
+
+        self.input_videos.insert(
+            idx,
+            InputVideo::new(
                 &self.device,
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
                 properties,
             ),
-            None => {
-                self.input_videos.insert(
-                    idx,
-                    InputVideo::new(
-                        &self.device,
-                        self.single_texture_bind_group_layout.clone(),
-                        &self.all_yuv_textures_bind_group_layout,
-                        properties,
-                    ),
-                );
-            }
+        );
+
+        Ok(())
+    }
+
+    pub fn update_properties(
+        &mut self,
+        idx: usize,
+        resolution: Option<Vec2d<u32>>,
+        placement: Option<VideoPlacement>,
+    ) -> Result<(), CompositorError> {
+        let video = self
+            .input_videos
+            .get_mut(&idx)
+            .ok_or(CompositorError::BadVideoIndex(idx))?;
+
+        let mut properties = *video.properties();
+
+        if let Some(caps) = resolution {
+            properties.resolution = caps;
         }
+
+        if let Some(placement) = placement {
+            properties.placement = placement;
+        }
+
+        video.update_properties(
+            &self.device,
+            self.single_texture_bind_group_layout.clone(),
+            &self.all_yuv_textures_bind_group_layout,
+            properties,
+        );
+
+        Ok(())
     }
 
     pub fn remove_video(&mut self, idx: usize) -> Result<(), CompositorError> {
@@ -444,19 +475,22 @@ mod tests {
         let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
 
         for i in 0..n {
-            compositor.put_video(
-                i,
-                VideoProperties {
-                    top_left: Point {
-                        x: 2 * i as u32,
-                        y: 0,
+            compositor
+                .add_video(
+                    i,
+                    VideoProperties {
+                        resolution: Vec2d { x: 2, y: 2 },
+                        placement: VideoPlacement {
+                            position: Vec2d {
+                                x: 2 * i as u32,
+                                y: 0,
+                            },
+                            size: Vec2d { x: 2, y: 2 },
+                            z: 0.5,
+                        },
                     },
-                    width: 2,
-                    height: 2,
-                    z: 0.5,
-                    scale: 1.0,
-                },
-            );
+                )
+                .unwrap();
         }
 
         compositor

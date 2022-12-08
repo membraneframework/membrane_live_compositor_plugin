@@ -17,7 +17,13 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
   alias Membrane.VideoCompositor.Wgpu
+
+  @typedoc """
+  A unique name used to identify videos.
+  """
+  @type name_t :: any()
 
   def_options caps: [
                 spec: RawVideo.t(),
@@ -37,12 +43,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     demand_mode: :auto,
     caps: {RawVideo, pixel_format: :I420},
     options: [
-      position: [
-        type: :tuple,
-        spec: {integer(), integer()},
-        description:
-          "Initial position of the video on the screen, given in the pixels, relative to the upper left corner of the screen",
-        default: {0, 0}
+      initial_placement: [
+        spec: VideoPlacement.t(),
+        description: "Initial placement of the video on the screen"
+      ],
+      name: [
+        spec: name_t(),
+        description: "A unique identifier for the video coming through this pad",
+        default: nil
       ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
@@ -61,7 +69,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     {:ok, wgpu_state} = Wgpu.init(options.caps)
 
     state = %{
-      videos_positions: %{},
+      initial_video_placements: %{},
+      names_to_pads: %{},
       timestamp_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
@@ -109,18 +118,20 @@ defmodule Membrane.VideoCompositor.CompositorElement do
           timestamp_offset
       end
 
-    position = context.options.position
+    initial_placement = context.options.initial_placement
+    name = if context.options.name != nil, do: context.options.name, else: make_ref()
 
-    state = register_pad(state, pad, position, timestamp_offset)
+    state = register_pad(state, name, pad, initial_placement, timestamp_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, position, timestamp_offset) do
+  defp register_pad(state, name, pad, placement, timestamp_offset) do
     new_id = state.new_pad_id
 
     %{
       state
-      | videos_positions: Map.put(state.videos_positions, new_id, position),
+      | initial_video_placements: Map.put(state.initial_video_placements, new_id, placement),
+        names_to_pads: Map.put(state.names_to_pads, name, pad),
         timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
@@ -132,15 +143,25 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      videos_positions: videos_positions
+      initial_video_placements: initial_video_placements
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    position = Map.get(videos_positions, id)
-    :ok = Wgpu.put_video(wgpu_state, id, caps, position)
+    initial_video_placements =
+      case Map.pop(initial_video_placements, id) do
+        {nil, initial_video_placements} ->
+          # this video was added before
+          :ok = Wgpu.update_caps(wgpu_state, id, caps)
+          initial_video_placements
 
-    {:ok, state}
+        {placement, initial_video_placements} ->
+          # this video was waiting for first caps to be added to the compositor
+          :ok = Wgpu.add_video(wgpu_state, id, caps, placement)
+          initial_video_placements
+      end
+
+    {:ok, %{state | initial_video_placements: initial_video_placements}}
   end
 
   @impl true
@@ -220,5 +241,23 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   defp all_input_pads_received_end_of_stream?(pads) do
     Map.to_list(pads)
     |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
+  end
+
+  @impl true
+  def handle_other({:update_placement, placements}, _ctx, state) do
+    %{
+      names_to_pads: names_to_pads,
+      pads_to_ids: pads_to_ids,
+      wgpu_state: wgpu_state
+    } = state
+
+    for {name, placement} <- placements do
+      pad = Map.get(names_to_pads, name)
+      id = Map.get(pads_to_ids, pad)
+
+      Wgpu.update_placement(wgpu_state, id, placement)
+    end
+
+    {:ok, state}
   end
 end
