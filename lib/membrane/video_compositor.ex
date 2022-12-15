@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor do
 
   use Membrane.Bin
   alias Membrane.FramerateConverter
+  alias Membrane.Pad
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
@@ -66,7 +67,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_pad_added(pad, context, state) do
+  def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
     converter = {:framerate_converter, make_ref()}
 
     children = %{
@@ -74,9 +75,9 @@ defmodule Membrane.VideoCompositor do
     }
 
     links = [
-      link_bin_input(pad)
+      link_bin_input(Pad.ref(:input, pad_id))
       |> to(converter)
-      |> via_in(:input,
+      |> via_in(Pad.ref(:input, pad_id),
         options: [
           initial_placement: context.options.initial_placement,
           timestamp_offset: context.options.timestamp_offset
