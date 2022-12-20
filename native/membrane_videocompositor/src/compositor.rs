@@ -1,16 +1,19 @@
 use std::{collections::BTreeMap, fmt::Display, sync::Arc};
 
 mod colour_converters;
+mod edge_rounder;
+mod common;
 mod textures;
 mod videos;
 
 use textures::*;
 use videos::*;
 
+use crate::compositor::edge_rounder::EdgeRounder;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter};
+use self::{colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter}};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -57,6 +60,7 @@ pub struct State {
     all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
+    edge_rounder: EdgeRounder,
     output_caps: crate::RawVideo,
     last_pts: Option<u64>,
 }
@@ -233,6 +237,7 @@ impl State {
             YUVToRGBAConverter::new(&device, &all_yuv_textures_bind_group_layout);
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
+        let edge_rounder = EdgeRounder::new(&device, &single_texture_bind_group_layout);
 
         Ok(Self {
             device,
@@ -248,6 +253,7 @@ impl State {
             all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
+            edge_rounder,
             output_caps: *output_caps,
             last_pts: None,
         })
@@ -266,6 +272,7 @@ impl State {
                 &self.device,
                 &self.queue,
                 &self.yuv_to_rgba_converter,
+                &self.edge_rounder,
                 frame,
                 pts,
                 self.last_pts,

@@ -4,6 +4,8 @@ use std::sync::Arc;
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
+
+use super::edge_rounder::EdgeRounder;
 use super::textures::{RGBATexture, YUVTextures};
 use super::{Vec2d, Vertex};
 
@@ -126,19 +128,31 @@ impl InputVideo {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         converter: &YUVToRGBAConverter,
+        edge_rounder: &EdgeRounder,
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
     ) {
         self.yuv_textures.upload_data(queue, data);
+        let converted_frame = RGBATexture::new(
+            device,
+            self.properties.resolution.x,
+            self.properties.resolution.y,
+            &self.single_texture_bind_group_layout,
+        );
+        converter.convert(device, queue, &self.yuv_textures, &converted_frame);
+        
+        // edge rounding
         let frame = RGBATexture::new(
             device,
             self.properties.resolution.x,
             self.properties.resolution.y,
             &self.single_texture_bind_group_layout,
         );
-        converter.convert(device, queue, &self.yuv_textures, &frame);
-
+        let video_resolution = self.properties.resolution;
+        let edge_rounding_radius = 100.0;
+        edge_rounder.transform(device, queue, &converted_frame, &frame, video_resolution, edge_rounding_radius);
+        
         // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
         if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
             // then we can add the frame to the queue (we assume the frames come in order)

@@ -94,8 +94,18 @@ defmodule Membrane.VideoCompositor.Test.Composing do
         }
       )
 
+    middle_video = %InputStream{
+      placement: %VideoPlacement{
+        position: {div(video_caps.width, 2), div(video_caps.height, 2)},
+        display_size: {video_caps.width, video_caps.height},
+        z_value: 0.5,
+      },
+      caps: video_caps,
+      input: input_path
+    }
+
     options = %Options{
-      inputs: inputs,
+      inputs: inputs ++ [middle_video],
       output: output_path,
       caps: out_caps
     }
