@@ -1,11 +1,11 @@
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashMap};
 use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::edge_rounder::EdgeRounder;
+use super::textures_transformations::{TextureTransformationUniform, TextureTransformerName, TextureTransformer};
 use super::textures::{RGBATexture, YUVTextures};
 use super::{Vec2d, Vertex};
 
@@ -52,6 +52,7 @@ pub struct InputVideo {
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
     properties: VideoProperties,
+    texture_transformations: Vec<TextureTransformationUniform>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     /// When a video is created this is set to `true`. When `draw` is later called on it,
@@ -67,6 +68,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         properties: VideoProperties,
+        texture_transformations: Vec<TextureTransformationUniform>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
@@ -98,6 +100,7 @@ impl InputVideo {
             vertices,
             indices,
             properties,
+            texture_transformations,
             previous_frame: None,
             single_texture_bind_group_layout,
             was_just_added: true,
@@ -128,30 +131,58 @@ impl InputVideo {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         converter: &YUVToRGBAConverter,
-        edge_rounder: &EdgeRounder,
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
+        texture_transformers: &HashMap<TextureTransformerName, TextureTransformer>
     ) {
         self.yuv_textures.upload_data(queue, data);
-        let converted_frame = RGBATexture::new(
+        let mut frame = RGBATexture::new(
             device,
             self.properties.resolution.x,
             self.properties.resolution.y,
             &self.single_texture_bind_group_layout,
         );
-        converter.convert(device, queue, &self.yuv_textures, &converted_frame);
+        converter.convert(device, queue, &self.yuv_textures, &frame);
         
-        // edge rounding
-        let frame = RGBATexture::new(
-            device,
-            self.properties.resolution.x,
-            self.properties.resolution.y,
-            &self.single_texture_bind_group_layout,
-        );
-        let video_resolution = self.properties.resolution;
-        let edge_rounding_radius = 100.0;
-        edge_rounder.transform(device, queue, &converted_frame, &frame, video_resolution, edge_rounding_radius);
+
+        for texture_transformation in self.texture_transformations.iter() {
+            let transformed_frame = RGBATexture::new(
+                device,
+                self.properties.resolution.x,
+                self.properties.resolution.y,
+                &self.single_texture_bind_group_layout,
+            );
+
+            let texture_transformer = match texture_transformation {
+                TextureTransformationUniform::EdgeRounder(_) => 
+                    texture_transformers.get(&TextureTransformerName::EdgeRounder()).unwrap()
+            };
+
+            match texture_transformation {
+                TextureTransformationUniform::EdgeRounder(uniform) => 
+                    texture_transformer.transform(
+                        device,
+                        queue,
+                        &frame,
+                        &transformed_frame,
+                        TextureTransformationUniform::EdgeRounder(uniform.clone())
+                    )
+            };
+
+            frame = transformed_frame;
+        }
+
+        // // edge rounding
+        // let frame = RGBATexture::new(
+        //     device,
+        //     self.properties.resolution.x,
+        //     self.properties.resolution.y,
+        //     &self.single_texture_bind_group_layout,
+        // );
+        // let video_resolution = self.properties.resolution;
+        // let edge_rounding_radius = 100.0;
+        // edge_rounder.transform(device, queue, &converted_frame, &frame, video_resolution, edge_rounding_radius);
         
         // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
         if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {

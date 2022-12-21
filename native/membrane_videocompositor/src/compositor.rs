@@ -1,7 +1,7 @@
-use std::{collections::BTreeMap, fmt::Display, sync::Arc};
+use std::{collections::{BTreeMap, HashMap}, fmt::Display, sync::Arc};
 
 mod colour_converters;
-mod edge_rounder;
+mod textures_transformations;
 mod common;
 mod textures;
 mod videos;
@@ -9,12 +9,11 @@ mod videos;
 use textures::*;
 use videos::*;
 
-use crate::compositor::edge_rounder::EdgeRounder;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::{colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter}};
-
+use self::{colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter}, textures_transformations::{TextureTransformationUniform, TextureTransformerName, TextureTransformer}};
+use self::textures_transformations::edge_rounding::EdgeRoundingUniform;
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 /// A point in 2D space
@@ -60,9 +59,9 @@ pub struct State {
     all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
-    edge_rounder: EdgeRounder,
     output_caps: crate::RawVideo,
     last_pts: Option<u64>,
+    texture_transformers: HashMap<TextureTransformerName, TextureTransformer>
 }
 
 impl State {
@@ -237,8 +236,12 @@ impl State {
             YUVToRGBAConverter::new(&device, &all_yuv_textures_bind_group_layout);
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
-        let edge_rounder = EdgeRounder::new(&device, &single_texture_bind_group_layout);
 
+        let mut texture_transformers = HashMap::new();
+        
+        texture_transformers.insert(TextureTransformerName::EdgeRounder(),
+            TextureTransformer::new(&device, &single_texture_bind_group_layout, TextureTransformerName::EdgeRounder()));
+        
         Ok(Self {
             device,
             input_videos,
@@ -253,9 +256,9 @@ impl State {
             all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
-            edge_rounder,
             output_caps: *output_caps,
             last_pts: None,
+            texture_transformers: texture_transformers
         })
     }
 
@@ -272,10 +275,10 @@ impl State {
                 &self.device,
                 &self.queue,
                 &self.yuv_to_rgba_converter,
-                &self.edge_rounder,
                 frame,
                 pts,
                 self.last_pts,
+                &self.texture_transformers
             );
         Ok(())
     }
@@ -376,10 +379,17 @@ impl State {
         &mut self,
         idx: usize,
         properties: VideoProperties,
+        mut textures_transformations: Vec<TextureTransformationUniform>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
         }
+
+        textures_transformations.push(TextureTransformationUniform::EdgeRounder(EdgeRoundingUniform{
+            video_width: 1280.0,
+            video_height: 720.0,
+            edge_rounding_radius: 100.0
+        }));
 
         self.input_videos.insert(
             idx,
@@ -388,7 +398,8 @@ impl State {
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
                 properties,
-            ),
+                textures_transformations,
+            )
         );
 
         Ok(())
@@ -511,6 +522,7 @@ mod tests {
                             z: 0.5,
                         },
                     },
+                    Vec::new()
                 )
                 .unwrap();
         }
@@ -587,6 +599,7 @@ mod tests {
                     z: 0.0,
                 },
             },
+            Vec::new(),
         )?;
 
         compositor.upload_texture(0, FRAME, 500_000_000)?;

@@ -191,6 +191,7 @@ fn add_video(
                 z: convert_z(placement.z_value),
             },
         },
+        Vec::new(),
     )?;
 
     Ok(atoms::ok())
