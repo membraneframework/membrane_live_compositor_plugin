@@ -1,230 +1,160 @@
-pub mod edge_rounding;
+/// Module providing abstraction over texture transformations, enabling creating new
+/// texture transformations easily.
+
+pub mod texture_transformer;
+
 pub mod cropping;
+pub mod corner_rounding;
 
-use std::f64::consts::E;
-use std::io::Seek;
+use std::collections::HashMap;
 
-use bytemuck::Pod;
-use wgpu::Device;
-use wgpu::{util::DeviceExt};
-use self::edge_rounding::{EdgeRoundingUniform};
-use self::cropping::{CroppingUniform};
-use crate::compositor::Vertex;
-use crate::compositor::common::Common;
+use self::cropping::CroppingUniform;
+use self::corner_rounding::CornerRoundingUniform;
+use self::texture_transformer::TextureTransformer;
+use wgpu::util::DeviceExt;
 
-use super::textures::RGBATexture;
-
-#[rustfmt::skip]
-const INDICES: [u16; 6] = [
-    0, 1, 2,
-    2, 3, 0,
-];
-
-#[derive(PartialEq, Eq, Hash)]
-pub enum TextureTransformerName {
+/// Name describing texture transformation type.
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
+pub enum TextureTransformationName {
     EdgeRounder(),
     Cropper(),
 }
 
-impl TextureTransformerName {
-    pub fn get_black_texture_transformation_uniform(self) -> TextureTransformationUniform {
+impl TextureTransformationName {
+    /// Returns blank struct describing passed texture transformation.
+    /// Is used for determining buffer parameters when rendering pipeline is created for
+    /// specific transformation type.
+    /// As a user adding new transformation, you just need to add new match arm,
+    /// returning TextureTransformationUniform with example transformation describing struct.
+    pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
         return match self {
-            TextureTransformerName::EdgeRounder() => 
-                TextureTransformationUniform::EdgeRounder(EdgeRoundingUniform::get_blank_uniform()),
-            TextureTransformerName::Cropper() =>
-                TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform()),
-        }
+            TextureTransformationName::EdgeRounder() => {
+                TextureTransformationUniform::EdgeRounder(CornerRoundingUniform::get_blank_uniform())
+            }
+            TextureTransformationName::Cropper() => {
+                TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform())
+            }
+        };
+    }
+
+    /// Returns shader module created based on shader file.
+    /// It's necessary for creating new transformation rendering pipeline.
+    /// As a user adding new transformation, you just need to add new match arm
+    /// with analogous function call on wgpu device, passing path to shader
+    /// used in created transformation.
+    pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
+        return match self {
+            TextureTransformationName::EdgeRounder() => {
+                device.create_shader_module(wgpu::include_wgsl!("corner_rounding/corner_rounding.wgsl"))
+            }
+            TextureTransformationName::Cropper() => {
+                device.create_shader_module(wgpu::include_wgsl!("cropping/cropping.wgsl"))
+            }
+        };
+    }
+
+    /// Returns name used to create rendering pipeline, used to improve debug / errors logs.
+    /// As a user adding new transformation, you just need to add new match arm returning
+    /// name used for describing rendering pipeline elements for that transformation.   
+    pub fn get_name(self) -> &'static str {
+        return match self {
+            TextureTransformationName::EdgeRounder() => "Edge rounder",
+            TextureTransformationName::Cropper() => "Cropper",
+        };
+    }
+
+    /// Returns all texture transformers. Used in compositor module to put all texture transformers
+    /// into state in order to only once initialize texture transformations pipelines.
+    /// As a user adding new transformation, you just need to add analogous new insert to
+    /// texture_transformers hashmap with TextureTransformationName as key and TextureTransformer as a value.  
+    pub fn get_all_texture_transformers(
+        device: &wgpu::Device,
+        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
+    ) -> HashMap<TextureTransformationName, TextureTransformer> {
+        let mut texture_transformers = HashMap::new();
+
+        texture_transformers.insert(
+            TextureTransformationName::EdgeRounder(),
+            TextureTransformer::new(
+                &device,
+                single_texture_bind_group_layout,
+                TextureTransformationName::EdgeRounder(),
+            ),
+        );
+        texture_transformers.insert(
+            TextureTransformationName::Cropper(),
+            TextureTransformer::new(
+                &device,
+                single_texture_bind_group_layout,
+                TextureTransformationName::Cropper(),
+            ),
+        );
+        texture_transformers
     }
 }
 
-
-#[derive(Debug, Clone)]
+/// Enum wrapping structs passed to texture transformations shaders.
+/// As a user adding new transformation, you just need to add analogous
+/// enum value.
+#[derive(Debug, Clone, Copy)]
 pub enum TextureTransformationUniform {
-    EdgeRounder(EdgeRoundingUniform),
-    Cropper(CroppingUniform)
+    EdgeRounder(CornerRoundingUniform),
+    Cropper(CroppingUniform),
 }
 
 impl TextureTransformationUniform {
+    /// Returns uniform buffer used in texture transformation render pipeline.
+    /// As a user adding new transformation, you just need to add analogous
+    /// call on wgpu device.
     pub fn create_uniform_buffer(self, device: &wgpu::Device) -> wgpu::Buffer {
         return match self {
-            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => 
-                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("edge rounding uniform buffer"),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     contents: bytemuck::cast_slice(&[edge_rounding_uniform]),
                 }),
-            TextureTransformationUniform::Cropper(cropping_uniform) => 
+            TextureTransformationUniform::Cropper(cropping_uniform) => {
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("cropping uniform buffer"),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                     contents: bytemuck::cast_slice(&[cropping_uniform]),
-                }),
-        }
+                })
+            }
+        };
     }
 
+    /// Writes buffer with struct describing texture transformation to queue, making it
+    /// accessible in shader.
+    /// As a user adding new transformation, you just need to write analogous
+    /// match arm calling write_buffer function on queue.
     pub fn write_buffer(self, queue: &wgpu::Queue, uniform_buffer: &wgpu::Buffer) {
         match self {
-            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => 
-                queue.write_buffer(
-                    uniform_buffer,
-                    0,
-                    bytemuck::cast_slice(&[edge_rounding_uniform])
-                ),
-            TextureTransformationUniform::Cropper(cropping_uniform) => 
-                queue.write_buffer(
-                    uniform_buffer,
-                    0,
-                    bytemuck::cast_slice(&[cropping_uniform])
-                ),
+            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => queue.write_buffer(
+                uniform_buffer,
+                0,
+                bytemuck::cast_slice(&[edge_rounding_uniform]),
+            ),
+            TextureTransformationUniform::Cropper(cropping_uniform) => {
+                queue.write_buffer(uniform_buffer, 0, bytemuck::cast_slice(&[cropping_uniform]))
+            }
         }
     }
-}
 
-pub struct TextureTransformer {
-    pub pipeline: wgpu::RenderPipeline,
-    pub common: Common,
-    pub uniform_buffer: wgpu::Buffer,
-    pub uniform_bind_group: wgpu::BindGroup,
-}
-
-impl TextureTransformer {
-    pub fn new(
-        device: &wgpu::Device,
-        single_texture_bind_group_layout: &wgpu::BindGroupLayout,
-        transformation_name: TextureTransformerName
-    ) -> Self {
-        let black_uniform = transformation_name.get_black_texture_transformation_uniform();
-
-        let common = Common::new(device);
-
-        let uniform_buffer = black_uniform.create_uniform_buffer(device);
-
-        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("{transformation_description} uniform bind group layout"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    count: None,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                }
-            ],
-        });
-
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("{transformation_description} uniform bind group layout"),
-            layout: &uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding()
-                }
-            ],
-        });
-
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("{transformation_description} pipeline layout"),
-            bind_group_layouts: &[
-                single_texture_bind_group_layout,
-                &common.sampler_bind_group_layout,
-                &uniform_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
-
-        let shader_module = match transformation_name {
-            TextureTransformerName::EdgeRounder() => 
-                device.create_shader_module(wgpu::include_wgsl!("edge_rounding/edge_rounding.wgsl")),
-            TextureTransformerName::Cropper() => 
-                device.create_shader_module(wgpu::include_wgsl!("edge_rounding/edge_rounding.wgsl")),
+    /// Returns TextureTransformer identified by TextureTransformationUniform.
+    /// As a user adding new transformation, you just need to write analogous
+    /// match arm returning TextureTransformer from map.
+    pub fn get_texture_transformer(
+        self,
+        texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
+    ) -> &TextureTransformer {
+        return match self {
+            TextureTransformationUniform::EdgeRounder(_) => texture_transformers
+                .get(&TextureTransformationName::EdgeRounder())
+                .unwrap(),
+            TextureTransformationUniform::Cropper(_) => texture_transformers
+                .get(&TextureTransformationName::Cropper())
+                .unwrap(),
         };
-
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("{transformation_description} pipeline"),
-            layout: Some(&pipeline_layout),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                strip_index_format: None,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            vertex: wgpu::VertexState {
-                module: &shader_module,
-                entry_point: "vs_main",
-                buffers: &[Vertex::LAYOUT],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader_module,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    blend: Some(wgpu::BlendState::REPLACE), // REPLACE to keep transparent parts not blended with cleared background
-                    write_mask: wgpu::ColorWrites::all(),
-                    format: wgpu::TextureFormat::Rgba8Unorm,
-                })],
-            }),
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-            depth_stencil: None,
-        });        
-
-        Self { 
-            pipeline: pipeline,
-            common: common,
-            uniform_buffer: uniform_buffer,
-            uniform_bind_group: uniform_bind_group,
-        }
-    }
-
-    pub fn transform(
-        &self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        src: &RGBATexture,
-        dst: &RGBATexture,
-        transformation_uniform: TextureTransformationUniform
-    ) {
-
-        transformation_uniform.write_buffer(queue, &self.uniform_buffer);
-
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Edge rounder encoder"),
-        });
-
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Edge rounder render pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
-                    },
-                    view: &dst.texture.view,
-                    resolve_target: None,
-                })],
-                depth_stencil_attachment: None,
-            });
-
-            render_pass.set_pipeline(&self.pipeline);
-            render_pass.set_bind_group(0, src.texture.bind_group.as_ref().unwrap(), &[]);
-            render_pass.set_bind_group(1, &self.common.sampler_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.uniform_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.common.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(
-                self.common.index_buffer.slice(..),
-                wgpu::IndexFormat::Uint16,
-            );
-            render_pass.draw_indexed(0..INDICES.len() as u32, 0, 0..1);
-        }
-
-        queue.submit(Some(encoder.finish()));
     }
 }

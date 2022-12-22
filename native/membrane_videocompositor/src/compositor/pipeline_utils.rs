@@ -26,7 +26,8 @@ const INDICES: [u16; 6] = [
     2, 3, 0,
 ];
 
-pub struct Common {
+#[derive(Debug)]
+pub struct PipelineUtils {
     pub _sampler: wgpu::Sampler,
     pub sampler_bind_group_layout: wgpu::BindGroupLayout,
     pub sampler_bind_group: wgpu::BindGroup,
@@ -34,7 +35,7 @@ pub struct Common {
     pub index_buffer: wgpu::Buffer,
 }
 
-impl Common {
+impl PipelineUtils {
     pub fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("edge rounder vertex buffer"),
@@ -87,4 +88,8 @@ impl Common {
             sampler_bind_group_layout,
         }
     }
+}
+pub struct Sampler {
+    pub _sampler: wgpu::Sampler,
+    pub bind_group: wgpu::BindGroup,
 }

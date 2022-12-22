@@ -19,9 +19,8 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 }
 
 struct CroppingUnifrom{
-    video_width: f32,
-    video_height: f32,
-    top_left_corner_crop: (f32, f32),
+    top_left_corner_crop_x: f32,
+    top_left_corner_crop_y: f32,
     crop_width: f32,
     crop_height: f32
 }
@@ -35,25 +34,18 @@ var sampler_: sampler;
 @group(2) @binding(0)
 var<uniform> cropping: CroppingUnifrom;
 
+
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let video_width = cropping.video_width;
-    let video_height = cropping.video_height;
-    let top_left_corner_crop = cropping.top_left_corner_crop;
-    let crop_width = cropping.crop_width;
-    let crop_height = cropping.crop_height;
-
-    let pixel_coords = vec2<f32>(
-        input.texture_coords.x * video_width, 
-        input.texture_coords.y * video_height
-    );
-
     let colour = textureSample(texture, sampler_, input.texture_coords);
 
-    if ((pixel_coords.x > top_left_corner_crop.x && pixel_coords.x < top_left_corner_crop.x + crop_width) || 
-        (pixel_coords.y > top_left_corner_crop.y && pixel_coords.y < top_left_corner_crop.y + crop_height)) {
-        
-        return vec4<0.0, 0.0, 0.0, 0.0>
+    if (
+        (input.texture_coords.x < cropping.top_left_corner_crop_x) || 
+        (input.texture_coords.y < cropping.top_left_corner_crop_y) ||
+        (input.texture_coords.x > cropping.top_left_corner_crop_x + cropping.crop_width) || 
+        (input.texture_coords.y > cropping.top_left_corner_crop_y + cropping.crop_height)
+    ) {
+        return vec4<f32>(0.0, 0.0, 0.0, 0.0);
     } else {
         return colour;
     }

@@ -1,4 +1,4 @@
-use compositor::Vec2d;
+use compositor::vec2d::Vec2d;
 use elixir_structs::*;
 use errors::CompositorError;
 use rustler::ResourceArc;
@@ -180,7 +180,7 @@ fn add_video(
             },
 
             placement: compositor::VideoPlacement {
-                position: compositor::Vec2d {
+                position: Vec2d {
                     x: placement.position.0,
                     y: placement.position.1,
                 },

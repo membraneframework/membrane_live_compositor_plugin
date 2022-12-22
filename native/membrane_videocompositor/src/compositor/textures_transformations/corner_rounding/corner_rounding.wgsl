@@ -59,6 +59,10 @@ fn get_nearest_inner_corner_coords(
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+    // Firstly calculates, whether the pixel is in the square in one of the video corners,
+    // then calculates the distance to the center of the circle located in corner of the video
+    // and if the distance is larger than the circle radius, it makes the pixel transparent.
+
     let video_width = edge_rounder_uniform.video_width;
     let video_height = edge_rounder_uniform.video_height;
     let edge_rounding_radius = edge_rounder_uniform.edge_rounding_radius;

@@ -1,10 +1,15 @@
-use std::{collections::{BTreeMap, HashMap}, fmt::Display, sync::Arc};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::Arc,
+};
 
 mod colour_converters;
-mod textures_transformations;
-mod common;
+mod pipeline_utils;
 mod textures;
+mod textures_transformations;
 mod videos;
+pub mod vec2d;
+mod vertex;
 
 use textures::*;
 use videos::*;
@@ -12,41 +17,16 @@ use videos::*;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::{colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter}, textures_transformations::{TextureTransformationUniform, TextureTransformerName, TextureTransformer}};
-use self::textures_transformations::edge_rounding::EdgeRoundingUniform;
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-/// A point in 2D space
-pub struct Vec2d<T> {
-    pub x: T,
-    pub y: T,
-}
+use self::{textures_transformations::corner_rounding::CornerRoundingUniform, vertex::Vertex, vec2d::Vec2d};
+use self::{
+    colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
+    textures_transformations::{
+        TextureTransformationName, TextureTransformationUniform, texture_transformer::TextureTransformer
+    },
+};
+use self::pipeline_utils::Sampler;
 
-impl<T: Display> Display for Vec2d<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
-    }
-}
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub texture_coords: [f32; 2],
-}
-
-impl Vertex {
-    const LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<Vertex>() as u64,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2],
-    };
-}
-
-struct Sampler {
-    _sampler: wgpu::Sampler,
-    bind_group: wgpu::BindGroup,
-}
 
 pub struct State {
     device: wgpu::Device,
@@ -61,7 +41,7 @@ pub struct State {
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_caps: crate::RawVideo,
     last_pts: Option<u64>,
-    texture_transformers: HashMap<TextureTransformerName, TextureTransformer>
+    texture_transformers: HashMap<TextureTransformationName, TextureTransformer>,
 }
 
 impl State {
@@ -237,11 +217,11 @@ impl State {
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
 
-        let mut texture_transformers = HashMap::new();
-        
-        texture_transformers.insert(TextureTransformerName::EdgeRounder(),
-            TextureTransformer::new(&device, &single_texture_bind_group_layout, TextureTransformerName::EdgeRounder()));
-        
+        let texture_transformers = TextureTransformationName::get_all_texture_transformers(
+            &device,
+            &single_texture_bind_group_layout,
+        );
+
         Ok(Self {
             device,
             input_videos,
@@ -258,7 +238,7 @@ impl State {
             rgba_to_yuv_converter,
             output_caps: *output_caps,
             last_pts: None,
-            texture_transformers: texture_transformers
+            texture_transformers: texture_transformers,
         })
     }
 
@@ -278,7 +258,7 @@ impl State {
                 frame,
                 pts,
                 self.last_pts,
-                &self.texture_transformers
+                &self.texture_transformers,
             );
         Ok(())
     }
@@ -385,11 +365,12 @@ impl State {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
         }
 
-        textures_transformations.push(TextureTransformationUniform::EdgeRounder(EdgeRoundingUniform{
-            video_width: 1280.0,
-            video_height: 720.0,
-            edge_rounding_radius: 100.0
-        }));
+        textures_transformations.push(TextureTransformationUniform::EdgeRounder(
+            CornerRoundingUniform {
+                video_resolution: [1280.0, 720.0],
+                edge_rounding_radius: 100.0,
+            },
+        ));
 
         self.input_videos.insert(
             idx,
@@ -399,7 +380,7 @@ impl State {
                 &self.all_yuv_textures_bind_group_layout,
                 properties,
                 textures_transformations,
-            )
+            ),
         );
 
         Ok(())
@@ -522,7 +503,7 @@ mod tests {
                             z: 0.5,
                         },
                     },
-                    Vec::new()
+                    Vec::new(),
                 )
                 .unwrap();
         }
