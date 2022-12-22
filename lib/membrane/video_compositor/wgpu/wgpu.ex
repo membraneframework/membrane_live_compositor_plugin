@@ -107,10 +107,11 @@ defmodule Membrane.VideoCompositor.Wgpu do
           state :: wgpu_state_t(),
           id :: id_t(),
           placement :: RustStructs.VideoPlacement.t()
-        ) :: :ok
+        ) :: :ok | {:error, :bad_video_index}
   def update_placement(state, id, placement) do
     case Native.update_placement(state, id, placement) do
       :ok -> :ok
+      {:error, :bad_video_index} -> {:error, :bad_video_index}
       {:error, reason} -> raise "Error while updating video placement, reason: #{inspect(reason)}"
     end
   end

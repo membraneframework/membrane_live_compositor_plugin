@@ -234,15 +234,26 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_other({:update_placement, placements}, _ctx, state) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      initial_video_placements: initial_video_placements
     } = state
 
-    for {pad, placement} <- placements do
-      id = Map.get(pads_to_ids, pad)
+    initial_video_placements =
+      Enum.each(
+        placements,
+        fn {pad, placement} ->
+          id = Map.fetch!(pads_to_ids, pad)
+          initial_video_placements = case Wgpu.update_placement(wgpu_state, id, placement) do
+            :ok ->
+              initial_video_placements
+            {:error, :bad_video_index} ->
+              # in case we update placement before reciving caps from pad
+              Map.put(initial_video_placements, id, placement)
+          end
+          initial_video_placements
+        end
+      )
 
-      Wgpu.update_placement(wgpu_state, id, placement)
-    end
-
-    {:ok, state}
+    {:ok, %{state | initial_video_placements: initial_video_placements}}
   end
 end
