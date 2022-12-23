@@ -239,7 +239,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     } = state
 
     initial_video_placements =
-      Enum.each(
+      Enum.map(
         placements,
         fn {pad, placement} ->
           id = Map.fetch!(pads_to_ids, pad)
