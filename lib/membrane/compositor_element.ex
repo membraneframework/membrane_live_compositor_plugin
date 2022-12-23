@@ -247,7 +247,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
             :ok ->
               initial_video_placements
             {:error, :bad_video_index} ->
-              # in case we update placement before reciving caps from pad
+              # in case we update placement before receiving caps from pad
               Map.put(initial_video_placements, id, placement)
           end
           initial_video_placements
