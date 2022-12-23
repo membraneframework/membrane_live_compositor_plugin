@@ -56,7 +56,7 @@ impl TextureTransformer {
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     count: None,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::VERTEX,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,

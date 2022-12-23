@@ -9,6 +9,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.VideoTransformations
 
   @typedoc """
   A message describing a compositor video placement update
@@ -39,6 +40,15 @@ defmodule Membrane.VideoCompositor do
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
+      ],
+      initial_video_transformations: [
+        spec: VideoTransformations.t(),
+        description:
+          "Specify the initial types and the order of transformations applied to video.",
+        default:
+          Macro.escape(%VideoTransformations{
+            texture_transformations: []
+          })
       ]
     ]
 
@@ -80,7 +90,8 @@ defmodule Membrane.VideoCompositor do
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           initial_placement: context.options.initial_placement,
-          timestamp_offset: context.options.timestamp_offset
+          timestamp_offset: context.options.timestamp_offset,
+          initial_video_transformations: context.options.initial_video_transformations
         ]
       )
       |> to(:compositor)

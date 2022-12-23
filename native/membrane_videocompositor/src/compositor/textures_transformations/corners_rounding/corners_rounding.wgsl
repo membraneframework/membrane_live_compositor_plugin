@@ -18,10 +18,9 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     return output;
 }
 
-struct EdgeRounderUnifrom{
-    video_width: f32,
-    video_height: f32,
-    edge_rounding_radius: f32,
+struct CornersRoundingUnifrom{
+    width_height_ratio: f32,
+    corner_rounding_radius: f32,
 }
 
 @group(0) @binding(0)
@@ -31,7 +30,7 @@ var texture: texture_2d<f32>;
 var sampler_: sampler;
 
 @group(2) @binding(0)
-var<uniform> edge_rounder_uniform: EdgeRounderUnifrom;
+var<uniform> corners_rounding_uniform: CornersRoundingUnifrom;
 
 struct IsInCorner {
     left_border: bool,
@@ -42,18 +41,17 @@ struct IsInCorner {
 
 fn get_nearest_inner_corner_coords(
     is_on_edge: IsInCorner,
-    video_width: f32,
-    video_height: f32,
-    edge_rounding_radius: f32
+    width_height_ratio: f32,
+    corner_rounding_radius: f32
 ) -> vec2<f32> {
     if (is_on_edge.left_border && is_on_edge.top_border) {
-        return vec2<f32>(edge_rounding_radius, edge_rounding_radius);
+        return vec2<f32>(corner_rounding_radius, corner_rounding_radius * width_height_ratio);
     } else if (is_on_edge.right_border && is_on_edge.top_border) {
-        return vec2<f32>(video_width - edge_rounding_radius, edge_rounding_radius);
+        return vec2<f32>(1.0 - corner_rounding_radius, corner_rounding_radius * width_height_ratio);
     } else if (is_on_edge.right_border && is_on_edge.bot_border) {
-        return vec2<f32>(video_width - edge_rounding_radius, video_height - edge_rounding_radius);
+        return vec2<f32>(1.0 - corner_rounding_radius, 1.0 - corner_rounding_radius * width_height_ratio);
     } else {
-        return vec2<f32>(edge_rounding_radius, video_height - edge_rounding_radius);
+        return vec2<f32>(corner_rounding_radius, 1.0 - corner_rounding_radius * width_height_ratio);
     }
 }
 
@@ -63,37 +61,30 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     // then calculates the distance to the center of the circle located in corner of the video
     // and if the distance is larger than the circle radius, it makes the pixel transparent.
 
-    let video_width = edge_rounder_uniform.video_width;
-    let video_height = edge_rounder_uniform.video_height;
-    let edge_rounding_radius = edge_rounder_uniform.edge_rounding_radius;
-
-    let tex_coords_in_pixels = vec2<f32>(
-        input.texture_coords.x * video_width, 
-        input.texture_coords.y * video_height
-    );
+    let width_height_ratio = corners_rounding_uniform.width_height_ratio;
+    let corner_rounding_radius = corners_rounding_uniform.corner_rounding_radius;
 
     var is_on_edge: IsInCorner;
 
-    is_on_edge.left_border = (tex_coords_in_pixels.x < edge_rounding_radius);
-    is_on_edge.right_border = (tex_coords_in_pixels.x > video_width - edge_rounding_radius);
-    is_on_edge.top_border = (tex_coords_in_pixels.y < edge_rounding_radius);
-    is_on_edge.bot_border = (tex_coords_in_pixels.y > video_height - edge_rounding_radius);
+    is_on_edge.left_border = (input.texture_coords.x < corner_rounding_radius);
+    is_on_edge.right_border = (input.texture_coords.x > 1.0 - corner_rounding_radius);
+    is_on_edge.top_border = (input.texture_coords.y < corner_rounding_radius * width_height_ratio);
+    is_on_edge.bot_border = (input.texture_coords.y > 1.0 - corner_rounding_radius * width_height_ratio);
 
     let is_in_corner = ( (is_on_edge.left_border || is_on_edge.right_border) && (is_on_edge.top_border || is_on_edge.bot_border) );
     let colour = textureSample(texture, sampler_, input.texture_coords);
 
     if (is_in_corner) {
-        let corner_coords_in_pixel = get_nearest_inner_corner_coords(
+        let corner_coords = get_nearest_inner_corner_coords(
             is_on_edge,
-            video_width, 
-            video_height, 
-            edge_rounding_radius
+            width_height_ratio,
+            corner_rounding_radius
         );
 
         if (sqrt(
-                    pow(tex_coords_in_pixels.x - corner_coords_in_pixel.x, 2.0) + 
-                    pow(tex_coords_in_pixels.y - corner_coords_in_pixel.y, 2.0)
-            ) > edge_rounding_radius) {
+                    pow(input.texture_coords.x - corner_coords.x, 2.0) + 
+                    pow((input.texture_coords.y - corner_coords.y) / width_height_ratio, 2.0)
+            ) > corner_rounding_radius) {
             return vec4<f32>(0.0, 0.0, 0.0, 0.0);
         }
         return colour;

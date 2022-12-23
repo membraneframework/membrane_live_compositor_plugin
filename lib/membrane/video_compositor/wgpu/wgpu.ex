@@ -3,6 +3,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   This module implements video composition in wgpu
   """
 
+  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -61,9 +62,10 @@ defmodule Membrane.VideoCompositor.Wgpu do
           state :: wgpu_state_t(),
           id :: id_t(),
           caps :: Membrane.RawVideo.t(),
-          placement :: RustStructs.VideoPlacement.t()
+          placement :: RustStructs.VideoPlacement.t(),
+          transformations :: VideoTransformations.t()
         ) :: :ok | {:error, error_t()}
-  def add_video(state, id, caps, placement) do
+  def add_video(state, id, caps, placement, transformations) do
     {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
     case Native.add_video(state, id, rust_caps, placement) do

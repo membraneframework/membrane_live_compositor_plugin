@@ -197,6 +197,15 @@ fn add_video(
     Ok(atoms::ok())
 }
 
+#[rustler::nif]
+fn add_texture_transformation(
+    #[allow(unused)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+) -> Result<rustler::Atom, rustler::Error> {
+    
+}
+
 fn convert_z(z: f32) -> f32 {
     // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
     // which is outside of the wgpu clip space

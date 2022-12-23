@@ -17,6 +17,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
   alias Membrane.VideoCompositor.Wgpu
 
@@ -46,6 +47,15 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
+      ],
+      initial_video_transformations: [
+        spec: VideoTransformations.t(),
+        description:
+          "Specify the initial types and the order of transformations applied to video.",
+        default:
+          Macro.escape(%VideoTransformations{
+            texture_transformations: []
+          })
       ]
     ]
 
@@ -60,6 +70,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     state = %{
       initial_video_placements: %{},
+      initial_video_transformations: %{},
       timestamp_offsets: %{},
       caps: options.caps,
       real_time: options.real_time,
@@ -130,25 +141,32 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      initial_video_placements: initial_video_placements
+      initial_video_placements: initial_video_placements,
+      initial_video_transformations: initial_video_transformations
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    initial_video_placements =
-      case Map.pop(initial_video_placements, id) do
-        {nil, initial_video_placements} ->
+    {initial_video_placements, initial_video_transformations} =
+      case {Map.pop(initial_video_placements, id), Map.pop(initial_video_transformations, id)} do
+        {{nil, initial_video_placements}, {nil, initial_video_transformations}} ->
           # this video was added before
           :ok = Wgpu.update_caps(wgpu_state, id, caps)
-          initial_video_placements
+          {initial_video_placements, initial_video_transformations}
 
-        {placement, initial_video_placements} ->
+        {{placement, initial_video_placements}, {transformations, initial_video_transformations}} ->
           # this video was waiting for first caps to be added to the compositor
-          :ok = Wgpu.add_video(wgpu_state, id, caps, placement)
-          initial_video_placements
+          :ok = Wgpu.add_video(wgpu_state, id, caps, placement, transformations)
+          {initial_video_placements, initial_video_transformations}
       end
 
-    {:ok, %{state | initial_video_placements: initial_video_placements}}
+    {
+      :ok,
+      %{state |
+        initial_video_placements: initial_video_placements,
+        initial_video_transformations: initial_video_transformations
+      }
+    }
   end
 
   @impl true

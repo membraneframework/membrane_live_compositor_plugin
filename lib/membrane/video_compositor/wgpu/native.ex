@@ -23,7 +23,12 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec force_render(wgpu_state()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()
 
-  @spec add_video(wgpu_state(), id_t(), RawVideo.t(), VideoPlacement.t()) ::
+  @spec add_video(
+          wgpu_state(),
+          id_t(),
+          RawVideo.t(),
+          VideoPlacement.t()
+        ) ::
           :ok | {:error, error_t()}
   def add_video(_state, _id, _caps, _placement), do: error()
 

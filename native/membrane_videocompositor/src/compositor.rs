@@ -17,7 +17,7 @@ use videos::*;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::{textures_transformations::corner_rounding::CornerRoundingUniform, vertex::Vertex, vec2d::Vec2d};
+use self::{textures_transformations::{corners_rounding::CornersRoundingUniform, cropping::CroppingUniform}, vertex::Vertex, vec2d::Vec2d};
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
     textures_transformations::{
@@ -365,10 +365,19 @@ impl State {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
         }
 
+        textures_transformations.push(TextureTransformationUniform::Cropper(
+            CroppingUniform {
+                top_left_corner_crop_x: 0.0,
+                top_left_corner_crop_y: 0.0,
+                crop_width: 0.4,
+                crop_height: 0.4,
+            }
+        ));
+
         textures_transformations.push(TextureTransformationUniform::EdgeRounder(
-            CornerRoundingUniform {
-                video_resolution: [1280.0, 720.0],
-                edge_rounding_radius: 100.0,
+            CornersRoundingUniform {
+                video_width_height_ratio: 16.0 / 9.0,
+                corner_rounding_radius: 0.07,
             },
         ));
 

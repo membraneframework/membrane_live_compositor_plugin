@@ -1,5 +1,7 @@
 #![allow(clippy::needless_borrow)]
 
+use crate::compositor::vec2d::Vec2d;
+
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
 pub struct ElixirRawVideo {
@@ -15,4 +17,17 @@ pub struct ElixirVideoPlacement {
     pub position: (u32, u32),
     pub display_size: (u32, u32),
     pub z_value: f32,
+}
+
+#[derive(Debug, rustler::NifStruct, Clone, Copy)]
+#[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding"]
+pub struct ElixirCornersRounding {
+    pub corner_rounding_radius: f32
+}
+
+#[derive(Debug, rustler::NifStruct, Clone, Copy)]
+#[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.Cropping"]
+pub struct ElixirCropping {
+    pub top_left_corner: (f32, f32),
+    pub crop_size: (f32, f32)
 }

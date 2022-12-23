@@ -4,12 +4,12 @@
 pub mod texture_transformer;
 
 pub mod cropping;
-pub mod corner_rounding;
+pub mod corners_rounding;
 
 use std::collections::HashMap;
 
 use self::cropping::CroppingUniform;
-use self::corner_rounding::CornerRoundingUniform;
+use self::corners_rounding::CornersRoundingUniform;
 use self::texture_transformer::TextureTransformer;
 use wgpu::util::DeviceExt;
 
@@ -29,7 +29,7 @@ impl TextureTransformationName {
     pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
         return match self {
             TextureTransformationName::EdgeRounder() => {
-                TextureTransformationUniform::EdgeRounder(CornerRoundingUniform::get_blank_uniform())
+                TextureTransformationUniform::EdgeRounder(CornersRoundingUniform::get_blank_uniform())
             }
             TextureTransformationName::Cropper() => {
                 TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform())
@@ -45,7 +45,7 @@ impl TextureTransformationName {
     pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
         return match self {
             TextureTransformationName::EdgeRounder() => {
-                device.create_shader_module(wgpu::include_wgsl!("corner_rounding/corner_rounding.wgsl"))
+                device.create_shader_module(wgpu::include_wgsl!("corners_rounding/corners_rounding.wgsl"))
             }
             TextureTransformationName::Cropper() => {
                 device.create_shader_module(wgpu::include_wgsl!("cropping/cropping.wgsl"))
@@ -98,7 +98,7 @@ impl TextureTransformationName {
 /// enum value.
 #[derive(Debug, Clone, Copy)]
 pub enum TextureTransformationUniform {
-    EdgeRounder(CornerRoundingUniform),
+    EdgeRounder(CornersRoundingUniform),
     Cropper(CroppingUniform),
 }
 
