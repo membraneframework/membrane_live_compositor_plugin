@@ -237,7 +237,7 @@ impl State {
             rgba_to_yuv_converter,
             output_caps: *output_caps,
             last_pts: None,
-            texture_transformers: texture_transformers,
+            texture_transformers,
         })
     }
 

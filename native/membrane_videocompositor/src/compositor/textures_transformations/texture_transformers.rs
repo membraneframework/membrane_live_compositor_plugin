@@ -124,10 +124,10 @@ impl TextureTransformer {
         });
 
         Self {
-            pipeline: pipeline,
-            common: common,
-            uniform_buffer: uniform_buffer,
-            uniform_bind_group: uniform_bind_group,
+            pipeline,
+            common,
+            uniform_buffer,
+            uniform_bind_group,
         }
     }
 
