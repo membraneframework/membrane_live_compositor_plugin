@@ -239,25 +239,36 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     } = state
 
     initial_video_placements =
-      Enum.map(
-        placements,
-        fn {pad, placement} ->
-          id = Map.fetch!(pads_to_ids, pad)
-
-          initial_video_placements =
-            case Wgpu.update_placement(wgpu_state, id, placement) do
-              :ok ->
-                initial_video_placements
-
-              {:error, :bad_video_index} ->
-                # in case we update placement before receiving caps from pad
-                Map.put(initial_video_placements, id, placement)
-            end
-
-          initial_video_placements
-        end
-      )
+      update_placements(placements, pads_to_ids, wgpu_state, initial_video_placements)
 
     {:ok, %{state | initial_video_placements: initial_video_placements}}
+  end
+
+  defp update_placements(
+         [],
+         _pads_to_ids,
+         _wgpu_state,
+         initial_video_placements
+       ) do
+    initial_video_placements
+  end
+
+  defp update_placements(
+         [{pad, placement} | other_placements],
+         pads_to_ids,
+         wgpu_state,
+         initial_video_placements
+       ) do
+    id = Map.get(pads_to_ids, pad)
+
+    initial_video_placements =
+      case Wgpu.update_placement(wgpu_state, id, placement) do
+        :ok -> initial_video_placements
+        # in case of update_placements is called before handle_caps and add_video in rust
+        # wasn't called yet (the video wasn't registered in rust yet)
+        {:error, :bad_video_index} -> Map.put(initial_video_placements, id, placement)
+      end
+
+    update_placements(other_placements, pads_to_ids, wgpu_state, initial_video_placements)
   end
 end
