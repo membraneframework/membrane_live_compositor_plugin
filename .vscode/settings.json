@@ -24,6 +24,7 @@
         "native/membrane_videocompositor/Cargo.toml"
     ],
     "cSpell.words": [
+        "binwrite",
         "bytemuck",
         "colour",
         "Deque",

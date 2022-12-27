@@ -3,8 +3,8 @@ defmodule Membrane.VideoCompositor.Wgpu do
   This module implements video composition in wgpu
   """
 
-  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs
+  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.Wgpu.Native
 
   @type id_t() :: non_neg_integer()
@@ -68,7 +68,7 @@ defmodule Membrane.VideoCompositor.Wgpu do
   def add_video(state, id, caps, placement, transformations) do
     {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
 
-    case Native.add_video(state, id, rust_caps, placement) do
+    case Native.add_video(state, id, rust_caps, placement, transformations) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
@@ -109,11 +109,30 @@ defmodule Membrane.VideoCompositor.Wgpu do
           state :: wgpu_state_t(),
           id :: id_t(),
           placement :: RustStructs.VideoPlacement.t()
-        ) :: :ok
+        ) :: :ok | {:error, :bad_video_index}
   def update_placement(state, id, placement) do
     case Native.update_placement(state, id, placement) do
       :ok -> :ok
+      {:error, :bad_video_index} -> {:error, :bad_video_index}
       {:error, reason} -> raise "Error while updating video placement, reason: #{inspect(reason)}"
+    end
+  end
+
+  @spec update_transformations(
+          state :: wgpu_state_t(),
+          id :: id_t(),
+          transformations :: Membrane.VideoCompositor.VideoTransformations.t()
+        ) :: :ok | {:error, :bad_video_index}
+  def update_transformations(state, id, transformations) do
+    case Native.update_transformations(state, id, transformations) do
+      :ok ->
+        :ok
+
+      {:error, :bad_video_index} ->
+        {:error, :bad_video_index}
+
+      {:error, reason} ->
+        raise "Error while updating video transformations, reason: #{inspect(reason)}"
     end
   end
 

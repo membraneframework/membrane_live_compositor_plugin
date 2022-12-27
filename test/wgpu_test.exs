@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.Test.Wgpu do
   use ExUnit.Case, async: false
 
+  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
@@ -37,16 +38,32 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                })
 
       assert :ok =
-               Native.add_video(state, 0, in_video, %VideoPlacement{
-                 position: {0, 0},
-                 display_size: {in_video.width, in_video.height}
-               })
+               Native.add_video(
+                 state,
+                 0,
+                 in_video,
+                 %VideoPlacement{
+                   position: {0, 0},
+                   display_size: {in_video.width, in_video.height}
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       assert :ok =
-               Native.add_video(state, 1, in_video, %VideoPlacement{
-                 position: {0, 360},
-                 display_size: {in_video.width, in_video.height}
-               })
+               Native.add_video(
+                 state,
+                 1,
+                 in_video,
+                 %VideoPlacement{
+                   position: {0, 360},
+                   display_size: {in_video.width, in_video.height}
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       assert :ok = Native.upload_frame(state, 0, frame, 1)
       assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
@@ -81,18 +98,34 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %VideoPlacement{
-                 position: {0, 0},
-                 display_size: {caps.width, caps.height},
-                 z_value: 0.0
-               })
+               Native.add_video(
+                 state,
+                 0,
+                 caps,
+                 %VideoPlacement{
+                   position: {0, 0},
+                   display_size: {caps.width, caps.height},
+                   z_value: 0.0
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       assert :ok =
-               Native.add_video(state, 1, caps, %VideoPlacement{
-                 position: {0, 0},
-                 display_size: {caps.width, caps.height},
-                 z_value: 0.5
-               })
+               Native.add_video(
+                 state,
+                 1,
+                 caps,
+                 %VideoPlacement{
+                   position: {0, 0},
+                   display_size: {caps.width, caps.height},
+                   z_value: 0.5
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
@@ -123,18 +156,34 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       assert {:ok, state} = Native.init(caps)
 
       assert :ok =
-               Native.add_video(state, 0, caps, %VideoPlacement{
-                 position: {0, 0},
-                 display_size: {caps.width, caps.height},
-                 z_value: 0.0
-               })
+               Native.add_video(
+                 state,
+                 0,
+                 caps,
+                 %VideoPlacement{
+                   position: {0, 0},
+                   display_size: {caps.width, caps.height},
+                   z_value: 0.0
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       assert :ok =
-               Native.add_video(state, 1, caps, %VideoPlacement{
-                 position: {0, 0},
-                 display_size: {caps.width, caps.height},
-                 z_value: 0.5
-               })
+               Native.add_video(
+                 state,
+                 1,
+                 caps,
+                 %VideoPlacement{
+                   position: {0, 0},
+                   display_size: {caps.width, caps.height},
+                   z_value: 0.5
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>

@@ -1,15 +1,14 @@
 /// Module providing abstraction over texture transformations, enabling creating new
 /// texture transformations easily.
-
 pub mod texture_transformer;
 
-pub mod cropping;
 pub mod corners_rounding;
+pub mod cropping;
 
 use std::collections::HashMap;
 
-use self::cropping::CroppingUniform;
 use self::corners_rounding::CornersRoundingUniform;
+use self::cropping::CroppingUniform;
 use self::texture_transformer::TextureTransformer;
 use wgpu::util::DeviceExt;
 
@@ -29,7 +28,9 @@ impl TextureTransformationName {
     pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
         return match self {
             TextureTransformationName::EdgeRounder() => {
-                TextureTransformationUniform::EdgeRounder(CornersRoundingUniform::get_blank_uniform())
+                TextureTransformationUniform::CornerRounder(
+                    CornersRoundingUniform::get_blank_uniform(),
+                )
             }
             TextureTransformationName::Cropper() => {
                 TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform())
@@ -44,9 +45,9 @@ impl TextureTransformationName {
     /// used in created transformation.
     pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
         return match self {
-            TextureTransformationName::EdgeRounder() => {
-                device.create_shader_module(wgpu::include_wgsl!("corners_rounding/corners_rounding.wgsl"))
-            }
+            TextureTransformationName::EdgeRounder() => device.create_shader_module(
+                wgpu::include_wgsl!("corners_rounding/corners_rounding.wgsl"),
+            ),
             TextureTransformationName::Cropper() => {
                 device.create_shader_module(wgpu::include_wgsl!("cropping/cropping.wgsl"))
             }
@@ -98,7 +99,7 @@ impl TextureTransformationName {
 /// enum value.
 #[derive(Debug, Clone, Copy)]
 pub enum TextureTransformationUniform {
-    EdgeRounder(CornersRoundingUniform),
+    CornerRounder(CornersRoundingUniform),
     Cropper(CroppingUniform),
 }
 
@@ -108,7 +109,7 @@ impl TextureTransformationUniform {
     /// call on wgpu device.
     pub fn create_uniform_buffer(self, device: &wgpu::Device) -> wgpu::Buffer {
         return match self {
-            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => device
+            TextureTransformationUniform::CornerRounder(edge_rounding_uniform) => device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("edge rounding uniform buffer"),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
@@ -130,11 +131,12 @@ impl TextureTransformationUniform {
     /// match arm calling write_buffer function on queue.
     pub fn write_buffer(self, queue: &wgpu::Queue, uniform_buffer: &wgpu::Buffer) {
         match self {
-            TextureTransformationUniform::EdgeRounder(edge_rounding_uniform) => queue.write_buffer(
-                uniform_buffer,
-                0,
-                bytemuck::cast_slice(&[edge_rounding_uniform]),
-            ),
+            TextureTransformationUniform::CornerRounder(edge_rounding_uniform) => queue
+                .write_buffer(
+                    uniform_buffer,
+                    0,
+                    bytemuck::cast_slice(&[edge_rounding_uniform]),
+                ),
             TextureTransformationUniform::Cropper(cropping_uniform) => {
                 queue.write_buffer(uniform_buffer, 0, bytemuck::cast_slice(&[cropping_uniform]))
             }
@@ -149,7 +151,7 @@ impl TextureTransformationUniform {
         texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
     ) -> &TextureTransformer {
         return match self {
-            TextureTransformationUniform::EdgeRounder(_) => texture_transformers
+            TextureTransformationUniform::CornerRounder(_) => texture_transformers
                 .get(&TextureTransformationName::EdgeRounder())
                 .unwrap(),
             TextureTransformationUniform::Cropper(_) => texture_transformers

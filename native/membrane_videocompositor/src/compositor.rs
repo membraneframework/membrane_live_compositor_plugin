@@ -6,10 +6,10 @@ use std::{
 mod colour_converters;
 mod pipeline_utils;
 mod textures;
-mod textures_transformations;
-mod videos;
+pub mod textures_transformations;
 pub mod vec2d;
 mod vertex;
+mod videos;
 
 use textures::*;
 use videos::*;
@@ -17,20 +17,19 @@ use videos::*;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::{textures_transformations::{corners_rounding::CornersRoundingUniform, cropping::CroppingUniform}, vertex::Vertex, vec2d::Vec2d};
+use self::pipeline_utils::Sampler;
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
     textures_transformations::{
-        TextureTransformationName, TextureTransformationUniform, texture_transformer::TextureTransformer
+        texture_transformer::TextureTransformer, TextureTransformationName,
+        TextureTransformationUniform,
     },
 };
-use self::pipeline_utils::Sampler;
-
-
+use self::{vec2d::Vec2d, vertex::Vertex};
 
 pub struct State {
     device: wgpu::Device,
-    input_videos: BTreeMap<usize, InputVideo>,
+    pub input_videos: BTreeMap<usize, InputVideo>,
     output_textures: OutputTextures,
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,
@@ -359,27 +358,11 @@ impl State {
         &mut self,
         idx: usize,
         properties: VideoProperties,
-        mut textures_transformations: Vec<TextureTransformationUniform>,
+        textures_transformations: Vec<TextureTransformationUniform>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
         }
-
-        textures_transformations.push(TextureTransformationUniform::Cropper(
-            CroppingUniform {
-                top_left_corner_crop_x: 0.0,
-                top_left_corner_crop_y: 0.0,
-                crop_width: 0.4,
-                crop_height: 0.4,
-            }
-        ));
-
-        textures_transformations.push(TextureTransformationUniform::EdgeRounder(
-            CornersRoundingUniform {
-                video_width_height_ratio: 16.0 / 9.0,
-                corner_rounding_radius: 0.07,
-            },
-        ));
 
         self.input_videos.insert(
             idx,

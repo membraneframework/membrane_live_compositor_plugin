@@ -20,6 +20,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
+  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.get_empty_video_transformations()
+
   describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
@@ -89,23 +91,14 @@ defmodule Membrane.VideoCompositor.Test.Composing do
             position: pos,
             display_size: {video_caps.width, video_caps.height}
           },
+          transformations: @empty_video_transformations,
           caps: video_caps,
           input: input_path
         }
       )
 
-    middle_video = %InputStream{
-      placement: %VideoPlacement{
-        position: {div(video_caps.width, 2), div(video_caps.height, 2)},
-        display_size: {video_caps.width, video_caps.height},
-        z_value: 0.5,
-      },
-      caps: video_caps,
-      input: input_path
-    }
-
     options = %Options{
-      inputs: inputs ++ [middle_video],
+      inputs: inputs,
       output: output_path,
       caps: out_caps
     }

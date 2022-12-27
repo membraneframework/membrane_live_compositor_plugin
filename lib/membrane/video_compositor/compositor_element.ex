@@ -17,8 +17,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.Wgpu
 
   def_options caps: [
@@ -52,10 +52,9 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: VideoTransformations.t(),
         description:
           "Specify the initial types and the order of transformations applied to video.",
-        default:
-          Macro.escape(%VideoTransformations{
-            texture_transformations: []
-          })
+        # Can't set here struct, due to quote error (AST invalid node).
+        # Calling Macro.escape() returns tuple and makes code more error prone and less readable.
+        default: nil
       ]
     ]
 
@@ -120,16 +119,27 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     initial_placement = context.options.initial_placement
 
-    state = register_pad(state, pad, initial_placement, timestamp_offset)
+    initial_transformations =
+      case context.options.initial_video_transformations do
+        nil ->
+          VideoTransformations.get_empty_video_transformations()
+
+        _other ->
+          context.options.initial_video_transformations
+      end
+
+    state = register_pad(state, pad, initial_placement, initial_transformations, timestamp_offset)
     {:ok, state}
   end
 
-  defp register_pad(state, pad, placement, timestamp_offset) do
+  defp register_pad(state, pad, placement, transformations, timestamp_offset) do
     new_id = state.new_pad_id
 
     %{
       state
       | initial_video_placements: Map.put(state.initial_video_placements, new_id, placement),
+        initial_video_transformations:
+          Map.put(state.initial_video_transformations, new_id, transformations),
         timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
@@ -162,9 +172,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     {
       :ok,
-      %{state |
-        initial_video_placements: initial_video_placements,
-        initial_video_transformations: initial_video_transformations
+      %{
+        state
+        | initial_video_placements: initial_video_placements,
+          initial_video_transformations: initial_video_transformations
       }
     }
   end
@@ -259,6 +270,22 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       id = Map.get(pads_to_ids, pad)
 
       Wgpu.update_placement(wgpu_state, id, placement)
+    end
+
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_other({:update_transformations, all_transformations}, _ctx, state) do
+    %{
+      pads_to_ids: pads_to_ids,
+      wgpu_state: wgpu_state
+    } = state
+
+    for {pad, video_transformations} <- all_transformations do
+      id = Map.get(pads_to_ids, pad)
+
+      Wgpu.update_transformations(wgpu_state, id, video_transformations)
     end
 
     {:ok, state}

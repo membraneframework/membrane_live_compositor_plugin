@@ -27,6 +27,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     aligned: true
   }
 
+  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.get_empty_video_transformations()
+
   describe "Checks h264 pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
@@ -89,6 +91,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
               position: pos,
               display_size: {video_caps.width, video_caps.height}
             },
+            transformations: @empty_video_transformations,
             caps: video_caps,
             input: input_path
           }
@@ -156,6 +159,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
               position: pos,
               display_size: {video_caps.width, video_caps.height}
             },
+            transformations: @empty_video_transformations,
             caps: video_caps,
             input: input_path
           }

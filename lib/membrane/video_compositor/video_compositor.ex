@@ -17,6 +17,9 @@ defmodule Membrane.VideoCompositor do
   @type update_placement_t ::
           {:update_placement, [{Membrane.Pad.ref_t(), VideoPlacement.t()}]}
 
+  @type update_transformations_t ::
+          {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
+
   def_options caps: [
                 spec: RawVideo.t(),
                 description: "Caps for the output video of the compositor"
@@ -45,10 +48,9 @@ defmodule Membrane.VideoCompositor do
         spec: VideoTransformations.t(),
         description:
           "Specify the initial types and the order of transformations applied to video.",
-        default:
-          Macro.escape(%VideoTransformations{
-            texture_transformations: []
-          })
+        # Can't set here struct, due to quote error (AST invalid node).
+        # Calling Macro.escape() returns tuple and makes code more error prone and less readable.
+        default: nil
       ]
     ]
 
@@ -105,5 +107,10 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_other({:update_placement, placements}, _ctx, state) do
     {{:ok, forward: {:compositor, {:update_placement, placements}}}, state}
+  end
+
+  @impl true
+  def handle_other({:update_transformations, transformations}, _ctx, state) do
+    {{:ok, forward: {:compositor, {:update_transformations, transformations}}}, state}
   end
 end

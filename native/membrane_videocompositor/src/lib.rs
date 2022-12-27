@@ -166,44 +166,38 @@ fn add_video(
     id: usize,
     caps: ElixirRawVideo,
     placement: ElixirVideoPlacement,
+    transformations: ElixirVideoTransformations,
 ) -> Result<rustler::Atom, rustler::Error> {
     let caps: RawVideo = caps.try_into()?;
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.add_video(
-        id,
-        compositor::VideoProperties {
-            resolution: Vec2d {
-                x: caps.width.get(),
-                y: caps.height.get(),
-            },
-
-            placement: compositor::VideoPlacement {
-                position: Vec2d {
-                    x: placement.position.0,
-                    y: placement.position.1,
-                },
-                size: Vec2d {
-                    x: placement.display_size.0,
-                    y: placement.display_size.1,
-                },
-                z: convert_z(placement.z_value),
-            },
+    let properties = compositor::VideoProperties {
+        resolution: Vec2d {
+            x: caps.width.get(),
+            y: caps.height.get(),
         },
-        Vec::new(),
-    )?;
+
+        placement: compositor::VideoPlacement {
+            position: Vec2d {
+                x: placement.position.0,
+                y: placement.position.1,
+            },
+            size: Vec2d {
+                x: placement.display_size.0,
+                y: placement.display_size.1,
+            },
+            z: convert_z(placement.z_value),
+        },
+    };
+
+    let texture_transformations = transformations.get_texture_transformations(properties);
+
+    state
+        .compositor
+        .add_video(id, properties, texture_transformations)?;
 
     Ok(atoms::ok())
-}
-
-#[rustler::nif]
-fn add_texture_transformation(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: rustler::ResourceArc<State>,
-    id: usize,
-) -> Result<rustler::Atom, rustler::Error> {
-    
 }
 
 fn convert_z(z: f32) -> f32 {
@@ -261,6 +255,24 @@ fn update_placement(
 }
 
 #[rustler::nif]
+fn update_transformations(
+    #[allow(unused)] env: rustler::Env<'_>,
+    state: rustler::ResourceArc<State>,
+    id: usize,
+    transformations: ElixirVideoTransformations,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
+    let video = state.compositor.input_videos.get_mut(&id).unwrap();
+    let properties = video.properties;
+
+    let texture_transformations = transformations.get_texture_transformations(properties);
+
+    video.texture_transformations = texture_transformations;
+
+    Ok(atoms::ok())
+}
+
+#[rustler::nif]
 fn remove_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: ResourceArc<State>,
@@ -292,6 +304,7 @@ rustler::init!(
         send_end_of_stream,
         update_caps,
         update_placement,
+        update_transformations
     ],
     load = |env, _| {
         rustler::resource!(State, env);

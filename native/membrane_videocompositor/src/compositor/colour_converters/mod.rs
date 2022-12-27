@@ -1,7 +1,7 @@
 use wgpu::util::DeviceExt;
 
-use crate::compositor::Vertex;
 use crate::compositor::pipeline_utils::PipelineUtils;
+use crate::compositor::Vertex;
 
 use super::textures::{RGBATexture, YUVPlane, YUVTextures};
 

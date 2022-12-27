@@ -1,12 +1,15 @@
-use std::collections::{VecDeque, HashMap};
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::textures_transformations::{TextureTransformationName, TextureTransformationUniform, texture_transformer::TextureTransformer};
 use super::textures::{RGBATexture, YUVTextures};
+use super::textures_transformations::{
+    texture_transformer::TextureTransformer, TextureTransformationName,
+    TextureTransformationUniform,
+};
 use super::{Vec2d, Vertex};
 
 #[derive(Debug, Clone, Copy)]
@@ -51,8 +54,8 @@ pub struct InputVideo {
     yuv_textures: YUVTextures,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
-    properties: VideoProperties,
-    texture_transformations: Vec<TextureTransformationUniform>,
+    pub properties: VideoProperties,
+    pub texture_transformations: Vec<TextureTransformationUniform>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     /// When a video is created this is set to `true`. When `draw` is later called on it,
@@ -134,7 +137,7 @@ impl InputVideo {
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
-        texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>
+        texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
     ) {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
@@ -144,7 +147,7 @@ impl InputVideo {
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
-        
+
         // Runs all texture transformations.
         for transformation_uniform in self.texture_transformations.iter() {
             let transformed_frame = RGBATexture::new(
@@ -154,13 +157,20 @@ impl InputVideo {
                 &self.single_texture_bind_group_layout,
             );
 
-            let texture_transformer = transformation_uniform.get_texture_transformer(texture_transformers);
+            let texture_transformer =
+                transformation_uniform.get_texture_transformer(texture_transformers);
 
-            texture_transformer.transform(device, queue, &frame, &transformed_frame, transformation_uniform);
+            texture_transformer.transform(
+                device,
+                queue,
+                &frame,
+                &transformed_frame,
+                transformation_uniform,
+            );
 
             frame = transformed_frame;
         }
-        
+
         // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
         if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
             // then we can add the frame to the queue (we assume the frames come in order)
