@@ -9,9 +9,9 @@ pub struct CornersRoundingUniform {
 
 impl CornersRoundingUniform {
     pub fn get_blank_uniform() -> Self {
-        return CornersRoundingUniform {
+        CornersRoundingUniform {
             video_width_height_ratio: 16.0 / 9.0,
             corner_rounding_radius: 0.0,
-        };
+        }
     }
 }

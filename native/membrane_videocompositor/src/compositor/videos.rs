@@ -7,7 +7,7 @@ use super::colour_converters::YUVToRGBAConverter;
 
 use super::textures::{RGBATexture, YUVTextures};
 use super::textures_transformations::{
-    texture_transformer::TextureTransformer, TextureTransformationName,
+    texture_transformers::TextureTransformer, TextureTransformationName,
     TextureTransformationUniform,
 };
 use super::{Vec2d, Vertex};
@@ -129,6 +129,7 @@ impl InputVideo {
         self.properties = properties;
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn upload_data(
         &mut self,
         device: &wgpu::Device,

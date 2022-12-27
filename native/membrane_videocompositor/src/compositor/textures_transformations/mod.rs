@@ -1,6 +1,6 @@
 /// Module providing abstraction over texture transformations, enabling creating new
 /// texture transformations easily.
-pub mod texture_transformer;
+pub mod texture_transformers;
 
 pub mod corners_rounding;
 pub mod cropping;
@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use self::corners_rounding::CornersRoundingUniform;
 use self::cropping::CroppingUniform;
-use self::texture_transformer::TextureTransformer;
+use self::texture_transformers::TextureTransformer;
 use wgpu::util::DeviceExt;
 
 /// Name describing texture transformation type.
@@ -77,7 +77,7 @@ impl TextureTransformationName {
         texture_transformers.insert(
             TextureTransformationName::EdgeRounder(),
             TextureTransformer::new(
-                &device,
+                device,
                 single_texture_bind_group_layout,
                 TextureTransformationName::EdgeRounder(),
             ),
@@ -85,7 +85,7 @@ impl TextureTransformationName {
         texture_transformers.insert(
             TextureTransformationName::Cropper(),
             TextureTransformer::new(
-                &device,
+                device,
                 single_texture_bind_group_layout,
                 TextureTransformationName::Cropper(),
             ),

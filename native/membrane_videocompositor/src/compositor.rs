@@ -21,7 +21,7 @@ use self::pipeline_utils::Sampler;
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
     textures_transformations::{
-        texture_transformer::TextureTransformer, TextureTransformationName,
+        texture_transformers::TextureTransformer, TextureTransformationName,
         TextureTransformationUniform,
     },
 };

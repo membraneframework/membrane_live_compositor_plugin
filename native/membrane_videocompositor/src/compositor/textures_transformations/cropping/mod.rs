@@ -16,11 +16,11 @@ pub struct CroppingUniform {
 
 impl CroppingUniform {
     pub fn get_blank_uniform() -> Self {
-        return CroppingUniform {
+        CroppingUniform {
             top_left_corner_crop_x: 0.0,
             top_left_corner_crop_y: 0.0,
             crop_width: 1.0,
             crop_height: 1.0,
-        };
+        }
     }
 }
