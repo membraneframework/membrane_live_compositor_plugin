@@ -60,14 +60,14 @@ pub enum ElixirTextureTransformations {
 
 impl ElixirTextureTransformations {
     pub fn into_uniform(self, properties: VideoProperties) -> TextureTransformationUniform {
-        return match self {
+        match self {
             ElixirTextureTransformations::CornersRounding(elixir_corners_rounding) => {
                 elixir_corners_rounding.into_uniform(properties)
             }
             ElixirTextureTransformations::Cropping(elixir_cropping) => {
                 elixir_cropping.into_uniform()
             }
-        };
+        }
     }
 }
 /// Elixir struct wrapping parameters describing corner rounding texture transformation

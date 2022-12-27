@@ -26,7 +26,7 @@ impl TextureTransformationName {
     /// As a user adding new transformation, you just need to add new match arm,
     /// returning TextureTransformationUniform with example transformation describing struct.
     pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
-        return match self {
+        match self {
             TextureTransformationName::EdgeRounder() => {
                 TextureTransformationUniform::CornerRounder(
                     CornersRoundingUniform::get_blank_uniform(),
@@ -35,7 +35,7 @@ impl TextureTransformationName {
             TextureTransformationName::Cropper() => {
                 TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform())
             }
-        };
+        }
     }
 
     /// Returns shader module created based on shader file.
@@ -44,24 +44,24 @@ impl TextureTransformationName {
     /// with analogous function call on wgpu device, passing path to shader
     /// used in created transformation.
     pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
-        return match self {
+        match self {
             TextureTransformationName::EdgeRounder() => device.create_shader_module(
                 wgpu::include_wgsl!("corners_rounding/corners_rounding.wgsl"),
             ),
             TextureTransformationName::Cropper() => {
                 device.create_shader_module(wgpu::include_wgsl!("cropping/cropping.wgsl"))
             }
-        };
+        }
     }
 
     /// Returns name used to create rendering pipeline, used to improve debug / errors logs.
     /// As a user adding new transformation, you just need to add new match arm returning
     /// name used for describing rendering pipeline elements for that transformation.   
     pub fn get_name(self) -> &'static str {
-        return match self {
+        match self {
             TextureTransformationName::EdgeRounder() => "Edge rounder",
             TextureTransformationName::Cropper() => "Cropper",
-        };
+        }
     }
 
     /// Returns all texture transformers. Used in compositor module to put all texture transformers
@@ -108,7 +108,7 @@ impl TextureTransformationUniform {
     /// As a user adding new transformation, you just need to add analogous
     /// call on wgpu device.
     pub fn create_uniform_buffer(self, device: &wgpu::Device) -> wgpu::Buffer {
-        return match self {
+        match self {
             TextureTransformationUniform::CornerRounder(edge_rounding_uniform) => device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("edge rounding uniform buffer"),
@@ -122,7 +122,7 @@ impl TextureTransformationUniform {
                     contents: bytemuck::cast_slice(&[cropping_uniform]),
                 })
             }
-        };
+        }
     }
 
     /// Writes buffer with struct describing texture transformation to queue, making it
@@ -150,13 +150,13 @@ impl TextureTransformationUniform {
         self,
         texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
     ) -> &TextureTransformer {
-        return match self {
+        match self {
             TextureTransformationUniform::CornerRounder(_) => texture_transformers
                 .get(&TextureTransformationName::EdgeRounder())
                 .unwrap(),
             TextureTransformationUniform::Cropper(_) => texture_transformers
                 .get(&TextureTransformationName::Cropper())
                 .unwrap(),
-        };
+        }
     }
 }
