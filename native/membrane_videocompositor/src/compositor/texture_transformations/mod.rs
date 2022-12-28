@@ -117,7 +117,7 @@ impl TextureTransformationUniform {
 
     pub fn update_texture_transformations(
         properties: VideoProperties,
-        texture_transformations: &mut Vec<TextureTransformationUniform>,
+        texture_transformations: &mut [TextureTransformationUniform],
     ) -> VideoProperties {
         let mut transformed_video_properties = properties;
 
