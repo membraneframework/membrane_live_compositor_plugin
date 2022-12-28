@@ -5,8 +5,8 @@ use std::{
 
 mod colour_converters;
 mod pipeline_utils;
+pub mod texture_transformations;
 mod textures;
-pub mod textures_transformations;
 pub mod vec2d;
 mod vertex;
 mod videos;
@@ -20,7 +20,7 @@ pub use videos::{VideoPlacement, VideoProperties};
 use self::pipeline_utils::Sampler;
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
-    textures_transformations::{
+    texture_transformations::{
         texture_transformers::TextureTransformer, TextureTransformationName,
         TextureTransformationUniform,
     },
@@ -383,6 +383,7 @@ impl State {
         idx: usize,
         resolution: Option<Vec2d<u32>>,
         placement: Option<VideoPlacement>,
+        new_texture_transformations: Option<Vec<TextureTransformationUniform>>,
     ) -> Result<(), CompositorError> {
         let video = self
             .input_videos
@@ -404,6 +405,7 @@ impl State {
             self.single_texture_bind_group_layout.clone(),
             &self.all_yuv_textures_bind_group_layout,
             properties,
+            new_texture_transformations,
         );
 
         Ok(())

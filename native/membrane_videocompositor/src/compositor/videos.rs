@@ -5,11 +5,11 @@ use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::textures::{RGBATexture, YUVTextures};
-use super::textures_transformations::{
+use super::texture_transformations::{
     texture_transformers::TextureTransformer, TextureTransformationName,
     TextureTransformationUniform,
 };
+use super::textures::{RGBATexture, YUVTextures};
 use super::{Vec2d, Vertex};
 
 #[derive(Debug, Clone, Copy)]
@@ -97,6 +97,8 @@ impl InputVideo {
             usage: wgpu::BufferUsages::INDEX,
         });
 
+        Self::update_texture_transformations(properties, &mut texture_transformations.to_vec());
+
         Self {
             yuv_textures,
             frames,
@@ -116,6 +118,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         properties: VideoProperties,
+        texture_transformations: Option<Vec<TextureTransformationUniform>>,
     ) {
         let yuv_textures = YUVTextures::new(
             device,
@@ -127,6 +130,33 @@ impl InputVideo {
         );
         self.yuv_textures = yuv_textures;
         self.properties = properties;
+        match texture_transformations {
+            Some(mut texture_transformations) => {
+                self.texture_transformations =
+                    Self::update_texture_transformations(properties, &mut texture_transformations)
+                        .to_vec();
+            }
+            None => {
+                self.texture_transformations = Self::update_texture_transformations(
+                    properties,
+                    &mut self.texture_transformations,
+                )
+                .to_vec();
+            }
+        }
+    }
+
+    pub fn update_texture_transformations(
+        properties: VideoProperties,
+        texture_transformations: &mut Vec<TextureTransformationUniform>,
+    ) -> &Vec<TextureTransformationUniform> {
+        let mut transformed_video_properties = properties.clone();
+
+        for texture_transformation in texture_transformations.iter_mut() {
+            transformed_video_properties =
+                texture_transformation.update_video_properties(transformed_video_properties);
+        }
+        texture_transformations
     }
 
     #[allow(clippy::too_many_arguments)]

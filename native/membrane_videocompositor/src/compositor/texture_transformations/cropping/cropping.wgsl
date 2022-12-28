@@ -26,17 +26,17 @@ var<uniform> cropping: CroppingUnifrom;
 
 fn get_scale_matrix(x_scale_factor: f32, y_scale_factor: f32) -> mat3x3<f32> {
     return mat3x3<f32>(
-        x_scale_factor, 0.0, 0.0,
-        0.0, y_scale_factor, 0.0,
-        0.0, 0.0, 1.0
+        x_scale_factor, 0.0, 0.0,  // col 1
+        0.0, y_scale_factor, 0.0,  // col 2
+        0.0, 0.0, 1.0  // col 3
     );
 }
 
 fn get_translation_matrix(x_translation: f32, y_translation: f32) -> mat3x3<f32> {
     return mat3x3<f32>(
-        1.0, 0.0, x_translation,
-        0.0, 1.0, y_translation,
-        0.0, 0.0, 1.0
+        1.0, 0.0, 0.0,  // col 1
+        0.0, 1.0, 0.0,  // col 2
+        x_translation, y_translation, 1.0  // col 3
     );
 }
 

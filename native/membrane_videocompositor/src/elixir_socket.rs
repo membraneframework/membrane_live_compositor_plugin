@@ -221,7 +221,9 @@ fn update_caps(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.update_properties(id, Some(caps), None)?;
+    state
+        .compositor
+        .update_properties(id, Some(caps), None, None)?;
 
     Ok(atoms::ok())
 }
@@ -249,7 +251,7 @@ fn update_placement(
 
     state
         .compositor
-        .update_properties(id, None, Some(placement))?;
+        .update_properties(id, None, Some(placement), None)?;
 
     Ok(atoms::ok())
 }
@@ -260,16 +262,18 @@ fn update_transformations(
     state: rustler::ResourceArc<State>,
     id: usize,
     transformations: ElixirVideoTransformations,
-) -> Result<rustler::Atom, rustler::Error> {
+) -> Result<rustler::Atom, CompositorError> {
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-    let video = state.compositor.input_videos.get_mut(&id).unwrap();
-    let properties = video.properties;
 
-    let texture_transformations = transformations.get_texture_transformations(properties);
-
-    video.texture_transformations = texture_transformations;
-
-    Ok(atoms::ok())
+    match state.compositor.input_videos.get_mut(&id) {
+        Some(video) => {
+            let properties = video.properties;
+            let texture_transformations = transformations.get_texture_transformations(properties);
+            video.texture_transformations = texture_transformations;
+            Ok(atoms::ok())
+        }
+        None => Err(CompositorError::BadVideoIndex(id)),
+    }
 }
 
 #[rustler::nif]

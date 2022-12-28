@@ -1,9 +1,5 @@
 defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.Cropping do
   @moduledoc """
-  Describe cropping texture transformation.
-  """
-
-  @typedoc """
   Describe cropping texture transformation parameters.
   ## Values
   - top_left_corner: tuple representing coords (in [0, 1] range) of
@@ -20,6 +16,10 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.C
         top_left_corner: {0.5, 0.5},
         crop_size: {0.5, 0.5}
       }
+  """
+
+  @typedoc """
+  Describe cropping texture transformation parameters.
   """
   @type t :: %__MODULE__{
           top_left_corner: {float(), float()},

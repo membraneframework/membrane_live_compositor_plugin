@@ -8,7 +8,7 @@ edition = "2021"
 
 [lib]
 name = "membrane_videocompositor"
-path = "src/lib.rs"
+path = "src/elixir_socket.rs"
 crate-type = ["cdylib"]
 
 [dependencies]

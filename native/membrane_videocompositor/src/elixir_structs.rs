@@ -2,9 +2,9 @@
 
 use rustler::NifUntaggedEnum;
 
-use crate::compositor::textures_transformations::corners_rounding::CornersRoundingUniform;
-use crate::compositor::textures_transformations::cropping::CroppingUniform;
-use crate::compositor::textures_transformations::TextureTransformationUniform;
+use crate::compositor::texture_transformations::corners_rounding::CornersRoundingUniform;
+use crate::compositor::texture_transformations::cropping::CroppingUniform;
+use crate::compositor::texture_transformations::TextureTransformationUniform;
 use crate::compositor::VideoProperties;
 
 #[derive(Debug, rustler::NifStruct, Clone)]

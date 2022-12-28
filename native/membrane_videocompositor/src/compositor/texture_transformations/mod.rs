@@ -12,11 +12,13 @@ use self::cropping::CroppingUniform;
 use self::texture_transformers::TextureTransformer;
 use wgpu::util::DeviceExt;
 
+use super::VideoProperties;
+
 /// Name describing texture transformation type.
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub enum TextureTransformationName {
-    EdgeRounder(),
-    Cropper(),
+    CornersRounder,
+    Cropper,
 }
 
 impl TextureTransformationName {
@@ -27,12 +29,12 @@ impl TextureTransformationName {
     /// returning TextureTransformationUniform with example transformation describing struct.
     pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
         match self {
-            TextureTransformationName::EdgeRounder() => {
+            TextureTransformationName::CornersRounder => {
                 TextureTransformationUniform::CornerRounder(
                     CornersRoundingUniform::get_blank_uniform(),
                 )
             }
-            TextureTransformationName::Cropper() => {
+            TextureTransformationName::Cropper => {
                 TextureTransformationUniform::Cropper(CroppingUniform::get_blank_uniform())
             }
         }
@@ -45,10 +47,10 @@ impl TextureTransformationName {
     /// used in created transformation.
     pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
         match self {
-            TextureTransformationName::EdgeRounder() => device.create_shader_module(
+            TextureTransformationName::CornersRounder => device.create_shader_module(
                 wgpu::include_wgsl!("corners_rounding/corners_rounding.wgsl"),
             ),
-            TextureTransformationName::Cropper() => {
+            TextureTransformationName::Cropper => {
                 device.create_shader_module(wgpu::include_wgsl!("cropping/cropping.wgsl"))
             }
         }
@@ -59,8 +61,8 @@ impl TextureTransformationName {
     /// name used for describing rendering pipeline elements for that transformation.   
     pub fn get_name(self) -> &'static str {
         match self {
-            TextureTransformationName::EdgeRounder() => "Edge rounder",
-            TextureTransformationName::Cropper() => "Cropper",
+            TextureTransformationName::CornersRounder => "Edge rounder",
+            TextureTransformationName::Cropper => "Cropper",
         }
     }
 
@@ -75,19 +77,19 @@ impl TextureTransformationName {
         let mut texture_transformers = HashMap::new();
 
         texture_transformers.insert(
-            TextureTransformationName::EdgeRounder(),
+            TextureTransformationName::CornersRounder,
             TextureTransformer::new(
                 device,
                 single_texture_bind_group_layout,
-                TextureTransformationName::EdgeRounder(),
+                TextureTransformationName::CornersRounder,
             ),
         );
         texture_transformers.insert(
-            TextureTransformationName::Cropper(),
+            TextureTransformationName::Cropper,
             TextureTransformer::new(
                 device,
                 single_texture_bind_group_layout,
-                TextureTransformationName::Cropper(),
+                TextureTransformationName::Cropper,
             ),
         );
         texture_transformers
@@ -104,16 +106,28 @@ pub enum TextureTransformationUniform {
 }
 
 impl TextureTransformationUniform {
+    pub fn update_video_properties(self, properties: VideoProperties) -> VideoProperties {
+        match self {
+            TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => {
+                let updated_properties = corners_rounding_uniform.update_properties(properties);
+                updated_properties
+            }
+            TextureTransformationUniform::Cropper(cropping_uniform) => {
+                cropping_uniform.update_properties(properties)
+            }
+        }
+    }
+
     /// Returns uniform buffer used in texture transformation render pipeline.
     /// As a user adding new transformation, you just need to add analogous
     /// call on wgpu device.
     pub fn create_uniform_buffer(self, device: &wgpu::Device) -> wgpu::Buffer {
         match self {
-            TextureTransformationUniform::CornerRounder(edge_rounding_uniform) => device
+            TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => device
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("edge rounding uniform buffer"),
+                    label: Some("corners rounding uniform buffer"),
                     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    contents: bytemuck::cast_slice(&[edge_rounding_uniform]),
+                    contents: bytemuck::cast_slice(&[corners_rounding_uniform]),
                 }),
             TextureTransformationUniform::Cropper(cropping_uniform) => {
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -152,10 +166,10 @@ impl TextureTransformationUniform {
     ) -> &TextureTransformer {
         match self {
             TextureTransformationUniform::CornerRounder(_) => texture_transformers
-                .get(&TextureTransformationName::EdgeRounder())
+                .get(&TextureTransformationName::CornersRounder)
                 .unwrap(),
             TextureTransformationUniform::Cropper(_) => texture_transformers
-                .get(&TextureTransformationName::Cropper())
+                .get(&TextureTransformationName::Cropper)
                 .unwrap(),
         }
     }

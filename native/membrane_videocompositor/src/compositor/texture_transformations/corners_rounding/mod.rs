@@ -1,5 +1,7 @@
 use bytemuck::{Pod, Zeroable};
 
+use crate::compositor::VideoProperties;
+
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
 pub struct CornersRoundingUniform {
@@ -13,5 +15,11 @@ impl CornersRoundingUniform {
             video_width_height_ratio: 16.0 / 9.0,
             corner_rounding_radius: 0.0,
         }
+    }
+
+    pub fn update_properties(mut self, properties: VideoProperties) -> VideoProperties {
+        self.video_width_height_ratio =
+            properties.resolution.x as f32 / properties.resolution.y as f32;
+        properties
     }
 }
