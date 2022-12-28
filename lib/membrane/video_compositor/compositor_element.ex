@@ -263,31 +263,96 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_other({:update_placement, placements}, _ctx, state) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      initial_video_placements: initial_video_placements
     } = state
 
-    for {pad, placement} <- placements do
-      id = Map.get(pads_to_ids, pad)
+    initial_video_placements =
+      update_placements(placements, pads_to_ids, wgpu_state, initial_video_placements)
 
-      Wgpu.update_placement(wgpu_state, id, placement)
-    end
-
-    {:ok, state}
+    {:ok, %{state | initial_video_placements: initial_video_placements}}
   end
 
   @impl true
   def handle_other({:update_transformations, all_transformations}, _ctx, state) do
     %{
       pads_to_ids: pads_to_ids,
-      wgpu_state: wgpu_state
+      wgpu_state: wgpu_state,
+      initial_video_transformations: initial_video_transformations
     } = state
 
-    for {pad, video_transformations} <- all_transformations do
-      id = Map.get(pads_to_ids, pad)
+    initial_video_transformations =
+      update_transformations(
+        all_transformations,
+        pads_to_ids,
+        wgpu_state,
+        initial_video_transformations
+      )
 
-      Wgpu.update_transformations(wgpu_state, id, video_transformations)
-    end
+    {:ok, %{state | initial_video_transformations: initial_video_transformations}}
+  end
 
-    {:ok, state}
+  defp update_placements(
+         [],
+         _pads_to_ids,
+         _wgpu_state,
+         initial_video_placements
+       ) do
+    initial_video_placements
+  end
+
+  defp update_placements(
+         [{pad, placement} | other_placements],
+         pads_to_ids,
+         wgpu_state,
+         initial_video_placements
+       ) do
+    id = Map.get(pads_to_ids, pad)
+
+    initial_video_placements =
+      case Wgpu.update_placement(wgpu_state, id, placement) do
+        :ok -> initial_video_placements
+        # in case of update_placements is called before handle_caps and add_video in rust
+        # wasn't called yet (the video wasn't registered in rust yet)
+        {:error, :bad_video_index} -> Map.put(initial_video_placements, id, placement)
+      end
+
+    update_placements(other_placements, pads_to_ids, wgpu_state, initial_video_placements)
+  end
+
+  defp update_transformations(
+         [],
+         _pads_to_ids,
+         _wgpu_state,
+         initial_video_transformations
+       ) do
+    initial_video_transformations
+  end
+
+  defp update_transformations(
+         [{pad, video_transformations} | other_transformations],
+         pads_to_ids,
+         wgpu_state,
+         initial_video_transformations
+       ) do
+    id = Map.get(pads_to_ids, pad)
+
+    initial_video_transformations =
+      case Wgpu.update_transformations(wgpu_state, id, video_transformations) do
+        :ok ->
+          initial_video_transformations
+
+        # in case of update_transformations is called before handle_caps and add_video in rust
+        # wasn't called yet (the video wasn't registered in rust yet)
+        {:error, :bad_video_index} ->
+          Map.put(initial_video_transformations, id, video_transformations)
+      end
+
+    update_transformations(
+      other_transformations,
+      pads_to_ids,
+      wgpu_state,
+      initial_video_transformations
+    )
   end
 end

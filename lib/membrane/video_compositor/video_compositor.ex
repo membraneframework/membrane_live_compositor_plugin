@@ -17,6 +17,9 @@ defmodule Membrane.VideoCompositor do
   @type update_placement_t ::
           {:update_placement, [{Membrane.Pad.ref_t(), VideoPlacement.t()}]}
 
+  @typedoc """
+  A message describing a compositor video transformations update
+  """
   @type update_transformations_t ::
           {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
 

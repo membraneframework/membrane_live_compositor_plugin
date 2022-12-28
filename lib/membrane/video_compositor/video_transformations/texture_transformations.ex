@@ -1,14 +1,5 @@
 defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations do
   @moduledoc """
-  Defines
-  """
-
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.{
-    CornersRounding,
-    Cropping
-  }
-
-  @typedoc """
   Describes all texture transformations applied to video.
   Texture transformations can change resolution of frame.
   Applying texture transformations may change size of
@@ -18,5 +9,11 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations d
   you must create new struct module type and add it to
   this type definition.
   """
+
+  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.{
+    CornersRounding,
+    Cropping
+  }
+
   @type t :: CornersRounding.t() | Cropping.t()
 end
