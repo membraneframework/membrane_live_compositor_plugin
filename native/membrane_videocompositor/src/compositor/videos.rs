@@ -12,7 +12,7 @@ use super::texture_transformations::{
 use super::textures::{RGBATexture, YUVTextures};
 use super::{Vec2d, Vertex};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
 pub struct VideoProperties {
     /// Position in pixels.
@@ -22,7 +22,7 @@ pub struct VideoProperties {
     pub placement: VideoPlacement,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VideoPlacement {
     pub position: Vec2d<u32>,
     pub size: Vec2d<u32>,
@@ -54,7 +54,8 @@ pub struct InputVideo {
     yuv_textures: YUVTextures,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
-    pub properties: VideoProperties,
+    pub base_properties: VideoProperties,
+    pub transformed_properties: VideoProperties,
     pub texture_transformations: Vec<TextureTransformationUniform>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
@@ -70,13 +71,13 @@ impl InputVideo {
         device: &wgpu::Device,
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        properties: VideoProperties,
+        base_properties: VideoProperties,
         texture_transformations: Vec<TextureTransformationUniform>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.resolution.x,
-            properties.resolution.y,
+            base_properties.resolution.x,
+            base_properties.resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -97,14 +98,18 @@ impl InputVideo {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        Self::update_texture_transformations(properties, &mut texture_transformations.to_vec());
+        let transformed_properties = TextureTransformationUniform::update_texture_transformations(
+            base_properties,
+            &mut texture_transformations.to_vec(),
+        );
 
         Self {
             yuv_textures,
             frames,
             vertices,
             indices,
-            properties,
+            base_properties,
+            transformed_properties,
             texture_transformations,
             previous_frame: None,
             single_texture_bind_group_layout,
@@ -117,46 +122,36 @@ impl InputVideo {
         device: &wgpu::Device,
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        properties: VideoProperties,
+        base_properties: VideoProperties,
         texture_transformations: Option<Vec<TextureTransformationUniform>>,
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.resolution.x,
-            properties.resolution.y,
+            base_properties.resolution.x,
+            base_properties.resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
         );
         self.yuv_textures = yuv_textures;
-        self.properties = properties;
+        self.base_properties = base_properties;
         match texture_transformations {
             Some(mut texture_transformations) => {
-                self.texture_transformations =
-                    Self::update_texture_transformations(properties, &mut texture_transformations)
-                        .to_vec();
+                self.transformed_properties =
+                    TextureTransformationUniform::update_texture_transformations(
+                        base_properties,
+                        &mut texture_transformations,
+                    );
+                self.texture_transformations = texture_transformations;
             }
             None => {
-                self.texture_transformations = Self::update_texture_transformations(
-                    properties,
-                    &mut self.texture_transformations,
-                )
-                .to_vec();
+                self.transformed_properties =
+                    TextureTransformationUniform::update_texture_transformations(
+                        base_properties,
+                        &mut self.texture_transformations,
+                    );
             }
         }
-    }
-
-    pub fn update_texture_transformations(
-        properties: VideoProperties,
-        texture_transformations: &mut Vec<TextureTransformationUniform>,
-    ) -> &Vec<TextureTransformationUniform> {
-        let mut transformed_video_properties = properties.clone();
-
-        for texture_transformation in texture_transformations.iter_mut() {
-            transformed_video_properties =
-                texture_transformation.update_video_properties(transformed_video_properties);
-        }
-        texture_transformations
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -173,18 +168,21 @@ impl InputVideo {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
             device,
-            self.properties.resolution.x,
-            self.properties.resolution.y,
+            self.base_properties.resolution.x,
+            self.base_properties.resolution.y,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
 
+        let mut transformed_properties = self.base_properties;
         // Runs all texture transformations.
         for transformation_uniform in self.texture_transformations.iter() {
+            transformed_properties =
+                transformation_uniform.update_video_properties(transformed_properties);
             let transformed_frame = RGBATexture::new(
                 device,
-                self.properties.resolution.x,
-                self.properties.resolution.y,
+                transformed_properties.resolution.x,
+                transformed_properties.resolution.y,
                 &self.single_texture_bind_group_layout,
             );
 
@@ -220,17 +218,11 @@ impl InputVideo {
         let scene_width = output_caps.width;
         let scene_height = output_caps.height;
 
-        let position = self.properties.placement.position;
-        let width = self.properties.placement.size.x;
-        let height = self.properties.placement.size.y;
+        let position = self.transformed_properties.placement.position;
+        let width = self.transformed_properties.placement.size.x;
+        let height = self.transformed_properties.placement.size.y;
 
-        let left = lerp(
-            self.properties.placement.position.x as f64,
-            0.0,
-            scene_width.get() as f64,
-            -1.0,
-            1.0,
-        ) as f32;
+        let left = lerp(position.x as f64, 0.0, scene_width.get() as f64, -1.0, 1.0) as f32;
         let right = lerp(
             position.x as f64 + width as f64,
             0.0,
@@ -249,19 +241,19 @@ impl InputVideo {
 
         [
             Vertex {
-                position: [right, top, self.properties.placement.z],
+                position: [right, top, self.transformed_properties.placement.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, self.properties.placement.z],
+                position: [left, top, self.transformed_properties.placement.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, self.properties.placement.z],
+                position: [left, bot, self.transformed_properties.placement.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, self.properties.placement.z],
+                position: [right, bot, self.transformed_properties.placement.z],
                 texture_coords: [1.0, 1.0],
             },
         ]
@@ -275,8 +267,12 @@ impl InputVideo {
         }
     }
 
-    pub fn properties(&self) -> &VideoProperties {
-        &self.properties
+    pub fn base_properties(&self) -> &VideoProperties {
+        &self.base_properties
+    }
+
+    pub fn transformed_properties(&self) -> &VideoProperties {
+        &self.transformed_properties
     }
 
     /// This returns pts of the used frame

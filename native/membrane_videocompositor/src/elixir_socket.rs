@@ -172,30 +172,22 @@ fn add_video(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    let properties = compositor::VideoProperties {
+    let base_placement = placement.to_rust_placement();
+
+    let base_properties = compositor::VideoProperties {
         resolution: Vec2d {
             x: caps.width.get(),
             y: caps.height.get(),
         },
 
-        placement: compositor::VideoPlacement {
-            position: Vec2d {
-                x: placement.position.0,
-                y: placement.position.1,
-            },
-            size: Vec2d {
-                x: placement.display_size.0,
-                y: placement.display_size.1,
-            },
-            z: convert_z(placement.z_value),
-        },
+        placement: base_placement,
     };
 
-    let texture_transformations = transformations.get_texture_transformations(properties);
+    let texture_transformations = transformations.get_texture_transformations(base_properties);
 
     state
         .compositor
-        .add_video(id, properties, texture_transformations)?;
+        .add_video(id, base_properties, texture_transformations)?;
 
     Ok(atoms::ok())
 }
@@ -235,17 +227,7 @@ fn update_placement(
     id: usize,
     placement: ElixirVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let placement = compositor::VideoPlacement {
-        position: Vec2d {
-            x: placement.position.0,
-            y: placement.position.1,
-        },
-        size: Vec2d {
-            x: placement.display_size.0,
-            y: placement.display_size.1,
-        },
-        z: convert_z(placement.z_value),
-    };
+    let placement = placement.to_rust_placement();
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
@@ -267,7 +249,7 @@ fn update_transformations(
 
     match state.compositor.input_videos.get_mut(&id) {
         Some(video) => {
-            let properties = video.properties;
+            let properties = video.base_properties;
             let texture_transformations = transformations.get_texture_transformations(properties);
             video.texture_transformations = texture_transformations;
             Ok(atoms::ok())

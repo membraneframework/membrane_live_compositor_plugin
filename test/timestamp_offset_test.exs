@@ -80,8 +80,8 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
     inputs = [
       %InputStream{
         placement: %VideoPlacement{
-          position: {0, 0},
-          display_size: {video_caps.width, video_caps.height}
+          base_position: {0, 0},
+          base_size: {video_caps.width, video_caps.height}
         },
         transformations: @empty_video_transformations,
         caps: video_caps,

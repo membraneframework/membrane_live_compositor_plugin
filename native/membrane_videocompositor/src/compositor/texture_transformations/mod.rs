@@ -99,18 +99,55 @@ impl TextureTransformationName {
 /// Enum wrapping structs passed to texture transformations shaders.
 /// As a user adding new transformation, you just need to add analogous
 /// enum value.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextureTransformationUniform {
     CornerRounder(CornersRoundingUniform),
     Cropper(CroppingUniform),
 }
 
 impl TextureTransformationUniform {
+    pub fn get_name(self) -> TextureTransformationName {
+        match self {
+            TextureTransformationUniform::CornerRounder(_) => {
+                TextureTransformationName::CornersRounder
+            }
+            TextureTransformationUniform::Cropper(_) => TextureTransformationName::Cropper,
+        }
+    }
+
+    pub fn update_texture_transformations(
+        properties: VideoProperties,
+        texture_transformations: &mut Vec<TextureTransformationUniform>,
+    ) -> VideoProperties {
+        let mut transformed_video_properties = properties;
+
+        for texture_transformation in texture_transformations.iter_mut() {
+            texture_transformation.set_video_properties(properties);
+            transformed_video_properties =
+                texture_transformation.update_video_properties(transformed_video_properties);
+        }
+        transformed_video_properties
+    }
+
+    /// Returns TextureTransformationUniform updated with video properties. It's necessary, since some
+    /// texture transformations can change video properties (e.g. cropping changes resolution and position)
+    pub fn set_video_properties(self, properties: VideoProperties) {
+        match self {
+            TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => {
+                corners_rounding_uniform.set_properties(properties)
+            }
+            TextureTransformationUniform::Cropper(cropping_uniform) => {
+                cropping_uniform.set_properties(properties)
+            }
+        }
+    }
+
+    /// Return video properties after transformation. It's necessary, since some transformations
+    /// need video properties to work correctly (e.g. width-height proportion is needed in CornerRounding)
     pub fn update_video_properties(self, properties: VideoProperties) -> VideoProperties {
         match self {
             TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => {
-                let updated_properties = corners_rounding_uniform.update_properties(properties);
-                updated_properties
+                corners_rounding_uniform.update_properties(properties)
             }
             TextureTransformationUniform::Cropper(cropping_uniform) => {
                 cropping_uniform.update_properties(properties)

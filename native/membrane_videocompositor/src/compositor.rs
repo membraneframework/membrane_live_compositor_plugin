@@ -287,10 +287,10 @@ impl State {
 
         let mut videos_sorted_by_z_value = self.input_videos.iter_mut().collect::<Vec<_>>();
         videos_sorted_by_z_value.sort_by(|(_, vid1), (_, vid2)| {
-            vid2.properties()
+            vid2.transformed_properties()
                 .placement
                 .z
-                .total_cmp(&vid1.properties().placement.z)
+                .total_cmp(&vid1.transformed_properties().placement.z)
         });
 
         {
@@ -357,7 +357,7 @@ impl State {
     pub fn add_video(
         &mut self,
         idx: usize,
-        properties: VideoProperties,
+        base_properties: VideoProperties,
         textures_transformations: Vec<TextureTransformationUniform>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
@@ -370,7 +370,7 @@ impl State {
                 &self.device,
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
-                properties,
+                base_properties,
                 textures_transformations,
             ),
         );
@@ -390,21 +390,21 @@ impl State {
             .get_mut(&idx)
             .ok_or(CompositorError::BadVideoIndex(idx))?;
 
-        let mut properties = *video.properties();
+        let mut base_properties = *video.base_properties();
 
         if let Some(caps) = resolution {
-            properties.resolution = caps;
+            base_properties.resolution = caps;
         }
 
         if let Some(placement) = placement {
-            properties.placement = placement;
+            base_properties.placement = placement;
         }
 
         video.update_properties(
             &self.device,
             self.single_texture_bind_group_layout.clone(),
             &self.all_yuv_textures_bind_group_layout,
-            properties,
+            base_properties,
             new_texture_transformations,
         );
 
@@ -457,7 +457,7 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{texture_transformations::cropping::CroppingUniform, *};
     use std::num::{NonZeroU32, NonZeroU64};
 
     impl Default for crate::RawVideo {
@@ -602,6 +602,86 @@ mod tests {
         compositor.upload_texture(0, FRAME, 2_000_000_000)?;
         // now the compositor should block on waiting for vid 1 frames.
         assert!(!compositor.all_frames_ready());
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_properties_test() -> Result<(), CompositorError> {
+        let mut compositor = setup_videos(4);
+        let mut texture_transformations = Vec::new();
+        texture_transformations.push(TextureTransformationUniform::Cropper(CroppingUniform {
+            top_left_corner_crop_x: 0.1,
+            top_left_corner_crop_y: 0.1,
+            crop_width: 0.5,
+            crop_height: 0.5,
+        }));
+
+        let mut transformed_texture_transformations = Vec::new();
+        transformed_texture_transformations.push(TextureTransformationUniform::Cropper(
+            CroppingUniform {
+                top_left_corner_crop_x: 0.1,
+                top_left_corner_crop_y: 0.1,
+                crop_width: 0.5,
+                crop_height: 0.5,
+            },
+        ));
+
+        assert!(compositor
+            .update_properties(
+                0 as usize,
+                Some(Vec2d { x: 540, y: 360 }),
+                Some(VideoPlacement {
+                    position: Vec2d { x: 0, y: 0 },
+                    size: Vec2d { x: 1080, y: 720 },
+                    z: 0.0
+                }),
+                Some(texture_transformations)
+            )
+            .is_ok());
+
+        assert_eq!(
+            compositor.input_videos.get(&0).unwrap().base_properties,
+            VideoProperties {
+                resolution: Vec2d { x: 540, y: 360 },
+                placement: VideoPlacement {
+                    position: Vec2d { x: 0, y: 0 },
+                    size: Vec2d { x: 1080, y: 720 },
+                    z: 0.0
+                }
+            }
+        );
+
+        assert_eq!(
+            compositor
+                .input_videos
+                .get(&0)
+                .unwrap()
+                .transformed_properties,
+            VideoProperties {
+                resolution: Vec2d { x: 540, y: 360 },
+                placement: VideoPlacement {
+                    position: Vec2d { x: 108, y: 72 },
+                    size: Vec2d { x: 540, y: 360 },
+                    z: 0.0
+                }
+            }
+        );
+
+        for (index, transformed_texture_transformation) in
+            transformed_texture_transformations.iter().enumerate()
+        {
+            assert_eq!(
+                compositor
+                    .input_videos
+                    .get(&0)
+                    .unwrap()
+                    .texture_transformations
+                    .get(index)
+                    .unwrap(),
+                transformed_texture_transformation
+            );
+        }
 
         Ok(())
     }

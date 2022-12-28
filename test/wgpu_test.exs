@@ -43,8 +43,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  0,
                  in_video,
                  %VideoPlacement{
-                   position: {0, 0},
-                   display_size: {in_video.width, in_video.height}
+                   base_position: {0, 0},
+                   base_size: {in_video.width, in_video.height}
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -57,8 +57,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  1,
                  in_video,
                  %VideoPlacement{
-                   position: {0, 360},
-                   display_size: {in_video.width, in_video.height}
+                   base_position: {0, 360},
+                   base_size: {in_video.width, in_video.height}
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -103,9 +103,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  0,
                  caps,
                  %VideoPlacement{
-                   position: {0, 0},
-                   display_size: {caps.width, caps.height},
-                   z_value: 0.0
+                   base_position: {0, 0},
+                   base_size: {caps.width, caps.height},
+                   base_z_value: 0.0
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -118,9 +118,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  1,
                  caps,
                  %VideoPlacement{
-                   position: {0, 0},
-                   display_size: {caps.width, caps.height},
-                   z_value: 0.5
+                   base_position: {0, 0},
+                   base_size: {caps.width, caps.height},
+                   base_z_value: 0.5
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -161,9 +161,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  0,
                  caps,
                  %VideoPlacement{
-                   position: {0, 0},
-                   display_size: {caps.width, caps.height},
-                   z_value: 0.0
+                   base_position: {0, 0},
+                   base_size: {caps.width, caps.height},
+                   base_z_value: 0.0
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -176,9 +176,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  1,
                  caps,
                  %VideoPlacement{
-                   position: {0, 0},
-                   display_size: {caps.width, caps.height},
-                   z_value: 0.5
+                   base_position: {0, 0},
+                   base_size: {caps.width, caps.height},
+                   base_z_value: 0.5
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -198,9 +198,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       Utils.compare_contents_with_error(in_path, out_path)
 
       Native.update_placement(state, 0, %VideoPlacement{
-        position: {0, 0},
-        display_size: {caps.width, caps.height},
-        z_value: 1.0
+        base_position: {0, 0},
+        base_size: {caps.width, caps.height},
+        base_z_value: 1.0
       })
 
       second = Membrane.Time.second()

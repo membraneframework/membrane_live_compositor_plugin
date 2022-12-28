@@ -7,7 +7,7 @@ use crate::compositor::{vec2d::Vec2d, VideoPlacement, VideoProperties};
 /// part of the video (in x ∈ [0,1], y ∈ [0, 1] proportion range).
 /// crop_width represents width of cropped video (visible part) in [0, 1] relative range.
 /// crop_height represents height of cropped video (visible part) in [0, 1] relative range.
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+#[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
 #[repr(C)]
 pub struct CroppingUniform {
     pub top_left_corner_crop_x: f32,
@@ -26,16 +26,18 @@ impl CroppingUniform {
         }
     }
 
+    pub fn set_properties(self, _properties: VideoProperties) {}
+
     pub fn update_properties(self, properties: VideoProperties) -> VideoProperties {
         VideoProperties {
             resolution: properties.resolution,
             placement: VideoPlacement {
                 position: Vec2d {
                     x: properties.placement.position.x
-                        + (self.top_left_corner_crop_x * properties.resolution.x as f32).round()
+                        + (self.top_left_corner_crop_x * properties.placement.size.x as f32).round()
                             as u32,
                     y: properties.placement.position.y
-                        + (self.top_left_corner_crop_y * properties.resolution.y as f32).round()
+                        + (self.top_left_corner_crop_y * properties.placement.size.y as f32).round()
                             as u32,
                 },
                 size: Vec2d {

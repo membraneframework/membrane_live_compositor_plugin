@@ -50,9 +50,9 @@ impl TextureTransformer {
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some(
-                    "Texture transformer {transformation_description} uniform bind group layout",
-                ),
+                label: Some(&format!(
+                    "Texture transformer {transformation_description} uniform bind group layout"
+                )),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     count: None,
@@ -66,9 +66,9 @@ impl TextureTransformer {
             });
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(
-                "Texture transformer {transformation_description} uniform bind group layout",
-            ),
+            label: Some(&format!(
+                "Texture transformer {transformation_description} uniform bind group layout"
+            )),
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -79,7 +79,9 @@ impl TextureTransformer {
         let shader_module = transformation_name.create_shader_module(device);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Texture transformer {transformation_description} pipeline layout"),
+            label: Some(&format!(
+                "Texture transformer {transformation_description} pipeline layout"
+            )),
             bind_group_layouts: &[
                 single_texture_bind_group_layout,
                 &common.sampler_bind_group_layout,
@@ -89,7 +91,9 @@ impl TextureTransformer {
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Texture transformer {transformation_description} pipeline"),
+            label: Some(&format!(
+                "Texture transformer {transformation_description} pipeline"
+            )),
             layout: Some(&pipeline_layout),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -143,6 +147,9 @@ impl TextureTransformer {
         dst: &RGBATexture,
         transformation_uniform: &TextureTransformationUniform,
     ) {
+        let transformation_name = transformation_uniform.get_name();
+        let transformation_description = transformation_name.get_name();
+
         transformation_uniform.write_buffer(queue, &self.uniform_buffer);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -151,7 +158,9 @@ impl TextureTransformer {
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Texture transformer {transformation_description} render pass"),
+                label: Some(&format!(
+                    "Texture transformer {transformation_description} render pass"
+                )),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),

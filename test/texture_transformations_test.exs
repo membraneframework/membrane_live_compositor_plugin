@@ -111,8 +111,8 @@
 #         do: %InputStream{
 #           video_spec
 #           | placement: %VideoPlacement{
-#               position: pos,
-#               display_size: {@hd_video.width, @hd_video.height}
+#               base_position: pos,
+#               base_size: {@hd_video.width, @hd_video.height}
 #             },
 #             input: input_path
 #         }
@@ -121,9 +121,9 @@
 #     middle_video = %InputStream{
 #       video_spec
 #       | placement: %VideoPlacement{
-#           position: {div(video_caps.width, 2), div(video_caps.height, 2)},
-#           display_size: {@hd_video.width, @hd_video.height},
-#           z_value: 0.5
+#           base_position: {div(video_caps.width, 2), div(video_caps.height, 2)},
+#           base_size: {@hd_video.width, @hd_video.height},
+#           base_z_value: 0.5
 #         },
 #         input: input_path
 #     }

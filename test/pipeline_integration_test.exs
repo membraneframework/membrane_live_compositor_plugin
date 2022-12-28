@@ -88,8 +88,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       for pos <- positions,
           do: %InputStream{
             placement: %VideoPlacement{
-              position: pos,
-              display_size: {video_caps.width, video_caps.height}
+              base_position: pos,
+              base_size: {video_caps.width, video_caps.height}
             },
             transformations: @empty_video_transformations,
             caps: video_caps,
@@ -156,8 +156,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
       for pos <- positions,
           do: %InputStream{
             placement: %VideoPlacement{
-              position: pos,
-              display_size: {video_caps.width, video_caps.height}
+              base_position: pos,
+              base_size: {video_caps.width, video_caps.height}
             },
             transformations: @empty_video_transformations,
             caps: video_caps,
