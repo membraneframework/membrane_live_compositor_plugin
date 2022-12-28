@@ -490,7 +490,7 @@ mod tests {
                         resolution: Vec2d { x: 2, y: 2 },
                         placement: VideoPlacement {
                             position: Vec2d {
-                                x: 2 * i as u32,
+                                x: 2 * i as i32,
                                 y: 0,
                             },
                             size: Vec2d { x: 2, y: 2 },

@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.RustStructs.VideoPlacement do
   """
 
   @type t :: %__MODULE__{
-          base_position: {non_neg_integer(), non_neg_integer()},
+          base_position: {integer(), integer()},
           base_size: {non_neg_integer(), non_neg_integer()},
           base_z_value: float()
         }

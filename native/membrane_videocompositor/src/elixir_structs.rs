@@ -21,7 +21,7 @@ pub struct ElixirRawVideo {
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
 #[module = "Membrane.VideoCompositor.RustStructs.VideoPlacement"]
 pub struct ElixirVideoPlacement {
-    pub base_position: (u32, u32),
+    pub base_position: (i32, i32),
     pub base_size: (u32, u32),
     pub base_z_value: f32,
 }

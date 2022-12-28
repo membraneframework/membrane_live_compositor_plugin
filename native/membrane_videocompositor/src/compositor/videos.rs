@@ -24,7 +24,7 @@ pub struct VideoProperties {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VideoPlacement {
-    pub position: Vec2d<u32>,
+    pub position: Vec2d<i32>,
     pub size: Vec2d<u32>,
     pub z: f32,
 }

@@ -35,10 +35,10 @@ impl CroppingUniform {
                 position: Vec2d {
                     x: properties.placement.position.x
                         + (self.top_left_corner_crop_x * properties.placement.size.x as f32).round()
-                            as u32,
+                            as i32,
                     y: properties.placement.position.y
                         + (self.top_left_corner_crop_y * properties.placement.size.y as f32).round()
-                            as u32,
+                            as i32,
                 },
                 size: Vec2d {
                     x: (properties.placement.size.x as f32 * self.crop_width).round() as u32,

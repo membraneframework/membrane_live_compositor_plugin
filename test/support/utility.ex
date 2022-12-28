@@ -59,7 +59,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   @spec generate_testing_video(input_video_path_t(), Membrane.RawVideo.t(), duration_t()) ::
           nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
-    # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
+    # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/videos/4s_30fps.raw
     {num, den} = video_description.framerate
     framerate = div(num, den)
 
@@ -110,17 +110,17 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
         ) ::
           {input_video_path_t(), output_video_path_t(), reference_video_path_t()}
   def prepare_paths(file_base_name, tmp_dir \\ "", sub_dir_name \\ "") do
-    fixtures_dir =
+    videos_dir =
       Path.join([
         File.cwd!(),
         "test",
-        "fixtures",
+        "videos",
         sub_dir_name
       ])
 
     tmp_dir = if tmp_dir == "", do: get_tmp_dir(), else: tmp_dir
 
-    in_path = Path.join(fixtures_dir, "input-#{file_base_name}")
+    in_path = Path.join(videos_dir, "input-#{file_base_name}")
     out_path = Path.join(tmp_dir, "out-#{file_base_name}")
     ref_path = Path.join(tmp_dir, "ref-#{file_base_name}")
     {in_path, out_path, ref_path}
