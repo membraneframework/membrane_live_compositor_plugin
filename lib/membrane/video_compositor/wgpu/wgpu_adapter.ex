@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Wgpu do
+defmodule Membrane.VideoCompositor.WgpuAdapter do
   @moduledoc """
   This module implements video composition in wgpu
   """

@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.RustStructs.VideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
-  alias Membrane.VideoCompositor.Wgpu
+  alias Membrane.VideoCompositor.WgpuAdapter
 
   def_options caps: [
                 spec: RawVideo.t(),
@@ -65,7 +65,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_init(options) do
-    {:ok, wgpu_state} = Wgpu.init(options.caps)
+    {:ok, wgpu_state} = WgpuAdapter.init(options.caps)
 
     state = %{
       initial_video_placements: %{},
@@ -97,7 +97,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_tick(:render_frame, _ctx, state) do
-    {:ok, {frame, pts}} = Wgpu.force_render(state.wgpu_state)
+    {:ok, {frame, pts}} = WgpuAdapter.force_render(state.wgpu_state)
 
     actions = [buffer: {:output, %Buffer{payload: frame, pts: pts}}]
 
@@ -161,12 +161,12 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       case {Map.pop(initial_video_placements, id), Map.pop(initial_video_transformations, id)} do
         {{nil, initial_video_placements}, {nil, initial_video_transformations}} ->
           # this video was added before
-          :ok = Wgpu.update_caps(wgpu_state, id, caps)
+          :ok = WgpuAdapter.update_caps(wgpu_state, id, caps)
           {initial_video_placements, initial_video_transformations}
 
         {{placement, initial_video_placements}, {transformations, initial_video_transformations}} ->
           # this video was waiting for first caps to be added to the compositor
-          :ok = Wgpu.add_video(wgpu_state, id, caps, placement, transformations)
+          :ok = WgpuAdapter.add_video(wgpu_state, id, caps, placement, transformations)
           {initial_video_placements, initial_video_transformations}
       end
 
@@ -198,7 +198,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
     pts = pts + Map.get(timestamp_offsets, id)
 
-    case Wgpu.upload_frame(wgpu_state, id, {frame, pts}) do
+    case WgpuAdapter.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
         {
           {
@@ -241,7 +241,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{pads_to_ids: pads_to_ids, wgpu_state: wgpu_state} = state
     id = Map.get(pads_to_ids, pad)
 
-    :ok = Wgpu.send_end_of_stream(wgpu_state, id)
+    :ok = WgpuAdapter.send_end_of_stream(wgpu_state, id)
 
     actions =
       if all_input_pads_received_end_of_stream?(context.pads) do
@@ -310,7 +310,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     id = Map.get(pads_to_ids, pad)
 
     initial_video_placements =
-      case Wgpu.update_placement(wgpu_state, id, placement) do
+      case WgpuAdapter.update_placement(wgpu_state, id, placement) do
         :ok -> initial_video_placements
         # in case of update_placements is called before handle_caps and add_video in rust
         # wasn't called yet (the video wasn't registered in rust yet)
@@ -338,7 +338,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     id = Map.get(pads_to_ids, pad)
 
     initial_video_transformations =
-      case Wgpu.update_transformations(wgpu_state, id, video_transformations) do
+      case WgpuAdapter.update_transformations(wgpu_state, id, video_transformations) do
         :ok ->
           initial_video_transformations
 
