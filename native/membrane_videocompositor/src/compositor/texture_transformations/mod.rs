@@ -97,6 +97,7 @@ impl TextureTransformationName {
 }
 
 /// Enum wrapping structs passed to texture transformations shaders.
+/// Variables order defined in Uniform struct have to be the same in shader file.
 /// As a user adding new transformation, you just need to add analogous
 /// enum value.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -115,6 +116,9 @@ impl TextureTransformationUniform {
         }
     }
 
+    /// Updates transformations with video properties of input frame (some transformations require those
+    /// information, e.g. corners rounding transformation require frame width height ratio).
+    /// Returns video properties after texture transformation.
     pub fn update_texture_transformations(
         properties: VideoProperties,
         texture_transformations: &mut [TextureTransformationUniform],
@@ -122,35 +126,43 @@ impl TextureTransformationUniform {
         let mut transformed_video_properties = properties;
 
         for texture_transformation in texture_transformations.iter_mut() {
-            texture_transformation.set_video_properties(properties);
+            texture_transformation.set_video_properties(transformed_video_properties);
             transformed_video_properties =
-                texture_transformation.update_video_properties(transformed_video_properties);
+                texture_transformation.transform_video_properties(transformed_video_properties);
         }
         transformed_video_properties
     }
 
-    /// Returns TextureTransformationUniform updated with video properties. It's necessary, since some
+    /// Updates TextureTransformationUniform with video properties. It's necessary, since some
     /// texture transformations can change video properties (e.g. cropping changes resolution and position)
-    pub fn set_video_properties(self, properties: VideoProperties) {
-        match self {
+    /// As a user adding new transformation, you just need to add analogous
+    /// match arm and handle set_properties function on transformation uniform struct,
+    /// which updates it with new properties.
+    pub fn set_video_properties(&mut self, properties: VideoProperties) {
+        *self = match self {
             TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => {
-                corners_rounding_uniform.set_properties(properties)
+                corners_rounding_uniform.set_properties(properties);
+                TextureTransformationUniform::CornerRounder(*corners_rounding_uniform)
             }
             TextureTransformationUniform::Cropper(cropping_uniform) => {
-                cropping_uniform.set_properties(properties)
+                cropping_uniform.set_properties(properties);
+                TextureTransformationUniform::Cropper(*cropping_uniform)
             }
-        }
+        };
     }
 
     /// Return video properties after transformation. It's necessary, since some transformations
     /// need video properties to work correctly (e.g. width-height proportion is needed in CornerRounding)
-    pub fn update_video_properties(self, properties: VideoProperties) -> VideoProperties {
+    /// As a user adding new transformation, you just need to add analogous
+    /// match arm and handle update_properties function on transformation uniform struct,
+    /// which returns video properties after transformation.
+    pub fn transform_video_properties(self, properties: VideoProperties) -> VideoProperties {
         match self {
             TextureTransformationUniform::CornerRounder(corners_rounding_uniform) => {
-                corners_rounding_uniform.update_properties(properties)
+                corners_rounding_uniform.transform_properties(properties)
             }
             TextureTransformationUniform::Cropper(cropping_uniform) => {
-                cropping_uniform.update_properties(properties)
+                cropping_uniform.transform_properties(properties)
             }
         }
     }

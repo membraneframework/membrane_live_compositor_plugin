@@ -151,7 +151,7 @@ impl InputVideo {
                         &mut self.texture_transformations,
                     );
             }
-        }
+        };
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -178,7 +178,7 @@ impl InputVideo {
         // Runs all texture transformations.
         for transformation_uniform in self.texture_transformations.iter() {
             transformed_properties =
-                transformation_uniform.update_video_properties(transformed_properties);
+                transformation_uniform.transform_video_properties(transformed_properties);
             let transformed_frame = RGBATexture::new(
                 device,
                 transformed_properties.resolution.x,

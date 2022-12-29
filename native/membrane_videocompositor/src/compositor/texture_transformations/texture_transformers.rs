@@ -153,7 +153,9 @@ impl TextureTransformer {
         transformation_uniform.write_buffer(queue, &self.uniform_buffer);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Texture transformer {transformation_description} encoder"),
+            label: Some(&format!(
+                "Texture transformer {transformation_description} encoder"
+            )),
         });
 
         {

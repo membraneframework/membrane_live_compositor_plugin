@@ -28,9 +28,12 @@ impl CroppingUniform {
 
     pub fn set_properties(self, _properties: VideoProperties) {}
 
-    pub fn update_properties(self, properties: VideoProperties) -> VideoProperties {
+    pub fn transform_properties(self, properties: VideoProperties) -> VideoProperties {
         VideoProperties {
-            resolution: properties.resolution,
+            resolution: Vec2d {
+                x: (properties.resolution.x as f32 * self.crop_width).round() as u32,
+                y: (properties.resolution.y as f32 * self.crop_height).round() as u32,
+            },
             placement: VideoPlacement {
                 position: Vec2d {
                     x: properties.placement.position.x

@@ -457,6 +457,8 @@ impl State {
 
 #[cfg(test)]
 mod tests {
+    use crate::compositor::texture_transformations::corners_rounding::CornersRoundingUniform;
+
     use super::{texture_transformations::cropping::CroppingUniform, *};
     use std::num::{NonZeroU32, NonZeroU64};
 
@@ -614,8 +616,14 @@ mod tests {
             top_left_corner_crop_x: 0.1,
             top_left_corner_crop_y: 0.1,
             crop_width: 0.5,
-            crop_height: 0.5,
+            crop_height: 0.25,
         }));
+        texture_transformations.push(TextureTransformationUniform::CornerRounder(
+            CornersRoundingUniform {
+                corner_rounding_radius: 0.1,
+                video_width_height_ratio: 0.0,
+            },
+        ));
 
         let mut transformed_texture_transformations = Vec::new();
         transformed_texture_transformations.push(TextureTransformationUniform::Cropper(
@@ -623,17 +631,24 @@ mod tests {
                 top_left_corner_crop_x: 0.1,
                 top_left_corner_crop_y: 0.1,
                 crop_width: 0.5,
-                crop_height: 0.5,
+                crop_height: 0.25,
+            },
+        ));
+        transformed_texture_transformations.push(TextureTransformationUniform::CornerRounder(
+            CornersRoundingUniform {
+                corner_rounding_radius: 0.1,
+                // cropping should changed resolution ratio from 16:9 to 32:9
+                video_width_height_ratio: 32.0 / 9.0,
             },
         ));
 
         assert!(compositor
             .update_properties(
                 0 as usize,
-                Some(Vec2d { x: 540, y: 360 }),
+                Some(Vec2d { x: 640, y: 360 }),
                 Some(VideoPlacement {
                     position: Vec2d { x: 0, y: 0 },
-                    size: Vec2d { x: 1080, y: 720 },
+                    size: Vec2d { x: 1280, y: 720 },
                     z: 0.0
                 }),
                 Some(texture_transformations)
@@ -642,11 +657,12 @@ mod tests {
 
         assert_eq!(
             compositor.input_videos.get(&0).unwrap().base_properties,
+            // base properties shouldn't be effected by transformations
             VideoProperties {
-                resolution: Vec2d { x: 540, y: 360 },
+                resolution: Vec2d { x: 640, y: 360 },
                 placement: VideoPlacement {
                     position: Vec2d { x: 0, y: 0 },
-                    size: Vec2d { x: 1080, y: 720 },
+                    size: Vec2d { x: 1280, y: 720 },
                     z: 0.0
                 }
             }
@@ -659,10 +675,12 @@ mod tests {
                 .unwrap()
                 .transformed_properties,
             VideoProperties {
-                resolution: Vec2d { x: 540, y: 360 },
+                resolution: Vec2d { x: 320, y: 90 },
                 placement: VideoPlacement {
-                    position: Vec2d { x: 108, y: 72 },
-                    size: Vec2d { x: 540, y: 360 },
+                    // cropping changes position to render plane fit position od crop on output frame
+                    position: Vec2d { x: 128, y: 72 },
+                    // cropping changes size of video
+                    size: Vec2d { x: 640, y: 180 },
                     z: 0.0
                 }
             }

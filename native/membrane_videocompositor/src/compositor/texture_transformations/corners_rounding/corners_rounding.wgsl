@@ -19,8 +19,8 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 }
 
 struct CornersRoundingUnifrom{
-    width_height_ratio: f32,
     corner_rounding_radius: f32,
+    width_height_ratio: f32,
 }
 
 @group(0) @binding(0)
@@ -81,14 +81,13 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
             corner_rounding_radius
         );
 
-        if (sqrt(
-                    pow(input.texture_coords.x - corner_coords.x, 2.0) + 
-                    pow((input.texture_coords.y - corner_coords.y) / width_height_ratio, 2.0)
-            ) > corner_rounding_radius) {
+        // to avoid non efficient sqrt function
+        // sqrt(a^2+b^2) > c <=> a^2+b^2 > c^2
+        if (pow(input.texture_coords.x - corner_coords.x, 2.0) + 
+            pow((input.texture_coords.y - corner_coords.y) / width_height_ratio, 2.0)
+            > pow(corner_rounding_radius, 2.0)) {
             return vec4<f32>(0.0, 0.0, 0.0, 0.0);
         }
-        return colour;
-    } else {
-        return colour;
     }
+    return colour;
 }
