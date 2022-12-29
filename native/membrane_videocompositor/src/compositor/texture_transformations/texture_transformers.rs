@@ -1,4 +1,4 @@
-/// The module used for relieving users from the pain of creating 600+ lines long boilerplate
+/// The module is used for relieving users from the pain of creating 600+ lines long boilerplate
 /// wgpu render pipeline descriptions for creating textures transformations.
 /// When adding a new texture transformation user needs only to modify texture_transformations
 /// module, without the burden of creating wgpu boilerplate.
@@ -138,7 +138,7 @@ impl TextureTransformer {
     /// Called on TextureTransformer instance
     /// (representing rendering pipeline for the specific type of texture transformation)
     /// applies transformation with passed parameters on the src frame and saves it
-    /// at dst frame.
+    /// at the dst frame.
     pub fn transform(
         &self,
         device: &wgpu::Device,

@@ -1,4 +1,4 @@
-/// Module providing abstraction over texture transformations, enabling creating new
+/// Module providing an abstraction over texture transformations, enabling creation of new
 /// texture transformations easily.
 pub mod texture_transformers;
 
@@ -23,9 +23,9 @@ pub enum TextureTransformationName {
 
 impl TextureTransformationName {
     /// Returns blank struct describing passed texture transformation.
-    /// Is used for determining buffer parameters when rendering pipeline is created for
-    /// specific transformation type.
-    /// As a user adding new transformation, you just need to add new match arm,
+    /// Is used for determining buffer parameters when the rendering pipeline is created for
+    /// a specific transformation type.
+    /// As a user adding a new transformation, you just need to add a new match arm,
     /// returning TextureTransformationUniform with example transformation describing struct.
     pub fn get_blank_texture_transformation_uniform(self) -> TextureTransformationUniform {
         match self {
@@ -41,9 +41,9 @@ impl TextureTransformationName {
     }
 
     /// Returns shader module created based on shader file.
-    /// It's necessary for creating new transformation rendering pipeline.
-    /// As a user adding new transformation, you just need to add new match arm
-    /// with analogous function call on wgpu device, passing path to shader
+    /// It's necessary for creating a new transformation rendering pipeline.
+    /// As a user adding a new transformation, you just need to add a new match arm
+    /// with an analogous function call on the wgpu device, passing the path to the shader
     /// used in created transformation.
     pub fn create_shader_module(self, device: &wgpu::Device) -> wgpu::ShaderModule {
         match self {
@@ -56,9 +56,9 @@ impl TextureTransformationName {
         }
     }
 
-    /// Returns name used to create rendering pipeline, used to improve debug / errors logs.
-    /// As a user adding new transformation, you just need to add new match arm returning
-    /// name used for describing rendering pipeline elements for that transformation.   
+    /// Returns name used to create rendering pipeline used to improve debug / error logs.
+    /// As a user adding a new transformation, you just need to add a new match arm returning
+    /// name used for describing rendering pipeline elements for that transformation.
     pub fn get_name(self) -> &'static str {
         match self {
             TextureTransformationName::CornersRounder => "Edge rounder",
@@ -67,9 +67,9 @@ impl TextureTransformationName {
     }
 
     /// Returns all texture transformers. Used in compositor module to put all texture transformers
-    /// into state in order to only once initialize texture transformations pipelines.
-    /// As a user adding new transformation, you just need to add analogous new insert to
-    /// texture_transformers hashmap with TextureTransformationName as key and TextureTransformer as a value.  
+    /// into the state to only once initialize texture transformation pipelines.
+    /// As a user adding a new transformation, you just need to add an analogous new insert to
+    /// texture_transformers hashmap with TextureTransformationName as the key and TextureTransformer as a value.
     pub fn get_all_texture_transformers(
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
@@ -96,9 +96,9 @@ impl TextureTransformationName {
     }
 }
 
-/// Enum wrapping structs passed to texture transformations shaders.
-/// Variables order defined in Uniform struct have to be the same in shader file.
-/// As a user adding new transformation, you just need to add analogous
+/// Enum wrapping structs passed to texture transformation shaders.
+/// Variables order defined in the Uniform struct has to be the same in the shader file.
+/// As a user adding a new transformation, you just need to add an analogous
 /// enum value.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextureTransformationUniform {
@@ -135,7 +135,7 @@ impl TextureTransformationUniform {
 
     /// Updates TextureTransformationUniform with video properties. It's necessary, since some
     /// texture transformations can change video properties (e.g. cropping changes resolution and position)
-    /// As a user adding new transformation, you just need to add analogous
+    /// As a user adding new transformation, you just need to add an analogous
     /// match arm and handle set_properties function on transformation uniform struct,
     /// which updates it with new properties.
     pub fn set_video_properties(&mut self, properties: VideoProperties) {
@@ -153,7 +153,7 @@ impl TextureTransformationUniform {
 
     /// Return video properties after transformation. It's necessary, since some transformations
     /// need video properties to work correctly (e.g. width-height proportion is needed in CornerRounding)
-    /// As a user adding new transformation, you just need to add analogous
+    /// As a user adding new transformation, you just need to add an analogous
     /// match arm and handle update_properties function on transformation uniform struct,
     /// which returns video properties after transformation.
     pub fn transform_video_properties(self, properties: VideoProperties) -> VideoProperties {
@@ -207,19 +207,10 @@ impl TextureTransformationUniform {
     }
 
     /// Returns TextureTransformer identified by TextureTransformationUniform.
-    /// As a user adding new transformation, you just need to write analogous
-    /// match arm returning TextureTransformer from map.
     pub fn get_texture_transformer(
         self,
         texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
     ) -> &TextureTransformer {
-        match self {
-            TextureTransformationUniform::CornerRounder(_) => texture_transformers
-                .get(&TextureTransformationName::CornersRounder)
-                .unwrap(),
-            TextureTransformationUniform::Cropper(_) => texture_transformers
-                .get(&TextureTransformationName::Cropper)
-                .unwrap(),
-        }
+        texture_transformers.get(&self.get_name()).unwrap()
     }
 }

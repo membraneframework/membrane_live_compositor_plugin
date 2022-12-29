@@ -118,6 +118,9 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
     end
   end
 
+  @doc """
+  Update transformations for the given video.
+  """
   @spec update_transformations(
           state :: wgpu_state_t(),
           id :: id_t(),

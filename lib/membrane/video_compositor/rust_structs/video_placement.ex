@@ -3,13 +3,14 @@ defmodule Membrane.VideoCompositor.RustStructs.VideoPlacement do
   A struct describing the video position, size and z-value for use with the rust-based compositor on the output frame,
   before video transformations.
   ## Values
-  - base_position: tuple given in pixels, relative to the top top right corner of the output frame,
-  represents position on output frame before transformations
+  - base_position: tuple given in pixels, relative to the top right corner of the output frame,
+  represents the position on the output frame before transformations
   - base_size: tuple given in pixels, represents video resolution on the output frame before transformations
   - z_value: float in [0.0, 1.0] range, specifies priority: videos with higher `z_value`s are 'in front' of
   videos with lower `z_value`s
   ## Examples
-  If you want to place video in bottom left quarter of 4k output frame, above videos on 0.0 base_z_value level:
+  If you want to place the video in the bottom left quarter of the 4k output frame,
+  above videos on 0.0 base_z_value level:
 
         iex> alias Membrane.VideoCompositor.RustStructs.VideoPlacement
         Membrane.VideoCompositor.RustStructs.VideoPlacement
