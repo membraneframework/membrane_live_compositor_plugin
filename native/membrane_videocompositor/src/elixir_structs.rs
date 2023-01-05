@@ -2,9 +2,9 @@
 
 use rustler::NifUntaggedEnum;
 
-use crate::compositor::texture_transformations::corners_rounding::CornersRoundingUniform;
-use crate::compositor::texture_transformations::cropping::CroppingUniform;
-use crate::compositor::texture_transformations::TextureTransformationUniform;
+use crate::compositor::texture_transformations::corners_rounding::CornersRounding;
+use crate::compositor::texture_transformations::cropping::Cropping;
+use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
 use crate::compositor::vec2d::Vec2d;
 use crate::compositor::{self, VideoPlacement, VideoProperties};
 use crate::convert_z;
@@ -53,17 +53,14 @@ impl ElixirVideoTransformations {
     pub fn get_texture_transformations(
         self,
         properties: VideoProperties,
-    ) -> Vec<TextureTransformationUniform> {
+    ) -> Vec<Box<dyn TextureTransformation>> {
         let mut texture_transformations = Vec::new();
 
         for texture_transformation in self.texture_transformations.into_iter() {
-            texture_transformations.push(texture_transformation.into_uniform(properties))
+            texture_transformations.push(texture_transformation.into_uniform(properties));
         }
 
-        let _transformed_properties = TextureTransformationUniform::update_texture_transformations(
-            properties,
-            &mut texture_transformations,
-        );
+        set_video_properties(properties, &mut texture_transformations);
         texture_transformations
     }
 }
@@ -82,7 +79,7 @@ pub enum ElixirTextureTransformations {
 }
 
 impl ElixirTextureTransformations {
-    pub fn into_uniform(self, properties: VideoProperties) -> TextureTransformationUniform {
+    pub fn into_uniform(self, properties: VideoProperties) -> Box<dyn TextureTransformation> {
         match self {
             ElixirTextureTransformations::CornersRounding(elixir_corners_rounding) => {
                 elixir_corners_rounding.into_uniform(properties)
@@ -101,11 +98,11 @@ pub struct ElixirCornersRounding {
 }
 
 impl ElixirCornersRounding {
-    fn into_uniform(self, properties: VideoProperties) -> TextureTransformationUniform {
-        TextureTransformationUniform::CornerRounder(CornersRoundingUniform {
+    fn into_uniform(self, properties: VideoProperties) -> Box<dyn TextureTransformation> {
+        Box::new(CornersRounding {
+            corner_rounding_radius: self.corner_rounding_radius,
             video_width_height_ratio: properties.placement.size.x as f32
                 / properties.placement.size.y as f32,
-            corner_rounding_radius: self.corner_rounding_radius,
         })
     }
 }
@@ -119,8 +116,8 @@ pub struct ElixirCropping {
 }
 
 impl ElixirCropping {
-    fn into_uniform(self) -> TextureTransformationUniform {
-        TextureTransformationUniform::Cropper(CroppingUniform {
+    fn into_uniform(self) -> Box<dyn TextureTransformation> {
+        Box::new(Cropping {
             top_left_corner_crop_x: self.top_left_corner.0,
             top_left_corner_crop_y: self.top_left_corner.1,
             crop_width: self.crop_size.0,

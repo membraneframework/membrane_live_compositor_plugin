@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
 mod colour_converters;
 mod pipeline_utils;
@@ -17,13 +14,12 @@ use videos::*;
 use crate::errors::CompositorError;
 pub use videos::{VideoPlacement, VideoProperties};
 
-use self::pipeline_utils::Sampler;
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
-    texture_transformations::{
-        texture_transformers::TextureTransformer, TextureTransformationName,
-        TextureTransformationUniform,
-    },
+    texture_transformations::{filled_registry, TextureTransformation},
+};
+use self::{
+    pipeline_utils::Sampler, texture_transformations::registry::TextureTransformationRegistry,
 };
 use self::{vec2d::Vec2d, vertex::Vertex};
 
@@ -40,7 +36,7 @@ pub struct State {
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_caps: crate::RawVideo,
     last_pts: Option<u64>,
-    texture_transformers: HashMap<TextureTransformationName, TextureTransformer>,
+    texture_transformation_pipelines: TextureTransformationRegistry,
 }
 
 impl State {
@@ -216,10 +212,8 @@ impl State {
         let rgba_to_yuv_converter =
             RGBAToYUVConverter::new(&device, &single_texture_bind_group_layout);
 
-        let texture_transformers = TextureTransformationName::get_all_texture_transformers(
-            &device,
-            &single_texture_bind_group_layout,
-        );
+        let texture_transformation_pipelines =
+            filled_registry(&device, &single_texture_bind_group_layout);
 
         Ok(Self {
             device,
@@ -237,7 +231,7 @@ impl State {
             rgba_to_yuv_converter,
             output_caps: *output_caps,
             last_pts: None,
-            texture_transformers,
+            texture_transformation_pipelines,
         })
     }
 
@@ -257,7 +251,7 @@ impl State {
                 frame,
                 pts,
                 self.last_pts,
-                &self.texture_transformers,
+                &self.texture_transformation_pipelines,
             );
         Ok(())
     }
@@ -358,7 +352,7 @@ impl State {
         &mut self,
         idx: usize,
         base_properties: VideoProperties,
-        textures_transformations: Vec<TextureTransformationUniform>,
+        textures_transformations: Vec<Box<dyn TextureTransformation>>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
@@ -383,7 +377,7 @@ impl State {
         idx: usize,
         resolution: Option<Vec2d<u32>>,
         placement: Option<VideoPlacement>,
-        new_texture_transformations: Option<Vec<TextureTransformationUniform>>,
+        new_texture_transformations: Option<Vec<Box<dyn TextureTransformation>>>,
     ) -> Result<(), CompositorError> {
         let video = self
             .input_videos
@@ -457,10 +451,13 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use crate::compositor::texture_transformations::corners_rounding::CornersRoundingUniform;
-
-    use super::{texture_transformations::cropping::CroppingUniform, *};
     use std::num::{NonZeroU32, NonZeroU64};
+
+    use crate::compositor::texture_transformations::{
+        corners_rounding::CornersRounding, cropping::Cropping,
+    };
+
+    use super::*;
 
     impl Default for crate::RawVideo {
         fn default() -> Self {
@@ -611,40 +608,36 @@ mod tests {
     #[test]
     fn update_properties_test() -> Result<(), CompositorError> {
         let mut compositor = setup_videos(4);
-        let mut texture_transformations = Vec::new();
-        texture_transformations.push(TextureTransformationUniform::Cropper(CroppingUniform {
-            top_left_corner_crop_x: 0.1,
-            top_left_corner_crop_y: 0.1,
-            crop_width: 0.5,
-            crop_height: 0.25,
-        }));
-        texture_transformations.push(TextureTransformationUniform::CornerRounder(
-            CornersRoundingUniform {
-                corner_rounding_radius: 0.1,
-                video_width_height_ratio: 0.0,
-            },
-        ));
-
-        let mut transformed_texture_transformations = Vec::new();
-        transformed_texture_transformations.push(TextureTransformationUniform::Cropper(
-            CroppingUniform {
+        let texture_transformations: Vec<Box<dyn TextureTransformation>> = vec![
+            Box::new(Cropping {
                 top_left_corner_crop_x: 0.1,
                 top_left_corner_crop_y: 0.1,
                 crop_width: 0.5,
                 crop_height: 0.25,
-            },
-        ));
-        transformed_texture_transformations.push(TextureTransformationUniform::CornerRounder(
-            CornersRoundingUniform {
+            }),
+            Box::new(CornersRounding {
+                corner_rounding_radius: 0.1,
+                video_width_height_ratio: 0.0,
+            }),
+        ];
+
+        let transformed_texture_transformations: Vec<Box<dyn TextureTransformation>> = vec![
+            Box::new(Cropping {
+                top_left_corner_crop_x: 0.1,
+                top_left_corner_crop_y: 0.1,
+                crop_width: 0.5,
+                crop_height: 0.25,
+            }),
+            Box::new(CornersRounding {
                 corner_rounding_radius: 0.1,
                 // cropping should changed resolution ratio from 16:9 to 32:9
                 video_width_height_ratio: 32.0 / 9.0,
-            },
-        ));
+            }),
+        ];
 
         assert!(compositor
             .update_properties(
-                0 as usize,
+                0,
                 Some(Vec2d { x: 640, y: 360 }),
                 Some(VideoPlacement {
                     position: Vec2d { x: 0, y: 0 },
@@ -696,8 +689,9 @@ mod tests {
                     .unwrap()
                     .texture_transformations
                     .get(index)
-                    .unwrap(),
-                transformed_texture_transformation
+                    .unwrap()
+                    .data(),
+                transformed_texture_transformation.data()
             );
         }
 

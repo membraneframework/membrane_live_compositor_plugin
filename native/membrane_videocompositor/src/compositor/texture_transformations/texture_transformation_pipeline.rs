@@ -1,10 +1,12 @@
+use std::any::TypeId;
+
 /// The module is used for relieving users from the pain of creating 600+ lines long boilerplate
 /// wgpu render pipeline descriptions for creating textures transformations.
 /// When adding a new texture transformation user needs only to modify texture_transformations
 /// module, without the burden of creating wgpu boilerplate.
 use crate::compositor::{pipeline_utils::PipelineUtils, textures::RGBATexture, Vertex};
 
-use super::{TextureTransformationName, TextureTransformationUniform};
+use super::TextureTransformation;
 
 #[rustfmt::skip]
 const INDICES: [u16; 6] = [
@@ -23,35 +25,28 @@ const INDICES: [u16; 6] = [
 /// (e.x. edge rounding radius or filter color) without the need to construct multiple
 /// rendering pipelines.
 #[derive(Debug)]
-pub struct TextureTransformer {
+pub struct TextureTransformationPipeline {
     pub pipeline: wgpu::RenderPipeline,
     pub common: PipelineUtils,
-    pub uniform_buffer: wgpu::Buffer,
     pub uniform_bind_group: wgpu::BindGroup,
+    uniform: wgpu::Buffer,
+    transformation_id: TypeId,
 }
 
-impl TextureTransformer {
+impl TextureTransformationPipeline {
     /// Creates a rendering pipeline for a specific transformation type defined
     /// by transformation name.
-    pub fn new(
+    pub fn new<T: super::TextureTransformation>(
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
-        transformation_name: TextureTransformationName,
     ) -> Self {
-        #[allow(unused_variables)]
-        // used for descriptive debugs / error logs
-        let transformation_description = transformation_name.get_name();
-
-        let blank_uniform = transformation_name.get_blank_texture_transformation_uniform();
-
         let common = PipelineUtils::new(device);
-
-        let uniform_buffer = blank_uniform.create_uniform_buffer(device);
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some(&format!(
-                    "Texture transformer {transformation_description} uniform bind group layout"
+                    "Texture transformation pipeline {} uniform bind group layout",
+                    stringify!(T)
                 )),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -65,22 +60,12 @@ impl TextureTransformer {
                 }],
             });
 
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(&format!(
-                "Texture transformer {transformation_description} uniform bind group layout"
-            )),
-            layout: &uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: uniform_buffer.as_entire_binding(),
-            }],
-        });
-
-        let shader_module = transformation_name.create_shader_module(device);
+        let shader_module = T::shader_module(device);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&format!(
-                "Texture transformer {transformation_description} pipeline layout"
+                "Texture transformation pipeline {} pipeline layout",
+                stringify!(T),
             )),
             bind_group_layouts: &[
                 single_texture_bind_group_layout,
@@ -92,7 +77,8 @@ impl TextureTransformer {
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!(
-                "Texture transformer {transformation_description} pipeline"
+                "Texture transformation pipeline {} pipeline",
+                stringify!(T),
             )),
             layout: Some(&pipeline_layout),
             primitive: wgpu::PrimitiveState {
@@ -127,11 +113,31 @@ impl TextureTransformer {
             depth_stencil: None,
         });
 
+        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some(&format!("{} uniform buffer", stringify!(T),)),
+            mapped_at_creation: false,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+            size: std::mem::size_of::<T>() as u64,
+        });
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(&format!(
+                "Texture transformation pipeline {} uniform bind group",
+                stringify!(T)
+            )),
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform.as_entire_binding(),
+            }],
+            layout: &uniform_bind_group_layout,
+        });
+
         Self {
             pipeline,
             common,
-            uniform_buffer,
             uniform_bind_group,
+            uniform,
+            transformation_id: TypeId::of::<T>(),
         }
     }
 
@@ -145,23 +151,25 @@ impl TextureTransformer {
         queue: &wgpu::Queue,
         src: &RGBATexture,
         dst: &RGBATexture,
-        transformation_uniform: &TextureTransformationUniform,
+        transformation: &dyn TextureTransformation,
     ) {
-        let transformation_name = transformation_uniform.get_name();
-        let transformation_description = transformation_name.get_name();
+        assert_eq!(self.transformation_id, transformation.type_id(), "TextureTransformationPipeline: transform() called with a transformation of an incorrect type");
+        // FIXME: handle the case of T.data().len() != T::buffer_size()
 
-        transformation_uniform.write_buffer(queue, &self.uniform_buffer);
+        queue.write_buffer(&self.uniform, 0, transformation.data());
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some(&format!(
-                "Texture transformer {transformation_description} encoder"
+                "Texture transformation pipeline {} encoder",
+                stringify!(T),
             )),
         });
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!(
-                    "Texture transformer {transformation_description} render pass"
+                    "Texture transformation pipeline {} render pass",
+                    stringify!(T),
                 )),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {

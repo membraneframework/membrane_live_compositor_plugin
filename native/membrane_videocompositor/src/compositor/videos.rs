@@ -1,14 +1,13 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::texture_transformations::{
-    texture_transformers::TextureTransformer, TextureTransformationName,
-    TextureTransformationUniform,
-};
+use super::texture_transformations::registry::TextureTransformationRegistry;
+use super::texture_transformations::{set_video_properties, TextureTransformation};
 use super::textures::{RGBATexture, YUVTextures};
 use super::{Vec2d, Vertex};
 
@@ -56,7 +55,7 @@ pub struct InputVideo {
     indices: wgpu::Buffer,
     pub base_properties: VideoProperties,
     pub transformed_properties: VideoProperties,
-    pub texture_transformations: Vec<TextureTransformationUniform>,
+    pub texture_transformations: Vec<Box<dyn TextureTransformation>>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     /// When a video is created this is set to `true`. When `draw` is later called on it,
@@ -72,7 +71,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         base_properties: VideoProperties,
-        texture_transformations: Vec<TextureTransformationUniform>,
+        mut texture_transformations: Vec<Box<dyn TextureTransformation>>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
@@ -98,10 +97,8 @@ impl InputVideo {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let transformed_properties = TextureTransformationUniform::update_texture_transformations(
-            base_properties,
-            &mut texture_transformations.to_vec(),
-        );
+        let transformed_properties =
+            set_video_properties(base_properties, &mut texture_transformations);
 
         Self {
             yuv_textures,
@@ -123,7 +120,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         base_properties: VideoProperties,
-        texture_transformations: Option<Vec<TextureTransformationUniform>>,
+        texture_transformations: Option<Vec<Box<dyn TextureTransformation>>>,
     ) {
         let yuv_textures = YUVTextures::new(
             device,
@@ -138,18 +135,12 @@ impl InputVideo {
         match texture_transformations {
             Some(mut texture_transformations) => {
                 self.transformed_properties =
-                    TextureTransformationUniform::update_texture_transformations(
-                        base_properties,
-                        &mut texture_transformations,
-                    );
+                    set_video_properties(base_properties, &mut texture_transformations);
                 self.texture_transformations = texture_transformations;
             }
             None => {
                 self.transformed_properties =
-                    TextureTransformationUniform::update_texture_transformations(
-                        base_properties,
-                        &mut self.texture_transformations,
-                    );
+                    set_video_properties(base_properties, &mut self.texture_transformations);
             }
         };
     }
@@ -163,7 +154,7 @@ impl InputVideo {
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
-        texture_transformers: &HashMap<TextureTransformationName, TextureTransformer>,
+        registry: &TextureTransformationRegistry,
     ) {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
@@ -176,9 +167,9 @@ impl InputVideo {
 
         let mut transformed_properties = self.base_properties;
         // Runs all texture transformations.
-        for transformation_uniform in self.texture_transformations.iter() {
+        for transformation in self.texture_transformations.iter() {
             transformed_properties =
-                transformation_uniform.transform_video_properties(transformed_properties);
+                transformation.transform_video_properties(transformed_properties);
             let transformed_frame = RGBATexture::new(
                 device,
                 transformed_properties.resolution.x,
@@ -186,15 +177,14 @@ impl InputVideo {
                 &self.single_texture_bind_group_layout,
             );
 
-            let texture_transformer =
-                transformation_uniform.get_texture_transformer(texture_transformers);
+            let pipeline = registry.get(transformation.as_ref());
 
-            texture_transformer.transform(
+            pipeline.transform(
                 device,
                 queue,
                 &frame,
                 &transformed_frame,
-                transformation_uniform,
+                transformation.as_ref(),
             );
 
             frame = transformed_frame;

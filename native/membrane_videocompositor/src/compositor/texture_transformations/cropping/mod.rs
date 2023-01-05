@@ -2,6 +2,8 @@ use bytemuck::{Pod, Zeroable};
 
 use crate::compositor::{vec2d::Vec2d, VideoPlacement, VideoProperties};
 
+use super::TextureTransformation;
+
 /// Struct representing parameters for video cropping texture transformation.
 /// top_left_corner represents the coords of the top left corner of cropped (visible)
 /// part of the video (in x ∈ [0,1], y ∈ [0, 1] proportion range).
@@ -9,26 +11,17 @@ use crate::compositor::{vec2d::Vec2d, VideoPlacement, VideoProperties};
 /// crop_height represents the height of the cropped video (visible part) in [0, 1] relative range.
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
 #[repr(C)]
-pub struct CroppingUniform {
+pub struct Cropping {
     pub top_left_corner_crop_x: f32,
     pub top_left_corner_crop_y: f32,
     pub crop_width: f32,
     pub crop_height: f32,
 }
 
-impl CroppingUniform {
-    pub fn get_blank_uniform() -> Self {
-        CroppingUniform {
-            top_left_corner_crop_x: 0.0,
-            top_left_corner_crop_y: 0.0,
-            crop_width: 1.0,
-            crop_height: 1.0,
-        }
-    }
+impl TextureTransformation for Cropping {
+    fn update_video_properties(&mut self, _properties: VideoProperties) {}
 
-    pub fn set_properties(self, _properties: VideoProperties) {}
-
-    pub fn transform_properties(self, properties: VideoProperties) -> VideoProperties {
+    fn transform_video_properties(&self, properties: VideoProperties) -> VideoProperties {
         VideoProperties {
             resolution: Vec2d {
                 x: (properties.resolution.x as f32 * self.crop_width).round() as u32,
@@ -50,5 +43,23 @@ impl CroppingUniform {
                 z: properties.placement.z,
             },
         }
+    }
+
+    fn buffer_size() -> usize
+    where
+        Self: Sized,
+    {
+        std::mem::size_of::<Self>()
+    }
+
+    fn data(&self) -> &[u8] {
+        bytemuck::cast_slice(std::slice::from_ref(self))
+    }
+
+    fn shader_module(device: &wgpu::Device) -> wgpu::ShaderModule
+    where
+        Self: Sized,
+    {
+        device.create_shader_module(wgpu::include_wgsl!("cropping.wgsl"))
     }
 }
