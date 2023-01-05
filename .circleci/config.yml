@@ -39,7 +39,13 @@ workflows:
   build:
     jobs:
       - elixir/build_test
+        docker:
+          - image: membraneframeworklabs/docker_membrane:opengl-experimental2
       - elixir/test
+        docker:
+          - image: membraneframeworklabs/docker_membrane:opengl-experimental2
       - elixir/lint
+        docker:
+          - image: membraneframeworklabs/docker_membrane:opengl-experimental2
       - rust_lint
       - rust_tests
