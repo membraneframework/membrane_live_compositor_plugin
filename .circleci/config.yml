@@ -2,11 +2,6 @@ version: 2.1
 orbs:
   elixir: membraneframework/elixir@1
 
-executors:
-  software_rendering_executor:
-    docker:
-      - image: membraneframeworklabs/docker_membrane:opengl-experimental
-
 jobs:
   rust_lint:
     executor: 
@@ -40,8 +35,8 @@ jobs:
             done
 
   elixir_test_with_software_rendering:
-    executor: 
-      name: software_rendering_executor
+    docker:
+      - image: membraneframeworklabs/docker_membrane:opengl-experimental
 
     steps:
       - run:
