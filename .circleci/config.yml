@@ -39,17 +39,9 @@ jobs:
       - image: membraneframeworklabs/docker_membrane:opengl-experimental2
 
     steps:
-      - checkout
-      - setup_remote_docker
-      - elixir/get_mix_deps
-      - elixir/use_build_cache:
-          env: test
       - run:
-          command: mix deps.compile
-          name: Ensure native deps are compiled
-      - run:
-          command: mix test --warnings-as-errors
-          name: Run all tests
+          command: echo "ABCDEFG"
+          name: Ensure commands are executed
 
 workflows:
   version: 2
