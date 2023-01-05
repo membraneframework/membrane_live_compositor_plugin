@@ -39,7 +39,6 @@ jobs:
       - image: membraneframeworklabs/docker_membrane:opengl-experimental
 
     steps:
-      steps:
       - checkout
       - setup_remote_docker
       - elixir/get_mix_deps
