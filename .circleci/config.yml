@@ -5,7 +5,7 @@ orbs:
 executors:
   software_rendering_executor:
     docker:
-      - image: ubuntu:latest
+      - image: membraneframeworklabs/docker_membrane:opengl-experimental
 
 jobs:
   rust_lint:
