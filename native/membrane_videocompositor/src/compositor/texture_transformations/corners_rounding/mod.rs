@@ -29,13 +29,6 @@ impl TextureTransformation for CornersRounding {
         device.create_shader_module(wgpu::include_wgsl!("corners_rounding.wgsl"))
     }
 
-    fn buffer_size() -> usize
-    where
-        Self: Sized,
-    {
-        std::mem::size_of::<Self>()
-    }
-
     fn data(&self) -> &[u8] {
         bytemuck::cast_slice(std::slice::from_ref(self))
     }

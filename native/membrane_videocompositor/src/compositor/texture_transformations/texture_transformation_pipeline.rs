@@ -1,10 +1,10 @@
-use std::any::TypeId;
+//! The module is used for relieving users from the pain of creating 600+ lines long boilerplate
+//! wgpu render pipeline descriptions for creating textures transformations.
+//! When adding a new texture transformation user needs only to modify texture_transformations
+//! module, without the burden of creating wgpu boilerplate.
 
-/// The module is used for relieving users from the pain of creating 600+ lines long boilerplate
-/// wgpu render pipeline descriptions for creating textures transformations.
-/// When adding a new texture transformation user needs only to modify texture_transformations
-/// module, without the burden of creating wgpu boilerplate.
 use crate::compositor::{pipeline_utils::PipelineUtils, textures::RGBATexture, Vertex};
+use std::any::TypeId;
 
 use super::TextureTransformation;
 
@@ -17,9 +17,9 @@ const INDICES: [u16; 6] = [
 /// This is abstraction for texture transformation rendering pipeline.
 /// It's created once for every type of texture transformation
 /// and is kept in main compositor state. Using specific texture transformation
-/// require calling transform function on created pipeline (TextureTransformer
-/// struct instance) with TextureTransformationUniform struct instance
-/// (passed to shader) describing transformation.
+/// require calling transform function on created pipeline (TextureTransformationPipeline
+/// struct instance) with TextureTransformation struct instance
+/// (passed to shader) describing transformation parameters.
 /// This way, we can apply the same type of texture transformation like
 /// corner rounding or filer effect on multiple videos with different parameters
 /// (e.x. edge rounding radius or filter color) without the need to construct multiple
@@ -34,8 +34,7 @@ pub struct TextureTransformationPipeline {
 }
 
 impl TextureTransformationPipeline {
-    /// Creates a rendering pipeline for a specific transformation type defined
-    /// by transformation name.
+    /// Creates a rendering pipeline for a specific transformation type.
     pub fn new<T: super::TextureTransformation>(
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
@@ -141,8 +140,7 @@ impl TextureTransformationPipeline {
         }
     }
 
-    /// Called on TextureTransformer instance
-    /// (representing rendering pipeline for the specific type of texture transformation)
+    /// Called on TextureTransformationPipeline instance
     /// applies transformation with passed parameters on the src frame and saves it
     /// at the dst frame.
     pub fn transform(

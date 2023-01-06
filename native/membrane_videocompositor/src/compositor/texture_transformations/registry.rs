@@ -1,3 +1,7 @@
+//! Implements registry of all texture transformation pipelines.
+//! It's allow to access transformation pipeline based on passed
+//! TextureTransformation struct.
+
 use std::{any::TypeId, collections::HashMap};
 
 use super::{

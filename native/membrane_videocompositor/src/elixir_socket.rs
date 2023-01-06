@@ -59,6 +59,8 @@ mod atoms {
         ok,
         error,
         #[allow(non_snake_case)] I420,
+        input_position,
+        crop_part_position
     }
 }
 

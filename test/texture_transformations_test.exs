@@ -28,10 +28,11 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
   describe "Checks corners rounding and cropping" do
     @describetag :tmp_dir
 
+    # TODO: test cropped_video_position option
     @tag wgpu: true
     test "1 frame 720p raw", %{tmp_dir: tmp_dir} do
       crop = %Cropping{
-        top_left_corner: {0.5, 0.5},
+        crop_top_left_corner: {0.5, 0.5},
         crop_size: {0.5, 0.5}
       }
 
@@ -82,7 +83,7 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
         "out_#{duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
       )
 
-    reference_path = "test/videos/texture_transformations/ref_cropping_and_corners_rounding.yuv"
+    reference_path = "test/fixtures/texture_transformations/ref_cropping_and_corners_rounding.yuv"
 
     positions = [
       {0, 0},

@@ -614,6 +614,7 @@ mod tests {
                 top_left_corner_crop_y: 0.1,
                 crop_width: 0.5,
                 crop_height: 0.25,
+                transform_position: 1,
             }),
             Box::new(CornersRounding {
                 corner_rounding_radius: 0.1,
@@ -627,6 +628,7 @@ mod tests {
                 top_left_corner_crop_y: 0.1,
                 crop_width: 0.5,
                 crop_height: 0.25,
+                transform_position: 1,
             }),
             Box::new(CornersRounding {
                 corner_rounding_radius: 0.1,

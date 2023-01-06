@@ -7,7 +7,7 @@ use crate::compositor::texture_transformations::cropping::Cropping;
 use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
 use crate::compositor::vec2d::Vec2d;
 use crate::compositor::{self, VideoPlacement, VideoProperties};
-use crate::convert_z;
+use crate::{atoms, convert_z};
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
@@ -111,17 +111,29 @@ impl ElixirCornersRounding {
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
 #[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.Cropping"]
 pub struct ElixirCropping {
-    pub top_left_corner: (f32, f32),
+    pub crop_top_left_corner: (f32, f32),
     pub crop_size: (f32, f32),
+    pub cropped_video_position: rustler::Atom,
 }
 
 impl ElixirCropping {
     fn into_uniform(self) -> Box<dyn TextureTransformation> {
+        let transform_position: u32;
+
+        if self.cropped_video_position == atoms::crop_part_position() {
+            transform_position = 1;
+        } else if self.cropped_video_position == atoms::input_position() {
+            transform_position = 0;
+        } else {
+            panic!("Unsupported elixir positioning format");
+        }
+
         Box::new(Cropping {
-            top_left_corner_crop_x: self.top_left_corner.0,
-            top_left_corner_crop_y: self.top_left_corner.1,
+            top_left_corner_crop_x: self.crop_top_left_corner.0,
+            top_left_corner_crop_y: self.crop_top_left_corner.1,
             crop_width: self.crop_size.0,
             crop_height: self.crop_size.1,
+            transform_position,
         })
     }
 }

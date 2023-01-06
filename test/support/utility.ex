@@ -59,7 +59,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   @spec generate_testing_video(input_video_path_t(), Membrane.RawVideo.t(), duration_t()) ::
           nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
-    # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/videos/4s_30fps.raw
     {num, den} = video_description.framerate
     framerate = div(num, den)
 
@@ -114,7 +113,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
       Path.join([
         File.cwd!(),
         "test",
-        "videos",
+        "fixtures",
         sub_dir_name
       ])
 
@@ -231,7 +230,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
       rest
     end
 
-    # -video_size 1280x720 -framerate 25 -pixel_format yuv420p
     {num, den} = video_description.framerate
 
     [

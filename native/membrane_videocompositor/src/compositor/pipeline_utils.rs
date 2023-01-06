@@ -38,19 +38,19 @@ pub struct PipelineUtils {
 impl PipelineUtils {
     pub fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("edge rounder vertex buffer"),
+            label: Some("vertex buffer"),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&VERTICES),
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("edge rounder index buffer"),
+            label: Some("index buffer"),
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             contents: bytemuck::cast_slice(&INDICES),
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("edge rounder sampler"),
+            label: Some("sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -62,7 +62,7 @@ impl PipelineUtils {
 
         let sampler_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("edge rounder sampler bind group layout"),
+                label: Some("sampler bind group layout"),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -72,7 +72,7 @@ impl PipelineUtils {
             });
 
         let sampler_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("edge rounder sampler bind group"),
+            label: Some("sampler bind group"),
             layout: &sampler_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
