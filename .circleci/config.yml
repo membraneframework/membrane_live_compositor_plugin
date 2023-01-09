@@ -37,8 +37,8 @@ jobs:
   elixir_test_with_software_rendering:
     docker:
       - image: membraneframeworklabs/docker_membrane:opengl-experimental
-        # environment:
-        #   XDG_RUNTIME_DIR: /tmp
+        environment:
+          XDG_RUNTIME_DIR: /tmp
 
     steps:
       - checkout
