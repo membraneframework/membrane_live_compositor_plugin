@@ -44,11 +44,8 @@ jobs:
       - checkout
       - setup_remote_docker
       - elixir/get_mix_deps
-      # - elixir/use_build_cache:
-      #     env: test
-      - run:
-          command: mix clean && rm -rf _build
-          name: Reset build cache
+      - elixir/use_build_cache:
+          env: test
       - run:
           command: mix deps.compile
           name: Ensure native deps are compiled
