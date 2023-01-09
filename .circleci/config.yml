@@ -61,5 +61,3 @@ workflows:
       - elixir/lint
       - rust_lint
       - rust_tests
-
-# VS Code Extension Version: 1.5.1
