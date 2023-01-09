@@ -44,8 +44,11 @@ jobs:
       - checkout
       - setup_remote_docker
       - elixir/get_mix_deps
-      - elixir/use_build_cache:
-          env: test
+      # - elixir/use_build_cache:
+      #     env: test
+      - run:
+          command: mix clean && rm -rf _build
+          name: Reset build cache
       - run:
           command: mix deps.compile
           name: Ensure native deps are compiled
@@ -54,7 +57,6 @@ jobs:
           name: Run all tests
 
 workflows:
-  version: 2
   build:
     jobs:
       - elixir/build_test
@@ -62,3 +64,5 @@ workflows:
       - elixir/lint
       - rust_lint
       - rust_tests
+
+# VS Code Extension Version: 1.5.1
