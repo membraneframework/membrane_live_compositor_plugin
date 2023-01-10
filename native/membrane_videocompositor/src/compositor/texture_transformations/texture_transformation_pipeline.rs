@@ -14,7 +14,7 @@ const INDICES: [u16; 6] = [
     2, 3, 0,
 ];
 
-/// This is abstraction for texture transformation rendering pipeline.
+/// This an is abstraction for texture transformation rendering pipeline.
 /// It's created once for every type of texture transformation
 /// and is kept in main compositor state. Using specific texture transformation
 /// require calling transform function on created pipeline (TextureTransformationPipeline

@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations d
   Applying texture transformations may change size of
   video on the output frame (e.x. adding border to video
   will make video larger).
-  As a developer adding new type of texture transformation,
+  As a contributor adding a new type of texture transformation,
   you must create new struct module type and add it to
   this type definition.
   """
