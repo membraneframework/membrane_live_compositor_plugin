@@ -22,22 +22,5 @@
     },
     "rust-analyzer.linkedProjects": [
         "native/membrane_videocompositor/Cargo.toml"
-    ],
-    "cSpell.words": [
-        "binwrite",
-        "bytemuck",
-        "colour",
-        "Deque",
-        "lerp",
-        "mipmap",
-        "multisample",
-        "multisampled",
-        "multiview",
-        "repr",
-        "rustfmt",
-        "unclipped",
-        "Unorm",
-        "videocompositor",
-        "Zeroable"
     ]
 }
