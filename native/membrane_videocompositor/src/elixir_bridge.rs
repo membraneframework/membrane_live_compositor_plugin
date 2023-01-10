@@ -170,7 +170,7 @@ fn add_video(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    let base_placement = placement.to_rust_placement();
+    let base_placement = placement.into();
 
     let base_properties = compositor::VideoProperties {
         resolution: Vec2d {
@@ -181,7 +181,7 @@ fn add_video(
         placement: base_placement,
     };
 
-    let texture_transformations = transformations.get_texture_transformations(base_properties);
+    let texture_transformations = transformations.into();
 
     state
         .compositor
@@ -225,7 +225,7 @@ fn update_placement(
     id: usize,
     placement: ElixirBaseVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let placement = placement.to_rust_placement();
+    let placement = placement.into();
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
@@ -243,16 +243,16 @@ fn update_transformations(
     id: usize,
     transformations: ElixirVideoTransformations,
 ) -> Result<rustler::Atom, CompositorError> {
+    let texture_transformations = transformations.into();
+
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    match state.compositor.input_videos.get_mut(&id) {
-        Some(video) => {
-            let properties = video.base_properties;
-            let texture_transformations = transformations.get_texture_transformations(properties);
-            video.texture_transformations = texture_transformations;
-            Ok(atoms::ok())
-        }
-        None => Err(CompositorError::BadVideoIndex(id)),
+    match state
+        .compositor
+        .update_properties(id, None, None, Some(texture_transformations))
+    {
+        Ok(_) => Ok(atoms::ok()),
+        Err(compositor_error) => Err(compositor_error),
     }
 }
 

@@ -1,11 +1,12 @@
 #![allow(clippy::needless_borrow)]
+#![allow(clippy::from_over_into)]
 use rustler::NifUntaggedEnum;
 
 use crate::compositor::math::Vec2d;
 use crate::compositor::texture_transformations::corners_rounding::CornersRounding;
 use crate::compositor::texture_transformations::cropping::Cropping;
-use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
-use crate::compositor::{self, VideoPlacement, VideoProperties};
+use crate::compositor::texture_transformations::TextureTransformation;
+use crate::compositor::{self, VideoPlacement};
 use crate::elixir_bridge::{atoms, convert_z};
 
 #[derive(Debug, rustler::NifStruct, Clone)]
@@ -25,8 +26,8 @@ pub struct ElixirBaseVideoPlacement {
     pub z_value: f32,
 }
 
-impl ElixirBaseVideoPlacement {
-    pub fn to_rust_placement(self) -> VideoPlacement {
+impl Into<VideoPlacement> for ElixirBaseVideoPlacement {
+    fn into(self) -> VideoPlacement {
         compositor::VideoPlacement {
             position: Vec2d {
                 x: self.position.0,
@@ -48,18 +49,14 @@ pub struct ElixirVideoTransformations {
     pub texture_transformations: Vec<ElixirTextureTransformations>,
 }
 
-impl ElixirVideoTransformations {
-    pub fn get_texture_transformations(
-        self,
-        properties: VideoProperties,
-    ) -> Vec<Box<dyn TextureTransformation>> {
+impl Into<Vec<Box<dyn TextureTransformation>>> for ElixirVideoTransformations {
+    fn into(self) -> Vec<Box<dyn TextureTransformation>> {
         let mut texture_transformations = Vec::new();
 
         for texture_transformation in self.texture_transformations.into_iter() {
-            texture_transformations.push(texture_transformation.into_uniform(properties));
+            texture_transformations.push(texture_transformation.into());
         }
 
-        set_video_properties(properties, &mut texture_transformations);
         texture_transformations
     }
 }
@@ -77,18 +74,17 @@ pub enum ElixirTextureTransformations {
     Cropping(ElixirCropping),
 }
 
-impl ElixirTextureTransformations {
-    pub fn into_uniform(self, properties: VideoProperties) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
+    fn into(self) -> Box<dyn TextureTransformation> {
         match self {
             ElixirTextureTransformations::CornersRounding(elixir_corners_rounding) => {
-                elixir_corners_rounding.into_uniform(properties)
+                elixir_corners_rounding.into()
             }
-            ElixirTextureTransformations::Cropping(elixir_cropping) => {
-                elixir_cropping.into_uniform()
-            }
+            ElixirTextureTransformations::Cropping(elixir_cropping) => elixir_cropping.into(),
         }
     }
 }
+
 /// Elixir struct wrapping parameters describing corner rounding texture transformation
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
 #[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding"]
@@ -96,12 +92,11 @@ pub struct ElixirCornersRounding {
     pub corner_rounding_radius: f32,
 }
 
-impl ElixirCornersRounding {
-    fn into_uniform(self, properties: VideoProperties) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
+    fn into(self) -> Box<dyn TextureTransformation> {
         Box::new(CornersRounding {
             corner_rounding_radius: self.corner_rounding_radius,
-            video_width_height_ratio: properties.placement.size.x as f32
-                / properties.placement.size.y as f32,
+            video_width_height_ratio: 0.0,
         })
     }
 }
@@ -115,8 +110,8 @@ pub struct ElixirCropping {
     pub cropped_video_position: rustler::Atom,
 }
 
-impl ElixirCropping {
-    fn into_uniform(self) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn TextureTransformation>> for ElixirCropping {
+    fn into(self) -> Box<dyn TextureTransformation> {
         let transform_position: u32;
 
         if self.cropped_video_position == atoms::crop_part_position() {
