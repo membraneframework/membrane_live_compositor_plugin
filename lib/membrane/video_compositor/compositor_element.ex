@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.WgpuAdapter
 
@@ -40,7 +40,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     caps: {RawVideo, pixel_format: :I420},
     options: [
       initial_placement: [
-        spec: VideoPlacement.t(),
+        spec: BaseVideoPlacement.t(),
         description: "Initial placement of the video on the screen"
       ],
       timestamp_offset: [

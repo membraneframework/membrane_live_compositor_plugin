@@ -2,10 +2,10 @@
 
 use rustler::NifUntaggedEnum;
 
+use crate::compositor::math::Vec2d;
 use crate::compositor::texture_transformations::corners_rounding::CornersRounding;
 use crate::compositor::texture_transformations::cropping::Cropping;
 use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
-use crate::compositor::vec2d::Vec2d;
 use crate::compositor::{self, VideoPlacement, VideoProperties};
 use crate::{atoms, convert_z};
 
@@ -19,25 +19,25 @@ pub struct ElixirRawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.RustStructs.VideoPlacement"]
-pub struct ElixirVideoPlacement {
-    pub base_position: (i32, i32),
-    pub base_size: (u32, u32),
-    pub base_z_value: f32,
+#[module = "Membrane.VideoCompositor.RustStructs.BaseVideoPlacement"]
+pub struct ElixirBaseVideoPlacement {
+    pub position: (i32, i32),
+    pub size: (u32, u32),
+    pub z_value: f32,
 }
 
-impl ElixirVideoPlacement {
+impl ElixirBaseVideoPlacement {
     pub fn to_rust_placement(self) -> VideoPlacement {
         compositor::VideoPlacement {
             position: Vec2d {
-                x: self.base_position.0,
-                y: self.base_position.1,
+                x: self.position.0,
+                y: self.position.1,
             },
             size: Vec2d {
-                x: self.base_size.0,
-                y: self.base_size.1,
+                x: self.size.0,
+                y: self.size.1,
             },
-            z: convert_z(self.base_z_value),
+            z: convert_z(self.z_value),
         }
     }
 }

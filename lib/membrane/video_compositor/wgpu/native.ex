@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
     crate: "membrane_videocompositor"
 
   alias Membrane.VideoCompositor.VideoTransformations
-  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
+  alias Membrane.VideoCompositor.RustStructs.{BaseVideoPlacement, RawVideo}
 
   @type wgpu_state() :: any()
   @type error_t() :: any()
@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           wgpu_state(),
           id_t(),
           RawVideo.t(),
-          VideoPlacement.t(),
+          BaseVideoPlacement.t(),
           VideoTransformations.t()
         ) ::
           :ok | {:error, error_t()}
@@ -37,7 +37,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec update_caps(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
   def update_caps(_state, _id, _caps), do: error()
 
-  @spec update_placement(wgpu_state(), id_t(), VideoPlacement.t()) ::
+  @spec update_placement(wgpu_state(), id_t(), BaseVideoPlacement.t()) ::
           :ok | {:error, error_t()}
   def update_placement(_state, _id, _placement), do: error()
 

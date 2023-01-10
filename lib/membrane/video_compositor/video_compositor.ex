@@ -8,14 +8,14 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.Pad
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
 
   @typedoc """
   A message describing a compositor video placement update
   """
   @type update_placement_t ::
-          {:update_placement, [{Membrane.Pad.ref_t(), VideoPlacement.t()}]}
+          {:update_placement, [{Membrane.Pad.ref_t(), BaseVideoPlacement.t()}]}
 
   @typedoc """
   A message describing a compositor video transformations update
@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor do
     availability: :on_request,
     options: [
       initial_placement: [
-        spec: VideoPlacement.t(),
+        spec: BaseVideoPlacement.t(),
         description: "Initial placement of the video on the screen"
       ],
       timestamp_offset: [

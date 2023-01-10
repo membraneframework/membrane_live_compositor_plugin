@@ -62,7 +62,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
           state :: wgpu_state_t(),
           id :: id_t(),
           caps :: Membrane.RawVideo.t(),
-          placement :: RustStructs.VideoPlacement.t(),
+          placement :: RustStructs.BaseVideoPlacement.t(),
           transformations :: VideoTransformations.t()
         ) :: :ok | {:error, error_t()}
   def add_video(state, id, caps, placement, transformations) do
@@ -108,7 +108,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @spec update_placement(
           state :: wgpu_state_t(),
           id :: id_t(),
-          placement :: RustStructs.VideoPlacement.t()
+          placement :: RustStructs.BaseVideoPlacement.t()
         ) :: :ok | {:error, :bad_video_index}
   def update_placement(state, id, placement) do
     case Native.update_placement(state, id, placement) do

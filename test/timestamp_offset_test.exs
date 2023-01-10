@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.VideoTransformations
@@ -79,9 +79,9 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
 
     inputs = [
       %InputStream{
-        placement: %VideoPlacement{
-          base_position: {0, 0},
-          base_size: {video_caps.width, video_caps.height}
+        placement: %BaseVideoPlacement{
+          position: {0, 0},
+          size: {video_caps.width, video_caps.height}
         },
         transformations: @empty_video_transformations,
         caps: video_caps,

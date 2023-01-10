@@ -1,17 +1,17 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 mod colour_converters;
+pub mod math;
 mod pipeline_utils;
 pub mod texture_transformations;
 mod textures;
-pub mod vec2d;
-mod vertex;
 mod videos;
 
 use textures::*;
 use videos::*;
 
 use crate::errors::CompositorError;
+pub use math::{Vec2d, Vertex};
 pub use videos::{VideoPlacement, VideoProperties};
 
 use self::{
@@ -21,7 +21,6 @@ use self::{
 use self::{
     pipeline_utils::Sampler, texture_transformations::registry::TextureTransformationRegistry,
 };
-use self::{vec2d::Vec2d, vertex::Vertex};
 
 pub struct State {
     device: wgpu::Device,

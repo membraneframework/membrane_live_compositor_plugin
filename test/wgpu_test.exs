@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
   use ExUnit.Case, async: false
 
   alias Membrane.VideoCompositor.VideoTransformations
-  alias Membrane.VideoCompositor.RustStructs.{RawVideo, VideoPlacement}
+  alias Membrane.VideoCompositor.RustStructs.{BaseVideoPlacement, RawVideo}
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -42,9 +42,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  0,
                  in_video,
-                 %VideoPlacement{
-                   base_position: {0, 0},
-                   base_size: {in_video.width, in_video.height}
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {in_video.width, in_video.height}
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -56,9 +56,9 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  1,
                  in_video,
-                 %VideoPlacement{
-                   base_position: {0, 360},
-                   base_size: {in_video.width, in_video.height}
+                 %BaseVideoPlacement{
+                   position: {0, 360},
+                   size: {in_video.width, in_video.height}
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -102,10 +102,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  0,
                  caps,
-                 %VideoPlacement{
-                   base_position: {0, 0},
-                   base_size: {caps.width, caps.height},
-                   base_z_value: 0.0
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.0
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -117,10 +117,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  1,
                  caps,
-                 %VideoPlacement{
-                   base_position: {0, 0},
-                   base_size: {caps.width, caps.height},
-                   base_z_value: 0.5
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.5
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -160,10 +160,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  0,
                  caps,
-                 %VideoPlacement{
-                   base_position: {0, 0},
-                   base_size: {caps.width, caps.height},
-                   base_z_value: 0.0
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.0
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -175,10 +175,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  state,
                  1,
                  caps,
-                 %VideoPlacement{
-                   base_position: {0, 0},
-                   base_size: {caps.width, caps.height},
-                   base_z_value: 0.5
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.5
                  },
                  %VideoTransformations{
                    texture_transformations: []
@@ -197,10 +197,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       Utils.compare_contents_with_error(in_path, out_path)
 
-      Native.update_placement(state, 0, %VideoPlacement{
-        base_position: {0, 0},
-        base_size: {caps.width, caps.height},
-        base_z_value: 1.0
+      Native.update_placement(state, 0, %BaseVideoPlacement{
+        position: {0, 0},
+        size: {caps.width, caps.height},
+        z_value: 1.0
       })
 
       second = Membrane.Time.second()

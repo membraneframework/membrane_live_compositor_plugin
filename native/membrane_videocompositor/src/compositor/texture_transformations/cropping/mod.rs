@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 
-use crate::compositor::{vec2d::Vec2d, VideoPlacement, VideoProperties};
+use crate::compositor::{math::Vec2d, VideoPlacement, VideoProperties};
 
 use super::TextureTransformation;
 

@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Pipeline.PacketLoss, as: PipelinePacketLoss
   alias Membrane.VideoCompositor.Test.Support.Utils
@@ -87,9 +87,9 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     inputs =
       for pos <- positions,
           do: %InputStream{
-            placement: %VideoPlacement{
-              base_position: pos,
-              base_size: {video_caps.width, video_caps.height}
+            placement: %BaseVideoPlacement{
+              position: pos,
+              size: {video_caps.width, video_caps.height}
             },
             transformations: @empty_video_transformations,
             caps: video_caps,
@@ -155,9 +155,9 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     inputs =
       for pos <- positions,
           do: %InputStream{
-            placement: %VideoPlacement{
-              base_position: pos,
-              base_size: {video_caps.width, video_caps.height}
+            placement: %BaseVideoPlacement{
+              position: pos,
+              size: {video_caps.width, video_caps.height}
             },
             transformations: @empty_video_transformations,
             caps: video_caps,

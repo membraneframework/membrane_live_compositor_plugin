@@ -1,4 +1,4 @@
-use compositor::vec2d::Vec2d;
+use compositor::math::Vec2d;
 use elixir_structs::*;
 use errors::CompositorError;
 use rustler::ResourceArc;
@@ -167,7 +167,7 @@ fn add_video(
     state: rustler::ResourceArc<State>,
     id: usize,
     caps: ElixirRawVideo,
-    placement: ElixirVideoPlacement,
+    placement: ElixirBaseVideoPlacement,
     transformations: ElixirVideoTransformations,
 ) -> Result<rustler::Atom, rustler::Error> {
     let caps: RawVideo = caps.try_into()?;
@@ -227,7 +227,7 @@ fn update_placement(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    placement: ElixirVideoPlacement,
+    placement: ElixirBaseVideoPlacement,
 ) -> Result<rustler::Atom, rustler::Error> {
     let placement = placement.to_rust_placement();
 
