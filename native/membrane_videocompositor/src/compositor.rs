@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, sync::Arc};
 
 mod colour_converters;
 pub mod math;
-mod pipeline_utils;
+mod pipeline_common;
 pub mod texture_transformations;
 mod textures;
 mod videos;
@@ -19,7 +19,7 @@ use self::{
     texture_transformations::{filled_registry, TextureTransformation},
 };
 use self::{
-    pipeline_utils::Sampler, texture_transformations::registry::TextureTransformationRegistry,
+    pipeline_common::Sampler, texture_transformations::registry::TextureTransformationRegistry,
 };
 
 pub struct State {

@@ -27,7 +27,7 @@ const INDICES: [u16; 6] = [
 ];
 
 #[derive(Debug)]
-pub struct PipelineUtils {
+pub struct PipelineCommon {
     pub _sampler: wgpu::Sampler,
     pub sampler_bind_group_layout: wgpu::BindGroupLayout,
     pub sampler_bind_group: wgpu::BindGroup,
@@ -35,7 +35,7 @@ pub struct PipelineUtils {
     pub index_buffer: wgpu::Buffer,
 }
 
-impl PipelineUtils {
+impl PipelineCommon {
     pub fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("vertex buffer"),

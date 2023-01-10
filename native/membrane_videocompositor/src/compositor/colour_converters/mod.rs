@@ -1,6 +1,6 @@
 use wgpu::util::DeviceExt;
 
-use crate::compositor::pipeline_utils::PipelineUtils;
+use crate::compositor::pipeline_common::PipelineCommon;
 use crate::compositor::Vertex;
 
 use super::textures::{RGBATexture, YUVPlane, YUVTextures};
@@ -13,7 +13,7 @@ const INDICES: [u16; 6] = [
 
 pub struct YUVToRGBAConverter {
     pipeline: wgpu::RenderPipeline,
-    common: PipelineUtils,
+    common: PipelineCommon,
 }
 
 impl YUVToRGBAConverter {
@@ -21,7 +21,7 @@ impl YUVToRGBAConverter {
         device: &wgpu::Device,
         yuv_textures_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
-        let common = PipelineUtils::new(device);
+        let common = PipelineCommon::new(device);
 
         let shader_module = device.create_shader_module(wgpu::include_wgsl!("yuv_to_rgba.wgsl"));
 
@@ -119,7 +119,7 @@ pub struct RGBAToYUVConverter {
     pipeline: wgpu::RenderPipeline,
     plane_selector_buffer: wgpu::Buffer,
     plane_selector_bind_group: wgpu::BindGroup,
-    common: PipelineUtils,
+    common: PipelineCommon,
 }
 
 impl RGBAToYUVConverter {
@@ -127,7 +127,7 @@ impl RGBAToYUVConverter {
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
-        let common = PipelineUtils::new(device);
+        let common = PipelineCommon::new(device);
 
         let plane_selector_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("RGBA to YUV colour converter plane selector buffer"),

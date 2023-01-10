@@ -3,7 +3,7 @@
 //! When adding a new texture transformation user needs only to modify texture_transformations
 //! module, without the burden of creating wgpu boilerplate.
 
-use crate::compositor::{pipeline_utils::PipelineUtils, textures::RGBATexture, Vertex};
+use crate::compositor::{pipeline_common::PipelineCommon, textures::RGBATexture, Vertex};
 use std::any::TypeId;
 
 use super::TextureTransformation;
@@ -27,7 +27,7 @@ const INDICES: [u16; 6] = [
 #[derive(Debug)]
 pub struct TextureTransformationPipeline {
     pub pipeline: wgpu::RenderPipeline,
-    pub common: PipelineUtils,
+    pub common: PipelineCommon,
     pub uniform_bind_group: wgpu::BindGroup,
     uniform: wgpu::Buffer,
     transformation_id: TypeId,
@@ -39,7 +39,7 @@ impl TextureTransformationPipeline {
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
-        let common = PipelineUtils::new(device);
+        let common = PipelineCommon::new(device);
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
