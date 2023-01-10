@@ -15,8 +15,8 @@ defmodule Membrane.VideoCompositor.VideoTransformations do
   @enforce_keys [:texture_transformations]
   defstruct @enforce_keys
 
-  @spec get_empty_video_transformations :: Membrane.VideoCompositor.VideoTransformations.t()
-  def get_empty_video_transformations() do
+  @spec empty :: Membrane.VideoCompositor.VideoTransformations.t()
+  def empty() do
     %VideoTransformations{
       texture_transformations: []
     }

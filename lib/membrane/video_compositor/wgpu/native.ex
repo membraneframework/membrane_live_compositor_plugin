@@ -43,7 +43,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
 
   @spec update_transformations(wgpu_state(), id_t(), VideoTransformations.t()) ::
           :ok | {:error, error_t()}
-  def update_transformations(_state, _id, _placement), do: error()
+  def update_transformations(_state, _id, _transformations), do: error()
 
   @spec remove_video(wgpu_state(), id_t()) ::
           :ok | {:error, error_t()}

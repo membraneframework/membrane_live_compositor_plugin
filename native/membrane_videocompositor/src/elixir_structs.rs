@@ -1,5 +1,3 @@
-#![allow(clippy::needless_borrow)]
-
 use rustler::NifUntaggedEnum;
 
 use crate::compositor::math::Vec2d;

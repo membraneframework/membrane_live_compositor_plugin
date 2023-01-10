@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     aligned: true
   }
 
-  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.get_empty_video_transformations()
+  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
   describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir

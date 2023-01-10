@@ -122,7 +122,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     initial_transformations =
       case context.options.initial_video_transformations do
         nil ->
-          VideoTransformations.get_empty_video_transformations()
+          VideoTransformations.empty()
 
         _other ->
           context.options.initial_video_transformations

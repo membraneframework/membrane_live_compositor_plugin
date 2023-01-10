@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
     aligned: true
   }
 
-  @empty_video_transformations VideoTransformations.get_empty_video_transformations()
+  @empty_video_transformations VideoTransformations.empty()
 
   describe "Checks timestamp_offset function on pipeline with" do
     @describetag :tmp_dir

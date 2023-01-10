@@ -113,7 +113,10 @@ impl TextureTransformationPipeline {
         });
 
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some(&format!("{} uniform buffer", stringify!(T),)),
+            label: Some(&format!(
+                "Texture transformation pipeline {} uniform buffer",
+                stringify!(T),
+            )),
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
             size: std::mem::size_of::<T>() as u64,
