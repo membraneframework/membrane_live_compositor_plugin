@@ -1,3 +1,4 @@
+#![allow(clippy::needless_borrow)]
 use rustler::NifUntaggedEnum;
 
 use crate::compositor::math::Vec2d;
@@ -5,7 +6,7 @@ use crate::compositor::texture_transformations::corners_rounding::CornersRoundin
 use crate::compositor::texture_transformations::cropping::Cropping;
 use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
 use crate::compositor::{self, VideoPlacement, VideoProperties};
-use crate::elixir_bridge::atoms;
+use crate::elixir_bridge::{atoms, convert_z};
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
@@ -35,7 +36,7 @@ impl ElixirBaseVideoPlacement {
                 x: self.size.0,
                 y: self.size.1,
             },
-            z: crate::elixir_bridge::convert_z(self.z_value),
+            z: convert_z(self.z_value),
         }
     }
 }

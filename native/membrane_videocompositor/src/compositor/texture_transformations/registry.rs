@@ -11,6 +11,7 @@ use super::{
 pub struct TextureTransformationRegistry(HashMap<TypeId, TextureTransformationPipeline>);
 
 impl TextureTransformationRegistry {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self(HashMap::new())
     }
