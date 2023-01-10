@@ -4,6 +4,8 @@ use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
+use crate::elixir_bridge::RawVideo;
+
 use super::colour_converters::YUVToRGBAConverter;
 
 use super::texture_transformations::registry::TextureTransformationRegistry;
@@ -204,7 +206,7 @@ impl InputVideo {
         }
     }
 
-    pub fn vertex_data(&self, output_caps: &crate::RawVideo) -> [Vertex; 4] {
+    pub fn vertex_data(&self, output_caps: &RawVideo) -> [Vertex; 4] {
         let scene_width = output_caps.width;
         let scene_height = output_caps.height;
 
@@ -270,7 +272,7 @@ impl InputVideo {
         &'a mut self,
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
-        output_caps: &crate::RawVideo,
+        output_caps: &RawVideo,
         frame_interval: Option<(u64, u64)>,
     ) -> DrawResult {
         queue.write_buffer(

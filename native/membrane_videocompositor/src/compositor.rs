@@ -10,7 +10,7 @@ mod videos;
 use textures::*;
 use videos::*;
 
-use crate::errors::CompositorError;
+use crate::{elixir_bridge::RawVideo, errors::CompositorError};
 pub use math::{Vec2d, Vertex};
 pub use videos::{VideoPlacement, VideoProperties};
 
@@ -33,13 +33,13 @@ pub struct State {
     all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
-    output_caps: crate::RawVideo,
+    output_caps: RawVideo,
     last_pts: Option<u64>,
     texture_transformation_pipelines: TextureTransformationRegistry,
 }
 
 impl State {
-    pub async fn new(output_caps: &crate::RawVideo) -> Result<State, CompositorError> {
+    pub async fn new(output_caps: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -452,18 +452,21 @@ impl State {
 mod tests {
     use std::num::{NonZeroU32, NonZeroU64};
 
-    use crate::compositor::texture_transformations::{
-        corners_rounding::CornersRounding, cropping::Cropping,
+    use crate::{
+        compositor::texture_transformations::{
+            corners_rounding::CornersRounding, cropping::Cropping,
+        },
+        elixir_bridge::PixelFormat,
     };
 
     use super::*;
 
-    impl Default for crate::RawVideo {
+    impl Default for RawVideo {
         fn default() -> Self {
             Self {
                 width: NonZeroU32::new(2).unwrap(),
                 height: NonZeroU32::new(2).unwrap(),
-                pixel_format: crate::PixelFormat::I420,
+                pixel_format: PixelFormat::I420,
                 framerate: (NonZeroU64::new(1).unwrap(), NonZeroU64::new(1).unwrap()),
             }
         }
@@ -472,7 +475,7 @@ mod tests {
     const FRAME: &[u8; 6] = &[0x30, 0x40, 0x30, 0x40, 0x80, 0xb0];
 
     fn setup_videos(n: usize) -> State {
-        let caps = crate::RawVideo {
+        let caps = RawVideo {
             width: NonZeroU32::new(2 * n as u32).unwrap(),
             height: NonZeroU32::new(2).unwrap(),
             ..Default::default()

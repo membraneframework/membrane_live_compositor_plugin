@@ -5,7 +5,7 @@ use crate::compositor::texture_transformations::corners_rounding::CornersRoundin
 use crate::compositor::texture_transformations::cropping::Cropping;
 use crate::compositor::texture_transformations::{set_video_properties, TextureTransformation};
 use crate::compositor::{self, VideoPlacement, VideoProperties};
-use crate::{atoms, convert_z};
+use crate::elixir_bridge::atoms;
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
@@ -35,7 +35,7 @@ impl ElixirBaseVideoPlacement {
                 x: self.size.0,
                 y: self.size.1,
             },
-            z: convert_z(self.z_value),
+            z: crate::elixir_bridge::convert_z(self.z_value),
         }
     }
 }

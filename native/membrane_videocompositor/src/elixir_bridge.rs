@@ -1,11 +1,7 @@
-use compositor::math::Vec2d;
-use elixir_structs::*;
-use errors::CompositorError;
+use crate::compositor::math::Vec2d;
+use crate::errors::CompositorError;
+use crate::{compositor, elixir_structs::*};
 use rustler::ResourceArc;
-
-mod compositor;
-mod elixir_structs;
-mod errors;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {
@@ -54,7 +50,7 @@ impl TryFrom<ElixirRawVideo> for RawVideo {
     }
 }
 
-mod atoms {
+pub mod atoms {
     rustler::atoms! {
         ok,
         error,
@@ -194,7 +190,7 @@ fn add_video(
     Ok(atoms::ok())
 }
 
-fn convert_z(z: f32) -> f32 {
+pub fn convert_z(z: f32) -> f32 {
     // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
     // which is outside of the wgpu clip space
     1.0 - z.max(1e-7)
