@@ -45,7 +45,7 @@ impl TextureTransformationPipeline {
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some(&format!(
                     "Texture transformation pipeline {} uniform bind group layout",
-                    stringify!(T)
+                    T::transformation_name()
                 )),
                 entries: &[wgpu::BindGroupLayoutEntry {
                     binding: 0,
@@ -64,7 +64,7 @@ impl TextureTransformationPipeline {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&format!(
                 "Texture transformation pipeline {} pipeline layout",
-                stringify!(T),
+                T::transformation_name(),
             )),
             bind_group_layouts: &[
                 single_texture_bind_group_layout,
@@ -77,7 +77,7 @@ impl TextureTransformationPipeline {
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!(
                 "Texture transformation pipeline {} pipeline",
-                stringify!(T),
+                T::transformation_name(),
             )),
             layout: Some(&pipeline_layout),
             primitive: wgpu::PrimitiveState {
@@ -115,7 +115,7 @@ impl TextureTransformationPipeline {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some(&format!(
                 "Texture transformation pipeline {} uniform buffer",
-                stringify!(T),
+                T::transformation_name(),
             )),
             mapped_at_creation: false,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
@@ -125,7 +125,7 @@ impl TextureTransformationPipeline {
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!(
                 "Texture transformation pipeline {} uniform bind group",
-                stringify!(T)
+                T::transformation_name()
             )),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -161,8 +161,8 @@ impl TextureTransformationPipeline {
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {} encoder",
-                stringify!(T),
+                "Texture transformation pipeline {:#?} encoder",
+                transformation.transformation_name_method(),
             )),
         });
 
@@ -170,7 +170,7 @@ impl TextureTransformationPipeline {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!(
                     "Texture transformation pipeline {} render pass",
-                    stringify!(T),
+                    transformation.transformation_name_method(),
                 )),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {

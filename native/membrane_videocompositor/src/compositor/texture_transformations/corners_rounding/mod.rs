@@ -32,4 +32,12 @@ impl TextureTransformation for CornersRounding {
     fn data(&self) -> &[u8] {
         bytemuck::cast_slice(std::slice::from_ref(self))
     }
+
+    fn transformation_name() -> &'static str {
+        "corners rounding"
+    }
+
+    fn transformation_name_method(&self) -> &'static str {
+        "corners rounding"
+    }
 }

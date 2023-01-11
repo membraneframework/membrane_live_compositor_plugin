@@ -37,6 +37,12 @@ pub trait TextureTransformation: Send + Sync + Debug + 'static {
     where
         Self: Sized;
 
+    fn transformation_name() -> &'static str
+    where
+        Self: Sized;
+
+    fn transformation_name_method(&self) -> &'static str;
+
     fn buffer_size() -> usize
     where
         Self: Sized,

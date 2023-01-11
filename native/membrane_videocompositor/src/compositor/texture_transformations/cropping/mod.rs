@@ -84,6 +84,14 @@ impl TextureTransformation for Cropping {
         bytemuck::cast_slice(std::slice::from_ref(self))
     }
 
+    fn transformation_name() -> &'static str {
+        "cropping"
+    }
+
+    fn transformation_name_method(&self) -> &'static str {
+        "cropping"
+    }
+
     fn shader_module(device: &wgpu::Device) -> wgpu::ShaderModule
     where
         Self: Sized,
