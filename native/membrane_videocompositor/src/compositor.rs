@@ -617,8 +617,9 @@ mod tests {
                 true,
             )),
             Box::new(CornersRounding {
-                corner_rounding_radius: 0.1,
-                video_width_height_ratio: 0.0,
+                corner_rounding_radius: 100.0,
+                video_width: 0.0,
+                video_height: 0.0,
             }),
         ];
 
@@ -629,9 +630,9 @@ mod tests {
                 true,
             )),
             Box::new(CornersRounding {
-                corner_rounding_radius: 0.1,
-                // cropping should changed resolution ratio from 16:9 to 32:9
-                video_width_height_ratio: 32.0 / 9.0,
+                corner_rounding_radius: 100.0,
+                video_width: 640.0,
+                video_height: 180.0,
             }),
         ];
 

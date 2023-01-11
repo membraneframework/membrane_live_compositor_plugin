@@ -12,13 +12,14 @@ use super::TextureTransformation;
 #[repr(C)]
 pub struct CornersRounding {
     pub corner_rounding_radius: f32,
-    pub video_width_height_ratio: f32,
+    pub video_width: f32,
+    pub video_height: f32,
 }
 
 impl TextureTransformation for CornersRounding {
     fn update_video_properties(&mut self, properties: VideoProperties) {
-        self.video_width_height_ratio =
-            properties.resolution.x as f32 / properties.resolution.y as f32;
+        self.video_width = properties.placement.size.x as f32;
+        self.video_height = properties.placement.size.y as f32;
     }
 
     fn transform_video_properties(&self, properties: VideoProperties) -> VideoProperties {

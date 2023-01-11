@@ -37,7 +37,7 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
       }
 
       corners_round = %CornersRounding{
-        corner_rounding_radius: 0.1
+        corner_rounding_radius: 100
       }
 
       video_spec = %InputStream{
