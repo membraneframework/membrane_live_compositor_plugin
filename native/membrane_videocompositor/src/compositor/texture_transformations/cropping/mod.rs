@@ -13,13 +13,12 @@ use super::TextureTransformation;
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
 #[repr(C)]
 pub struct Cropping {
-    scale_matrix: [[f32; 4]; 4],
-    translation_matrix: [[f32; 4]; 4],
-    pub top_left_corner_crop_x: f32,
-    pub top_left_corner_crop_y: f32,
-    pub crop_width: f32,
-    pub crop_height: f32,
-    pub transform_position: u32,
+    crop_matrix: [[f32; 4]; 4],
+    top_left_corner_crop_x: f32,
+    top_left_corner_crop_y: f32,
+    crop_width: f32,
+    crop_height: f32,
+    transform_position: u32,
     _padding: [u32; 3],
 }
 
@@ -37,13 +36,12 @@ impl Cropping {
         });
 
         Cropping {
+            crop_matrix: (translation_matrix * scale_matrix).into(),
             top_left_corner_crop_x: top_left_corner.x,
             top_left_corner_crop_y: top_left_corner.y,
             crop_width: crop_size.x,
             crop_height: crop_size.y,
             transform_position: transform_position as u32,
-            scale_matrix: scale_matrix.into(),
-            translation_matrix: translation_matrix.into(),
             _padding: [0; 3],
         }
     }
@@ -88,7 +86,7 @@ impl TextureTransformation for Cropping {
         "cropping"
     }
 
-    fn transformation_name_method(&self) -> &'static str {
+    fn transformation_name_dyn(&self) -> &'static str {
         "cropping"
     }
 

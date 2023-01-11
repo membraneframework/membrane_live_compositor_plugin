@@ -162,7 +162,7 @@ impl TextureTransformationPipeline {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some(&format!(
                 "Texture transformation pipeline {:#?} encoder",
-                transformation.transformation_name_method(),
+                transformation.transformation_name_dyn(),
             )),
         });
 
@@ -170,7 +170,7 @@ impl TextureTransformationPipeline {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!(
                     "Texture transformation pipeline {} render pass",
-                    transformation.transformation_name_method(),
+                    transformation.transformation_name_dyn(),
                 )),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     ops: wgpu::Operations {

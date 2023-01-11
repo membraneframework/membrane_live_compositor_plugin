@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.RustStructs.BaseVideoPlacement do
   @moduledoc """
-  A struct describing the video position, size and z-value for use with the rust-based compositor on the output frame,
-  before video transformations.
+  A struct describing the video position, size and z-value for use with the rust-based compositor
+  on the output frame, before video transformations.
   ## Values
   - position: tuple given in pixels, relative to the top right corner of the output frame,
   represents the position on the output frame before transformations

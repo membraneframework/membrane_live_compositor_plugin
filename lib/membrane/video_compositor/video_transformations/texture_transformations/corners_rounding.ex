@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.C
   @moduledoc """
   Describe cropping texture transformation parameter.
   Corner rounding transformation can be imagined as placing four circles with specified radius
-  adjoining to frame corners, placed inside frame and making space between circle edge and
+  adjoining to frame borders, placed inside frame and making space between circle edge and
   nearest frame corner transparent.
   ## Values
   - corner_rounding_radius: non negative integer representing radius of circle "cutting"

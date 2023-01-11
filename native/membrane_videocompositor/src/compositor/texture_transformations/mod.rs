@@ -17,6 +17,8 @@ use super::VideoProperties;
 /// Trait that each new texture transformation should implement.
 /// Remember, that struct fields order in struct implementing this trait
 /// should match the one in shader for data to be mapped correctly.
+/// Keep in mind, that sometimes adding some padding might be required.
+/// For more reference on padding and alignment check: https://www.w3.org/TR/WGSL/#memory-layouts
 pub trait TextureTransformation: Send + Sync + Debug + 'static {
     /// Returns struct data sliced passed to shader.
     fn data(&self) -> &[u8];
@@ -41,7 +43,7 @@ pub trait TextureTransformation: Send + Sync + Debug + 'static {
     where
         Self: Sized;
 
-    fn transformation_name_method(&self) -> &'static str;
+    fn transformation_name_dyn(&self) -> &'static str;
 
     fn buffer_size() -> usize
     where

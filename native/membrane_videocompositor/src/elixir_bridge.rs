@@ -1,7 +1,10 @@
+use crate::compositor;
 use crate::compositor::math::Vec2d;
+use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
-use crate::{compositor, elixir_structs::*};
 use rustler::ResourceArc;
+
+mod elixir_structs;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {

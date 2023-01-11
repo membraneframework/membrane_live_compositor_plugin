@@ -24,7 +24,7 @@ use self::{
 
 pub struct State {
     device: wgpu::Device,
-    pub input_videos: BTreeMap<usize, InputVideo>,
+    input_videos: BTreeMap<usize, InputVideo>,
     output_textures: OutputTextures,
     pipeline: wgpu::RenderPipeline,
     queue: wgpu::Queue,

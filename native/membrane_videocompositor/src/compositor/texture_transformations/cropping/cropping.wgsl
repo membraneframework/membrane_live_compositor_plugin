@@ -9,8 +9,7 @@ struct VertexOutput {
 }
 
 struct CroppingUnifrom{
-    scale_matrix: mat4x4<f32>,
-    translation_matrix: mat4x4<f32>,
+    crop_matrix: mat4x4<f32>,
     top_left_corner_crop_x: f32,
     top_left_corner_crop_y: f32,
     crop_width: f32,
@@ -32,7 +31,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
     output.position = vec4<f32>(input.position, 1.0);
-    output.texture_coords = (cropping.translation_matrix * cropping.scale_matrix * vec4<f32>(input.texture_coords, 0.0, 1.0)).xy;
+    output.texture_coords = (cropping.crop_matrix * vec4<f32>(input.texture_coords, 0.0, 1.0)).xy;
 
     return output;
 }
