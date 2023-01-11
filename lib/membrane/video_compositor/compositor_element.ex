@@ -52,8 +52,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         spec: VideoTransformations.t(),
         description:
           "Specify the initial types and the order of transformations applied to video.",
-        # Can't set here struct, due to quote error (AST invalid node).
-        # Calling Macro.escape() returns tuple and makes code more error prone and less readable.
+        # Membrane Core uses macro with a quote on def_input_pad, which breaks structured data like structs.
+        # To avoid that, we would need to use Macro.escape(%VideoTransformations{texture_transformations: []})
+        # here and handle its mapping letter, which is a significantly harder and less readable than handling nil
+        # as a default value, that's why we use nil here.
         default: nil
       ]
     ]
