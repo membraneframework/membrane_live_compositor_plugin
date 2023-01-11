@@ -611,13 +611,11 @@ mod tests {
     fn update_properties_test() -> Result<(), CompositorError> {
         let mut compositor = setup_videos(4);
         let texture_transformations: Vec<Box<dyn TextureTransformation>> = vec![
-            Box::new(Cropping {
-                top_left_corner_crop_x: 0.1,
-                top_left_corner_crop_y: 0.1,
-                crop_width: 0.5,
-                crop_height: 0.25,
-                transform_position: 1,
-            }),
+            Box::new(Cropping::new(
+                Vec2d { x: 0.1, y: 0.1 },
+                Vec2d { x: 0.5, y: 0.25 },
+                true,
+            )),
             Box::new(CornersRounding {
                 corner_rounding_radius: 0.1,
                 video_width_height_ratio: 0.0,
@@ -625,13 +623,11 @@ mod tests {
         ];
 
         let transformed_texture_transformations: Vec<Box<dyn TextureTransformation>> = vec![
-            Box::new(Cropping {
-                top_left_corner_crop_x: 0.1,
-                top_left_corner_crop_y: 0.1,
-                crop_width: 0.5,
-                crop_height: 0.25,
-                transform_position: 1,
-            }),
+            Box::new(Cropping::new(
+                Vec2d { x: 0.1, y: 0.1 },
+                Vec2d { x: 0.5, y: 0.25 },
+                true,
+            )),
             Box::new(CornersRounding {
                 corner_rounding_radius: 0.1,
                 // cropping should changed resolution ratio from 16:9 to 32:9

@@ -1,4 +1,5 @@
 use bytemuck::{Pod, Zeroable};
+use cgmath::*;
 
 use crate::compositor::{math::Vec2d, VideoPlacement, VideoProperties};
 
@@ -12,11 +13,40 @@ use super::TextureTransformation;
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
 #[repr(C)]
 pub struct Cropping {
+    scale_matrix: [[f32; 4]; 4],
+    translation_matrix: [[f32; 4]; 4],
     pub top_left_corner_crop_x: f32,
     pub top_left_corner_crop_y: f32,
     pub crop_width: f32,
     pub crop_height: f32,
     pub transform_position: u32,
+    _padding: [u32; 3],
+}
+
+impl Cropping {
+    pub fn new(
+        top_left_corner: Vec2d<f32>,
+        crop_size: Vec2d<f32>,
+        transform_position: bool,
+    ) -> Self {
+        let scale_matrix = cgmath::Matrix4::from_nonuniform_scale(crop_size.x, crop_size.y, 1.0);
+        let translation_matrix = cgmath::Matrix4::from_translation(Vector3 {
+            x: top_left_corner.x,
+            y: top_left_corner.y,
+            z: 0.0,
+        });
+
+        Cropping {
+            top_left_corner_crop_x: top_left_corner.x,
+            top_left_corner_crop_y: top_left_corner.y,
+            crop_width: crop_size.x,
+            crop_height: crop_size.y,
+            transform_position: transform_position as u32,
+            scale_matrix: scale_matrix.into(),
+            translation_matrix: translation_matrix.into(),
+            _padding: [0; 3],
+        }
+    }
 }
 
 impl TextureTransformation for Cropping {

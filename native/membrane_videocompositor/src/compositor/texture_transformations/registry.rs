@@ -33,14 +33,16 @@ impl TextureTransformationRegistry {
         &self,
         transformation: &dyn TextureTransformation,
     ) -> &TextureTransformationPipeline {
-        self.get_from_typeid(transformation.type_id())
+        match self.get_from_typeid(transformation.type_id()) {
+            Some(texture_transformation_pipeline) => texture_transformation_pipeline,
+            None => panic!(
+                "Transformation pipeline of {:#?} hasn't been registered!",
+                transformation
+            ),
+        }
     }
 
-    fn get_from_typeid(&self, id: TypeId) -> &TextureTransformationPipeline {
-        self.0.get(&id).expect(concat!(
-            "Type",
-            stringify!(T),
-            "was never registered as a transformation"
-        ))
+    fn get_from_typeid(&self, id: TypeId) -> Option<&TextureTransformationPipeline> {
+        self.0.get(&id)
     }
 }

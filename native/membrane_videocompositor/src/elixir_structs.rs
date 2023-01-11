@@ -110,24 +110,28 @@ pub struct ElixirCropping {
     pub cropped_video_position: rustler::Atom,
 }
 
-impl Into<Box<dyn TextureTransformation>> for ElixirCropping {
-    fn into(self) -> Box<dyn TextureTransformation> {
-        let transform_position: u32;
+impl From<ElixirCropping> for Box<dyn TextureTransformation> {
+    fn from(val: ElixirCropping) -> Self {
+        let transform_position: bool;
 
-        if self.cropped_video_position == atoms::crop_part_position() {
-            transform_position = 1;
-        } else if self.cropped_video_position == atoms::input_position() {
-            transform_position = 0;
+        if val.cropped_video_position == atoms::crop_part_position() {
+            transform_position = true;
+        } else if val.cropped_video_position == atoms::input_position() {
+            transform_position = false;
         } else {
             panic!("Unsupported elixir positioning format");
         }
 
-        Box::new(Cropping {
-            top_left_corner_crop_x: self.crop_top_left_corner.0,
-            top_left_corner_crop_y: self.crop_top_left_corner.1,
-            crop_width: self.crop_size.0,
-            crop_height: self.crop_size.1,
+        Box::new(Cropping::new(
+            Vec2d {
+                x: val.crop_top_left_corner.0,
+                y: val.crop_top_left_corner.1,
+            },
+            Vec2d {
+                x: val.crop_size.0,
+                y: val.crop_size.1,
+            },
             transform_position,
-        })
+        ))
     }
 }
