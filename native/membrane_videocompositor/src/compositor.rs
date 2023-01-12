@@ -386,7 +386,7 @@ impl State {
         let mut base_properties = *video.base_properties();
 
         if let Some(caps) = resolution {
-            base_properties.resolution = caps;
+            base_properties.input_resolution = caps;
         }
 
         if let Some(placement) = placement {
@@ -488,7 +488,7 @@ mod tests {
                 .add_video(
                     i,
                     VideoProperties {
-                        resolution: Vec2d { x: 2, y: 2 },
+                        input_resolution: Vec2d { x: 2, y: 2 },
                         placement: VideoPlacement {
                             position: Vec2d {
                                 x: 2 * i as i32,
@@ -568,7 +568,7 @@ mod tests {
         compositor.add_video(
             1,
             VideoProperties {
-                resolution: Vec2d { x: 2, y: 2 },
+                input_resolution: Vec2d { x: 2, y: 2 },
                 placement: VideoPlacement {
                     position: Vec2d { x: 2, y: 0 },
                     size: Vec2d { x: 2, y: 2 },
@@ -618,8 +618,6 @@ mod tests {
             )),
             Box::new(CornersRounding {
                 border_radius: 100.0,
-                video_width: 0.0,
-                video_height: 0.0,
             }),
         ];
 
@@ -631,8 +629,6 @@ mod tests {
             )),
             Box::new(CornersRounding {
                 border_radius: 100.0,
-                video_width: 640.0,
-                video_height: 180.0,
             }),
         ];
 
@@ -653,7 +649,7 @@ mod tests {
             compositor.input_videos.get(&0).unwrap().base_properties,
             // base properties shouldn't be effected by transformations
             VideoProperties {
-                resolution: Vec2d { x: 640, y: 360 },
+                input_resolution: Vec2d { x: 640, y: 360 },
                 placement: VideoPlacement {
                     position: Vec2d { x: 0, y: 0 },
                     size: Vec2d { x: 1280, y: 720 },
@@ -669,7 +665,7 @@ mod tests {
                 .unwrap()
                 .transformed_properties,
             VideoProperties {
-                resolution: Vec2d { x: 320, y: 90 },
+                input_resolution: Vec2d { x: 320, y: 90 },
                 placement: VideoPlacement {
                     // cropping changes position to render plane fit position od crop on output frame
                     position: Vec2d { x: 128, y: 72 },

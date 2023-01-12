@@ -63,9 +63,9 @@ impl TextureTransformation for Cropping {
             false => properties.placement.position,
         };
         VideoProperties {
-            resolution: Vec2d {
-                x: (properties.resolution.x as f32 * self.crop_width).round() as u32,
-                y: (properties.resolution.y as f32 * self.crop_height).round() as u32,
+            input_resolution: Vec2d {
+                x: (properties.input_resolution.x as f32 * self.crop_width).round() as u32,
+                y: (properties.input_resolution.y as f32 * self.crop_height).round() as u32,
             },
             placement: VideoPlacement {
                 position: transformed_position,

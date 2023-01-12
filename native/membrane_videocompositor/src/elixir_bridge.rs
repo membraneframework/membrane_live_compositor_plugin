@@ -176,7 +176,7 @@ fn add_video(
     let base_placement = placement.into();
 
     let base_properties = compositor::VideoProperties {
-        resolution: Vec2d {
+        input_resolution: Vec2d {
             x: caps.width.get(),
             y: caps.height.get(),
         },

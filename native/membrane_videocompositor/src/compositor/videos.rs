@@ -19,7 +19,7 @@ pub struct VideoProperties {
     /// Position in pixels.
     /// Specifying a position outside of the `output_caps`
     /// of the scene this will be rendered onto will cause it to not be displayed.
-    pub resolution: Vec2d<u32>,
+    pub input_resolution: Vec2d<u32>,
     pub placement: VideoPlacement,
 }
 
@@ -77,8 +77,8 @@ impl InputVideo {
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            base_properties.resolution.x,
-            base_properties.resolution.y,
+            base_properties.input_resolution.x,
+            base_properties.input_resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -126,8 +126,8 @@ impl InputVideo {
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            base_properties.resolution.x,
-            base_properties.resolution.y,
+            base_properties.placement.size.x,
+            base_properties.placement.size.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -161,8 +161,8 @@ impl InputVideo {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
             device,
-            self.base_properties.resolution.x,
-            self.base_properties.resolution.y,
+            self.base_properties.input_resolution.x,
+            self.base_properties.input_resolution.y,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
@@ -174,8 +174,8 @@ impl InputVideo {
                 transformation.transform_video_properties(transformed_properties);
             let transformed_frame = RGBATexture::new(
                 device,
-                transformed_properties.resolution.x,
-                transformed_properties.resolution.y,
+                transformed_properties.input_resolution.x,
+                transformed_properties.input_resolution.y,
                 &self.single_texture_bind_group_layout,
             );
 
