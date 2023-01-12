@@ -5,12 +5,12 @@ use crate::compositor::VideoProperties;
 use super::TextureTransformation;
 
 /// Struct representing parameters for video corners rounding texture transformation.
-/// corner_rounding_radius is value representing the radius of the circle in pixels "cutting"
+/// border_radius is value representing the radius of the circle in pixels "cutting"
 /// frame corner part.
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
 #[repr(C)]
 pub struct CornersRounding {
-    pub corner_rounding_radius: f32,
+    pub border_radius: f32,
     pub video_width: f32,
     pub video_height: f32,
 }

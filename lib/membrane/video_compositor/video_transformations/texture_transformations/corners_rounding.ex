@@ -5,16 +5,16 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.C
   adjoining to frame borders, placed inside frame and making space between circle edge and
   nearest frame corner transparent.
   ## Values
-  - corner_rounding_radius: non negative integer representing radius of circle "cutting"
+  - border_radius: non negative integer representing radius of circle "cutting"
   frame corner part.
   ## Examples
     Example struct describing transformation which rounds corners with 100 pixel radius:
 
       iex> alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding
       Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding
-      iex> %CornersRounding{ corner_rounding_radius: 100 }
+      iex> %CornersRounding{ border_radius: 100 }
       %Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding{
-        corner_rounding_radius: 100
+        border_radius: 100
       }
   """
 
@@ -22,9 +22,9 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.C
   Describe cropping texture transformation parameter.
   """
   @type t :: %__MODULE__{
-          corner_rounding_radius: non_neg_integer()
+          border_radius: non_neg_integer()
         }
 
-  @enforce_keys [:corner_rounding_radius]
+  @enforce_keys [:border_radius]
   defstruct @enforce_keys
 end

@@ -89,13 +89,13 @@ impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
 #[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding"]
 pub struct ElixirCornersRounding {
-    pub corner_rounding_radius: u32,
+    pub border_radius: u32,
 }
 
 impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
     fn into(self) -> Box<dyn TextureTransformation> {
         Box::new(CornersRounding {
-            corner_rounding_radius: self.corner_rounding_radius as f32,
+            border_radius: self.border_radius as f32,
             video_width: 0.0,  // will be updated in compositor
             video_height: 0.0, // will be updated in compositor
         })
