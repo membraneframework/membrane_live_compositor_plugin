@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
     Cropping
   }
 
-  @hd_video %RawVideo{
+  @video_caps %RawVideo{
     width: 1280,
     height: 720,
     framerate: {1, 1},
@@ -25,111 +25,116 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
     aligned: true
   }
 
+  @duration 1
+  @sub_dir_name "short_videos"
+
+  @crop %Cropping{
+    crop_top_left_corner: {0.5, 0.5},
+    crop_size: {0.5, 0.5}
+  }
+  @corners_round %CornersRounding{
+    border_radius: 100
+  }
+  @transformations %VideoTransformations{
+    texture_transformations: [@crop, @corners_round]
+  }
+
   describe "Checks corners rounding and cropping" do
     @describetag :tmp_dir
 
-    # TODO: test cropped_video_position option
-    @tag wgpu: true
-    test "1 frame 720p raw", %{tmp_dir: tmp_dir} do
-      crop = %Cropping{
-        crop_top_left_corner: {0.5, 0.5},
-        crop_size: {0.5, 0.5}
-      }
+    # Because of differences in linux and mac hardware, we need to compere
+    # rendered images to different references.
+    @tag linux: true
+    test "1 frame 720p raw linux", %{tmp_dir: tmp_dir} do
+      test_transformations(tmp_dir, "linux")
+    end
 
-      corners_round = %CornersRounding{
-        border_radius: 100
-      }
-
-      video_spec = %InputStream{
-        placement: nil,
-        transformations: %VideoTransformations{
-          texture_transformations: [crop, corners_round]
-        },
-        caps: @hd_video,
-        input: nil
-      }
-
-      test_transformations(@hd_video, 1, tmp_dir, "short_videos", video_spec)
+    @tag mac: true
+    test "1 frame 720p raw mac", %{tmp_dir: tmp_dir} do
+      test_transformations(tmp_dir, "mac")
     end
   end
 
-  @spec test_transformations(
-          Membrane.RawVideo.t(),
-          non_neg_integer(),
-          binary(),
-          binary(),
-          InputStream.t()
-        ) ::
+  @spec test_transformations(binary(), String.t()) ::
           nil
-  defp test_transformations(video_caps, duration, tmp_dir, sub_dir_name, video_spec) do
+  defp test_transformations(tmp_dir, render_environment) do
     {input_path, _output_path, _reference_path} =
       Utils.prepare_testing_video(
-        video_caps,
-        duration,
+        @video_caps,
+        @duration,
         "raw",
         tmp_dir,
-        sub_dir_name
+        @sub_dir_name
       )
 
     out_caps = %RawVideo{
-      video_caps
-      | width: video_caps.width * 2,
-        height: video_caps.height * 2
+      @video_caps
+      | width: @video_caps.width * 2,
+        height: @video_caps.height * 2
     }
 
     output_path =
       Path.join(
         tmp_dir,
-        "out_#{duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
+        "out_#{@duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
       )
 
-    reference_path = "test/fixtures/texture_transformations/ref_cropping_and_corners_rounding.yuv"
+    reference_path =
+      case String.to_atom(render_environment) do
+        :linux ->
+          "test/fixtures/texture_transformations/ref_linux_cropping_and_corners_rounding.yuv"
+
+        :mac ->
+          "test/fixtures/texture_transformations/ref_mac_cropping_and_corners_rounding.yuv"
+      end
 
     positions = [
       {0, 0},
-      {video_caps.width, 0},
-      {0, video_caps.height},
-      {video_caps.width, video_caps.height}
+      {@video_caps.width, 0},
+      {0, @video_caps.height},
+      {@video_caps.width, @video_caps.height}
     ]
 
     background_video = %InputStream{
       placement: %BaseVideoPlacement{
         position: {0, 0},
-        size: {@hd_video.width * 2, @hd_video.height * 2}
+        size: {@video_caps.width * 2, @video_caps.height * 2}
       },
       transformations: %VideoTransformations{
         texture_transformations: []
       },
-      caps: @hd_video,
+      caps: @video_caps,
       input: input_path
     }
 
-    inputs =
+    transformed_videos =
       for(
         pos <- positions,
         do: %InputStream{
-          video_spec
-          | placement: %BaseVideoPlacement{
-              position: pos,
-              size: {@hd_video.width, @hd_video.height},
-              z_value: 0.5
-            },
-            input: input_path
+          placement: %BaseVideoPlacement{
+            position: pos,
+            size: {@video_caps.width, @video_caps.height},
+            z_value: 0.5
+          },
+          transformations: @transformations,
+          caps: @video_caps,
+          input: input_path
         }
       )
 
     middle_video = %InputStream{
-      video_spec
-      | placement: %BaseVideoPlacement{
-          position: {-@hd_video.width, -@hd_video.height},
-          size: {@hd_video.width * 2, @hd_video.height * 2},
-          z_value: 0.2
-        },
-        input: input_path
+      placement: %BaseVideoPlacement{
+        position: {-@video_caps.width, -@video_caps.height},
+        size: {@video_caps.width * 2, @video_caps.height * 2},
+        z_value: 0.2
+      },
+      transformations: @transformations,
+      caps: @video_caps,
+      input: input_path
     }
 
     options = %Options{
-      inputs: inputs ++ [middle_video] ++ [background_video],
+      inputs: transformed_videos ++ [middle_video] ++ [background_video],
       output: output_path,
       caps: out_caps
     }
