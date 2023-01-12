@@ -96,6 +96,8 @@ impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
     fn into(self) -> Box<dyn TextureTransformation> {
         Box::new(CornersRounding {
             border_radius: self.border_radius as f32,
+            video_width: 0.0,  // will be updated in compositor
+            video_height: 0.0, // will be updated in compositor
         })
     }
 }

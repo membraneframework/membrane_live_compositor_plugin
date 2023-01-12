@@ -20,8 +20,8 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
 struct CornersRoundingUnifrom{
     border_radius: f32,
-    // video_width: f32,
-    // video_height: f32
+    video_width: f32,
+    video_height: f32
 }
 
 @group(0) @binding(0)
@@ -64,9 +64,8 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     // and if the distance is larger than the circle radius, it makes the pixel transparent.
 
     let border_radius = corners_rounding_uniform.border_radius;
-    let video_resolution = vec2<f32>(textureDimensions(texture));
-    let video_width = video_resolution.x;
-    let video_height = video_resolution.y;
+    let video_width = corners_rounding_uniform.video_width;
+    let video_height = corners_rounding_uniform.video_height;
 
     var is_on_edge: IsInCorner;
 

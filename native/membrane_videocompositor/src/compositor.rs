@@ -618,6 +618,8 @@ mod tests {
             )),
             Box::new(CornersRounding {
                 border_radius: 100.0,
+                video_width: 0.0,
+                video_height: 0.0,
             }),
         ];
 
@@ -629,6 +631,8 @@ mod tests {
             )),
             Box::new(CornersRounding {
                 border_radius: 100.0,
+                video_width: 640.0,
+                video_height: 180.0,
             }),
         ];
 
