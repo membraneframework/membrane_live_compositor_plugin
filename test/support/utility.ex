@@ -59,7 +59,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   @spec generate_testing_video(input_video_path_t(), Membrane.RawVideo.t(), duration_t()) ::
           nil | :ok
   def generate_testing_video(file_name, video_description, duration) do
-    # ffmpeg -f lavfi -i testsrc=duration=4:size=1280x720:rate=30,format=yuv420p -f rawvideo test/fixtures/4s_30fps.raw
     {num, den} = video_description.framerate
     framerate = div(num, den)
 
@@ -110,7 +109,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
         ) ::
           {input_video_path_t(), output_video_path_t(), reference_video_path_t()}
   def prepare_paths(file_base_name, tmp_dir \\ "", sub_dir_name \\ "") do
-    fixtures_dir =
+    videos_dir =
       Path.join([
         File.cwd!(),
         "test",
@@ -120,7 +119,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
 
     tmp_dir = if tmp_dir == "", do: get_tmp_dir(), else: tmp_dir
 
-    in_path = Path.join(fixtures_dir, "input-#{file_base_name}")
+    in_path = Path.join(videos_dir, "input-#{file_base_name}")
     out_path = Path.join(tmp_dir, "out-#{file_base_name}")
     ref_path = Path.join(tmp_dir, "ref-#{file_base_name}")
     {in_path, out_path, ref_path}
@@ -231,7 +230,6 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
       rest
     end
 
-    # -video_size 1280x720 -framerate 25 -pixel_format yuv420p
     {num, den} = video_description.framerate
 
     [
@@ -260,7 +258,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   Compare contents of two raw files, succeeding when `different_bytes / length < allowed_error`
   """
   @spec compare_contents_with_error(binary(), binary(), float()) :: boolean()
-  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 0.005) do
+  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 0.003) do
     {:ok, reference_file} = File.read(reference_path)
     {:ok, output_file} = File.read(output_path)
 

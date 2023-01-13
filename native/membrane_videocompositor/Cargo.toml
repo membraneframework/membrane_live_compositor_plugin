@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 bytemuck = { version = "1.12.1", features = ["derive"] }
+cgmath = "0.18.0"
 futures-intrusive = "0.4.0"
 pollster = "0.2.5"
 rustler = "0.26.0"

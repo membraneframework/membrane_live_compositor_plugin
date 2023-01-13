@@ -163,7 +163,6 @@ impl YUVTextures {
                 ],
             })
         });
-
         Self { planes, bind_group }
     }
 

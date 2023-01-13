@@ -6,9 +6,10 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Utils
+  alias Membrane.VideoCompositor.VideoTransformations
 
   @hd_video %RawVideo{
     width: 1280,
@@ -17,6 +18,8 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
     pixel_format: :I420,
     aligned: true
   }
+
+  @empty_video_transformations VideoTransformations.empty()
 
   describe "Checks timestamp_offset function on pipeline with" do
     @describetag :tmp_dir
@@ -76,10 +79,11 @@ defmodule Membrane.VideoCompositor.Test.TimestampOffset do
 
     inputs = [
       %InputStream{
-        placement: %VideoPlacement{
+        placement: %BaseVideoPlacement{
           position: {0, 0},
-          display_size: {video_caps.width, video_caps.height}
+          size: {video_caps.width, video_caps.height}
         },
+        transformations: @empty_video_transformations,
         caps: video_caps,
         timestamp_offset: timestamp_offset,
         input: input_path

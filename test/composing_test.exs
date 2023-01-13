@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.RustStructs.VideoPlacement
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Test.Support.Utils
 
@@ -19,6 +19,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     pixel_format: :I420,
     aligned: true
   }
+
+  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
   describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
@@ -85,10 +87,11 @@ defmodule Membrane.VideoCompositor.Test.Composing do
       for(
         pos <- positions,
         do: %InputStream{
-          placement: %VideoPlacement{
+          placement: %BaseVideoPlacement{
             position: pos,
-            display_size: {video_caps.width, video_caps.height}
+            size: {video_caps.width, video_caps.height}
           },
+          transformations: @empty_video_transformations,
           caps: video_caps,
           input: input_path
         }
