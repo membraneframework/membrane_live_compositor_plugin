@@ -126,8 +126,8 @@ impl InputVideo {
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            base_properties.placement.size.x,
-            base_properties.placement.size.y,
+            base_properties.input_resolution.x,
+            base_properties.input_resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
