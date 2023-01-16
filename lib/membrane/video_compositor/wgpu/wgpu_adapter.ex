@@ -128,10 +128,10 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
         ) :: :ok | {:error, :bad_video_index}
   def update_transformations(state, id, transformations) do
     case Native.update_transformations(state, id, transformations) do
-      :ok ->
+      {:ok, :ok} ->
         :ok
 
-      {:error, :bad_video_index} ->
+      {:error, {:bad_video_index, _index}} ->
         {:error, :bad_video_index}
 
       {:error, reason} ->
