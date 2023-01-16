@@ -34,10 +34,10 @@ var sampler_: sampler;
 var<uniform> corners_rounding_uniform: CornersRoundingUnifrom;
 
 struct IsInCorner {
-    left_border: bool,
-    right_border: bool,
-    top_border: bool,
-    bot_border: bool,
+    left_border: f32,
+    right_border: f32,
+    top_border: f32,
+    bot_border: f32,
 }
 
 fn get_nearest_inner_corner_coords_in_pixels(
@@ -46,22 +46,17 @@ fn get_nearest_inner_corner_coords_in_pixels(
     video_height: f32,
     border_radius: f32
 ) -> vec2<f32> {
-    if (is_on_edge.left_border && is_on_edge.top_border) {
-        return vec2<f32>(border_radius, border_radius);
-    } else if (is_on_edge.right_border && is_on_edge.top_border) {
-        return vec2<f32>(video_width - border_radius, border_radius);
-    } else if (is_on_edge.right_border && is_on_edge.bot_border) {
-        return vec2<f32>(video_width - border_radius, video_height - border_radius);
-    } else {
-        return vec2<f32>(border_radius, video_height - border_radius);
-    }
+    let x = is_on_edge.left_border * border_radius + is_on_edge.right_border * (video_width - border_radius);
+    let y = is_on_edge.top_border * border_radius + is_on_edge.bot_border * (video_height - border_radius);
+
+    return vec2(x, y);
 }
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     // Firstly calculates, whether the pixel is in the square in one of the video corners,
     // then calculates the distance to the center of the circle located in corner of the video
-    // and if the distance is larger than the circle radius, it makes the pixel transparent.
+    // and applies the smoothstep functon to the alpha value of the pixel.
 
     let border_radius = corners_rounding_uniform.border_radius;
     let video_width = corners_rounding_uniform.video_width;
@@ -69,29 +64,26 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
 
     var is_on_edge: IsInCorner;
 
-    is_on_edge.left_border = (input.texture_coords.x * video_width < border_radius);
-    is_on_edge.right_border = (input.texture_coords.x * video_width > video_width - border_radius);
-    is_on_edge.top_border = (input.texture_coords.y * video_height < border_radius);
-    is_on_edge.bot_border = (input.texture_coords.y * video_height > video_height - border_radius);
+    is_on_edge.left_border = f32((input.texture_coords.x * video_width) < border_radius);
+    is_on_edge.right_border = f32((input.texture_coords.x * video_width) > video_width - border_radius);
+    is_on_edge.top_border = f32((input.texture_coords.y * video_height) < border_radius);
+    is_on_edge.bot_border = f32((input.texture_coords.y * video_height) > video_height - border_radius);
 
-    let is_in_corner = ( (is_on_edge.left_border || is_on_edge.right_border) && (is_on_edge.top_border || is_on_edge.bot_border) );
+    let is_in_corner = max(is_on_edge.left_border, is_on_edge.right_border) * max(is_on_edge.top_border, is_on_edge.bot_border);
     let colour = textureSample(texture, sampler_, input.texture_coords);
 
-    if (is_in_corner) {
-        let corner_coords = get_nearest_inner_corner_coords_in_pixels(
-            is_on_edge,
-            video_width,
-            video_height,
-            border_radius
-        );
+    let corner_coords = get_nearest_inner_corner_coords_in_pixels(
+        is_on_edge,
+        video_width,
+        video_height,
+        border_radius
+    );
 
-        // to avoid non efficient sqrt function
-        // sqrt(a^2+b^2) > c <=> a^2+b^2 > c^2
-        if (pow(input.texture_coords.x * video_width - corner_coords.x, 2.0) + 
-            pow(input.texture_coords.y * video_height - corner_coords.y, 2.0)
-            > pow(border_radius, 2.0)) {
-            return vec4<f32>(0.0, 0.0, 0.0, 0.0);
-        }
-    }
-    return colour;
+    let d = distance(input.texture_coords * vec2(video_width, video_height), corner_coords);
+
+    let anti_aliasing_pixels = 1.5;
+
+    let alpha = smoothstep(border_radius + anti_aliasing_pixels, border_radius - anti_aliasing_pixels, d);
+
+    return vec4(colour.xyz, is_in_corner * alpha + (1. - is_in_corner));
 }
