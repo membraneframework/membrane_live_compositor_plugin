@@ -213,5 +213,63 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       Utils.compare_contents_with_error(in_path, out_path)
     end
+
+    @tag wgpu: true
+    test "update transformations has correct return type" do
+      caps = %RawVideo{
+        width: 640,
+        height: 360,
+        pixel_format: :I420,
+        framerate: {1, 1}
+      }
+
+      assert {:ok, state} = Native.init(caps)
+
+      assert :ok =
+               Native.add_video(
+                 state,
+                 0,
+                 caps,
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.0
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
+
+      assert :ok =
+               Native.add_video(
+                 state,
+                 1,
+                 caps,
+                 %BaseVideoPlacement{
+                   position: {0, 0},
+                   size: {caps.width, caps.height},
+                   z_value: 0.5
+                 },
+                 %VideoTransformations{
+                   texture_transformations: []
+                 }
+               )
+
+      assert :ok =
+               Native.update_transformations(
+                 state,
+                 0,
+                 %Membrane.VideoCompositor.VideoTransformations{texture_transformations: []}
+               )
+
+      bad_index = 3
+
+      assert {:error, {:bad_video_index, ^bad_index}} =
+               Native.update_transformations(
+                 state,
+                 bad_index,
+                 %Membrane.VideoCompositor.VideoTransformations{texture_transformations: []}
+               )
+    end
   end
 end

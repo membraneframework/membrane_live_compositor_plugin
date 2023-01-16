@@ -131,7 +131,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
       :ok ->
         :ok
 
-      {:error, :bad_video_index} ->
+      {:error, {:bad_video_index, _index}} ->
         {:error, :bad_video_index}
 
       {:error, reason} ->
