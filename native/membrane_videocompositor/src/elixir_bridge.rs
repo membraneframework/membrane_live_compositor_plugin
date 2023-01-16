@@ -245,18 +245,16 @@ fn update_transformations(
     state: rustler::ResourceArc<State>,
     id: usize,
     transformations: ElixirVideoTransformations,
-) -> Result<rustler::Atom, CompositorError> {
+) -> Result<rustler::Atom, rustler::Error> {
     let texture_transformations = transformations.into();
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    match state
+    state
         .compositor
-        .update_properties(id, None, None, Some(texture_transformations))
-    {
-        Ok(_) => Ok(atoms::ok()),
-        Err(compositor_error) => Err(compositor_error),
-    }
+        .update_properties(id, None, None, Some(texture_transformations))?;
+
+    Ok(atoms::ok())
 }
 
 #[rustler::nif]
