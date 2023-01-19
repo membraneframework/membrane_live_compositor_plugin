@@ -88,23 +88,23 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      caps = %RawVideo{
+      stream_format = %RawVideo{
         width: 640,
         height: 360,
         pixel_format: :I420,
         framerate: {60, 1}
       }
 
-      assert {:ok, state} = Native.init(caps)
+      assert {:ok, state} = Native.init(stream_format)
 
       assert :ok =
                Native.add_video(
                  state,
                  0,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.0
                  },
                  %VideoTransformations{
@@ -116,10 +116,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                Native.add_video(
                  state,
                  1,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.5
                  },
                  %VideoTransformations{
@@ -146,23 +146,23 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      caps = %RawVideo{
+      stream_format = %RawVideo{
         width: 640,
         height: 360,
         pixel_format: :I420,
         framerate: {1, 1}
       }
 
-      assert {:ok, state} = Native.init(caps)
+      assert {:ok, state} = Native.init(stream_format)
 
       assert :ok =
                Native.add_video(
                  state,
                  0,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.0
                  },
                  %VideoTransformations{
@@ -174,10 +174,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                Native.add_video(
                  state,
                  1,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.5
                  },
                  %VideoTransformations{
@@ -199,7 +199,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       Native.update_placement(state, 0, %BaseVideoPlacement{
         position: {0, 0},
-        size: {caps.width, caps.height},
+        size: {stream_format.width, stream_format.height},
         z_value: 1.0
       })
 
@@ -216,23 +216,23 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
     @tag wgpu: true
     test "update transformations has correct return type" do
-      caps = %RawVideo{
+      stream_format = %RawVideo{
         width: 640,
         height: 360,
         pixel_format: :I420,
         framerate: {1, 1}
       }
 
-      assert {:ok, state} = Native.init(caps)
+      assert {:ok, state} = Native.init(stream_format)
 
       assert :ok =
                Native.add_video(
                  state,
                  0,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.0
                  },
                  %VideoTransformations{
@@ -244,10 +244,10 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                Native.add_video(
                  state,
                  1,
-                 caps,
+                 stream_format,
                  %BaseVideoPlacement{
                    position: {0, 0},
-                   size: {caps.width, caps.height},
+                   size: {stream_format.width, stream_format.height},
                    z_value: 0.5
                  },
                  %VideoTransformations{

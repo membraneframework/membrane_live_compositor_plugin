@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   @typedoc """
   Specification of the output video, parameters of the final \"canvas\"
   """
-  @type caps_t :: RawVideo.t()
+  @type stream_format_t :: RawVideo.t()
 
   @typedoc """
   Multiple Frames Compositor
@@ -41,12 +41,12 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   @type t() :: %__MODULE__{
           inputs: inputs_t(),
           output: output_t(),
-          caps: caps_t(),
+          stream_format: stream_format_t(),
           compositor: compositor_t(),
           decoder: decoder_t(),
           encoder: encoder_t(),
           input_filter: input_filter_t()
         }
-  @enforce_keys [:inputs, :output, :caps]
-  defstruct [:inputs, :output, :caps, :compositor, :decoder, :encoder, :input_filter]
+  @enforce_keys [:inputs, :output, :stream_format]
+  defstruct [:inputs, :output, :stream_format, :compositor, :decoder, :encoder, :input_filter]
 end

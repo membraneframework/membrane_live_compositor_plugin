@@ -7,33 +7,28 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
   @impl true
-  def handle_init(options) do
-    [%InputStream{caps: in_caps} | _tail] = options.inputs
+  def handle_init(ctx, options) do
+    [%InputStream{stream_format: in_stream_format} | _tail] = options.inputs
 
     parser = %Membrane.RawVideo.Parser{
-      framerate: in_caps.framerate,
-      width: in_caps.width,
-      height: in_caps.height,
-      pixel_format: in_caps.pixel_format
+      framerate: in_stream_format.framerate,
+      width: in_stream_format.width,
+      height: in_stream_format.height,
+      pixel_format: in_stream_format.pixel_format
     }
 
     options = %Options{
       options
       | decoder: parser,
         compositor: %Membrane.VideoCompositor{
-          caps: options.caps
+          stream_format: options.stream_format
         }
     }
 
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)
+    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(ctx, options)
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, ref}, context, state) do
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_element_end_of_stream(
-      {pad, ref},
-      context,
-      state
-    )
-  end
+  defdelegate handle_element_end_of_stream(pad, element, context, state),
+    to: Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs
 end

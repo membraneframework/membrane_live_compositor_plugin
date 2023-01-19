@@ -15,9 +15,11 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @type frame_with_pts_t :: {binary(), pts_t()}
 
   @spec init(Membrane.RawVideo.t()) :: {:error, wgpu_state_t()} | {:ok, wgpu_state_t()}
-  def init(output_caps) do
-    {:ok, output_caps} = RustStructs.RawVideo.from_membrane_raw_video(output_caps)
-    Native.init(output_caps)
+  def init(output_stream_format) do
+    {:ok, output_stream_format} =
+      RustStructs.RawVideo.from_membrane_raw_video(output_stream_format)
+
+    Native.init(output_stream_format)
   end
 
   @doc """
@@ -61,14 +63,14 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @spec add_video(
           state :: wgpu_state_t(),
           id :: id_t(),
-          caps :: Membrane.RawVideo.t(),
+          stream_format :: Membrane.RawVideo.t(),
           placement :: RustStructs.BaseVideoPlacement.t(),
           transformations :: VideoTransformations.t()
         ) :: :ok | {:error, error_t()}
-  def add_video(state, id, caps, placement, transformations) do
-    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+  def add_video(state, id, stream_format, placement, transformations) do
+    {:ok, rust_stream_format} = RustStructs.RawVideo.from_membrane_raw_video(stream_format)
 
-    case Native.add_video(state, id, rust_caps, placement, transformations) do
+    case Native.add_video(state, id, rust_stream_format, placement, transformations) do
       :ok -> :ok
       {:error, reason} -> raise "Error while adding a video, reason: #{inspect(reason)}"
     end
@@ -89,16 +91,23 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   end
 
   @doc """
-  Update input caps for the given video.
+  Update input stream_format for the given video.
   """
-  @spec update_caps(state :: wgpu_state_t(), id :: id_t(), caps :: Membrane.RawVideo.t()) ::
+  @spec update_stream_format(
+          state :: wgpu_state_t(),
+          id :: id_t(),
+          stream_format :: Membrane.RawVideo.t()
+        ) ::
           :ok
-  def update_caps(state, id, caps) do
-    {:ok, rust_caps} = RustStructs.RawVideo.from_membrane_raw_video(caps)
+  def update_stream_format(state, id, stream_format) do
+    {:ok, rust_stream_format} = RustStructs.RawVideo.from_membrane_raw_video(stream_format)
 
-    case Native.update_caps(state, id, rust_caps) do
-      :ok -> :ok
-      {:error, reason} -> raise "Error while updating video caps, reason: #{inspect(reason)}"
+    case Native.update_stream_format(state, id, rust_stream_format) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        raise "Error while updating video stream_format, reason: #{inspect(reason)}"
     end
   end
 

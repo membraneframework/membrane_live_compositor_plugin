@@ -66,8 +66,10 @@ pub mod atoms {
 struct State(std::sync::Mutex<InnerState>);
 
 impl State {
-    fn new(output_caps: RawVideo) -> Result<Self, CompositorError> {
-        Ok(Self(std::sync::Mutex::new(InnerState::new(output_caps)?)))
+    fn new(output_stream_format: RawVideo) -> Result<Self, CompositorError> {
+        Ok(Self(std::sync::Mutex::new(InnerState::new(
+            output_stream_format,
+        )?)))
     }
 }
 
@@ -81,14 +83,14 @@ impl std::ops::Deref for State {
 
 struct InnerState {
     compositor: compositor::State,
-    output_caps: RawVideo,
+    output_stream_format: RawVideo,
 }
 
 impl InnerState {
-    fn new(output_caps: RawVideo) -> Result<Self, CompositorError> {
+    fn new(output_stream_format: RawVideo) -> Result<Self, CompositorError> {
         Ok(Self {
-            compositor: pollster::block_on(compositor::State::new(&output_caps))?,
-            output_caps,
+            compositor: pollster::block_on(compositor::State::new(&output_stream_format))?,
+            output_stream_format,
         })
     }
 }
@@ -96,11 +98,11 @@ impl InnerState {
 #[rustler::nif]
 fn init(
     #[allow(unused)] env: rustler::Env,
-    output_caps: ElixirRawVideo,
+    output_stream_format: ElixirRawVideo,
 ) -> Result<(rustler::Atom, rustler::ResourceArc<State>), rustler::Error> {
     Ok((
         atoms::ok(),
-        rustler::ResourceArc::new(State::new(output_caps.try_into()?)?),
+        rustler::ResourceArc::new(State::new(output_stream_format.try_into()?)?),
     ))
 }
 
@@ -132,7 +134,9 @@ fn upload_frame<'a>(
 
     if state.compositor.all_frames_ready() {
         let mut output = rustler::OwnedBinary::new(
-            state.output_caps.width.get() as usize * state.output_caps.height.get() as usize * 3
+            state.output_stream_format.width.get() as usize
+                * state.output_stream_format.height.get() as usize
+                * 3
                 / 2,
         )
         .unwrap();
@@ -151,7 +155,10 @@ fn force_render(
     let mut state = state.lock().unwrap();
 
     let mut output = rustler::OwnedBinary::new(
-        state.output_caps.width.get() as usize * state.output_caps.height.get() as usize * 3 / 2,
+        state.output_stream_format.width.get() as usize
+            * state.output_stream_format.height.get() as usize
+            * 3
+            / 2,
     )
     .unwrap(); //FIXME: return an error instead of panicking here
 
@@ -165,11 +172,11 @@ fn add_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    caps: ElixirRawVideo,
+    stream_format: ElixirRawVideo,
     placement: ElixirBaseVideoPlacement,
     transformations: ElixirVideoTransformations,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let caps: RawVideo = caps.try_into()?;
+    let stream_format: RawVideo = stream_format.try_into()?;
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
@@ -177,8 +184,8 @@ fn add_video(
 
     let base_properties = compositor::VideoProperties {
         input_resolution: Vec2d {
-            x: caps.width.get(),
-            y: caps.height.get(),
+            x: stream_format.width.get(),
+            y: stream_format.height.get(),
         },
 
         placement: base_placement,
@@ -200,23 +207,23 @@ pub fn convert_z(z: f32) -> f32 {
 }
 
 #[rustler::nif]
-fn update_caps(
+fn update_stream_format(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
     id: usize,
-    caps: ElixirRawVideo,
+    stream_format: ElixirRawVideo,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let caps: RawVideo = caps.try_into()?;
-    let caps = Vec2d {
-        x: caps.width.get(),
-        y: caps.height.get(),
+    let stream_format: RawVideo = stream_format.try_into()?;
+    let stream_format = Vec2d {
+        x: stream_format.width.get(),
+        y: stream_format.height.get(),
     };
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
     state
         .compositor
-        .update_properties(id, Some(caps), None, None)?;
+        .update_properties(id, Some(stream_format), None, None)?;
 
     Ok(atoms::ok())
 }
@@ -287,7 +294,7 @@ rustler::init!(
         remove_video,
         upload_frame,
         send_end_of_stream,
-        update_caps,
+        update_stream_format,
         update_placement,
         update_transformations
     ],

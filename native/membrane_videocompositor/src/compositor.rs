@@ -33,13 +33,13 @@ pub struct State {
     all_yuv_textures_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     yuv_to_rgba_converter: YUVToRGBAConverter,
     rgba_to_yuv_converter: RGBAToYUVConverter,
-    output_caps: RawVideo,
+    output_stream_format: RawVideo,
     last_pts: Option<u64>,
     texture_transformation_pipelines: TextureTransformationRegistry,
 }
 
 impl State {
-    pub async fn new(output_caps: &RawVideo) -> Result<State, CompositorError> {
+    pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -118,8 +118,8 @@ impl State {
 
         let output_textures = OutputTextures::new(
             &device,
-            output_caps.width.get(),
-            output_caps.height.get(),
+            output_stream_format.width.get(),
+            output_stream_format.height.get(),
             &single_texture_bind_group_layout,
         );
 
@@ -228,7 +228,7 @@ impl State {
             all_yuv_textures_bind_group_layout: Arc::new(all_yuv_textures_bind_group_layout),
             yuv_to_rgba_converter,
             rgba_to_yuv_converter,
-            output_caps: *output_caps,
+            output_stream_format: *output_stream_format,
             last_pts: None,
             texture_transformation_pipelines,
         })
@@ -311,7 +311,12 @@ impl State {
             render_pass.set_bind_group(1, &self.sampler.bind_group, &[]);
 
             for (&id, video) in videos_sorted_by_z_value.iter_mut() {
-                match video.draw(&self.queue, &mut render_pass, &self.output_caps, interval) {
+                match video.draw(
+                    &self.queue,
+                    &mut render_pass,
+                    &self.output_stream_format,
+                    interval,
+                ) {
                     DrawResult::Rendered(new_pts) => {
                         pts = pts.max(new_pts);
                         rendered_video_ids.push(id);
@@ -385,8 +390,8 @@ impl State {
 
         let mut base_properties = *video.base_properties();
 
-        if let Some(caps) = resolution {
-            base_properties.input_resolution = caps;
+        if let Some(stream_format) = resolution {
+            base_properties.input_resolution = stream_format;
         }
 
         if let Some(placement) = placement {
@@ -421,7 +426,8 @@ impl State {
 
     /// This is in nanoseconds
     pub fn frame_time(&self) -> f64 {
-        self.output_caps.framerate.1.get() as f64 / self.output_caps.framerate.0.get() as f64
+        self.output_stream_format.framerate.1.get() as f64
+            / self.output_stream_format.framerate.0.get() as f64
             * 1_000_000_000.0
     }
 
@@ -475,13 +481,13 @@ mod tests {
     const FRAME: &[u8; 6] = &[0x30, 0x40, 0x30, 0x40, 0x80, 0xb0];
 
     fn setup_videos(n: usize) -> State {
-        let caps = RawVideo {
+        let stream_format = RawVideo {
             width: NonZeroU32::new(2 * n as u32).unwrap(),
             height: NonZeroU32::new(2).unwrap(),
             ..Default::default()
         };
 
-        let mut compositor = pollster::block_on(State::new(&caps)).unwrap();
+        let mut compositor = pollster::block_on(State::new(&stream_format)).unwrap();
 
         for i in 0..n {
             compositor

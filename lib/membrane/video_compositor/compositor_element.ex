@@ -21,7 +21,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.WgpuAdapter
 
-  def_options caps: [
+  def_options stream_format: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
               ],
@@ -34,10 +34,9 @@ defmodule Membrane.VideoCompositor.CompositorElement do
               ]
 
   def_input_pad :input,
-    demand_unit: :buffers,
     availability: :on_request,
     demand_mode: :auto,
-    caps: {RawVideo, pixel_format: :I420},
+    accepted_format: %RawVideo{pixel_format: :I420},
     options: [
       initial_placement: [
         spec: BaseVideoPlacement.t(),
@@ -61,40 +60,39 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     ]
 
   def_output_pad :output,
-    demand_unit: :buffers,
     demand_mode: :auto,
-    caps: {RawVideo, pixel_format: :I420}
+    accepted_format: %RawVideo{pixel_format: :I420}
 
   @impl true
-  def handle_init(options) do
-    {:ok, wgpu_state} = WgpuAdapter.init(options.caps)
+  def handle_init(_ctx, options) do
+    {:ok, wgpu_state} = WgpuAdapter.init(options.stream_format)
 
     state = %{
       initial_video_placements: %{},
       initial_video_transformations: %{},
       timestamp_offsets: %{},
-      caps: options.caps,
+      stream_format: options.stream_format,
       real_time: options.real_time,
       wgpu_state: wgpu_state,
       pads_to_ids: %{},
       new_pad_id: 0
     }
 
-    {:ok, state}
+    {[], state}
   end
 
   @impl true
-  def handle_prepared_to_playing(_ctx, state) do
-    spf = spf_from_framerate(state.caps.framerate)
+  def handle_playing(_ctx, state) do
+    spf = spf_from_framerate(state.stream_format.framerate)
 
     actions =
       if state.real_time do
-        [start_timer: {:render_frame, spf}, caps: {:output, state.caps}]
+        [start_timer: {:render_frame, spf}, stream_format: {:output, state.stream_format}]
       else
-        [caps: {:output, state.caps}]
+        [stream_format: {:output, state.stream_format}]
       end
 
-    {{:ok, actions}, state}
+    {actions, state}
   end
 
   @impl true
@@ -103,7 +101,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     actions = [buffer: {:output, %Buffer{payload: frame, pts: pts}}]
 
-    {{:ok, actions}, state}
+    {actions, state}
   end
 
   @impl true
@@ -131,7 +129,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       end
 
     state = register_pad(state, pad, initial_placement, initial_transformations, timestamp_offset)
-    {:ok, state}
+    {[], state}
   end
 
   defp register_pad(state, pad, placement, transformations, timestamp_offset) do
@@ -149,7 +147,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   @impl true
-  def handle_caps(pad, caps, _context, state) do
+  def handle_stream_format(pad, stream_format, _context, state) do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
@@ -163,17 +161,17 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       case {Map.pop(initial_video_placements, id), Map.pop(initial_video_transformations, id)} do
         {{nil, initial_video_placements}, {nil, initial_video_transformations}} ->
           # this video was added before
-          :ok = WgpuAdapter.update_caps(wgpu_state, id, caps)
+          :ok = WgpuAdapter.update_stream_format(wgpu_state, id, stream_format)
           {initial_video_placements, initial_video_transformations}
 
         {{placement, initial_video_placements}, {transformations, initial_video_transformations}} ->
-          # this video was waiting for first caps to be added to the compositor
-          :ok = WgpuAdapter.add_video(wgpu_state, id, caps, placement, transformations)
+          # this video was waiting for first stream_format to be added to the compositor
+          :ok = WgpuAdapter.add_video(wgpu_state, id, stream_format, placement, transformations)
           {initial_video_placements, initial_video_transformations}
       end
 
     {
-      :ok,
+      [],
       %{
         state
         | initial_video_placements: initial_video_placements,
@@ -183,12 +181,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   @impl true
-  def handle_process(
-        pad,
-        buffer,
-        _context,
-        state
-      ) do
+  def handle_process(pad, buffer, _context, state) do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
@@ -202,21 +195,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     case WgpuAdapter.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
-        {
-          {
-            :ok,
-            [
-              buffer: {
-                :output,
-                %Membrane.Buffer{payload: frame, pts: pts}
-              }
-            ] ++ restart_timer_action_if_necessary(state)
-          },
-          state
-        }
+        {[buffer: {:output, %Membrane.Buffer{payload: frame, pts: pts}}] ++
+           restart_timer_action_if_necessary(state), state}
 
       :ok ->
-        {:ok, state}
+        {[], state}
     end
   end
 
@@ -225,7 +208,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   defp restart_timer_action_if_necessary(state) do
-    spf = spf_from_framerate(state.caps.framerate)
+    spf = spf_from_framerate(state.stream_format.framerate)
 
     if state.real_time do
       [stop_timer: :render_frame, start_timer: {:render_frame, spf}]
@@ -253,7 +236,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         []
       end
 
-    {{:ok, actions}, state}
+    {actions, state}
   end
 
   defp all_input_pads_received_end_of_stream?(pads) do
@@ -262,7 +245,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   @impl true
-  def handle_other({:update_placement, placements}, _ctx, state) do
+  def handle_parent_notification({:update_placement, placements}, _ctx, state) do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
@@ -272,11 +255,11 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     initial_video_placements =
       update_placements(placements, pads_to_ids, wgpu_state, initial_video_placements)
 
-    {:ok, %{state | initial_video_placements: initial_video_placements}}
+    {[], %{state | initial_video_placements: initial_video_placements}}
   end
 
   @impl true
-  def handle_other({:update_transformations, all_transformations}, _ctx, state) do
+  def handle_parent_notification({:update_transformations, all_transformations}, _ctx, state) do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
@@ -291,7 +274,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         initial_video_transformations
       )
 
-    {:ok, %{state | initial_video_transformations: initial_video_transformations}}
+    {[], %{state | initial_video_transformations: initial_video_transformations}}
   end
 
   defp update_placements(
@@ -314,7 +297,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     initial_video_placements =
       case WgpuAdapter.update_placement(wgpu_state, id, placement) do
         :ok -> initial_video_placements
-        # in case of update_placements is called before handle_caps and add_video in rust
+        # in case of update_placements is called before handle_stream_format and add_video in rust
         # wasn't called yet (the video wasn't registered in rust yet)
         {:error, :bad_video_index} -> Map.put(initial_video_placements, id, placement)
       end
@@ -344,7 +327,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         :ok ->
           initial_video_transformations
 
-        # in case of update_transformations is called before handle_caps and add_video in rust
+        # in case of update_transformations is called before handle_stream_format and add_video in rust
         # wasn't called yet (the video wasn't registered in rust yet)
         {:error, :bad_video_index} ->
           Map.put(initial_video_transformations, id, video_transformations)
