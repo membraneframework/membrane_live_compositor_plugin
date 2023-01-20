@@ -78,7 +78,13 @@ defmodule Membrane.VideoCompositor.Mixfile do
       links: %{
         "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"
-      }
+      },
+      files:
+        ["lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs"] ++
+          Enum.map(
+            ["src", ".cargo/config", "Cargo.toml", "Cargo.lock"],
+            &"native/membrane_videocompositor/#{&1}"
+          )
     ]
   end
 
