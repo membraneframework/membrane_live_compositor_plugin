@@ -94,7 +94,15 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.VideoCompositor]
+      nest_modules_by_prefix: [
+        Membrane.VideoCompositor,
+        Membrane.VideoCompositor.VideoTransformations
+      ],
+      groups_for_modules: [
+        "Video transformations": [
+          ~r/^Membrane\.VideoCompositor\.VideoTransformations($|\.)/
+        ]
+      ]
     ]
   end
 end
