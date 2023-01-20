@@ -23,9 +23,9 @@ defmodule Membrane.VideoCompositor do
   @type update_transformations_t ::
           {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
 
-  def_options caps: [
+  def_options stream_format: [
                 spec: RawVideo.t(),
-                description: "Caps for the output video of the compositor"
+                description: "Stream format for the output video of the compositor"
               ],
               real_time: [
                 spec: boolean(),
@@ -34,8 +34,7 @@ defmodule Membrane.VideoCompositor do
               ]
 
   def_input_pad :input,
-    caps: {RawVideo, pixel_format: :I420},
-    demand_unit: :buffers,
+    accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
       initial_placement: [
@@ -58,40 +57,30 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    demand_unit: :buffers,
-    caps: {RawVideo, pixel_format: :I420},
+    accepted_format: %RawVideo{pixel_format: :I420},
     availability: :always
 
   @impl true
-  def handle_init(options) do
-    children = %{
-      compositor: %CompositorElement{caps: options.caps, real_time: options.real_time}
-    }
+  def handle_init(_ctx, options) do
+    spec =
+      child(:compositor, %CompositorElement{
+        stream_format: options.stream_format,
+        real_time: options.real_time
+      })
+      |> bin_output()
 
-    links = [
-      link(:compositor) |> to_bin_output(:output)
-    ]
+    state = %{output_stream_format: options.stream_format}
 
-    spec = %ParentSpec{children: children, links: links}
-
-    state = %{
-      output_caps: options.caps
-    }
-
-    {{:ok, spec: spec}, state}
+    {[spec: spec], state}
   end
 
   @impl true
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
-    converter = {:framerate_converter, make_ref()}
-
-    children = %{
-      converter => %FramerateConverter{framerate: state.output_caps.framerate}
-    }
-
-    links = [
-      link_bin_input(Pad.ref(:input, pad_id))
-      |> to(converter)
+    spec =
+      bin_input(Pad.ref(:input, pad_id))
+      |> child({:framerate_converter, make_ref()}, %FramerateConverter{
+        framerate: state.output_stream_format.framerate
+      })
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           initial_placement: context.options.initial_placement,
@@ -99,21 +88,18 @@ defmodule Membrane.VideoCompositor do
           initial_video_transformations: context.options.initial_video_transformations
         ]
       )
-      |> to(:compositor)
-    ]
+      |> get_child(:compositor)
 
-    spec = %ParentSpec{children: children, links: links}
-
-    {{:ok, spec: spec}, state}
+    {[spec: spec], state}
   end
 
   @impl true
-  def handle_other({:update_placement, placements}, _ctx, state) do
-    {{:ok, forward: {:compositor, {:update_placement, placements}}}, state}
+  def handle_parent_notification({:update_placement, placements}, _ctx, state) do
+    {[notify_child: {:compositor, {:update_placement, placements}}], state}
   end
 
   @impl true
-  def handle_other({:update_transformations, transformations}, _ctx, state) do
-    {{:ok, forward: {:compositor, {:update_transformations, transformations}}}, state}
+  def handle_parent_notification({:update_transformations, transformations}, _ctx, state) do
+    {[notify_child: {:compositor, {:update_transformations, transformations}}], state}
   end
 end

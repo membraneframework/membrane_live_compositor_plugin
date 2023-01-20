@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
     Cropping
   }
 
-  @video_caps %RawVideo{
+  @video_stream_format %RawVideo{
     width: 1280,
     height: 720,
     framerate: {1, 1},
@@ -60,23 +60,23 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
   defp test_transformations(tmp_dir, render_environment) do
     {input_path, _output_path, _reference_path} =
       Utils.prepare_testing_video(
-        @video_caps,
+        @video_stream_format,
         @duration,
         "raw",
         tmp_dir,
         @sub_dir_name
       )
 
-    out_caps = %RawVideo{
-      @video_caps
-      | width: @video_caps.width * 2,
-        height: @video_caps.height * 2
+    out_stream_format = %RawVideo{
+      @video_stream_format
+      | width: @video_stream_format.width * 2,
+        height: @video_stream_format.height * 2
     }
 
     output_path =
       Path.join(
         tmp_dir,
-        "out_#{@duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
+        "out_#{@duration}s_#{out_stream_format.width}x#{out_stream_format.height}_#{div(elem(out_stream_format.framerate, 0), elem(out_stream_format.framerate, 1))}fps.raw"
       )
 
     reference_path =
@@ -90,20 +90,20 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
 
     positions = [
       {0, 0},
-      {@video_caps.width, 0},
-      {0, @video_caps.height},
-      {@video_caps.width, @video_caps.height}
+      {@video_stream_format.width, 0},
+      {0, @video_stream_format.height},
+      {@video_stream_format.width, @video_stream_format.height}
     ]
 
     background_video = %InputStream{
       placement: %BaseVideoPlacement{
         position: {0, 0},
-        size: {@video_caps.width * 2, @video_caps.height * 2}
+        size: {@video_stream_format.width * 2, @video_stream_format.height * 2}
       },
       transformations: %VideoTransformations{
         texture_transformations: []
       },
-      caps: @video_caps,
+      stream_format: @video_stream_format,
       input: input_path
     }
 
@@ -113,38 +113,36 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
         do: %InputStream{
           placement: %BaseVideoPlacement{
             position: pos,
-            size: {@video_caps.width, @video_caps.height},
+            size: {@video_stream_format.width, @video_stream_format.height},
             z_value: 0.5
           },
           transformations: @transformations,
-          caps: @video_caps,
+          stream_format: @video_stream_format,
           input: input_path
         }
       )
 
     middle_video = %InputStream{
       placement: %BaseVideoPlacement{
-        position: {-@video_caps.width, -@video_caps.height},
-        size: {@video_caps.width * 2, @video_caps.height * 2},
+        position: {-@video_stream_format.width, -@video_stream_format.height},
+        size: {@video_stream_format.width * 2, @video_stream_format.height * 2},
         z_value: 0.2
       },
       transformations: @transformations,
-      caps: @video_caps,
+      stream_format: @video_stream_format,
       input: input_path
     }
 
     options = %Options{
       inputs: transformed_videos ++ [middle_video] ++ [background_video],
       output: output_path,
-      caps: out_caps
+      stream_format: out_stream_format
     }
 
-    assert {:ok, pid} = TestingPipeline.start_link(module: PipelineRaw, custom_args: options)
-
-    assert_pipeline_playback_changed(pid, _, :playing)
-
-    assert_end_of_stream(pid, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pid, blocking?: true)
+    pipeline = TestingPipeline.start_link_supervised!(module: PipelineRaw, custom_args: options)
+    assert_pipeline_play(pipeline)
+    assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
+    TestingPipeline.terminate(pipeline, blocking?: true)
 
     assert Utils.compare_contents_with_error(output_path, reference_path)
   end

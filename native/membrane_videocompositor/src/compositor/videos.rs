@@ -17,7 +17,7 @@ use super::{Vec2d, Vertex};
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
 pub struct VideoProperties {
     /// Position in pixels.
-    /// Specifying a position outside of the `output_caps`
+    /// Specifying a position outside of the `output_stream_format`
     /// of the scene this will be rendered onto will cause it to not be displayed.
     pub input_resolution: Vec2d<u32>,
     pub placement: VideoPlacement,
@@ -206,9 +206,9 @@ impl InputVideo {
         }
     }
 
-    pub fn vertex_data(&self, output_caps: &RawVideo) -> [Vertex; 4] {
-        let scene_width = output_caps.width;
-        let scene_height = output_caps.height;
+    pub fn vertex_data(&self, output_stream_format: &RawVideo) -> [Vertex; 4] {
+        let scene_width = output_stream_format.width;
+        let scene_height = output_stream_format.height;
 
         let position = self.transformed_properties.placement.position;
         let width = self.transformed_properties.placement.size.x;
@@ -272,13 +272,13 @@ impl InputVideo {
         &'a mut self,
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
-        output_caps: &RawVideo,
+        output_stream_format: &RawVideo,
         frame_interval: Option<(u64, u64)>,
     ) -> DrawResult {
         queue.write_buffer(
             &self.vertices,
             0,
-            bytemuck::cast_slice(&self.vertex_data(output_caps)),
+            bytemuck::cast_slice(&self.vertex_data(output_stream_format)),
         );
 
         let (frame, pts) = match self.frames.front() {

@@ -32,10 +32,10 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           VideoTransformations.t()
         ) ::
           :ok | {:error, error_t()}
-  def add_video(_state, _id, _caps, _placement, _transformations), do: error()
+  def add_video(_state, _id, _stream_format, _placement, _transformations), do: error()
 
-  @spec update_caps(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
-  def update_caps(_state, _id, _caps), do: error()
+  @spec update_stream_format(wgpu_state(), id_t(), RawVideo.t()) :: :ok | {:error, error_t()}
+  def update_stream_format(_state, _id, _stream_format), do: error()
 
   @spec update_placement(wgpu_state(), id_t(), BaseVideoPlacement.t()) ::
           :ok | {:error, error_t()}
