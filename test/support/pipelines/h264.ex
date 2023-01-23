@@ -7,9 +7,9 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
   alias Membrane.VideoCompositor.Pipeline.Utils.Options
 
   @impl true
-  def handle_init(options) do
+  def handle_init(ctx, options) do
     decoder = %Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder{
-      framerate: options.caps.framerate
+      framerate: options.stream_format.framerate
     }
 
     encoder = Membrane.H264.FFmpeg.Encoder
@@ -19,19 +19,14 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
       | decoder: decoder,
         encoder: encoder,
         compositor: %Membrane.VideoCompositor{
-          caps: options.caps
+          stream_format: options.stream_format
         }
     }
 
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(options)
+    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(ctx, options)
   end
 
   @impl true
-  def handle_element_end_of_stream({pad, ref}, context, state) do
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_element_end_of_stream(
-      {pad, ref},
-      context,
-      state
-    )
-  end
+  defdelegate handle_element_end_of_stream(pad, ref, context, state),
+    to: Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs
 end

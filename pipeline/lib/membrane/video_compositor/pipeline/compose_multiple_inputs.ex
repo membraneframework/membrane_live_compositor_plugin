@@ -10,12 +10,13 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
   @impl true
-  def handle_init(%Options{} = options) do
-    source_links =
+  def handle_init(_ctx, %Options{} = options) do
+    source_spec =
       Enum.with_index(options.inputs)
       |> Enum.map(fn {%InputStream{
                         input: input,
-                        position: position,
+                        placement: placement,
+                        transformations: transformations,
                         timestamp_offset: timestamp_offset
                       }, i} ->
         source = get_src(input)
@@ -27,25 +28,31 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         input_filter = options.input_filter
         input_filter_name = String.to_atom("input_filter_#{i}")
 
-        link(source_name, source)
-        |> then(if not is_nil(decoder), do: &to(&1, decoder_name, decoder), else: & &1)
+        child(source_name, source)
+        |> then(if not is_nil(decoder), do: &child(&1, decoder_name, decoder), else: & &1)
         |> then(
-          if not is_nil(input_filter), do: &to(&1, input_filter_name, input_filter), else: & &1
+          if not is_nil(input_filter), do: &child(&1, input_filter_name, input_filter), else: & &1
         )
-        |> via_in(:input, options: [position: position, timestamp_offset: timestamp_offset])
-        |> to(:compositor)
+        |> via_in(:input,
+          options: [
+            initial_placement: placement,
+            timestamp_offset: timestamp_offset,
+            initial_video_transformations: transformations
+          ]
+        )
+        |> get_child(:compositor)
       end)
 
-    links =
+    spec =
       [
-        link(:compositor, options.compositor)
+        child(:compositor, options.compositor)
         |> then(
-          if not is_nil(options.encoder), do: &to(&1, :encoder, options.encoder), else: & &1
+          if not is_nil(options.encoder), do: &child(&1, :encoder, options.encoder), else: & &1
         )
-        |> to(:sink, get_sink(options.output))
-      ] ++ source_links
+        |> child(:sink, get_sink(options.output))
+      ] ++ source_spec
 
-    {{:ok, [spec: %ParentSpec{links: links}, playback: :playing]}, %{}}
+    {[spec: spec, playback: :playing], %{}}
   end
 
   defp get_src(input_path) when is_binary(input_path) do
@@ -65,12 +72,12 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   end
 
   @impl true
-  def handle_element_end_of_stream({:sink, :input}, _context, state) do
-    {{:ok, [playback: :terminating]}, state}
+  def handle_element_end_of_stream(:sink, :input, _context, state) do
+    {[terminate: :normal], state}
   end
 
   @impl true
-  def handle_element_end_of_stream({_pad, _src}, _context, state) do
-    {:ok, state}
+  def handle_element_end_of_stream(_pad, _src, _context, state) do
+    {[], state}
   end
 end

@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
+  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Test.Support.Pipeline.PacketLoss, as: PipelinePacketLoss
   alias Membrane.VideoCompositor.Test.Support.Utils
@@ -25,6 +26,8 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     pixel_format: :I420,
     aligned: true
   }
+
+  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
   describe "Checks h264 pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
@@ -50,57 +53,59 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     end
   end
 
-  defp test_h264_pipeline(video_caps, duration, sub_dir_name, tmp_dir) do
+  defp test_h264_pipeline(video_stream_format, duration, sub_dir_name, tmp_dir) do
     alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
     {input_path, _output_path, _ref_file_name} =
       Utils.prepare_testing_video(
-        video_caps,
+        video_stream_format,
         duration,
         "h264",
         tmp_dir,
         sub_dir_name
       )
 
-    out_caps = %RawVideo{
-      video_caps
-      | width: video_caps.width * 2,
-        height: video_caps.height * 2
+    out_stream_format = %RawVideo{
+      video_stream_format
+      | width: video_stream_format.width * 2,
+        height: video_stream_format.height * 2
     }
 
     output_path =
       Path.join(
         tmp_dir,
-        "out_#{duration}s_#{out_caps.width}x#{out_caps.height}_#{div(elem(out_caps.framerate, 0), elem(out_caps.framerate, 1))}fps.raw"
+        "out_#{duration}s_#{out_stream_format.width}x#{out_stream_format.height}_#{div(elem(out_stream_format.framerate, 0), elem(out_stream_format.framerate, 1))}fps.raw"
       )
 
     positions = [
       {0, 0},
-      {video_caps.width, 0},
-      {0, video_caps.height},
-      {video_caps.width, video_caps.height}
+      {video_stream_format.width, 0},
+      {0, video_stream_format.height},
+      {video_stream_format.width, video_stream_format.height}
     ]
 
     inputs =
       for pos <- positions,
           do: %InputStream{
-            position: pos,
-            caps: video_caps,
+            placement: %BaseVideoPlacement{
+              position: pos,
+              size: {video_stream_format.width, video_stream_format.height}
+            },
+            transformations: @empty_video_transformations,
+            stream_format: video_stream_format,
             input: input_path
           }
 
     options = %Options{
       inputs: inputs,
       output: output_path,
-      caps: out_caps
+      stream_format: out_stream_format
     }
 
-    assert {:ok, pid} = TestingPipeline.start_link(module: PipelineH264, custom_args: options)
-
-    assert_pipeline_playback_changed(pid, _, :playing)
-
-    assert_end_of_stream(pid, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pid, blocking?: true)
+    pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)
+    assert_pipeline_play(pipeline)
+    assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
+    TestingPipeline.terminate(pipeline, blocking?: true)
   end
 
   describe "Checks packet loss pipeline on merging four videos on 2x2 grid" do
@@ -128,7 +133,7 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   end
 
   defp test_h264_pipeline_with_packet_loss(
-         video_caps,
+         video_stream_format,
          duration,
          sub_dir_name,
          tmp_dir
@@ -136,37 +141,47 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
 
     {input_path, output_path, _ref_file_name} =
-      Utils.prepare_testing_video(video_caps, duration, "h264", tmp_dir, sub_dir_name)
+      Utils.prepare_testing_video(video_stream_format, duration, "h264", tmp_dir, sub_dir_name)
 
     positions = [
       {0, 0},
-      {video_caps.width, 0},
-      {0, video_caps.height},
-      {video_caps.width, video_caps.height}
+      {video_stream_format.width, 0},
+      {0, video_stream_format.height},
+      {video_stream_format.width, video_stream_format.height}
     ]
 
     inputs =
       for pos <- positions,
           do: %InputStream{
-            position: pos,
-            caps: video_caps,
+            placement: %BaseVideoPlacement{
+              position: pos,
+              size: {video_stream_format.width, video_stream_format.height}
+            },
+            transformations: @empty_video_transformations,
+            stream_format: video_stream_format,
             input: input_path
           }
 
-    out_caps = %RawVideo{video_caps | width: video_caps.width * 2, height: video_caps.height * 2}
+    out_stream_format = %RawVideo{
+      video_stream_format
+      | width: video_stream_format.width * 2,
+        height: video_stream_format.height * 2
+    }
 
     options = %Options{
       inputs: inputs,
       output: output_path,
-      caps: out_caps
+      stream_format: out_stream_format
     }
 
-    assert {:ok, pid} =
-             TestingPipeline.start_link(module: PipelinePacketLoss, custom_args: options)
+    pipeline =
+      TestingPipeline.start_link_supervised!(
+        module: PipelinePacketLoss,
+        custom_args: options
+      )
 
-    assert_pipeline_playback_changed(pid, _, :playing)
-
-    assert_end_of_stream(pid, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pid, blocking?: true)
+    assert_pipeline_play(pipeline)
+    assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
+    TestingPipeline.terminate(pipeline, blocking?: true)
   end
 end

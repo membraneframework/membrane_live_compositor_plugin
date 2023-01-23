@@ -8,6 +8,7 @@ pub enum YUVPlane {
     V,
 }
 
+#[derive(Debug)]
 pub struct Texture {
     desc: wgpu::TextureDescriptor<'static>,
     texture: wgpu::Texture,
@@ -100,6 +101,7 @@ impl Texture {
     }
 }
 
+#[derive(Debug)]
 pub struct YUVTextures {
     planes: [Texture; 3],
     pub bind_group: Option<wgpu::BindGroup>,
@@ -161,7 +163,6 @@ impl YUVTextures {
                 ],
             })
         });
-
         Self { planes, bind_group }
     }
 
@@ -329,6 +330,7 @@ impl OutputTextures {
     }
 }
 
+#[derive(Debug)]
 pub struct RGBATexture {
     pub texture: Texture,
 }

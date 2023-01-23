@@ -1,25 +1,36 @@
 use std::collections::VecDeque;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 
-use super::colour_converters::YUVToRGBAConverter;
-use super::textures::{RGBATexture, YUVTextures};
-use super::{Point, Vertex};
+use crate::elixir_bridge::RawVideo;
 
-#[derive(Debug, Clone, Copy)]
+use super::colour_converters::YUVToRGBAConverter;
+
+use super::texture_transformations::registry::TextureTransformationRegistry;
+use super::texture_transformations::{set_video_properties, TextureTransformation};
+use super::textures::{RGBATexture, YUVTextures};
+use super::{Vec2d, Vertex};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 // All of the fields are in pixels, except of the `z`, which should be from the <0, 1> range
 pub struct VideoProperties {
     /// Position in pixels.
-    /// Specifying a position outside of the `output_caps`
+    /// Specifying a position outside of the `output_stream_format`
     /// of the scene this will be rendered onto will cause it to not be displayed.
-    pub top_left: Point<u32>,
-    pub width: u32,
-    pub height: u32,
-    pub z: f32,
-    pub scale: f64,
+    pub input_resolution: Vec2d<u32>,
+    pub placement: VideoPlacement,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct VideoPlacement {
+    pub position: Vec2d<i32>,
+    pub size: Vec2d<u32>,
+    pub z: f32,
+}
+
+#[derive(Debug)]
 pub enum Message {
     Frame { pts: u64, frame: RGBATexture },
     EndOfStream,
@@ -38,14 +49,22 @@ const INDICES: [u16; 6] = [
     1, 2, 3
 ];
 
+#[derive(Debug)]
 pub struct InputVideo {
     frames: VecDeque<Message>,
     yuv_textures: YUVTextures,
     vertices: wgpu::Buffer,
     indices: wgpu::Buffer,
-    properties: VideoProperties,
+    pub base_properties: VideoProperties,
+    pub transformed_properties: VideoProperties,
+    pub texture_transformations: Vec<Box<dyn TextureTransformation>>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
+    /// When a video is created this is set to `true`. When `draw` is later called on it,
+    /// until the first frame form this video's queue is composed, it won't block the compositor
+    /// while it's frames are considered 'too new'. When the first frame from this video is composed,
+    /// this gets set to `false` and the video operates normally.
+    was_just_added: bool,
 }
 
 impl InputVideo {
@@ -53,12 +72,13 @@ impl InputVideo {
         device: &wgpu::Device,
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        properties: VideoProperties,
+        base_properties: VideoProperties,
+        mut texture_transformations: Vec<Box<dyn TextureTransformation>>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.width,
-            properties.height,
+            base_properties.input_resolution.x,
+            base_properties.input_resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
@@ -79,14 +99,20 @@ impl InputVideo {
             usage: wgpu::BufferUsages::INDEX,
         });
 
+        let transformed_properties =
+            set_video_properties(base_properties, &mut texture_transformations);
+
         Self {
             yuv_textures,
             frames,
             vertices,
             indices,
-            properties,
+            base_properties,
+            transformed_properties,
+            texture_transformations,
             previous_frame: None,
             single_texture_bind_group_layout,
+            was_just_added: true,
         }
     }
 
@@ -95,20 +121,33 @@ impl InputVideo {
         device: &wgpu::Device,
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        properties: VideoProperties,
+        base_properties: VideoProperties,
+        texture_transformations: Option<Vec<Box<dyn TextureTransformation>>>,
     ) {
         let yuv_textures = YUVTextures::new(
             device,
-            properties.width,
-            properties.height,
+            base_properties.input_resolution.x,
+            base_properties.input_resolution.y,
             wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             Some(&single_texture_bind_group_layout),
             Some(all_textures_bind_group_layout),
         );
         self.yuv_textures = yuv_textures;
-        self.properties = properties;
+        self.base_properties = base_properties;
+        match texture_transformations {
+            Some(mut texture_transformations) => {
+                self.transformed_properties =
+                    set_video_properties(base_properties, &mut texture_transformations);
+                self.texture_transformations = texture_transformations;
+            }
+            None => {
+                self.transformed_properties =
+                    set_video_properties(base_properties, &mut self.texture_transformations);
+            }
+        };
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn upload_data(
         &mut self,
         device: &wgpu::Device,
@@ -117,15 +156,41 @@ impl InputVideo {
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
+        registry: &TextureTransformationRegistry,
     ) {
         self.yuv_textures.upload_data(queue, data);
-        let frame = RGBATexture::new(
+        let mut frame = RGBATexture::new(
             device,
-            self.properties.width,
-            self.properties.height,
+            self.base_properties.input_resolution.x,
+            self.base_properties.input_resolution.y,
             &self.single_texture_bind_group_layout,
         );
         converter.convert(device, queue, &self.yuv_textures, &frame);
+
+        let mut transformed_properties = self.base_properties;
+        // Runs all texture transformations.
+        for transformation in self.texture_transformations.iter() {
+            transformed_properties =
+                transformation.transform_video_properties(transformed_properties);
+            let transformed_frame = RGBATexture::new(
+                device,
+                transformed_properties.input_resolution.x,
+                transformed_properties.input_resolution.y,
+                &self.single_texture_bind_group_layout,
+            );
+
+            let pipeline = registry.get(transformation.as_ref());
+
+            pipeline.transform(
+                device,
+                queue,
+                &frame,
+                &transformed_frame,
+                transformation.as_ref(),
+            );
+
+            frame = transformed_frame;
+        }
 
         // if we haven't rendered a frame yet, or pts of our frame is ahead of last rendered frame
         if last_rendered_pts.is_none() || pts > last_rendered_pts.unwrap() {
@@ -141,23 +206,17 @@ impl InputVideo {
         }
     }
 
-    pub fn vertex_data(&self, output_caps: &crate::RawVideo) -> [Vertex; 4] {
-        let scene_width = output_caps.width;
-        let scene_height = output_caps.height;
+    pub fn vertex_data(&self, output_stream_format: &RawVideo) -> [Vertex; 4] {
+        let scene_width = output_stream_format.width;
+        let scene_height = output_stream_format.height;
 
-        let position = self.properties.top_left;
-        let width = self.properties.width;
-        let height = self.properties.height;
+        let position = self.transformed_properties.placement.position;
+        let width = self.transformed_properties.placement.size.x;
+        let height = self.transformed_properties.placement.size.y;
 
-        let left = lerp(
-            self.properties.top_left.x as f64,
-            0.0,
-            scene_width.get() as f64,
-            -1.0,
-            1.0,
-        ) as f32;
+        let left = lerp(position.x as f64, 0.0, scene_width.get() as f64, -1.0, 1.0) as f32;
         let right = lerp(
-            position.x as f64 + width as f64 * self.properties.scale,
+            position.x as f64 + width as f64,
             0.0,
             scene_width.get() as f64,
             -1.0,
@@ -165,7 +224,7 @@ impl InputVideo {
         ) as f32;
         let top = lerp(position.y as f64, 0.0, scene_height.get() as f64, 1.0, -1.0) as f32;
         let bot = lerp(
-            position.y as f64 + height as f64 * self.properties.scale,
+            position.y as f64 + height as f64,
             0.0,
             scene_height.get() as f64,
             1.0,
@@ -174,19 +233,19 @@ impl InputVideo {
 
         [
             Vertex {
-                position: [right, top, self.properties.z],
+                position: [right, top, self.transformed_properties.placement.z],
                 texture_coords: [1.0, 0.0],
             },
             Vertex {
-                position: [left, top, self.properties.z],
+                position: [left, top, self.transformed_properties.placement.z],
                 texture_coords: [0.0, 0.0],
             },
             Vertex {
-                position: [left, bot, self.properties.z],
+                position: [left, bot, self.transformed_properties.placement.z],
                 texture_coords: [0.0, 1.0],
             },
             Vertex {
-                position: [right, bot, self.properties.z],
+                position: [right, bot, self.transformed_properties.placement.z],
                 texture_coords: [1.0, 1.0],
             },
         ]
@@ -200,21 +259,39 @@ impl InputVideo {
         }
     }
 
+    pub fn base_properties(&self) -> &VideoProperties {
+        &self.base_properties
+    }
+
+    pub fn transformed_properties(&self) -> &VideoProperties {
+        &self.transformed_properties
+    }
+
     /// This returns pts of the used frame
     pub fn draw<'a>(
         &'a mut self,
         queue: &wgpu::Queue,
         render_pass: &mut wgpu::RenderPass<'a>,
-        output_caps: &crate::RawVideo,
+        output_stream_format: &RawVideo,
+        frame_interval: Option<(u64, u64)>,
     ) -> DrawResult {
         queue.write_buffer(
             &self.vertices,
             0,
-            bytemuck::cast_slice(&self.vertex_data(output_caps)),
+            bytemuck::cast_slice(&self.vertex_data(output_stream_format)),
         );
 
         let (frame, pts) = match self.frames.front() {
-            Some(Message::Frame { frame, pts }) => (frame, *pts),
+            Some(Message::Frame { frame, pts }) => {
+                // this is the case when the video was just added and its frames are 'too new'
+                if let Some((_, end)) = frame_interval {
+                    if *pts > end && self.was_just_added {
+                        return DrawResult::NotRendered;
+                    }
+                }
+
+                (frame, *pts)
+            }
 
             Some(Message::EndOfStream) => return DrawResult::EndOfStream,
 
@@ -235,6 +312,8 @@ impl InputVideo {
         let indices_len = (self.indices.size() / std::mem::size_of::<u16>() as u64) as u32;
 
         render_pass.draw_indexed(0..indices_len, 0, 0..1);
+
+        self.was_just_added = false;
 
         DrawResult::Rendered(pts)
     }
@@ -272,10 +351,27 @@ impl InputVideo {
             return true;
         }
 
-        self.front_pts().is_some() // if the stream hasn't ended then we have to have a frame in the queue, then either:
-            && (interval.is_none() // this is the first frame, which means a frame with any pts is good
-                || (interval.unwrap().0 <= self.front_pts().unwrap()
-                    && self.front_pts().unwrap() <= interval.unwrap().1)) // or we have to fit between the start and end pts
+        // if the stream hasn't ended then we have to have a frame in the queue, then either:
+        if self.front_pts().is_some() {
+            // this is the first frame, which means a frame with any pts is good
+            if interval.is_none() {
+                return true;
+            }
+
+            // or we have to fit between the start and end pts
+            if interval.unwrap().0 <= self.front_pts().unwrap()
+                && self.front_pts().unwrap() <= interval.unwrap().1
+            {
+                return true;
+            }
+
+            // or this video was just added, and frames in it's queue are 'too new'
+            if self.was_just_added {
+                return true;
+            }
+        }
+
+        false
     }
 }
 

@@ -12,6 +12,8 @@ pub enum CompositorError {
     UnsupportedPixelFormat,
     #[error("bad video resolution: {0}x{1}")]
     BadVideoResolution(u32, u32),
+    #[error("video index {0} is already taken")]
+    VideoIndexAlreadyTaken(usize),
 }
 
 impl rustler::Encoder for CompositorError {
@@ -40,6 +42,11 @@ impl rustler::Encoder for CompositorError {
                     .unwrap()
                     .encode(env)
             }
+            CompositorError::VideoIndexAlreadyTaken(idx) => (
+                rustler::Atom::from_str(env, "video_index_already_taken").unwrap(),
+                *idx,
+            )
+                .encode(env),
         }
     }
 }

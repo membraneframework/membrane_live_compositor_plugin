@@ -3,11 +3,16 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.InputStream do
   Specification of input video stream for a testing pipeline
   """
   @type t() :: %__MODULE__{
-          caps: Membrane.RawVideo.t(),
-          position: {non_neg_integer(), non_neg_integer()},
+          stream_format: Membrane.RawVideo.t(),
+          placement: Membrane.VideoCompositor.RustStructs.BaseVideoPlacement,
           timestamp_offset: Membrane.Time.non_neg_t(),
+          transformations: Membrane.VideoCompositor.VideoTransformations,
           input: String.t() | Membrane.Source
         }
-  @enforce_keys [:caps, :position, :input]
-  defstruct caps: nil, position: nil, timestamp_offset: 0, input: nil
+  @enforce_keys [:stream_format, :placement, :transformations, :input]
+  defstruct stream_format: nil,
+            placement: nil,
+            transformations: nil,
+            timestamp_offset: 0,
+            input: nil
 end

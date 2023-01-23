@@ -13,28 +13,20 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder do
                 """
               ]
 
-  def_input_pad :input,
-    demand_unit: :buffers,
-    demand_mode: :auto,
-    caps: :any
+  def_input_pad :input, accepted_format: _any
 
   def_output_pad :output,
-    demand_mode: :auto,
-    caps: {RawVideo, pixel_format: one_of([:I420, :I422]), aligned: true}
+    accepted_format:
+      %RawVideo{pixel_format: pix_fmt, aligned: true} when pix_fmt in [:I420, :I422]
 
   @impl true
-  def handle_init(opts) do
-    children = %{
-      parser: %Membrane.H264.FFmpeg.Parser{framerate: opts.framerate},
-      decoder: Membrane.H264.FFmpeg.Decoder
-    }
+  def handle_init(_ctx, opts) do
+    spec =
+      bin_input()
+      |> child(:parser, %Membrane.H264.FFmpeg.Parser{framerate: opts.framerate})
+      |> child(:decoder, Membrane.H264.FFmpeg.Decoder)
+      |> bin_output()
 
-    links = [
-      link_bin_input(:input) |> to(:parser) |> to(:decoder) |> to_bin_output(:output)
-    ]
-
-    spec = %ParentSpec{children: children, links: links}
-
-    {{:ok, spec: spec}, %{}}
+    {[spec: spec], %{}}
   end
 end

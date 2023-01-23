@@ -36,22 +36,18 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
                 default: 0.05
               ]
 
-  def_input_pad :input,
-    demand_unit: :buffers,
-    demand_mode: :auto,
-    caps: RawVideo
+  def_input_pad :input, demand_mode: :auto, accepted_format: RawVideo
 
-  def_output_pad :output,
-    demand_unit: :buffers,
-    demand_mode: :auto,
-    caps: RawVideo
+  def_output_pad :output, demand_mode: :auto, accepted_format: RawVideo
 
   @impl true
-  def handle_init(%{
-        packet_loss: packet_loss,
-        delay_chance: delay_chance,
-        delay_interval: delay_interval
-      }) do
+  def handle_init(_ctx, options) do
+    %{
+      packet_loss: packet_loss,
+      delay_chance: delay_chance,
+      delay_interval: delay_interval
+    } = options
+
     if packet_loss > 1.0 or packet_loss < 0.0 do
       raise "Packet loss has to be between 0 and 1"
     end
@@ -76,24 +72,19 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
       delay_interval: delay_interval
     }
 
-    {:ok, state}
+    {[], state}
   end
 
   @impl true
-  def handle_caps(_pad, caps, _ctx, state) do
-    {{:ok, caps: {:output, caps}}, state}
-  end
-
-  @impl true
-  def handle_process(_pad, buffer, _ctx, state) do
+  def handle_process(:input, buffer, _ctx, state) do
     if :rand.uniform() <= state.packet_loss do
-      {:ok, state}
+      {[], state}
     else
       if :rand.uniform() <= state.delay_chance do
         Process.sleep(calculate_sleep_time(state.delay_interval))
       end
 
-      {{:ok, buffer: {:output, buffer}}, state}
+      {[buffer: {:output, buffer}], state}
     end
   end
 
@@ -101,10 +92,5 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
     diff = big - smol
     time = smol + :rand.uniform() * diff
     floor(time * 1000)
-  end
-
-  @impl true
-  def handle_end_of_stream(_pad, _ctx, state) do
-    {{:ok, end_of_stream: :output}, state}
   end
 end
