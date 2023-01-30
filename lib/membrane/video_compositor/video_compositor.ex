@@ -75,6 +75,10 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
+  def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
+    do: {[remove_child: {:framerate_converter, pad_id}], state}
+
+  @impl true
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
     spec =
       bin_input(Pad.ref(:input, pad_id))
