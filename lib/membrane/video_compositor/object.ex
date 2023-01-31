@@ -12,6 +12,8 @@ defmodule Membrane.VideoCompositor.Object do
   @type input_t :: t() | Pad.name_t()
 
   defmodule __MODULE__.Alternation do
+    @moduledoc false
+
     @type definition_t :: Manipulation.definition_t() | Transformation.definition_t()
     @type name_t :: Manipulation.name_t() | Transformation.name_t()
   end

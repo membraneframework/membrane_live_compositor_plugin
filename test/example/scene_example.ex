@@ -1,4 +1,6 @@
 defmodule Example.Hard do
+  @moduledoc false
+
   alias Membrane.VideoCompositor.{Canvas, Compound, Scene, Texture}
   alias Membrane.VideoCompositor.Compound.BaseSize
   alias Mock.{CornerRounding, Grid, Merging, Overlay, Rotate, ToBall}

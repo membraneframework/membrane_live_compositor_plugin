@@ -1,5 +1,9 @@
 defmodule Mock do
+  @moduledoc false
+
   defmodule __MODULE__.CornerRounding do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Texture.Transformation
 
     @enforce_keys [:pixels, :degrees]
@@ -10,6 +14,8 @@ defmodule Mock do
   end
 
   defmodule __MODULE__.Rotate do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Canvas.Manipulation
 
     @enforce_keys [:degrees]
@@ -20,6 +26,8 @@ defmodule Mock do
   end
 
   defmodule __MODULE__.Merging do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Compound.Layout
 
     @enforce_keys [:videos_num]
@@ -30,6 +38,8 @@ defmodule Mock do
   end
 
   defmodule __MODULE__.Grid do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Compound.Layout
 
     @impl true
@@ -37,6 +47,8 @@ defmodule Mock do
   end
 
   defmodule __MODULE__.Overlay do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Compound.Layout
 
     @impl true
@@ -44,6 +56,8 @@ defmodule Mock do
   end
 
   defmodule __MODULE__.ToBall do
+    @moduledoc false
+
     @behaviour Membrane.VideoCompositor.Canvas.Manipulation
 
     @impl true
