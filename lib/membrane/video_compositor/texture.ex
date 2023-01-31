@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor.Texture do
   @moduledoc false
 
-  alias Membrane.VideoCompositor.Object
   alias __MODULE__.Transformation
+  alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:input]
   defstruct @enforce_keys ++ [transformations: []]

@@ -4,6 +4,5 @@ defmodule Membrane.VideoCompositor.Canvas.Manipulation do
   @type definition_t :: struct() | module()
   @type name_t :: any()
 
-  # TODO: placeholder
   @callback render() :: any()
 end
