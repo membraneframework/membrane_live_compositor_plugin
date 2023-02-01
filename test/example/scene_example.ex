@@ -1,4 +1,4 @@
-defmodule Example.Hard do
+defmodule Example do
   @moduledoc false
 
   alias Membrane.VideoCompositor.{Canvas, Compound, Scene, Texture}

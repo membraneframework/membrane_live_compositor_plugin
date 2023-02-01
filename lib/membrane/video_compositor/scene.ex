@@ -1,7 +1,11 @@
 defmodule Membrane.VideoCompositor.Scene do
-  @moduledoc false
+  @moduledoc """
+  Structure representing a top level specification of what is Video Compositor
+  supposed to render.
+  """
 
-  alias Membrane.VideoCompositor.{Object, Texture}
+  alias Membrane.VideoCompositor.Compound.Layout
+  alias Membrane.VideoCompositor.Object
   alias Membrane.VideoCompositor.Object.Alternation
 
   @enforce_keys [:objects, :render]
@@ -11,6 +15,12 @@ defmodule Membrane.VideoCompositor.Scene do
           alternations: [{Alternation.name_t(), Alternation.definition_t()}],
           layouts: [{Layout.name_t(), Layout.definition_t()}],
           objects: [{Object.name_t(), Object.t()}],
-          render: Texture
+          render: render_t()
         }
+
+  @typedoc """
+  Defines allowed type top level object, that is going to be rendered
+  as an output of Video Compositor.
+  """
+  @type render_t :: Object.t()
 end

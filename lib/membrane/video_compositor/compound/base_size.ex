@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Compound.BaseSize do
-  @moduledoc false
+  @moduledoc """
+  A struct describing the base video size.
+  """
 
   @enforce_keys [:height, :width]
   defstruct @enforce_keys

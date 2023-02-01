@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Canvas do
-  @moduledoc false
+  @moduledoc """
+  Structure representing Canvas objects.
+  """
 
   alias __MODULE__.Manipulation
   alias Membrane.VideoCompositor.Object

@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Texture do
-  @moduledoc false
+  @moduledoc """
+  Structure representing Texture objects.
+  """
 
   alias __MODULE__.Transformation
   alias Membrane.VideoCompositor.Object
