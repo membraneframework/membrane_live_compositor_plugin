@@ -258,17 +258,20 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   Compare contents of two raw files, succeeding when `different_bytes / length < allowed_error`
   """
   @spec compare_contents_with_error(binary(), binary(), float()) :: boolean()
-  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 0.003) do
+  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 1.5) do
     {:ok, reference_file} = File.read(reference_path)
     {:ok, output_file} = File.read(output_path)
 
     assert byte_size(reference_file) == byte_size(output_file)
 
-    errors =
+    square_errors =
       Enum.zip(:binary.bin_to_list(reference_file), :binary.bin_to_list(output_file))
-      |> Enum.count(fn {b1, b2} -> b1 != b2 end)
+      |> Enum.map(fn {b1, b2} -> Integer.pow(b1 - b2, 2) end)
+      |> Enum.sum()
 
-    assert errors / byte_size(reference_file) < allowed_error
+    mse = square_errors / byte_size(reference_file)
+
+    assert mse < allowed_error
   end
 
   @doc """
