@@ -1,6 +1,5 @@
 excluded = [
-  long_wgpu: true,
-  mac: true
+  long_wgpu: true
 ]
 
 ExUnit.start(capture_log: true, exclude: excluded)

@@ -39,25 +39,17 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
     texture_transformations: [@crop, @corners_round]
   }
 
+  @reference_path "test/fixtures/texture_transformations/ref_cropping_and_corners_rounding.yuv"
+
   describe "Checks corners rounding and cropping" do
     @describetag :tmp_dir
-
-    # Because of differences in linux and mac hardware, we need to compere
-    # rendered images to different references.
-    @tag linux: true
-    test "1 frame 720p raw linux", %{tmp_dir: tmp_dir} do
-      test_transformations(tmp_dir, "linux")
-    end
-
-    @tag mac: true
-    test "1 frame 720p raw mac", %{tmp_dir: tmp_dir} do
-      test_transformations(tmp_dir, "mac")
+    test "1 frame 720p raw", %{tmp_dir: tmp_dir} do
+      test_transformations(tmp_dir)
     end
   end
 
-  @spec test_transformations(binary(), String.t()) ::
-          nil
-  defp test_transformations(tmp_dir, render_environment) do
+  @spec test_transformations(binary()) :: nil
+  defp test_transformations(tmp_dir) do
     {input_path, _output_path, _reference_path} =
       Utils.prepare_testing_video(
         @video_stream_format,
@@ -78,15 +70,6 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
         tmp_dir,
         "out_#{@duration}s_#{out_stream_format.width}x#{out_stream_format.height}_#{div(elem(out_stream_format.framerate, 0), elem(out_stream_format.framerate, 1))}fps.raw"
       )
-
-    reference_path =
-      case String.to_atom(render_environment) do
-        :linux ->
-          "test/fixtures/texture_transformations/ref_linux_cropping_and_corners_rounding.yuv"
-
-        :mac ->
-          "test/fixtures/texture_transformations/ref_mac_cropping_and_corners_rounding.yuv"
-      end
 
     positions = [
       {0, 0},
@@ -144,6 +127,6 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pipeline, blocking?: true)
 
-    assert Utils.compare_contents_with_error(output_path, reference_path)
+    assert Utils.compare_contents_with_error(output_path, @reference_path)
   end
 end
