@@ -4,6 +4,8 @@
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_video_compositor_plugin) -->
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/membraneframework-labs/membrane_video_compositor_plugin/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/membraneframework-labs/membrane_video_compositor_plugin/tree/master)
 
+Membrane plugin that accepts multiple video inputs, transforms them according to provided transformations and composes them into a single output video.
+
 It is part of [Membrane Multimedia Framework](https://membraneframework.org).
 
 ## Installation
