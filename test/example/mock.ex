@@ -16,7 +16,7 @@ defmodule Mock do
   defmodule __MODULE__.Rotate do
     @moduledoc false
 
-    @behaviour Membrane.VideoCompositor.Canvas.Manipulation
+    @behaviour Membrane.VideoCompositor.Canvas.Transformation
 
     @enforce_keys [:degrees]
     defstruct @enforce_keys
@@ -58,7 +58,7 @@ defmodule Mock do
   defmodule __MODULE__.ToBall do
     @moduledoc false
 
-    @behaviour Membrane.VideoCompositor.Canvas.Manipulation
+    @behaviour Membrane.VideoCompositor.Canvas.Transformation
 
     @impl true
     def render(), do: :ok

@@ -50,14 +50,14 @@ defmodule Example do
       merging: %Merging{videos_num: 2}
     ],
     objects: [
-      rotated: %Canvas{input: :video_1, manipulations: [:rotate]},
+      rotated: %Canvas{input: :video_1, transformations: [:rotate]},
       merged: %Compound{
         base_size: :video_1,
         layout: :merging,
         inputs_map: %{video_1: 1, video_2: 2}
       },
       rounded: %Texture{input: :merged, transformations: [:rounding]},
-      ball: %Canvas{input: :video_3, manipulations: [:ball]},
+      ball: %Canvas{input: :video_3, transformations: [:ball]},
       final_object: %Compound{
         base_size: %BaseSize{height: 1080, width: 1920},
         layout: :grid,
