@@ -1,18 +1,16 @@
 defmodule Membrane.VideoCompositor.CompositorElement do
-  @moduledoc """
-  The element responsible for composing frames.
+  @moduledoc false
+  # The element responsible for composing frames.
 
-  It is capable of operating in one of two modes:
+  # It is capable of operating in one of two modes:
 
-   * offline compositing:
-     The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
+  #  * offline compositing:
+  #    The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
 
-   * real-time compositing:
-     In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
-     If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
-     If the frames arrive later, they will be dropped. The newest dropped frame will become the new fallback frame.
-
-  """
+  #  * real-time compositing:
+  #    In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
+  #    If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
+  #    If the frames arrive later, they will be dropped. The newest dropped frame will become the new fallback frame.
 
   use Membrane.Filter
   alias Membrane.Buffer

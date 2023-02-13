@@ -1,7 +1,5 @@
 defmodule Membrane.VideoCompositor.WgpuAdapter do
-  @moduledoc """
-  This module implements video composition in wgpu
-  """
+  @moduledoc false
 
   alias Membrane.VideoCompositor.RustStructs
   alias Membrane.VideoCompositor.VideoTransformations

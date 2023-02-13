@@ -6,7 +6,6 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Bin
   alias Membrane.FramerateConverter
   alias Membrane.Pad
-  alias Membrane.RawVideo
   alias Membrane.VideoCompositor.CompositorElement
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
@@ -24,7 +23,7 @@ defmodule Membrane.VideoCompositor do
           {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
 
   def_options stream_format: [
-                spec: RawVideo.t(),
+                spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
               ],
               real_time: [
@@ -34,7 +33,7 @@ defmodule Membrane.VideoCompositor do
               ]
 
   def_input_pad :input,
-    accepted_format: %RawVideo{pixel_format: :I420},
+    accepted_format: %Membrane.RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
       initial_placement: [
@@ -57,7 +56,7 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    accepted_format: %RawVideo{pixel_format: :I420},
+    accepted_format: %Membrane.RawVideo{pixel_format: :I420},
     availability: :always
 
   @impl true
@@ -73,6 +72,10 @@ defmodule Membrane.VideoCompositor do
 
     {[spec: spec], state}
   end
+
+  @impl true
+  def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
+    do: {[remove_child: {:framerate_converter, pad_id}], state}
 
   @impl true
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
