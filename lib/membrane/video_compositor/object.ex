@@ -5,8 +5,6 @@ defmodule Membrane.VideoCompositor.Object do
 
   alias Membrane.Pad
   alias Membrane.VideoCompositor.{Canvas, Compound, Texture}
-  alias Membrane.VideoCompositor.Canvas.Manipulation
-  alias Membrane.VideoCompositor.Texture.Transformation
 
   @typedoc """
   An Object is a renderable entity within Video Compositor.
@@ -16,12 +14,13 @@ defmodule Membrane.VideoCompositor.Object do
   @type name_t :: any()
   @type input_t :: t() | Pad.name_t()
 
-  defmodule __MODULE__.Alternation do
+  defmodule __MODULE__.SimpleAlternation do
     @moduledoc """
-    An alteration is a common name of all modifications of single-input objects.
+    A simple alteration is a common name of all modifications of single-input objects.
     """
 
-    @type definition_t :: Manipulation.definition_t() | Transformation.definition_t()
-    @type name_t :: Manipulation.name_t() | Transformation.name_t()
+    @type definition_t ::
+            Canvas.Transformation.definition_t() | Texture.Transformation.definition_t()
+    @type name_t :: Canvas.Transformation.name_t() | Texture.Transformation.name_t()
   end
 end

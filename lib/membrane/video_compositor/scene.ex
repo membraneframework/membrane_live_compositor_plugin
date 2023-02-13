@@ -6,13 +6,13 @@ defmodule Membrane.VideoCompositor.Scene do
 
   alias Membrane.VideoCompositor.Compound.Layout
   alias Membrane.VideoCompositor.Object
-  alias Membrane.VideoCompositor.Object.Alternation
+  alias Membrane.VideoCompositor.Object.SimpleAlternation
 
   @enforce_keys [:objects, :render]
   defstruct @enforce_keys ++ [alternations: [], layouts: []]
 
   @type t :: %__MODULE__{
-          alternations: [{Alternation.name_t(), Alternation.definition_t()}],
+          alternations: [{SimpleAlternation.name_t(), SimpleAlternation.definition_t()}],
           layouts: [{Layout.name_t(), Layout.definition_t()}],
           objects: [{Object.name_t(), Object.t()}],
           render: render_t()

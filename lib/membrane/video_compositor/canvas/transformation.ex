@@ -1,7 +1,7 @@
-defmodule Membrane.VideoCompositor.Canvas.Manipulation do
+defmodule Membrane.VideoCompositor.Canvas.Transformation do
   @moduledoc """
   Behaviour representing alternations of a Canvas object.
-  Under the hood manipulations most likely are implemented as a vertex shaders.
+  Under the hood canvas transformation most likely are implemented as a vertex shaders.
 
   Render callback is a placeholder.
   """

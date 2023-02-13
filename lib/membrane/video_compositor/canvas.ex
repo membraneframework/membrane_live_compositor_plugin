@@ -3,14 +3,14 @@ defmodule Membrane.VideoCompositor.Canvas do
   Structure representing Canvas objects.
   """
 
-  alias __MODULE__.Manipulation
+  alias __MODULE__.Transformation
   alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:input]
-  defstruct @enforce_keys ++ [manipulations: []]
+  defstruct @enforce_keys ++ [transformations: []]
 
   @type t :: %__MODULE__{
           input: Object.input_t(),
-          manipulations: [Manipulation.name_t()]
+          transformations: [Transformation.name_t()]
         }
 end
