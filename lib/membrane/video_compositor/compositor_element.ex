@@ -8,6 +8,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   #    The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
 
   use Membrane.Filter
+
   alias Membrane.Buffer
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
@@ -199,6 +200,42 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   defp all_input_pads_received_end_of_stream?(pads) do
     Map.to_list(pads)
     |> Enum.all?(fn {ref, pad} -> ref == :output or pad.end_of_stream? end)
+  end
+
+  @impl true
+  def handle_pad_removed(pad, ctx, state) do
+    {pad_id, pads_to_ids} = Map.pop!(state.pads_to_ids, pad)
+    state = %{state | pads_to_ids: pads_to_ids}
+
+    if is_pad_waiting_for_caps?(pad, state) do
+      # this is the case of removing a video that did not receive caps yet
+      # since it did not receive caps, it wasn't added to the internal compositor state yet
+      {[],
+       %{
+         state
+         | initial_video_transformations: Map.delete(state.initial_video_transformations, pad_id),
+           initial_video_placements: Map.delete(state.initial_video_placements, pad_id)
+       }}
+    else
+      if Map.get(ctx.pads, pad).end_of_stream? do
+        # videos that already received end of stream don't require special treatment
+        {[], state}
+      else
+        # this is the case of removing a video that did receive caps, but did not receive
+        # end of stream. all videos that were added to the compositor need to receive
+        # end of stream, so we need to send one here.
+        {:ok, frames} = WgpuAdapter.send_end_of_stream(state.wgpu_state, pad_id)
+        buffers = frames |> Enum.map(fn {frame, pts} -> %Buffer{payload: frame, pts: pts} end)
+
+        {[buffer: buffers], state}
+      end
+    end
+  end
+
+  defp is_pad_waiting_for_caps?(pad, state) do
+    pad_id = Map.get(state.pads_to_ids, pad)
+
+    Map.has_key?(state.initial_video_transformations, pad_id)
   end
 
   @impl true
