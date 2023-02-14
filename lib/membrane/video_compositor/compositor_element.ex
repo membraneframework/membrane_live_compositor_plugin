@@ -7,11 +7,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   #  * offline compositing:
   #    The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
 
-  #  * real-time compositing:
-  #    In this mode, if the compositor will start a timer ticking every spf (seconds per frame). The timer is reset every time a frame is produced.
-  #    If the compositor doesn't have all frames ready by the time the timer ticks, it will produce a frame anyway, using old frames as fallback in cases when a current frame is not available.
-  #    If the frames arrive later, they will be dropped. The newest dropped frame will become the new fallback frame.
-
   use Membrane.Filter
   alias Membrane.Buffer
   alias Membrane.RawVideo
@@ -22,13 +17,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def_options stream_format: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
-              ],
-              real_time: [
-                spec: boolean(),
-                description: """
-                Set the compositor to real-time mode.
-                """,
-                default: false
               ]
 
   def_input_pad :input,
@@ -70,7 +58,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
       initial_video_transformations: %{},
       timestamp_offsets: %{},
       stream_format: options.stream_format,
-      real_time: options.real_time,
       wgpu_state: wgpu_state,
       pads_to_ids: %{},
       new_pad_id: 0
@@ -81,25 +68,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_playing(_ctx, state) do
-    spf = spf_from_framerate(state.stream_format.framerate)
-
-    actions =
-      if state.real_time do
-        [start_timer: {:render_frame, spf}, stream_format: {:output, state.stream_format}]
-      else
-        [stream_format: {:output, state.stream_format}]
-      end
-
-    {actions, state}
-  end
-
-  @impl true
-  def handle_tick(:render_frame, _ctx, state) do
-    {:ok, {frame, pts}} = WgpuAdapter.force_render(state.wgpu_state)
-
-    actions = [buffer: {:output, %Buffer{payload: frame, pts: pts}}]
-
-    {actions, state}
+    {[stream_format: {:output, state.stream_format}], state}
   end
 
   @impl true
@@ -193,25 +162,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     case WgpuAdapter.upload_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
-        {[buffer: {:output, %Membrane.Buffer{payload: frame, pts: pts}}] ++
-           restart_timer_action_if_necessary(state), state}
+        {[buffer: {:output, %Membrane.Buffer{payload: frame, pts: pts}}], state}
 
       :ok ->
         {[], state}
-    end
-  end
-
-  defp spf_from_framerate({frames, seconds}) do
-    Ratio.new(frames, seconds)
-  end
-
-  defp restart_timer_action_if_necessary(state) do
-    spf = spf_from_framerate(state.stream_format.framerate)
-
-    if state.real_time do
-      [stop_timer: :render_frame, start_timer: {:render_frame, spf}]
-    else
-      []
     end
   end
 
@@ -224,15 +178,20 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %{pads_to_ids: pads_to_ids, wgpu_state: wgpu_state} = state
     id = Map.get(pads_to_ids, pad)
 
-    :ok = WgpuAdapter.send_end_of_stream(wgpu_state, id)
+    {:ok, frames} = WgpuAdapter.send_end_of_stream(wgpu_state, id)
 
-    actions =
+    buffers = frames |> Enum.map(fn {frame, pts} -> %Buffer{payload: frame, pts: pts} end)
+
+    buffers = [buffer: {:output, [buffers]}]
+
+    end_of_stream =
       if all_input_pads_received_end_of_stream?(context.pads) do
-        stop = if state.real_time, do: [stop_timer: :render_frame], else: []
-        [end_of_stream: :output] ++ stop
+        [end_of_stream: :output]
       else
         []
       end
+
+    actions = buffers ++ end_of_stream
 
     {actions, state}
   end

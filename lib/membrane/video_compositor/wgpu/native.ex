@@ -49,7 +49,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           :ok | {:error, error_t()}
   def remove_video(_state, _id), do: error()
 
-  @spec send_end_of_stream(wgpu_state(), id_t()) :: :ok | {:error, atom()}
+  @spec send_end_of_stream(wgpu_state(), id_t()) :: {:ok, [frame_with_pts()]} | {:error, atom()}
   def send_end_of_stream(_state, _id), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)

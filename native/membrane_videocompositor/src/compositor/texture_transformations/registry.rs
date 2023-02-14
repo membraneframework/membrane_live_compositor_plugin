@@ -35,10 +35,9 @@ impl TextureTransformationRegistry {
     ) -> &TextureTransformationPipeline {
         match self.get_from_typeid(transformation.type_id()) {
             Some(texture_transformation_pipeline) => texture_transformation_pipeline,
-            None => panic!(
-                "Transformation pipeline of {:#?} hasn't been registered!",
-                transformation
-            ),
+            None => {
+                panic!("Transformation pipeline of {transformation:#?} hasn't been registered!")
+            }
         }
     }
 

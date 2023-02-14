@@ -152,11 +152,11 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   This causes the video to be deleted after it's enqueued frames are used up.
   """
   @spec send_end_of_stream(wgpu_state_t(), id_t()) ::
-          :ok | {:error, error_t()}
+          {:ok, [frame_with_pts_t()]} | {:error, error_t()}
   def send_end_of_stream(state, id) do
     case Native.send_end_of_stream(state, id) do
-      :ok ->
-        :ok
+      {:ok, frames} ->
+        {:ok, frames}
 
       {:error, reason} ->
         raise "Error while sending an end of stream message to a video, reason: #{inspect(reason)}"

@@ -133,14 +133,7 @@ fn upload_frame<'a>(
     state.compositor.upload_texture(id, &frame, pts)?;
 
     if state.compositor.all_frames_ready() {
-        let mut output = rustler::OwnedBinary::new(
-            state.output_stream_format.width.get() as usize
-                * state.output_stream_format.height.get() as usize
-                * 3
-                / 2,
-        )
-        .unwrap();
-        let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
+        let (output, pts) = get_frame(&mut state);
         Ok(UploadFrameResult::WithFrame(output.release(env), pts))
     } else {
         Ok(UploadFrameResult::WithoutFrame)
@@ -154,6 +147,12 @@ fn force_render(
 ) -> Result<(rustler::Atom, (rustler::Term<'_>, u64)), rustler::Error> {
     let mut state = state.lock().unwrap();
 
+    let (output, pts) = get_frame(&mut state);
+
+    Ok((atoms::ok(), (output.release(env).to_term(env), pts)))
+}
+
+fn get_frame(state: &mut InnerState) -> (rustler::OwnedBinary, u64) {
     let mut output = rustler::OwnedBinary::new(
         state.output_stream_format.width.get() as usize
             * state.output_stream_format.height.get() as usize
@@ -164,7 +163,7 @@ fn force_render(
 
     let pts = pollster::block_on(state.compositor.draw_into(output.as_mut_slice()));
 
-    Ok((atoms::ok(), (output.release(env).to_term(env), pts)))
+    (output, pts)
 }
 
 #[rustler::nif]
@@ -279,10 +278,20 @@ fn send_end_of_stream(
     #[allow(unused)] env: rustler::Env<'_>,
     state: ResourceArc<State>,
     id: usize,
-) -> Result<rustler::Atom, rustler::Error> {
-    state.lock().unwrap().compositor.send_end_of_stream(id)?;
+) -> Result<(rustler::Atom, Vec<(rustler::Term<'_>, u64)>), rustler::Error> {
+    let mut state = state.lock().unwrap();
 
-    Ok(atoms::ok())
+    state.compositor.send_end_of_stream(id)?;
+
+    let mut outputs = Vec::new();
+
+    while state.compositor.all_frames_ready() {
+        let (output, pts) = get_frame(&mut state);
+        let output = output.release(env).to_term(env);
+        outputs.push((output, pts))
+    }
+
+    Ok((atoms::ok(), outputs))
 }
 
 rustler::init!(
