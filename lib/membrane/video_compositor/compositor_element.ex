@@ -2,10 +2,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   @moduledoc false
   # The element responsible for composing frames.
 
-  # It is capable of operating in one of two modes:
-
-  #  * offline compositing:
-  #    The compositor will wait for all videos to have a recent enough frame available and then perform the compositing.
+  #  Right now, the compositor only operates in offline mode, which means that it will wait for
+  #  all videos to have a recent enough frame available, however long it might take, and then perform the compositing.
 
   use Membrane.Filter
 
@@ -208,8 +206,9 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     state = %{state | pads_to_ids: pads_to_ids}
 
     if is_pad_waiting_for_caps?(pad, state) do
-      # this is the case of removing a video that did not receive caps yet
-      # since it did not receive caps, it wasn't added to the internal compositor state yet
+      # This is the case of removing a video that did not receive caps yet.
+      # Since it did not receive stream format, it wasn't added to the internal
+      # compositor state yet.
       {[],
        %{
          state
@@ -218,12 +217,12 @@ defmodule Membrane.VideoCompositor.CompositorElement do
        }}
     else
       if Map.get(ctx.pads, pad).end_of_stream? do
-        # videos that already received end of stream don't require special treatment
+        # Videos that already received end of stream don't require special treatment
         {[], state}
       else
-        # this is the case of removing a video that did receive caps, but did not receive
-        # end of stream. all videos that were added to the compositor need to receive
-        # end of stream, so we need to send one here.
+        # This is the case of removing a video that did receive stream format, but did
+        # not receive end of stream. All videos that were added to the compositor need
+        # to receive end of stream, so we need to send one here.
         {:ok, frames} = WgpuAdapter.send_end_of_stream(state.wgpu_state, pad_id)
         buffers = frames |> Enum.map(fn {frame, pts} -> %Buffer{payload: frame, pts: pts} end)
 
