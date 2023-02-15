@@ -14,8 +14,7 @@ defmodule Membrane.VideoCompositor.Compound do
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          # base_size: BaseSize.t() | Object.input_t(),
-          base_size: BaseSize.t(),
+          base_size: BaseSize.t() | Object.input_t(),
           inputs_map: %{Object.name_t() => Layout.input_t()},
           layout: Layout.name_t()
         }

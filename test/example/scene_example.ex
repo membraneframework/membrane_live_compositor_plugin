@@ -1,5 +1,19 @@
 defmodule Example do
-  @moduledoc false
+  @moduledoc """
+  This module covers two examples for scene API.
+
+  An easy example simulates the layout of a video conferencing app.
+  There are 4 video inputs. All of them get their corners rounded. Then,
+  one of them is chosen as a main video (which takes most of the screen),
+  while the rest are scaled-down and put in a side strip on top of the main video.
+
+  A hard example takes four videos, applies varied transformations to them, and puts
+  them together on the final canvas
+  - The first video is simply rotated and then put in the top left corner
+  - The second video is merged with the first video. The result gets
+  corner rounding and is put in the top right corner
+  - The third video is turned into a ball and put in the middle bottom of the screen
+  """
 
   alias Membrane.VideoCompositor.{Canvas, Compound, Scene, Texture}
   alias Membrane.VideoCompositor.Compound.BaseSize
@@ -30,8 +44,8 @@ defmodule Example do
       final_object: %Compound{
         base_size: %BaseSize{height: 1080, width: 1920},
         inputs_map: %{
-          1.0 => :strip,
-          0.0 => :rounded_4
+          strip: 1.0,
+          rounded_4: 0.0
         },
         layout: :overlay
       }
