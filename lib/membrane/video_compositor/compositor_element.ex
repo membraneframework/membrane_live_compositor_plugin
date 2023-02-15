@@ -13,6 +13,49 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.WgpuAdapter
 
+  defmodule State do
+    @moduledoc false
+    # The internal state of the compositor
+
+    defmodule VideoInformation do
+      @moduledoc false
+      # Information required for adding a video to the compositor except the stream format
+
+      @type t() :: %__MODULE__{
+              initial_placement: BaseVideoPlacement.t(),
+              initial_video_transformations: VideoTransformations.t()
+            }
+
+      @enforce_keys [:initial_placement, :initial_video_transformations]
+      defstruct @enforce_keys
+    end
+
+    @type wgpu_state_t() :: any()
+    @type pad_id_t() :: non_neg_integer()
+    @type pads_to_ids_t() :: %{Membrane.Pad.ref_t() => pad_id_t()}
+    @type timestamp_offsets_t() :: %{pad_id_t() => Membrane.Time.t()}
+    @type videos_waiting_for_stream_format_t() :: %{pad_id_t() => VideoInformation.t()}
+
+    @type t() :: %__MODULE__{
+            wgpu_state: wgpu_state_t(),
+            stream_format: RawVideo.t(),
+            new_pad_id: pad_id_t(),
+            pads_to_ids: pads_to_ids_t(),
+            timestamp_offsets: timestamp_offsets_t(),
+            videos_waiting_for_stream_format: videos_waiting_for_stream_format_t()
+          }
+
+    @enforce_keys [:wgpu_state, :stream_format]
+    defstruct [
+      :wgpu_state,
+      :stream_format,
+      new_pad_id: 0,
+      pads_to_ids: %{},
+      timestamp_offsets: %{},
+      videos_waiting_for_stream_format: %{}
+    ]
+  end
+
   def_options stream_format: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
@@ -52,26 +95,21 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_init(_ctx, options) do
     {:ok, wgpu_state} = WgpuAdapter.init(options.stream_format)
 
-    state = %{
-      initial_video_placements: %{},
-      initial_video_transformations: %{},
-      timestamp_offsets: %{},
-      stream_format: options.stream_format,
+    state = %State{
       wgpu_state: wgpu_state,
-      pads_to_ids: %{},
-      new_pad_id: 0
+      stream_format: options.stream_format
     }
 
     {[], state}
   end
 
   @impl true
-  def handle_playing(_ctx, state) do
+  def handle_playing(_ctx, state = %State{}) do
     {[stream_format: {:output, state.stream_format}], state}
   end
 
   @impl true
-  def handle_pad_added(pad, context, state) do
+  def handle_pad_added(pad, context, state = %State{}) do
     timestamp_offset =
       case context.options.timestamp_offset do
         timestamp_offset when timestamp_offset < 0 ->
@@ -94,18 +132,28 @@ defmodule Membrane.VideoCompositor.CompositorElement do
           context.options.initial_video_transformations
       end
 
-    state = register_pad(state, pad, initial_placement, initial_transformations, timestamp_offset)
+    video_information = %State.VideoInformation{
+      initial_placement: initial_placement,
+      initial_video_transformations: initial_transformations
+    }
+
+    state = register_pad(state, pad, video_information, timestamp_offset)
     {[], state}
   end
 
-  defp register_pad(state, pad, placement, transformations, timestamp_offset) do
+  @spec register_pad(
+          State.t(),
+          Membrane.Pad.ref_t(),
+          State.VideoInformation.t(),
+          Membrane.Time.t()
+        ) :: State.t()
+  defp register_pad(state, pad, video_information, timestamp_offset) do
     new_id = state.new_pad_id
 
-    %{
+    %State{
       state
-      | initial_video_placements: Map.put(state.initial_video_placements, new_id, placement),
-        initial_video_transformations:
-          Map.put(state.initial_video_transformations, new_id, transformations),
+      | videos_waiting_for_stream_format:
+          Map.put(state.videos_waiting_for_stream_format, new_id, video_information),
         timestamp_offsets: Map.put(state.timestamp_offsets, new_id, timestamp_offset),
         pads_to_ids: Map.put(state.pads_to_ids, pad, new_id),
         new_pad_id: new_id + 1
@@ -113,41 +161,42 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   @impl true
-  def handle_stream_format(pad, stream_format, _context, state) do
-    %{
+  def handle_stream_format(pad, stream_format, _context, state = %State{}) do
+    %State{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      initial_video_placements: initial_video_placements,
-      initial_video_transformations: initial_video_transformations
+      videos_waiting_for_stream_format: videos_waiting_for_stream_format
     } = state
 
     id = Map.get(pads_to_ids, pad)
 
-    {initial_video_placements, initial_video_transformations} =
-      case {Map.pop(initial_video_placements, id), Map.pop(initial_video_transformations, id)} do
-        {{nil, initial_video_placements}, {nil, initial_video_transformations}} ->
+    videos_waiting_for_stream_format =
+      case Map.pop(videos_waiting_for_stream_format, id) do
+        {nil, videos_waiting_for_stream_format} ->
           # this video was added before
           :ok = WgpuAdapter.update_stream_format(wgpu_state, id, stream_format)
-          {initial_video_placements, initial_video_transformations}
+          videos_waiting_for_stream_format
 
-        {{placement, initial_video_placements}, {transformations, initial_video_transformations}} ->
+        {%State.VideoInformation{
+           initial_placement: placement,
+           initial_video_transformations: transformations
+         }, videos_waiting_for_stream_format} ->
           # this video was waiting for first stream_format to be added to the compositor
           :ok = WgpuAdapter.add_video(wgpu_state, id, stream_format, placement, transformations)
-          {initial_video_placements, initial_video_transformations}
+          videos_waiting_for_stream_format
       end
 
     {
       [],
-      %{
+      %State{
         state
-        | initial_video_placements: initial_video_placements,
-          initial_video_transformations: initial_video_transformations
+        | videos_waiting_for_stream_format: videos_waiting_for_stream_format
       }
     }
   end
 
   @impl true
-  def handle_process(pad, buffer, _context, state) do
+  def handle_process(pad, buffer, _context, state = %State{}) do
     %{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
@@ -172,7 +221,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_end_of_stream(
         pad,
         context,
-        state
+        state = %State{}
       ) do
     %{pads_to_ids: pads_to_ids, wgpu_state: wgpu_state} = state
     id = Map.get(pads_to_ids, pad)
@@ -201,19 +250,19 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   end
 
   @impl true
-  def handle_pad_removed(pad, ctx, state) do
+  def handle_pad_removed(pad, ctx, state = %State{}) do
     {pad_id, pads_to_ids} = Map.pop!(state.pads_to_ids, pad)
     state = %{state | pads_to_ids: pads_to_ids}
 
-    if is_pad_waiting_for_caps?(pad, state) do
+    if is_pad_waiting_for_stream_format?(pad, state) do
       # This is the case of removing a video that did not receive caps yet.
       # Since it did not receive stream format, it wasn't added to the internal
       # compositor state yet.
       {[],
-       %{
+       %State{
          state
-         | initial_video_transformations: Map.delete(state.initial_video_transformations, pad_id),
-           initial_video_placements: Map.delete(state.initial_video_placements, pad_id)
+         | videos_waiting_for_stream_format:
+             Map.delete(state.videos_waiting_for_stream_format, pad_id)
        }}
     else
       if Map.get(ctx.pads, pad).end_of_stream? do
@@ -231,106 +280,141 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     end
   end
 
-  defp is_pad_waiting_for_caps?(pad, state) do
+  @spec is_pad_waiting_for_stream_format?(Membrane.Pad.ref_t(), State.t()) :: boolean()
+  defp is_pad_waiting_for_stream_format?(pad, state) do
     pad_id = Map.get(state.pads_to_ids, pad)
 
-    Map.has_key?(state.initial_video_transformations, pad_id)
+    Map.has_key?(state.videos_waiting_for_stream_format, pad_id)
   end
 
   @impl true
-  def handle_parent_notification({:update_placement, placements}, _ctx, state) do
-    %{
+  def handle_parent_notification({:update_placement, placements}, _ctx, state = %State{}) do
+    %State{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      initial_video_placements: initial_video_placements
+      videos_waiting_for_stream_format: videos_waiting_for_stream_format
     } = state
 
-    initial_video_placements =
-      update_placements(placements, pads_to_ids, wgpu_state, initial_video_placements)
+    videos_waiting_for_stream_format =
+      update_placements(placements, pads_to_ids, wgpu_state, videos_waiting_for_stream_format)
 
-    {[], %{state | initial_video_placements: initial_video_placements}}
+    {[], %State{state | videos_waiting_for_stream_format: videos_waiting_for_stream_format}}
   end
 
   @impl true
-  def handle_parent_notification({:update_transformations, all_transformations}, _ctx, state) do
-    %{
+  def handle_parent_notification(
+        {:update_transformations, all_transformations},
+        _ctx,
+        state = %State{}
+      ) do
+    %State{
       pads_to_ids: pads_to_ids,
       wgpu_state: wgpu_state,
-      initial_video_transformations: initial_video_transformations
+      videos_waiting_for_stream_format: videos_waiting_for_stream_format
     } = state
 
-    initial_video_transformations =
+    videos_waiting_for_stream_format =
       update_transformations(
         all_transformations,
         pads_to_ids,
         wgpu_state,
-        initial_video_transformations
+        videos_waiting_for_stream_format
       )
 
-    {[], %{state | initial_video_transformations: initial_video_transformations}}
+    {[], %State{state | videos_waiting_for_stream_format: videos_waiting_for_stream_format}}
   end
 
+  @spec update_placements(
+          [{Membrane.Pad.ref_t(), BaseVideoPlacement.t()}],
+          State.pads_to_ids_t(),
+          State.wgpu_state_t(),
+          State.videos_waiting_for_stream_format_t()
+        ) :: boolean()
   defp update_placements(
          [],
          _pads_to_ids,
          _wgpu_state,
-         initial_video_placements
+         videos_waiting_for_stream_format
        ) do
-    initial_video_placements
+    videos_waiting_for_stream_format
   end
 
   defp update_placements(
          [{pad, placement} | other_placements],
          pads_to_ids,
          wgpu_state,
-         initial_video_placements
+         videos_waiting_for_stream_format
        ) do
     id = Map.get(pads_to_ids, pad)
 
-    initial_video_placements =
+    videos_waiting_for_stream_format =
       case WgpuAdapter.update_placement(wgpu_state, id, placement) do
-        :ok -> initial_video_placements
+        :ok ->
+          videos_waiting_for_stream_format
+
         # in case of update_placements is called before handle_stream_format and add_video in rust
         # wasn't called yet (the video wasn't registered in rust yet)
-        {:error, :bad_video_index} -> Map.put(initial_video_placements, id, placement)
+        {:error, :bad_video_index} ->
+          Map.update!(
+            videos_waiting_for_stream_format,
+            id,
+            fn information = %State.VideoInformation{} ->
+              %State.VideoInformation{information | initial_placement: placement}
+            end
+          )
       end
 
-    update_placements(other_placements, pads_to_ids, wgpu_state, initial_video_placements)
+    update_placements(other_placements, pads_to_ids, wgpu_state, videos_waiting_for_stream_format)
   end
 
+  @spec update_transformations(
+          [{Membrane.Pad.ref_t(), VideoTransformations.t()}],
+          State.pads_to_ids_t(),
+          State.wgpu_state_t(),
+          State.videos_waiting_for_stream_format_t()
+        ) :: boolean()
   defp update_transformations(
          [],
          _pads_to_ids,
          _wgpu_state,
-         initial_video_transformations
+         videos_waiting_for_stream_format
        ) do
-    initial_video_transformations
+    videos_waiting_for_stream_format
   end
 
   defp update_transformations(
          [{pad, video_transformations} | other_transformations],
          pads_to_ids,
          wgpu_state,
-         initial_video_transformations
+         videos_waiting_for_stream_format
        ) do
     id = Map.get(pads_to_ids, pad)
 
-    initial_video_transformations =
+    videos_waiting_for_stream_format =
       case WgpuAdapter.update_transformations(wgpu_state, id, video_transformations) do
         :ok ->
-          initial_video_transformations
+          videos_waiting_for_stream_format
 
         # in case of update_transformations is called before handle_stream_format and add_video in rust
         # wasn't called yet (the video wasn't registered in rust yet)
         {:error, :bad_video_index} ->
-          Map.put(initial_video_transformations, id, video_transformations)
+          Map.update!(
+            videos_waiting_for_stream_format,
+            id,
+            fn information = %State.VideoInformation{} ->
+              %State.VideoInformation{
+                information
+                | initial_video_transformations: video_transformations
+              }
+            end
+          )
       end
 
     update_transformations(
       other_transformations,
       pads_to_ids,
       wgpu_state,
-      initial_video_transformations
+      videos_waiting_for_stream_format
     )
   end
 end
