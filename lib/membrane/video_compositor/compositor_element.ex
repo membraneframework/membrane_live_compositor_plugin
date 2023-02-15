@@ -159,7 +159,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     %Membrane.Buffer{payload: frame, pts: pts} = buffer
     pts = pts + Map.get(timestamp_offsets, id)
 
-    case WgpuAdapter.upload_frame(wgpu_state, id, {frame, pts}) do
+    case WgpuAdapter.process_frame(wgpu_state, id, {frame, pts}) do
       {:ok, {frame, pts}} ->
         {[buffer: {:output, %Membrane.Buffer{payload: frame, pts: pts}}], state}
 

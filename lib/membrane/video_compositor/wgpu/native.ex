@@ -17,9 +17,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec init(RawVideo.t()) :: {:ok, wgpu_state()} | {:error, error_t()}
   def init(_out_video), do: error()
 
-  @spec upload_frame(wgpu_state(), id_t(), binary(), Membrane.Time.t()) ::
+  @spec process_frame(wgpu_state(), id_t(), binary(), Membrane.Time.t()) ::
           :ok | {:ok, frame_with_pts()} | {:error, atom()}
-  def upload_frame(_state, _id, _frame, _pts), do: error()
+  def process_frame(_state, _id, _frame, _pts), do: error()
 
   @spec force_render(wgpu_state()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()

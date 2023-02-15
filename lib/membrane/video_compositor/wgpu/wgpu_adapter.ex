@@ -25,10 +25,10 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
 
   If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
   """
-  @spec upload_frame(wgpu_state_t(), id_t(), frame_with_pts_t()) ::
+  @spec process_frame(wgpu_state_t(), id_t(), frame_with_pts_t()) ::
           :ok | {:ok, frame_with_pts_t()}
-  def upload_frame(state, id, {frame, pts}) do
-    case Native.upload_frame(state, id, frame, pts) do
+  def process_frame(state, id, {frame, pts}) do
+    case Native.process_frame(state, id, frame, pts) do
       :ok ->
         :ok
 

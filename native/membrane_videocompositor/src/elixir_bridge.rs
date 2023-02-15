@@ -121,7 +121,7 @@ impl rustler::Encoder for UploadFrameResult<'_> {
 }
 
 #[rustler::nif]
-fn upload_frame<'a>(
+fn process_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,
     id: usize,
@@ -301,7 +301,7 @@ rustler::init!(
         force_render,
         add_video,
         remove_video,
-        upload_frame,
+        process_frame,
         send_end_of_stream,
         update_stream_format,
         update_placement,

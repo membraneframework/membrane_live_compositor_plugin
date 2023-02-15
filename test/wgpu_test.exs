@@ -105,8 +105,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  }
                )
 
-      assert :ok = Native.upload_frame(state, 0, frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)
@@ -133,8 +133,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
 
-      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -155,8 +155,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
 
-      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -171,8 +171,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       })
 
       second = Membrane.Time.second()
-      assert :ok = Native.upload_frame(state, 0, frame, second)
-      assert {:ok, {out_frame, ^second}} = Native.upload_frame(state, 1, empty_frame, second)
+      assert :ok = Native.process_frame(state, 0, frame, second)
+      assert {:ok, {out_frame, ^second}} = Native.process_frame(state, 1, empty_frame, second)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -216,17 +216,17 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       frame_time = Membrane.Time.second()
 
       for i <- 0..2 do
-        assert :ok = Native.upload_frame(state, 1, empty_frame, i * frame_time)
+        assert :ok = Native.process_frame(state, 1, empty_frame, i * frame_time)
       end
 
       # two frames that we upload should produce a buffer, since both vids have frames
       for i <- 0..2 do
-        assert {:ok, _buffer} = Native.upload_frame(state, 0, frame, i * frame_time)
+        assert {:ok, _buffer} = Native.process_frame(state, 0, frame, i * frame_time)
       end
 
       # two next frames into vid 0 should not output a buffer, since there are no frames in vid 1
       for i <- 2..4 do
-        assert :ok = Native.upload_frame(state, 0, frame, i * frame_time)
+        assert :ok = Native.process_frame(state, 0, frame, i * frame_time)
       end
 
       # after end of stream, two frames in vid 0 queue are not blocked anymore and should be rendered
