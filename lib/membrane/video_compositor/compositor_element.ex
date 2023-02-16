@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
     @type pad_id_t() :: non_neg_integer()
     @type pads_to_ids_t() :: %{Membrane.Pad.ref_t() => pad_id_t()}
     @type timestamp_offsets_t() :: %{pad_id_t() => Membrane.Time.t()}
-    @type videos_waiting_for_stream_format_t() :: %{pad_id_t() => VideoInformation.t()}
+    @type videos_waiting_for_stream_format_t() :: %{optional(pad_id_t()) => VideoInformation.t()}
 
     @type t() :: %__MODULE__{
             wgpu_state: wgpu_state_t(),
@@ -329,7 +329,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
           State.pads_to_ids_t(),
           State.wgpu_state_t(),
           State.videos_waiting_for_stream_format_t()
-        ) :: boolean()
+        ) :: State.videos_waiting_for_stream_format_t()
   defp update_placements(
          [],
          _pads_to_ids,
@@ -372,7 +372,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
           State.pads_to_ids_t(),
           State.wgpu_state_t(),
           State.videos_waiting_for_stream_format_t()
-        ) :: boolean()
+        ) :: State.videos_waiting_for_stream_format_t()
   defp update_transformations(
          [],
          _pads_to_ids,
