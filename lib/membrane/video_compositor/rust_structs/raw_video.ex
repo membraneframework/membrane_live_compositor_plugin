@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.RustStructs.RawVideo do
   defstruct @enforce_keys
 
   @spec from_membrane_raw_video(Membrane.RawVideo.t()) :: {:ok, __MODULE__.t()}
-  def from_membrane_raw_video(%Membrane.RawVideo{} = raw_video) do
+  def from_membrane_raw_video(raw_video = %Membrane.RawVideo{}) do
     {:ok,
      %__MODULE__{
        width: raw_video.width,

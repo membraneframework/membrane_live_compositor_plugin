@@ -6,6 +6,51 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
+  @stream_format_360p_1fps %RawVideo{
+    width: 640,
+    height: 360,
+    pixel_format: :I420,
+    framerate: {1, 1}
+  }
+
+  defp two_overlapping_videos_setup() do
+    stream_format = @stream_format_360p_1fps
+
+    assert {:ok, state} = Native.init(stream_format)
+
+    assert :ok =
+             Native.add_video(
+               state,
+               0,
+               stream_format,
+               %BaseVideoPlacement{
+                 position: {0, 0},
+                 size: {stream_format.width, stream_format.height},
+                 z_value: 0.0
+               },
+               %VideoTransformations{
+                 texture_transformations: []
+               }
+             )
+
+    assert :ok =
+             Native.add_video(
+               state,
+               1,
+               stream_format,
+               %BaseVideoPlacement{
+                 position: {0, 0},
+                 size: {stream_format.width, stream_format.height},
+                 z_value: 0.5
+               },
+               %VideoTransformations{
+                 texture_transformations: []
+               }
+             )
+
+    state
+  end
+
   describe "wgpu" do
     @describetag :tmp_dir
 
@@ -22,12 +67,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      in_video = %RawVideo{
-        width: 640,
-        height: 360,
-        pixel_format: :I420,
-        framerate: {60, 1}
-      }
+      in_video = @stream_format_360p_1fps
 
       assert {:ok, state} =
                Native.init(%RawVideo{
@@ -65,8 +105,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  }
                )
 
-      assert :ok = Native.upload_frame(state, 0, frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
       File.close(file)
@@ -88,50 +128,13 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      stream_format = %RawVideo{
-        width: 640,
-        height: 360,
-        pixel_format: :I420,
-        framerate: {60, 1}
-      }
-
-      assert {:ok, state} = Native.init(stream_format)
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 0,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.0
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 1,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.5
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
+      state = two_overlapping_videos_setup()
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
 
-      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -146,50 +149,14 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      stream_format = %RawVideo{
-        width: 640,
-        height: 360,
-        pixel_format: :I420,
-        framerate: {1, 1}
-      }
-
-      assert {:ok, state} = Native.init(stream_format)
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 0,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.0
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 1,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.5
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
+      stream_format = @stream_format_360p_1fps
+      state = two_overlapping_videos_setup()
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
 
-      assert :ok = Native.upload_frame(state, 0, empty_frame, 1)
-      assert {:ok, {out_frame, 1}} = Native.upload_frame(state, 1, frame, 1)
+      assert :ok = Native.process_frame(state, 0, empty_frame, 1)
+      assert {:ok, {out_frame, 1}} = Native.process_frame(state, 1, frame, 1)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -204,8 +171,8 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       })
 
       second = Membrane.Time.second()
-      assert :ok = Native.upload_frame(state, 0, frame, second)
-      assert {:ok, {out_frame, ^second}} = Native.upload_frame(state, 1, empty_frame, second)
+      assert :ok = Native.process_frame(state, 0, frame, second)
+      assert {:ok, {out_frame, ^second}} = Native.process_frame(state, 1, empty_frame, second)
 
       assert {:ok, file} = File.open(out_path, [:write])
       IO.binwrite(file, out_frame)
@@ -216,44 +183,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
     @tag wgpu: true
     test "update transformations has correct return type" do
-      stream_format = %RawVideo{
-        width: 640,
-        height: 360,
-        pixel_format: :I420,
-        framerate: {1, 1}
-      }
-
-      assert {:ok, state} = Native.init(stream_format)
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 0,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.0
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
-
-      assert :ok =
-               Native.add_video(
-                 state,
-                 1,
-                 stream_format,
-                 %BaseVideoPlacement{
-                   position: {0, 0},
-                   size: {stream_format.width, stream_format.height},
-                   z_value: 0.5
-                 },
-                 %VideoTransformations{
-                   texture_transformations: []
-                 }
-               )
+      state = two_overlapping_videos_setup()
 
       assert :ok =
                Native.update_transformations(
@@ -270,6 +200,48 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
                  bad_index,
                  %Membrane.VideoCompositor.VideoTransformations{texture_transformations: []}
                )
+    end
+
+    @tag wgpu: true
+    test "handle end of stream message correctly", %{tmp_dir: tmp_dir} do
+      {in_path, out_path, _ref_path} = Utils.prepare_paths("1frame.yuv", tmp_dir, "native")
+
+      assert {:ok, frame} = File.read(in_path)
+
+      state = two_overlapping_videos_setup()
+
+      s = bit_size(frame)
+      empty_frame = <<0::size(s)>>
+
+      frame_time = Membrane.Time.second()
+
+      for i <- 0..2 do
+        assert :ok = Native.process_frame(state, 1, empty_frame, i * frame_time)
+      end
+
+      # two frames that we upload should produce a buffer, since both vids have frames
+      for i <- 0..2 do
+        assert {:ok, _buffer} = Native.process_frame(state, 0, frame, i * frame_time)
+      end
+
+      # two next frames into vid 0 should not output a buffer, since there are no frames in vid 1
+      for i <- 2..4 do
+        assert :ok = Native.process_frame(state, 0, frame, i * frame_time)
+      end
+
+      # after end of stream, two frames in vid 0 queue are not blocked anymore and should be rendered
+      # since vid 0 was in the back before, these frames should contain the reference image
+      assert {:ok, buffers} = Native.send_end_of_stream(state, 1)
+
+      assert length(buffers) == 2
+
+      Enum.each(buffers, fn {frame, _pts} ->
+        assert {:ok, file} = File.open(out_path, [:write])
+        IO.binwrite(file, frame)
+        File.close(file)
+
+        Utils.compare_contents_with_error(in_path, out_path)
+      end)
     end
   end
 end

@@ -8,7 +8,6 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Test.Support.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Test.Support.Pipeline.PacketLoss, as: PipelinePacketLoss
   alias Membrane.VideoCompositor.Test.Support.Utils
 
   @hd_video %RawVideo{
@@ -103,83 +102,6 @@ defmodule Membrane.VideoCompositor.Test.Pipeline do
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)
-    assert_pipeline_play(pipeline)
-    assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pipeline, blocking?: true)
-  end
-
-  describe "Checks packet loss pipeline on merging four videos on 2x2 grid" do
-    @describetag :tmp_dir
-
-    @tag wgpu: true
-    test "2s 720p 30fps h264", %{tmp_dir: tmp_dir} do
-      test_h264_pipeline_with_packet_loss(
-        @hd_video,
-        2,
-        "short_videos",
-        tmp_dir
-      )
-    end
-
-    @tag wgpu: true
-    test "1s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
-      test_h264_pipeline_with_packet_loss(
-        @full_hd_video,
-        1,
-        "short_videos",
-        tmp_dir
-      )
-    end
-  end
-
-  defp test_h264_pipeline_with_packet_loss(
-         video_stream_format,
-         duration,
-         sub_dir_name,
-         tmp_dir
-       ) do
-    alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
-
-    {input_path, output_path, _ref_file_name} =
-      Utils.prepare_testing_video(video_stream_format, duration, "h264", tmp_dir, sub_dir_name)
-
-    positions = [
-      {0, 0},
-      {video_stream_format.width, 0},
-      {0, video_stream_format.height},
-      {video_stream_format.width, video_stream_format.height}
-    ]
-
-    inputs =
-      for pos <- positions,
-          do: %InputStream{
-            placement: %BaseVideoPlacement{
-              position: pos,
-              size: {video_stream_format.width, video_stream_format.height}
-            },
-            transformations: @empty_video_transformations,
-            stream_format: video_stream_format,
-            input: input_path
-          }
-
-    out_stream_format = %RawVideo{
-      video_stream_format
-      | width: video_stream_format.width * 2,
-        height: video_stream_format.height * 2
-    }
-
-    options = %Options{
-      inputs: inputs,
-      output: output_path,
-      stream_format: out_stream_format
-    }
-
-    pipeline =
-      TestingPipeline.start_link_supervised!(
-        module: PipelinePacketLoss,
-        custom_args: options
-      )
-
     assert_pipeline_play(pipeline)
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pipeline, blocking?: true)
