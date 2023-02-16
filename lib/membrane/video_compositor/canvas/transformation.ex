@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Canvas.Transformation do
   """
 
   @type definition_t :: struct() | module()
-  @type name_t :: any()
+  @type name_t :: tuple() | atom()
 
   @callback render() :: any()
 end

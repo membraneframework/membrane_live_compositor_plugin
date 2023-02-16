@@ -7,7 +7,7 @@ defmodule Example do
   one of them is chosen as a main video (which takes most of the screen),
   while the rest are scaled-down and put in a side strip on top of the main video.
 
-  A hard example takes four videos, applies varied transformations to them, and puts
+  A hard example takes three videos, applies varied transformations to them, and puts
   them together on the final canvas
   - The first video is simply rotated and then put in the top left corner
   - The second video is merged with the first video. The result gets

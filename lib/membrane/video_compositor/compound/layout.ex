@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Compound.Layout do
   """
 
   @type definition_t :: struct() | module()
-  @type name_t :: any()
+  @type name_t :: tuple() | atom()
   @type input_t :: any()
 
   @callback render() :: any()
