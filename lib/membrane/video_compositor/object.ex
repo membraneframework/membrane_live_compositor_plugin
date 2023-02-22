@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Object do
   """
   @type t :: Canvas.t() | Compound.t() | Texture.t()
 
-  @type name_t :: any()
+  @type name_t :: tuple() | atom()
   @type input_t :: t() | Pad.name_t()
 
   defmodule __MODULE__.SimpleAlternation do
