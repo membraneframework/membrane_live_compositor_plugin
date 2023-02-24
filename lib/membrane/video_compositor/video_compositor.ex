@@ -75,7 +75,7 @@ defmodule Membrane.VideoCompositor do
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
     spec =
       bin_input(Pad.ref(:input, pad_id))
-      |> child({:framerate_converter, make_ref()}, %FramerateConverter{
+      |> child({:framerate_converter, pad_id}, %FramerateConverter{
         framerate: state.output_stream_format.framerate
       })
       |> via_in(Pad.ref(:input, pad_id),
