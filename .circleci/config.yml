@@ -68,10 +68,10 @@ workflows:
             <<: *filters
       - rust_lint:
           filters:
-                <<: *filters
+            <<: *filters
       - rust_tests:
           filters:
-                <<: *filters
+            <<: *filters
       - elixir/hex_publish:
           requires:
             - elixir/build_test
