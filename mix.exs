@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
   @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
