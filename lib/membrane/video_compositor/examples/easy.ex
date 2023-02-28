@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Simple do
+defmodule Membrane.VideoCompositor.Examples.Easy do
   @moduledoc """
   An easy example simulates the layout of a video conferencing app.
   There are 4 video inputs. All of them get their corners rounded. Then,
@@ -16,6 +16,7 @@ defmodule Membrane.VideoCompositor.Examples.Simple do
 
   @one_third 1.0 / 3.0
   @sixteen_tenths 16.0 / 9.0
+  @corners_rounding %CornersRounding{border_radius: 100}
 
   @strip_overlay %Overlay{
     input_map: %{
@@ -47,28 +48,22 @@ defmodule Membrane.VideoCompositor.Examples.Simple do
   }
 
   %Scene{
-    transformations: %{
-      corners_rounding: %CornersRounding{border_radius: 100}
-    },
-    layouts: %{
-      overlay: @strip_overlay
-    },
     objects: [
       rounded_1: %Texture{
         input: :video_1,
-        transformations: [:corners_rounding]
+        transformations: [@corners_rounding]
       },
       rounded_2: %Texture{
         input: :video_2,
-        transformations: [:corners_rounding]
+        transformations: [@corners_rounding]
       },
       rounded_3: %Texture{
         input: :video_3,
-        transformations: [:corners_rounding]
+        transformations: [@corners_rounding]
       },
       rounded_4: %Texture{
         input: :video_4,
-        transformations: [:corners_rounding]
+        transformations: [@corners_rounding]
       },
       final_object: %Layout{
         inputs_map: %{
@@ -77,7 +72,7 @@ defmodule Membrane.VideoCompositor.Examples.Simple do
           rounded_3: :bottom_left,
           rounded_4: :background
         },
-        layout: :overlay,
+        layout: @strip_overlay,
         resolution: %Resolution{width: 1920, height: 1080}
       }
     ],
