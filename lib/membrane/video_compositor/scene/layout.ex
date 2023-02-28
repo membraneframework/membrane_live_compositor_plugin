@@ -1,22 +1,23 @@
 defmodule Membrane.VideoCompositor.Scene.Layout do
-  @moduledoc false
+        @moduledoc """
+        Wraps specified implemented layout with input sources and output frame resolution.
+        """
 
-  alias Membrane.Pad
-  alias Membrane.VideoCompositor.Scene.LayoutSpec
-  alias Membrane.VideoCompositor.Scene.Object
-  alias Membrane.VideoCompositor.Scene.Resolution
-  alias Membrane.VideoCompositor.Scene.TransformationSpec
+        alias Membrane.Pad
+        alias Membrane.VideoCompositor.Scene.{Object, Resolution}
 
-  @type input_t :: Pad.name_t() | TransformationSpec.definition_t() | LayoutSpec.definition_t()
-  @type resolution_t ::
-          Pad.name_t() | TransformationSpec.definition_t() | LayoutSpec.definition_t()
+        @enforce_keys [:inputs_map, :layout, :resolution]
+        defstruct @enforce_keys
 
-  @enforce_keys [:inputs_map, :layout, :resolution]
-  defstruct @enforce_keys
-
-  @type t :: %__MODULE__{
-          inputs_map: %{Object.name_t() => any()},
-          layout: LayoutSpec.definition_t(),
-          resolution: Resolution.t()
-        }
-end
+        @typedoc """
+        Wraps layout (like Grid, Overlay etc.) with mapping of input objects
+        (which rendered output frames will be passed as inputs into layout).
+        Specifies resolution of layout output frame - if object name is passed
+        as resolution, it'll use resolution of object's output frame.
+        """
+        @type t :: %__MODULE__{
+                inputs_map: %{Object.name_t() => any()},
+                layout: LayoutSpec.definition_t(),
+                resolution: Resolution.t() | Object.name_t()
+              }
+      end

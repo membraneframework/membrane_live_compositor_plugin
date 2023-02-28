@@ -1,9 +1,14 @@
 defmodule Membrane.VideoCompositor.Scene.Resolution do
-  @moduledoc false
+  @moduledoc """
+  Simple resolution definition.
+  """
 
   @enforce_keys [:width, :height]
   defstruct @enforce_keys
 
+  @typedoc """
+  Defines frame / video resolution.
+  """
   @type t ::
           %__MODULE__{
             width: non_neg_integer(),
