@@ -36,7 +36,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
         resolution: :video_1
       },
       rounded: %Texture{input: :merged, transformations: [@corners_rounding]},
-      ball: %Texture{input: :video_2, transformations: [@ball]},
+      ball: %Texture{input: :video_3, transformations: [@ball]},
       final_object: %Layout{
         inputs_map: %{
           rotated: :top_left,
@@ -49,4 +49,25 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
     ],
     output: :final_objects
   }
+
+  # Here's how I would like for in to look in the final version, with macros etc.
+  # I think that design would be more coherent with membrane.
+
+  # scene = %Scene{
+  #   elements: %{
+  #     rotate: %Rotate{degrees: 90},
+  #     ball: ToBall,
+  #     corners_rounding: %CornersRounding{border_radius: 5},
+  #     three_vids_grid: %Grid{videos_count: 3},
+  #     merging: Merging
+  #   },
+  #   rendering: [
+  #     link(:video_1) |> with_transforms([:rotate]) |> via_in(:top_left) |> to(:three_vids_grid),
+  #     link(:video_1) |> via_in(0) |> to(:merging),
+  #     link(:video_2) |> via_in(1) |> to(:merging),
+  #     link(:merging) |> via_in(:top_left) |> to(:three_vids_grid)
+  #     link(:video_3) |> with_transforms([:ball]) |> via_in(:bottom) |> to(:three_vids_grid)
+  #     link(:three_vids_grid) |> to(:output)
+  #   ]
+  # }
 end
