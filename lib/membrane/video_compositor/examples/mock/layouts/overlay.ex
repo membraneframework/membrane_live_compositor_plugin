@@ -13,8 +13,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   @type placing_name_t :: atom()
 
   @typedoc """
-  Overlays textures received received from input pad or rendered from previous
-  transformation / layouts
+  Overlays textures received received from input pad or rendered from previous objects.
   """
   @type t :: %__MODULE__{
           overlay_spec: %{placing_name_t() => Position.t()},
