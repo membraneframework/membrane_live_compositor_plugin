@@ -38,9 +38,9 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
       final_object: %Grid{
         @three_vids_grid
         | inputs: %{
-            rotated: :top_left,
-            rounded: :top_right,
-            ball: :bottom
+            0 => :rotated,
+            1 => :rounded,
+            2 => :ball
           },
           resolution: %Resolution{width: 1920, height: 1080}
       }
