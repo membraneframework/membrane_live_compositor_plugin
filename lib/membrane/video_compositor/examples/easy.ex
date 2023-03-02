@@ -85,11 +85,11 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
 
   # Here's how I would like for in to look in the final version, with macros etc.
   # I think that design would be more coherent with membrane.
-
+  #
   # scene = %Scene{
   #   elements: %{
   #     corners_rounding: %CornersRounding{border_radius: 100},
-  #     overlay: @strip_overlay
+  #     overlay: %Overlay{@strip_overlay | resolution: %Resolution{width: 1920, height: 1080}}
   #   },
   #   rendering: [
   #     link(:video_1) |> with_transforms([:corners_rounding]) |> via_in(:top_left) |> to(:overlay),

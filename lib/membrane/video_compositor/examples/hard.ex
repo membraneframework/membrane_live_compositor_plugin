@@ -45,7 +45,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
           resolution: %Resolution{width: 1920, height: 1080}
       }
     ],
-    output: :final_objects
+    output: :final_object
   }
 
   # Here's how I would like for in to look in the final version, with macros etc.
@@ -54,17 +54,17 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   # scene = %Scene{
   #   elements: %{
   #     rotate: %Rotate{degrees: 90},
-  #     ball: ToBall,
+  #     to_ball: ToBall,
   #     corners_rounding: %CornersRounding{border_radius: 5},
-  #     three_vids_grid: %Grid{videos_count: 3},
-  #     merging: Merging
+  #     three_vids_grid: %Grid{@three_vids_grid | resolution: %Resolution{width: 1920, height: 1080}},
+  #     merging: %Merging{inputs: {0 => nil, 1 => nil}, resolution %Resolution{width: 1920, height: 1080}}
   #   },
   #   rendering: [
-  #     link(:video_1) |> with_transforms([:rotate]) |> via_in(:top_left) |> to(:three_vids_grid),
+  #     link(:video_1) |> with_transforms([:rotate]) |> via_in(0) |> to(:three_vids_grid),
   #     link(:video_1) |> via_in(0) |> to(:merging),
   #     link(:video_2) |> via_in(1) |> to(:merging),
-  #     link(:merging) |> via_in(:top_left) |> to(:three_vids_grid)
-  #     link(:video_3) |> with_transforms([:ball]) |> via_in(:bottom) |> to(:three_vids_grid)
+  #     link(:merging) |> via_in(1) |> to(:three_vids_grid)
+  #     link(:video_3) |> with_transforms([:to_ball]) |> via_in(2) |> to(:three_vids_grid)
   #     link(:three_vids_grid) |> to(:output)
   #   ]
   # }
