@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
   @moduledoc """
-  Mocks Grid Layout. Videos placements are defined by :video_count
-  parameter. Basically mocks some component defining different
-  video arrangements for different number of input sources.
+  Mock Grid Layout. Videos placements are defined by the :video_count
+  parameter. Mock some components defining different
+  video arrangements for a different number of input sources.
   """
 
   alias Membrane.VideoCompositor.Scene.{Layout, Object, Resolution}

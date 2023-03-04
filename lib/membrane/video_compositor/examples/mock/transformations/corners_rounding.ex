@@ -6,11 +6,11 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
 
   @typedoc """
   Describe corners rounding texture transformation parameter.
-  Corner rounding transformation can be imagined as placing four circles with specified radius
-  adjoining to frame borders, placed inside frame and making space between circle edge and
-  nearest frame corner transparent.
+  Corner rounding transformation can be imagined as placing four circles with a specified radius
+  adjoining to frame borders, placed inside the frame and making space between the circle edge and
+  the nearest frame corner transparent.
   ## Values
-  - border_radius: non negative integer representing radius of circle "cutting"
+  - border_radius: non-negative integer representing the radius of the circle "cutting"
   frame corner part.
   """
   @type t :: %__MODULE__{

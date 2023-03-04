@@ -83,8 +83,8 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
     output: :final_object
   }
 
-  # Here's how I would like for in to look in the final version, with macros etc.
-  # I think that design would be more coherent with membrane.
+  # Here's how I would like for it to look in the final version, with macros etc.
+  # I think that this design would be more coherent with a Membrane ecosystem.
   #
   # scene = %Scene{
   #   elements: %{

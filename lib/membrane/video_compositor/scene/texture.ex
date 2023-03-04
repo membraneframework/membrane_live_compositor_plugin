@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Scene.Texture do
   @moduledoc """
-  Texture takes frame received from Video Compositor objects,
+  Texture take frame received from Video Compositor objects,
   apply all transformations and can be passed as an input
   for other objects.
   """
@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor.Scene.Texture do
 
   @typedoc """
   Defines texture object, that takes frames from input Object (rendered frame),
-  apply all transformations sequentially and can be passed as an input for other
+  applies all transformations sequentially and can be passed as an input for other
   objects.
   """
   @type t :: %__MODULE__{
