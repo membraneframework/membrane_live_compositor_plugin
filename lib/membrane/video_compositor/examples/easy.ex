@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
   alias Membrane.VideoCompositor.Scene.{Resolution, Texture}
 
   @one_third 1.0 / 3.0
-  @sixteen_tenths 16.0 / 9.0
+  @sixteen_ninths 16.0 / 9.0
   @corners_rounding %CornersRounding{border_radius: 100}
 
   @strip_overlay %Overlay{
@@ -25,19 +25,19 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
       },
       top_left: %Position{
         top_left_corner: {0.0, 0.0},
-        width: @sixteen_tenths * @one_third,
+        width: @sixteen_ninths * @one_third,
         height: @one_third,
         z_value: 1.0
       },
       center_left: %Position{
         top_left_corner: {0.0, @one_third},
-        width: @sixteen_tenths * @one_third,
+        width: @sixteen_ninths * @one_third,
         height: @one_third,
         z_value: 1.0
       },
       bottom_left: %Position{
         top_left_corner: {0.0, 2 * @one_third},
-        width: @sixteen_tenths * @one_third,
+        width: @sixteen_ninths * @one_third,
         height: @one_third,
         z_value: 1.0
       }
