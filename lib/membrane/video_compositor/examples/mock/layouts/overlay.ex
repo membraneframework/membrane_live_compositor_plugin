@@ -2,9 +2,9 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   @moduledoc false
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
-  alias Membrane.VideoCompositor.Scene.{Layout, Object}
+  alias Membrane.VideoCompositor.Scene.Object
 
-  @enforce_keys [:overlay_spec] ++ Layout.get_layout_enforce_keys()
+  @enforce_keys [:overlay_spec, :inputs, :resolution]
   defstruct @enforce_keys
 
   @typedoc """

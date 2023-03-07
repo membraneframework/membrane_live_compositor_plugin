@@ -39,14 +39,4 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
           :resolution => resolution_t(),
           optional(any()) => any()
         }
-
-  @layout_enforce_keys [:inputs, :resolution]
-
-  @doc """
-  Returns all required fields in Layout structs.
-  """
-  @spec get_layout_enforce_keys() :: list(enforced_keys_t())
-  def get_layout_enforce_keys() do
-    @layout_enforce_keys
-  end
 end
