@@ -11,12 +11,6 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   alias Membrane.VideoCompositor.Scene.Object
 
   @typedoc """
-  Specify how Layouts can be defined - by module structs with
-  layout_enforce_keys (and optionally custom ones).
-  """
-  @type definition_t :: struct()
-
-  @typedoc """
   Keys enforced in Layout objects.
   """
   @type enforced_keys_t :: :inputs | :resolution
@@ -32,6 +26,19 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   Specify :resolution types in Layout structs.
   """
   @type resolution_t :: Object.object_output_resolution_t()
+
+  @typedoc """
+  Specify that Layouts:
+    - should be defined as structs
+    - should have :inputs and :resolution fields
+    - can have custom fields
+  """
+  @type t :: %{
+          :__struct__ => module(),
+          :inputs => inputs_t(),
+          :resolution => resolution_t(),
+          optional(any()) => any()
+        }
 
   @layout_enforce_keys [:inputs, :resolution]
 

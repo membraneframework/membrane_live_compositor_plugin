@@ -8,9 +8,11 @@ defmodule Membrane.VideoCompositor.Scene.Object do
 
   @typedoc """
   Objects are renderable entities in VC, that can serve as input for other
-  objects or as an output of the video
+  objects or as an output of the video.
+  They are either Texture structs or structs defining Layouts
+  following Layout.t() definition.
   """
-  @type t :: Layout.definition_t() | Texture.t()
+  @type t :: Layout.t() | Texture.t()
 
   @typedoc """
   Defines how an object can be referenced in Scene.
