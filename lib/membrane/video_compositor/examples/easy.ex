@@ -82,21 +82,4 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
     ],
     output: :final_object
   }
-
-  # Here's how I would like for it to look in the final version, with macros etc.
-  # I think that this design would be more coherent with a Membrane ecosystem.
-  #
-  # scene = %Scene{
-  #   elements: %{
-  #     corners_rounding: %CornersRounding{border_radius: 100},
-  #     overlay: %Overlay{@strip_overlay | resolution: %Resolution{width: 1920, height: 1080}}
-  #   },
-  #   rendering: [
-  #     link(:video_1) |> with_transforms([:corners_rounding]) |> via_in(:top_left) |> to(:overlay),
-  #     link(:video_2) |> with_transforms([:corners_rounding]) |> via_in(:center_left) |> to(:overlay),
-  #     link(:video_3) |> with_transforms([:corners_rounding]) |> via_in(:bottom_left) |> to(:overlay),
-  #     link(:video_4) |> with_transforms([:corners_rounding]) |> via_in(:background) |> to(:overlay)
-  #     link(:overlay) |> to(:output)
-  #   ]
-  # }
 end
