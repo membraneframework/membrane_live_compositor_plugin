@@ -5,12 +5,12 @@ defmodule Membrane.VideoCompositor.RustStructs.RawVideo do
   @typedoc """
   Pixel format of the video
   """
-  @type pixel_format_t :: :I420
+  @type pixel_format :: :I420
 
   @type t :: %__MODULE__{
           width: non_neg_integer(),
           height: non_neg_integer(),
-          pixel_format: pixel_format_t(),
+          pixel_format: pixel_format(),
           framerate: {pos_integer(), pos_integer()}
         }
 

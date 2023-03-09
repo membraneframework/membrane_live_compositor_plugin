@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   """
 
   alias Membrane.Pad
-  alias Membrane.VideoCompositor.Scene.{Layout, Object, Resolution, Texture}
+  alias Membrane.VideoCompositor.Scene.{Layout, Resolution, Texture}
 
   @typedoc """
   Objects are renderable entities in VC, that can serve as input for other
@@ -19,13 +19,13 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   Objects can be assigned to names and identified
   at other objects as inputs based on assigned names
   """
-  @type name_t :: tuple() | atom()
+  @type name :: tuple() | atom()
 
   @typedoc """
   Defines how the input of an object can be specified
   in Video Compositor.
   """
-  @type input_t :: name_t() | Pad.name_t()
+  @type input :: name() | Pad.name()
 
   @typedoc """
   Define how the output resolution of an object can be specified.
@@ -34,5 +34,5 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   (e.g. for corners rounding - same as input,
   for cropping - accordingly smaller than input)
   """
-  @type object_output_resolution_t :: Resolution.t() | Object.name_t()
+  @type object_output_resolution :: Resolution.t() | __MODULE__.name()
 end

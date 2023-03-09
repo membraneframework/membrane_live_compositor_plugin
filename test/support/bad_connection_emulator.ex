@@ -11,10 +11,10 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
   @typedoc """
   Has to be between 0 and 1.
   """
-  @type probability_t :: float()
+  @type probability :: float()
 
   def_options packet_loss: [
-                spec: probability_t(),
+                spec: probability(),
                 description: """
                 Simulated packet loss.
                 """,
@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Test.Support.BadConnectionEmulator do
                 """
               ],
               delay_chance: [
-                spec: probability_t(),
+                spec: probability(),
                 description: """
                 The chance the delay will happen. This chance will be rolled after checking
                 whether the packet will be dropped.

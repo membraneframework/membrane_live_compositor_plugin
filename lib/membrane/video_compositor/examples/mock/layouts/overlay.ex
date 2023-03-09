@@ -10,15 +10,15 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   @typedoc """
   Name used to identify create placing name - position relationship.
   """
-  @type placing_name_t :: atom()
+  @type placing_name :: atom()
 
   @typedoc """
   Specify how each input texture (received either from the input pad or rendered as
   an output of the previous object) maps on the rendered output of Overlay.
   """
   @type t :: %__MODULE__{
-          overlay_spec: %{placing_name_t() => Position.t()},
-          inputs: %{placing_name_t() => Object.name_t()},
-          resolution: Object.object_output_resolution_t()
+          overlay_spec: %{placing_name() => Position.t()},
+          inputs: %{placing_name() => Object.name()},
+          resolution: Object.object_output_resolution()
         }
 end

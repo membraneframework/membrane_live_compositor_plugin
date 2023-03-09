@@ -14,6 +14,6 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
     and identifying transformation without it is enough e.g. RollToBall - transformation
     turning input object / frame / video into the ball
   """
-  @type definition_t :: struct() | module()
-  @type name_t :: tuple() | atom()
+  @type definition :: struct() | module()
+  @type name :: tuple() | atom()
 end

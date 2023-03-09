@@ -13,14 +13,14 @@ defmodule Membrane.VideoCompositor do
   @typedoc """
   A message describing a compositor video placement update
   """
-  @type update_placement_t ::
-          {:update_placement, [{Membrane.Pad.ref_t(), BaseVideoPlacement.t()}]}
+  @type update_placement ::
+          {:update_placement, [{Membrane.Pad.ref(), BaseVideoPlacement.t()}]}
 
   @typedoc """
   A message describing a compositor video transformations update
   """
-  @type update_transformations_t ::
-          {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
+  @type update_transformations ::
+          {:update_transformations, [{Membrane.Pad.ref(), VideoTransformations.t()}]}
 
   def_options stream_format: [
                 spec: Membrane.RawVideo.t(),
@@ -41,7 +41,7 @@ defmodule Membrane.VideoCompositor do
         description: "Initial placement of the video on the screen"
       ],
       timestamp_offset: [
-        spec: Membrane.Time.non_neg_t(),
+        spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],

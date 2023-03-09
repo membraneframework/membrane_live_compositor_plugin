@@ -13,19 +13,19 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   @typedoc """
   Keys enforced in Layout objects.
   """
-  @type enforced_keys_t :: :inputs | :resolution
+  @type enforced_keys :: :inputs | :resolution
 
   @typedoc """
   Specify :inputs types in Layout structs.
   any() can be replaced with more specific
   type, such as atom()
   """
-  @type inputs_t :: %{any() => Object.name_t()}
+  @type inputs :: %{any() => Object.name()}
 
   @typedoc """
   Specify :resolution types in Layout structs.
   """
-  @type resolution_t :: Object.object_output_resolution_t()
+  @type resolution :: Object.object_output_resolution()
 
   @typedoc """
   Specify that Layouts:
@@ -35,8 +35,8 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   """
   @type t :: %{
           :__struct__ => module(),
-          :inputs => inputs_t(),
-          :resolution => resolution_t(),
+          :inputs => inputs(),
+          :resolution => resolution(),
           optional(any()) => any()
         }
 end

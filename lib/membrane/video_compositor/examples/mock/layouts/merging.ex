@@ -10,8 +10,8 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
 
   @type t :: %__MODULE__{
           inputs: %{
-            first: Object.name_t(),
-            second: Object.name_t()
+            first: Object.name(),
+            second: Object.name()
           },
           resolution: Resolution.t()
         }

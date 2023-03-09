@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
   @type t :: %__MODULE__{
           videos_count: non_neg_integer(),
           inputs: %{
-            integer() => Object.name_t()
+            integer() => Object.name()
           },
           resolution: Resolution.t()
         }

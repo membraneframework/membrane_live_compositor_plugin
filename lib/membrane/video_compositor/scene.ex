@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.Scene do
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          objects: [{Object.name_t(), Object.t()}],
-          output: Object.name_t()
+          objects: [{Object.name(), Object.t()}],
+          output: Object.name()
         }
 end
