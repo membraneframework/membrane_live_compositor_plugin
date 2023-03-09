@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
 
   Basically it's a multi-input, single-output node in processing graph.
   """
-  alias Membrane.VideoCompositor.Scene.Object
+  alias Membrane.VideoCompositor.Scene.{Object, Resolution}
 
   # @enforced_keys [:inputs, :resolution]
 
