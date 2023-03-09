@@ -25,7 +25,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   Defines how the input of an object can be specified
   in Video Compositor.
   """
-  @type input :: name() | Pad.name()
+  @type input :: name() | Pad.name_t()
 
   @typedoc """
   Define how the output resolution of an object can be specified.
