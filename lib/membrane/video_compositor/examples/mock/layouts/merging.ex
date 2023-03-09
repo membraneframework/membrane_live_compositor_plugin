@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
   @moduledoc """
-  Mock simple component combing two videos / frames / inputs into one.
+  Mocks simple component combing two videos / frames / inputs into one.
   """
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution}

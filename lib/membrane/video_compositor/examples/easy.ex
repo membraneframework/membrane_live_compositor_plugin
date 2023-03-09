@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.Examples.Easy do
   @moduledoc """
   An easy example simulates the layout of a video conferencing app.
+
   There are 4 video inputs. All of them get their corners rounded. Then,
   one of them is chosen as a main video (which takes most of the screen),
   while the rest are scaled-down and put in a side strip on top of the main video.
@@ -42,12 +43,7 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
         z_value: 1.0
       }
     },
-    inputs: %{
-      background: nil,
-      top_left: nil,
-      center_left: nil,
-      bottom_left: nil
-    },
+    inputs: %{},
     resolution: nil
   }
 
@@ -72,10 +68,10 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
       final_object: %Overlay{
         @strip_overlay
         | inputs: %{
-            top_left: :video_1,
-            center_left: :video_2,
-            bottom_left: :video_3,
-            background: :video_4
+            top_left: :rounded_1,
+            center_left: :rounded_2,
+            bottom_left: :rounded_3,
+            background: :rounded_4
           },
           resolution: %Resolution{width: 1920, height: 1080}
       }

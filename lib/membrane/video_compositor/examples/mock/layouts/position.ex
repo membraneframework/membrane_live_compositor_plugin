@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Position do
-  @moduledoc false
+  @moduledoc """
+  A structure representing position of an object in rendered frame.
+  """
 
   @enforce_keys [:top_left_corner, :width, :height]
   defstruct @enforce_keys ++ [z_value: 0.0]

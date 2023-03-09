@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
-  @moduledoc false
+  @moduledoc """
+  Mocks Overlay layout.any()
+  """
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
   alias Membrane.VideoCompositor.Scene.Object
@@ -8,7 +10,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   defstruct @enforce_keys
 
   @typedoc """
-  Name used to identify create placing name - position relationship.
+  A name used to identify placing of an objects.
   """
   @type placing_name :: atom()
 

@@ -2,6 +2,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   @moduledoc """
   A hard example takes three videos, applies varied transformations to them, and puts
   them together on the final canvas
+
   - The first video is simply rotated and then put in the top left corner
   - The second video is merged with the first video. The result gets
   corner rounding and is put in the top right corner

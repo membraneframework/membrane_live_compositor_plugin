@@ -6,26 +6,26 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   combine them into one frame. Fadings, Grids, Overlays, Transitions,
   etc. can be defined as Layouts.
 
-  Basically multi-input, single-output node in processing graph.
+  Basically it's a multi-input, single-output node in processing graph.
   """
   alias Membrane.VideoCompositor.Scene.Object
 
-  @typedoc """
-  Keys enforced in Layout objects.
-  """
-  @type enforced_keys :: :inputs | :resolution
+  @enforced_keys [:inputs, :resolution]
 
   @typedoc """
-  Specify :inputs types in Layout structs.
-  any() can be replaced with more specific
-  type, such as atom()
+  Type of a map defining on how to map internal layout's ids
+  to Scene objects
   """
   @type inputs :: %{any() => Object.name()}
 
   @typedoc """
-  Specify :resolution types in Layout structs.
+  Defines how the output resolution of a layout texture can be specified.
+
+  Texture resolution can be specified as:
+  - plain `Membrane.VideoCompositor.Resolution.t()`
+  - resolution of another object
   """
-  @type resolution :: Object.object_output_resolution()
+  @type output_resolution :: Resolution.t() | Object.name()
 
   @typedoc """
   Specify that Layouts:
@@ -36,7 +36,7 @@ defmodule Membrane.VideoCompositor.Scene.Layout do
   @type t :: %{
           :__struct__ => module(),
           :inputs => inputs(),
-          :resolution => resolution(),
+          :resolution => output_resolution(),
           optional(any()) => any()
         }
 end

@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
 
   @typedoc """
   Describe corners rounding texture transformation parameter.
+
   Corner rounding transformation can be imagined as placing four circles with a specified radius
   adjoining to frame borders, placed inside the frame and making space between the circle edge and
   the nearest frame corner transparent.
