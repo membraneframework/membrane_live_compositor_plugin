@@ -1,6 +1,9 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   @moduledoc """
-  Mocks Overlay layout.any()
+  Mocks Overlay layout.
+
+  Videos are places on output frame based on their
+  given position.
   """
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position

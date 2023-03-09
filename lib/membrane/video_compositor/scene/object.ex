@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   """
 
   alias Membrane.Pad
-  alias Membrane.VideoCompositor.Scene.{Layout, Resolution, Texture}
+  alias Membrane.VideoCompositor.Scene.{Layout, Texture}
 
   @typedoc """
   Objects are renderable entities in VC, that can serve as input for other
