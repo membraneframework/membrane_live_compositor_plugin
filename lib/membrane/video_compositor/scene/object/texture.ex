@@ -3,6 +3,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   Texture takes a frame received from Video Compositor objects,
   applies all transformations and can be passed as an input
   to other objects.
+
+  Basically wraps multiple single-input, single-output processing graph nodes.
   """
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}

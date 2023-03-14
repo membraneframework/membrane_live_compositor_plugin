@@ -9,8 +9,8 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   Objects are renderable entities in VC, that can serve as input for other
   objects or as an output of the video.
 
-  They are either Texture structs or structs defining Layouts
-  following Layout.t() definition.
+  They are either Texture structs, structs defining Layouts
+  following Layout.t() definition or InputVideo structs.
   """
   @type t :: Layout.t() | Texture.t() | InputVideo.t()
 

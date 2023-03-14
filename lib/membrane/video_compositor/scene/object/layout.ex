@@ -10,8 +10,6 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   """
   alias Membrane.VideoCompositor.Scene.{Object, Resolution}
 
-  # @enforced_keys [:inputs, :resolution]
-
   @typedoc """
   Type of a map defining on how to map internal layout's ids
   to Scene objects
