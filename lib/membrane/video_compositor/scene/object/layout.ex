@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   Type of a map defining on how to map internal layout's ids
   to Scene objects
   """
-  @type inputs :: %{any() => Object.input()}
+  @type inputs :: %{any() => Object.name()}
 
   @typedoc """
   Defines how the output resolution of a layout texture can be specified.

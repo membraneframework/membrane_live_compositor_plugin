@@ -23,12 +23,6 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   @type name :: tuple() | atom()
 
   @typedoc """
-  Defines how the input of an object can be specified
-  in Video Compositor.
-  """
-  @type input :: name()
-
-  @typedoc """
   Defines how the output resolution of an object can be specified.
 
   Additionally, in Textures resolution can be specified as

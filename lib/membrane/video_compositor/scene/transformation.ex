@@ -3,9 +3,6 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   Module representing single-input, single-output frames processing graph nodes
   that apply a single effect on the input frame (e.g. crop them or round corners).
 
-  Transformations are single frame input - single frame output nodes of the processing
-  graph.
-
   Transformations can change frame resolution. Cropping, CornersRounding, ColorFiler,
   RollToBall, etc. can be implemented as transformations.
   """

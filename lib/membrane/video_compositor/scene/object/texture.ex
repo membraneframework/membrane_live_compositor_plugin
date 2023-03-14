@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   objects.
   """
   @type t :: %__MODULE__{
-          input: Object.input(),
+          input: Object.name(),
           transformations: [Transformation.definition()],
           resolution: output_resolution()
         }
