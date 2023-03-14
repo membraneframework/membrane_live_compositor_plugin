@@ -2,8 +2,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   @moduledoc """
   Structure representing Layout objects.
 
-  Layouts can take multiple renderable objects as input and
-  combine them into one frame. Fadings, Grids, Overlays, Transitions,
+  Layouts can take multiple input pads or renderable objects as input
+  and combine them into one frame. Fadings, Grids, Overlays, Transitions,
   etc. can be defined as Layouts.
 
   Basically it's a multi-input, single-output node in processing graph.
@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   Type of a map defining on how to map internal layout's ids
   to Scene objects
   """
-  @type inputs :: %{any() => Object.name()}
+  @type inputs :: %{any() => Object.input()}
 
   @typedoc """
   Defines how the output resolution of a layout texture can be specified.

@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   @moduledoc """
-  Texture takes a frame received from Video Compositor objects,
-  applies all transformations and can be passed as an input
-  to other objects.
+  Texture takes a frame received from input pads or
+  Video Compositor objects, applies all transformations
+  and can be passed as an input to other objects.
   """
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   objects.
   """
   @type t :: %__MODULE__{
-          input: Object.name(),
+          input: Object.input(),
           transformations: [Transformation.definition()],
           resolution: output_resolution()
         }
