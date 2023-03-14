@@ -256,9 +256,12 @@ impl State {
     }
 
     pub fn all_frames_ready(&self) -> bool {
-        self.input_videos
-            .values()
-            .all(|v| v.is_frame_ready(self.frame_interval()))
+        !self.input_videos.is_empty()
+            && self.input_videos.values().any(|v| v.front_pts().is_some())
+            && self
+                .input_videos
+                .values()
+                .all(|v| v.is_frame_ready(self.frame_interval()))
     }
 
     /// This returns the pts of the new frame
@@ -444,12 +447,12 @@ impl State {
     pub fn dump_queue_state(&self) {
         println!("[rust compositor queue dump]");
         println!(
-            "interval: {:?}, frame_time: {}",
+            "  interval: {:?}, frame_time: {}",
             self.frame_interval(),
             self.frame_time()
         );
         for (key, val) in &self.input_videos {
-            println!("vid {key} => front pts {:?}", val.front_pts());
+            println!("  vid {key} => front pts {:?}", val.front_pts());
         }
     }
 }

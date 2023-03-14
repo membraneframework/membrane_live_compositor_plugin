@@ -25,10 +25,10 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
 
   If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
   """
-  @spec upload_frame(wgpu_state(), id(), frame_with_pts()) ::
+  @spec process_frame(wgpu_state(), id(), frame_with_pts()) ::
           :ok | {:ok, frame_with_pts()}
-  def upload_frame(state, id, {frame, pts}) do
-    case Native.upload_frame(state, id, frame, pts) do
+  def process_frame(state, id, {frame, pts}) do
+    case Native.process_frame(state, id, frame, pts) do
       :ok ->
         :ok
 
@@ -152,11 +152,11 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   This causes the video to be deleted after it's enqueued frames are used up.
   """
   @spec send_end_of_stream(wgpu_state(), id()) ::
-          :ok | {:error, error()}
+          {:ok, [frame_with_pts()]}
   def send_end_of_stream(state, id) do
     case Native.send_end_of_stream(state, id) do
-      :ok ->
-        :ok
+      {:ok, frames} ->
+        {:ok, frames}
 
       {:error, reason} ->
         raise "Error while sending an end of stream message to a video, reason: #{inspect(reason)}"

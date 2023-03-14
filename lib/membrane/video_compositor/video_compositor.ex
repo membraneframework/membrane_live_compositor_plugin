@@ -25,11 +25,6 @@ defmodule Membrane.VideoCompositor do
   def_options stream_format: [
                 spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
-              ],
-              real_time: [
-                spec: boolean(),
-                description: "Set compositor into real_time mode",
-                default: false
               ]
 
   def_input_pad :input,
@@ -63,8 +58,7 @@ defmodule Membrane.VideoCompositor do
   def handle_init(_ctx, options) do
     spec =
       child(:compositor, %CompositorElement{
-        stream_format: options.stream_format,
-        real_time: options.real_time
+        stream_format: options.stream_format
       })
       |> bin_output()
 
@@ -81,7 +75,7 @@ defmodule Membrane.VideoCompositor do
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
     spec =
       bin_input(Pad.ref(:input, pad_id))
-      |> child({:framerate_converter, make_ref()}, %FramerateConverter{
+      |> child({:framerate_converter, pad_id}, %FramerateConverter{
         framerate: state.output_stream_format.framerate
       })
       |> via_in(Pad.ref(:input, pad_id),

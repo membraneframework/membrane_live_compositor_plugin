@@ -17,9 +17,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec init(RawVideo.t()) :: {:ok, wgpu_state()} | {:error, error()}
   def init(_out_video), do: error()
 
-  @spec upload_frame(wgpu_state(), id(), binary(), Membrane.Time.t()) ::
+  @spec process_frame(wgpu_state(), id(), binary(), Membrane.Time.t()) ::
           :ok | {:ok, frame_with_pts()} | {:error, atom()}
-  def upload_frame(_state, _id, _frame, _pts), do: error()
+  def process_frame(_state, _id, _frame, _pts), do: error()
 
   @spec force_render(wgpu_state()) :: {:ok, frame_with_pts()} | {:error, atom()}
   def force_render(_state), do: error()
@@ -49,7 +49,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           :ok | {:error, error()}
   def remove_video(_state, _id), do: error()
 
-  @spec send_end_of_stream(wgpu_state(), id()) :: :ok | {:error, atom()}
+  @spec send_end_of_stream(wgpu_state(), id()) :: {:ok, [frame_with_pts()]} | {:error, atom()}
   def send_end_of_stream(_state, _id), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)

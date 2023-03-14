@@ -56,8 +56,33 @@ jobs:
 workflows:
   build:
     jobs:
-      - elixir/build_test
-      - elixir_test_with_software_rendering
-      - elixir/lint
-      - rust_lint
-      - rust_tests
+      - elixir/build_test:
+          filters: &filters
+            tags:
+              only: /v.*/
+      - elixir_test_with_software_rendering:
+          filters:
+            <<: *filters
+      - elixir/lint:
+          filters:
+            <<: *filters
+      - rust_lint:
+          filters:
+            <<: *filters
+      - rust_tests:
+          filters:
+            <<: *filters
+      - elixir/hex_publish:
+          requires:
+            - elixir/build_test
+            - elixir_test_with_software_rendering
+            - elixir/lint
+            - rust_lint
+            - rust_tests
+          context:
+            - Deployment
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v.*/
