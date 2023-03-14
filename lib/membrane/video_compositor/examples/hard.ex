@@ -14,8 +14,8 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Resolution
   alias Membrane.VideoCompositor.Scene.Object.Texture
+  alias Membrane.VideoCompositor.Scene.Resolution
 
   @rotate %Rotate{degrees: 90}
   @ball ToBall
