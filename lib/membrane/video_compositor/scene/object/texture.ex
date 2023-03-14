@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Texture do
+defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   @moduledoc """
   Texture takes a frame received from Video Compositor objects,
   applies all transformations and can be passed as an input

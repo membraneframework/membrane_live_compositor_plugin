@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Layout do
+defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   @moduledoc """
   Structure representing Layout objects.
 
