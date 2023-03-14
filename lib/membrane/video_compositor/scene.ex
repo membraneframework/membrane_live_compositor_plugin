@@ -4,11 +4,13 @@ defmodule Membrane.VideoCompositor.Scene do
   supposed to render.
 
   The main part of the Scene are `Membrane.VideoCompositor.Scene.Object`s
-  and interactions between them. There are two kinds of Objects:
+  and interactions between them. There are three kinds of Objects:
   - `Membrane.VideoCompositor.Scene.Object.Texture` - single input object,
   taking frames and applying a series of transformations onto it.
   - `Membrane.VideoCompositor.Scene.Object.Layout` - combining
   frames from multiple inputs into a single output.
+  - `Membrane.VideoCompositor.Scene.Object.InputVideo` - which maps
+  an input pad of element into Scene object.
   """
 
   alias Membrane.VideoCompositor.Scene.Object

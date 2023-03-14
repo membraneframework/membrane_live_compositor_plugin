@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Overlay, Position}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Object.Texture
+  alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Texture}
   alias Membrane.VideoCompositor.Scene.Resolution
 
   @one_third 1.0 / 3.0
@@ -50,6 +50,10 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
 
   %Scene{
     objects: [
+      video_1: %InputVideo{input_pad: :video_1},
+      video_2: %InputVideo{input_pad: :video_2},
+      video_3: %InputVideo{input_pad: :video_3},
+      video_4: %InputVideo{input_pad: :video_4},
       rounded_1: %Texture{
         input: :video_1,
         transformations: [@corners_rounding]

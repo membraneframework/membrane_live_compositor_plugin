@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
 
   - The first video is simply rotated and then put in the top left corner
   - The second video is merged with the first video. The result gets
-  corner rounding and is put in the top right corner
+  corner rounded and is put in the top right corner
   - The third video is turned into a ball and put in the middle bottom of the screen
   """
 
@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Object.Texture
+  alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Texture}
   alias Membrane.VideoCompositor.Scene.Resolution
 
   @rotate %Rotate{degrees: 90}
@@ -24,6 +24,9 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
 
   %Scene{
     objects: [
+      video_1: %InputVideo{input_pad: :video_1},
+      video_2: %InputVideo{input_pad: :video_2},
+      video_3: %InputVideo{input_pad: :video_3},
       rotated: %Texture{
         input: :video_1,
         transformations: [@rotate]
