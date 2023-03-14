@@ -37,4 +37,11 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
           :resolution => output_resolution(),
           optional(any()) => any()
         }
+
+  @type rust_representation :: binary()
+
+  @spec encode(t()) :: rust_representation()
+  def encode(layout) do
+    inspect(layout)
+  end
 end

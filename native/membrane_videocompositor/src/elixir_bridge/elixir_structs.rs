@@ -136,3 +136,55 @@ impl From<ElixirCropping> for Box<dyn TextureTransformation> {
         ))
     }
 }
+
+#[derive(Debug, Clone, Copy, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.Resolution"]
+pub struct Resolution {
+    width: u32,
+    height: u32,
+}
+
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Texture"]
+pub struct Texture<'a> {
+    input: rustler::Term<'a>,
+    transformations: Vec<String>, // has to stay this way for now
+    resolution: ObjectOutputResolution<'a>,
+}
+
+#[derive(rustler::NifUntaggedEnum, Debug)]
+pub enum Layout {
+    Layout(String), // this is very temporary
+}
+
+#[derive(Debug, rustler::NifTaggedEnum)]
+pub enum ObjectOutputResolution<'a> {
+    TransformedInputResolution,
+    Resolution(Resolution),
+    Name(rustler::Term<'a>),
+}
+
+#[derive(Debug, rustler::NifTaggedEnum)]
+pub enum Object<'a> {
+    Layout(Layout),
+    Texture(Texture<'a>),
+    Video(InputVideo<'a>),
+}
+
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Scene"]
+pub struct Scene<'a> {
+    objects: Vec<(rustler::Term<'a>, Object<'a>)>,
+    output: rustler::Term<'a>,
+}
+
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo"]
+pub struct InputVideo<'a> {
+    input_pad: rustler::Term<'a>,
+}
+
+#[rustler::nif]
+pub fn test(obj: Scene) {
+    println!("{obj:#?}");
+}

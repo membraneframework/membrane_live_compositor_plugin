@@ -31,10 +31,20 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   @typedoc """
   Defines how the output resolution of an object can be specified.
 
+  Define how the output resolution of an object can be specified.
   Additionally, in Textures resolution can be specified as
   transformed resolution of the object input
   (e.g. for corners rounding - same as input,
   for cropping - accordingly smaller than input)
   """
   @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
+
+  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Object.t()
+  def encode(object) do
+    case object do
+      %InputVideo{} -> {:video, InputVideo.encode(object)}
+      %Texture{} -> {:texture, Texture.encode(object)}
+      layout -> {:layout, Layout.encode(layout)}
+    end
+  end
 end

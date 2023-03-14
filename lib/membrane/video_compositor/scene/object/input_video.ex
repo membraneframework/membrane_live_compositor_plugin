@@ -14,4 +14,13 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
   @type t :: %__MODULE__{
           input_pad: Pad.ref_t()
         }
+
+  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo.t()
+  def encode(video) do
+    alias Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo
+
+    %InputVideo{
+      input_pad: video.input_pad
+    }
+  end
 end

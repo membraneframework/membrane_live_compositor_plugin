@@ -4,7 +4,7 @@ mod colour_converters;
 pub mod math;
 mod pipeline_common;
 pub mod texture_transformations;
-mod textures;
+pub mod textures;
 mod videos;
 
 use textures::*;

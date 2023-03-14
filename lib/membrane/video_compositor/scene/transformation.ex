@@ -20,4 +20,11 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   """
   @type definition :: struct() | module()
   @type name :: tuple() | atom()
+
+  @type rust_representation :: binary()
+
+  @spec encode(definition()) :: rust_representation()
+  def encode(transformation) do
+    inspect(transformation)
+  end
 end

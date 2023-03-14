@@ -34,4 +34,24 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
           transformations: [Transformation.definition()],
           resolution: output_resolution()
         }
+
+  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Texture.t()
+  def encode(texture) do
+    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Texture
+
+    encoded_transformations = Enum.map(texture.transformations, &Transformation.encode(&1))
+
+    encoded_resolution =
+      case texture.resolution do
+        :transformed_input_resolution -> :transformed_input_resolution
+        %Resolution{} = resolution -> {:resolution, resolution}
+        name -> {:name, name}
+      end
+
+    %Texture{
+      input: texture.input,
+      transformations: encoded_transformations,
+      resolution: encoded_resolution
+    }
+  end
 end

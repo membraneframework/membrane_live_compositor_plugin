@@ -305,10 +305,12 @@ rustler::init!(
         send_end_of_stream,
         update_stream_format,
         update_placement,
-        update_transformations
+        update_transformations,
+        elixir_structs::test,
     ],
     load = |env, _| {
         rustler::resource!(State, env);
+
         true
     }
 );

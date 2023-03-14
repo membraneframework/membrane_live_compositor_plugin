@@ -24,4 +24,20 @@ defmodule Membrane.VideoCompositor.Scene do
           objects: [{Object.name(), Object.t()}],
           output: Object.name()
         }
+
+  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Scene.t()
+  def encode(scene) do
+    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Scene
+
+    # convert pad refs form sources into Video structs
+
+    encoded_objects =
+      scene.objects
+      |> Enum.map(fn {name, obj} -> {name, Object.encode(obj)} end)
+
+    %Scene{
+      objects: encoded_objects,
+      output: scene.output
+    }
+  end
 end
