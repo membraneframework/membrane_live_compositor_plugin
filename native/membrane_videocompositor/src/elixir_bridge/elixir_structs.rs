@@ -1,5 +1,7 @@
 #![allow(clippy::needless_borrow)]
 #![allow(clippy::from_over_into)]
+use std::collections::HashMap;
+
 use rustler::NifUntaggedEnum;
 
 use crate::compositor::math::Vec2d;
@@ -154,9 +156,12 @@ pub struct Texture<'a> {
     resolution: ObjectOutputResolution<'a>,
 }
 
-#[derive(rustler::NifUntaggedEnum, Debug)]
-pub enum Layout {
-    Layout(String), // this is very temporary
+#[derive(rustler::NifStruct, Debug)]
+#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Layout"]
+pub struct Layout<'a> {
+    inputs: HashMap<rustler::Term<'a>, rustler::Term<'a>>,
+    resolution: ObjectOutputResolution<'a>,
+    implementation: rustler::Term<'a>,
 }
 
 #[derive(Debug, rustler::NifTaggedEnum)]
@@ -168,7 +173,7 @@ pub enum ObjectOutputResolution<'a> {
 
 #[derive(Debug, rustler::NifTaggedEnum)]
 pub enum Object<'a> {
-    Layout(Layout),
+    Layout(Layout<'a>),
     Texture(Texture<'a>),
     Video(InputVideo<'a>),
 }

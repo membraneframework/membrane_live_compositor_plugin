@@ -4,7 +4,6 @@ defmodule Membrane.VideoCompositor.Scene do
   supposed to render.
 
   """
-
   alias Membrane.VideoCompositor.Scene.Object
 
   @enforce_keys [:objects, :output]
@@ -28,8 +27,6 @@ defmodule Membrane.VideoCompositor.Scene do
   @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Scene.t()
   def encode(scene) do
     alias Membrane.VideoCompositor.Scene.RustlerFriendly.Scene
-
-    # convert pad refs form sources into Video structs
 
     encoded_objects =
       scene.objects

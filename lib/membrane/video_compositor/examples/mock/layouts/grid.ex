@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
   parameter. Mocks some components defining different
   video arrangements for a different number of input sources.
   """
+  @behaviour Membrane.VideoCompositor.Scene.Object.Layout
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution}
 
@@ -19,4 +20,9 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
           },
           resolution: Resolution.t()
         }
+
+  @impl true
+  def encode(_grid) do
+    make_ref()
+  end
 end

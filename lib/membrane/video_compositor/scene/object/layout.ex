@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   Type of a map defining on how to map internal layout's ids
   to Scene objects
   """
-  @type inputs :: %{any() => Object.input()}
+  @type inputs :: %{any() => Object.name()}
 
   @typedoc """
   Defines how the output resolution of a layout texture can be specified.
@@ -38,10 +38,26 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
           optional(any()) => any()
         }
 
-  @type rust_representation :: binary()
+  @type rust_representation :: reference()
 
-  @spec encode(t()) :: rust_representation()
-  def encode(layout) do
-    inspect(layout)
+  @callback encode(t()) :: rust_representation()
+
+  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Layout.t()
+  def encode(layout = %module{inputs: inputs, resolution: resolution}) do
+    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Layout
+
+    rust_representation = module.encode(layout)
+
+    encoded_resolution =
+      case resolution do
+        %Resolution{} = resolution -> {:resolution, resolution}
+        name -> {:name, name}
+      end
+
+    %Layout{
+      inputs: inputs,
+      resolution: encoded_resolution,
+      implementation: rust_representation
+    }
   end
 end
