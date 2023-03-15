@@ -148,7 +148,9 @@ pub struct Resolution {
 #[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Texture"]
 pub struct Texture<'a> {
     input: rustler::Term<'a>,
-    transformations: Vec<String>, // has to stay this way for now
+    // this is a term only temporarily, until we figure out encoding transformations
+    // then, it will be something like `rustler::ResourceArc<Box<dyn Transformation>>`
+    transformations: Vec<rustler::Term<'a>>,
     resolution: ObjectOutputResolution<'a>,
 }
 

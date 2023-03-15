@@ -1,6 +1,8 @@
 defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding do
   @moduledoc false
 
+  @behaviour Membrane.VideoCompositor.Scene.Transformation
+
   @enforce_keys [:border_radius]
   defstruct @enforce_keys
 
@@ -17,4 +19,9 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
   @type t :: %__MODULE__{
           border_radius: non_neg_integer()
         }
+
+  @impl true
+  def encode(_corners_rounding) do
+    make_ref()
+  end
 end

@@ -39,7 +39,14 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   def encode(texture) do
     alias Membrane.VideoCompositor.Scene.RustlerFriendly.Texture
 
-    encoded_transformations = Enum.map(texture.transformations, &Transformation.encode(&1))
+    encoded_transformations =
+      texture.transformations
+      |> Enum.map(fn transformation ->
+        case transformation do
+          %module{} -> module.encode(transformation)
+          module -> module.encode(transformation)
+        end
+      end)
 
     encoded_resolution =
       case texture.resolution do
