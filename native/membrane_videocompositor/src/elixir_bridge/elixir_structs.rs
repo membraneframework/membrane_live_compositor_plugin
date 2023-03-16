@@ -147,7 +147,7 @@ pub struct Resolution {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Texture"]
+#[module = "Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly"]
 pub struct Texture<'a> {
     input: rustler::Term<'a>,
     // this is a term only temporarily, until we figure out encoding transformations
@@ -157,7 +157,7 @@ pub struct Texture<'a> {
 }
 
 #[derive(rustler::NifStruct, Debug)]
-#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Layout"]
+#[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
 pub struct Layout<'a> {
     inputs: HashMap<rustler::Term<'a>, rustler::Term<'a>>,
     resolution: ObjectOutputResolution<'a>,
@@ -179,14 +179,14 @@ pub enum Object<'a> {
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.Scene"]
+#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly"]
 pub struct Scene<'a> {
     objects: Vec<(rustler::Term<'a>, Object<'a>)>,
     output: rustler::Term<'a>,
 }
 
 #[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo"]
+#[module = "Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly"]
 pub struct InputVideo<'a> {
     input_pad: rustler::Term<'a>,
 }

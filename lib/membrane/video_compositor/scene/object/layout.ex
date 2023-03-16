@@ -10,6 +10,26 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   """
   alias Membrane.VideoCompositor.Scene.{Object, Resolution}
 
+  defmodule RustlerFriendly do
+    @moduledoc false
+    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
+    alias Membrane.VideoCompositor.Scene.Resolution
+
+    @type inputs :: %{any() => RFObject.name()}
+    @type output_resolution :: {:resolution, Resolution.t()} | {:name, Object.name()}
+    @type rust_representation :: reference()
+
+    @type t :: %__MODULE__{
+            :inputs => inputs(),
+            :resolution => output_resolution(),
+            # unsure about calling this `implementation`
+            :implementation => rust_representation()
+          }
+
+    @enforce_keys [:inputs, :resolution, :implementation]
+    defstruct @enforce_keys
+  end
+
   @typedoc """
   Type of a map defining on how to map internal layout's ids
   to Scene objects
@@ -42,10 +62,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
 
   @callback encode(t()) :: rust_representation()
 
-  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Layout.t()
+  @spec encode(t()) :: RustlerFriendly.t()
   def encode(layout = %module{inputs: inputs, resolution: resolution}) do
-    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Layout
-
     rust_representation = module.encode(layout)
 
     encoded_resolution =
@@ -54,7 +72,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
         name -> {:name, name}
       end
 
-    %Layout{
+    %RustlerFriendly{
       inputs: inputs,
       resolution: encoded_resolution,
       implementation: rust_representation

@@ -89,52 +89,5 @@ defmodule Membrane.VideoCompositor.Test.Deserialize do
 
   test "deserialize" do
     Native.test(Scene.encode(@scene))
-    # Native.test(
-    #   [
-    #     video_1: {:video, %Membrane.VideoCompositor.Scene.Video{input: {Membrane.Pad, :video, 1}}},
-    #     video_2: {:video, %Membrane.VideoCompositor.Scene.Video{input: {Membrane.Pad, :video, 2}}},
-    #     video_3: {:video, %Membrane.VideoCompositor.Scene.Video{input: {Membrane.Pad, :video, 3}}},
-    #     video_4: {:video, %Membrane.VideoCompositor.Scene.Video{input: {Membrane.Pad, :video, 4}}},
-    #     rounded_1:
-    #       {:texture,
-    #        %Membrane.VideoCompositor.Scene.RustlerFriendly.Texture{
-    #          input: :video_1,
-    #          transformations: [
-    #            "%Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding{border_radius: 100}"
-    #          ],
-    #          resolution: :transformed_input_resolution
-    #        }},
-    #     rounded_2:
-    #       {:texture,
-    #        %Membrane.VideoCompositor.Scene.RustlerFriendly.Texture{
-    #          input: :video_2,
-    #          transformations: [
-    #            "%Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding{border_radius: 100}"
-    #          ],
-    #          resolution: :transformed_input_resolution
-    #        }},
-    #     rounded_3:
-    #       {:texture,
-    #        %Membrane.VideoCompositor.Scene.RustlerFriendly.Texture{
-    #          input: :video_3,
-    #          transformations: [
-    #            "%Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding{border_radius: 100}"
-    #          ],
-    #          resolution: :transformed_input_resolution
-    #        }},
-    #     rounded_4:
-    #       {:texture,
-    #        %Membrane.VideoCompositor.Scene.RustlerFriendly.Texture{
-    #          input: :video_4,
-    #          transformations: [
-    #            "%Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding{border_radius: 100}"
-    #          ],
-    #          resolution: :transformed_input_resolution
-    #        }},
-    #     final_object:
-    #       {:layout,
-    #        "%Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay{overlay_spec: %{background: %Membrane.VideoCompositor.Examples.Mock.Layouts.Position{top_left_corner: {0.0, 0.0}, width: 1.0, height: 1.0, z_value: 0.0}, bottom_left: %Membrane.VideoCompositor.Examples.Mock.Layouts.Position{top_left_corner: {0.0, 0.6666666666666666}, width: 0.5925925925925926, height: 0.3333333333333333, z_value: 1.0}, center_left: %Membrane.VideoCompositor.Examples.Mock.Layouts.Position{top_left_corner: {0.0, 0.3333333333333333}, width: 0.5925925925925926, height: 0.3333333333333333, z_value: 1.0}, top_left: %Membrane.VideoCompositor.Examples.Mock.Layouts.Position{top_left_corner: {0.0, 0.0}, width: 0.5925925925925926, height: 0.3333333333333333, z_value: 1.0}}, inputs: %{background: :video_4, bottom_left: :video_3, center_left: :video_2, top_left: :video_1}, resolution: %Membrane.VideoCompositor.Scene.Resolution{width: 1920, height: 1080}}"}
-    #   ]
-    # )
   end
 end

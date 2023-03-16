@@ -9,6 +9,24 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
 
+  defmodule RustlerFriendly do
+    @moduledoc false
+
+    alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
+
+    @type output_resolution ::
+            {:resolution, Resolution.t()} | {:name, Object.name()} | :transformed_input_resolution
+
+    @enforce_keys [:input]
+    defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
+
+    @type t :: %__MODULE__{
+            input: Object.name(),
+            transformations: [Transformation.rust_representation()],
+            resolution: output_resolution()
+          }
+  end
+
   @enforce_keys [:input]
   defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
 
@@ -35,10 +53,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
           resolution: output_resolution()
         }
 
-  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Texture.t()
+  @spec encode(t()) :: RustlerFriendly.t()
   def encode(texture) do
-    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Texture
-
     encoded_transformations =
       texture.transformations
       |> Enum.map(fn transformation ->
@@ -55,7 +71,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
         name -> {:name, name}
       end
 
-    %Texture{
+    %RustlerFriendly{
       input: texture.input,
       transformations: encoded_transformations,
       resolution: encoded_resolution

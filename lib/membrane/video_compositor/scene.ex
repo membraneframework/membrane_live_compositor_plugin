@@ -6,6 +6,19 @@ defmodule Membrane.VideoCompositor.Scene do
   """
   alias Membrane.VideoCompositor.Scene.Object
 
+  defmodule RustlerFriendly do
+    @moduledoc false
+    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly
+
+    @type t :: %__MODULE__{
+            objects: [{Object.name(), Object.t()}],
+            output: Object.name()
+          }
+
+    @enforce_keys [:objects, :output]
+    defstruct @enforce_keys
+  end
+
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys
 
@@ -24,15 +37,13 @@ defmodule Membrane.VideoCompositor.Scene do
           output: Object.name()
         }
 
-  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.Scene.t()
+  @spec encode(t()) :: RustlerFriendly.t()
   def encode(scene) do
-    alias Membrane.VideoCompositor.Scene.RustlerFriendly.Scene
-
     encoded_objects =
       scene.objects
       |> Enum.map(fn {name, obj} -> {name, Object.encode(obj)} end)
 
-    %Scene{
+    %RustlerFriendly{
       objects: encoded_objects,
       output: scene.output
     }

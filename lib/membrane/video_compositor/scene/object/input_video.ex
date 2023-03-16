@@ -5,6 +5,17 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
   """
   alias Membrane.Pad
 
+  defmodule RustlerFriendly do
+    @moduledoc false
+
+    @type t :: %__MODULE__{
+            input_pad: Membrane.Pad.ref_t()
+          }
+
+    @enforce_keys [:input_pad]
+    defstruct @enforce_keys
+  end
+
   @enforce_keys [:input_pad]
   defstruct @enforce_keys
 
@@ -15,11 +26,9 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
           input_pad: Pad.ref_t()
         }
 
-  @spec encode(t()) :: Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo.t()
+  @spec encode(t()) :: RustlerFriendly.t()
   def encode(video) do
-    alias Membrane.VideoCompositor.Scene.RustlerFriendly.InputVideo
-
-    %InputVideo{
+    %RustlerFriendly{
       input_pad: video.input_pad
     }
   end
