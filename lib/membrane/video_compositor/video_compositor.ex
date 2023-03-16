@@ -13,13 +13,13 @@ defmodule Membrane.VideoCompositor do
   @typedoc """
   A message describing a compositor video placement update
   """
-  @type update_placement_t ::
+  @type update_placement ::
           {:update_placement, [{Membrane.Pad.ref_t(), BaseVideoPlacement.t()}]}
 
   @typedoc """
   A message describing a compositor video transformations update
   """
-  @type update_transformations_t ::
+  @type update_transformations ::
           {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
 
   def_options stream_format: [
