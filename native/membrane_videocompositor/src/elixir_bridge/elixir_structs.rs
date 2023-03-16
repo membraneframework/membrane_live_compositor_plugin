@@ -153,20 +153,26 @@ pub struct Texture<'a> {
     // this is a term only temporarily, until we figure out encoding transformations
     // then, it will be something like `rustler::ResourceArc<Box<dyn Transformation>>`
     transformations: Vec<rustler::Term<'a>>,
-    resolution: ObjectOutputResolution<'a>,
+    resolution: TextureOutputResolution<'a>,
 }
 
 #[derive(rustler::NifStruct, Debug)]
 #[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
 pub struct Layout<'a> {
     inputs: HashMap<rustler::Term<'a>, rustler::Term<'a>>,
-    resolution: ObjectOutputResolution<'a>,
+    resolution: LayoutOutputResolution<'a>,
     implementation: rustler::Term<'a>,
 }
 
 #[derive(Debug, rustler::NifTaggedEnum)]
-pub enum ObjectOutputResolution<'a> {
+pub enum TextureOutputResolution<'a> {
     TransformedInputResolution,
+    Resolution(Resolution),
+    Name(rustler::Term<'a>),
+}
+
+#[derive(Debug, rustler::NifTaggedEnum)]
+pub enum LayoutOutputResolution<'a> {
     Resolution(Resolution),
     Name(rustler::Term<'a>),
 }

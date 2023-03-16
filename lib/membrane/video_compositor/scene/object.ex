@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
 
     @type t :: {:layout, RFLayout.t()} | {:texture, RFTexture.t()} | {:video, RFInputVideo.t()}
 
-    @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
+    @type object_output_resolution :: RFTexture.output_resolution() | RFLayout.output_resolution()
   end
 
   @typedoc """
@@ -61,6 +61,18 @@ defmodule Membrane.VideoCompositor.Scene.Object do
       %InputVideo{} -> {:video, InputVideo.encode(object)}
       %Texture{} -> {:texture, Texture.encode(object)}
       layout -> {:layout, Layout.encode(layout)}
+    end
+  end
+
+  @spec encode_output_resolution(object_output_resolution()) ::
+          RustlerFriendly.object_output_resolution()
+  def encode_output_resolution(resolution) do
+    alias Membrane.VideoCompositor.Scene.Resolution
+
+    case resolution do
+      :transformed_input_resolution -> :transformed_input_resolution
+      %Resolution{} = resolution -> {:resolution, resolution}
+      name -> {:name, name}
     end
   end
 end

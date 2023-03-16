@@ -66,11 +66,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   def encode(layout = %module{inputs: inputs, resolution: resolution}) do
     rust_representation = module.encode(layout)
 
-    encoded_resolution =
-      case resolution do
-        %Resolution{} = resolution -> {:resolution, resolution}
-        name -> {:name, name}
-      end
+    encoded_resolution = Object.encode_output_resolution(resolution)
 
     %RustlerFriendly{
       inputs: inputs,

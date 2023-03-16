@@ -64,12 +64,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
         end
       end)
 
-    encoded_resolution =
-      case texture.resolution do
-        :transformed_input_resolution -> :transformed_input_resolution
-        %Resolution{} = resolution -> {:resolution, resolution}
-        name -> {:name, name}
-      end
+    encoded_resolution = Object.encode_output_resolution(texture.resolution)
 
     %RustlerFriendly{
       input: texture.input,
