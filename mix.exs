@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.2.1"
+  @version "0.2.2"
   @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
@@ -40,14 +40,14 @@ defmodule Membrane.VideoCompositor.Mixfile do
     [
       {:unifex, "~> 1.0"},
       {:membrane_core, "~> 0.11.2"},
-      {:membrane_framerate_converter_plugin, "~> 0.6.0"},
-      {:membrane_raw_video_format, "~> 0.2.0"},
+      {:membrane_framerate_converter_plugin, "~> 0.6.1"},
+      {:membrane_raw_video_format, "~> 0.3.0"},
       {:qex, "~> 0.5.1"},
       {:rustler, "~> 0.26.0"},
       # Testing
       {:membrane_file_plugin, "~> 0.13.2", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.25.1", only: :test},
-      {:membrane_raw_video_parser_plugin, "~> 0.9.0", only: :test},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.26.2", only: :test},
+      {:membrane_raw_video_parser_plugin, "~> 0.10.0", only: :test},
       {:membrane_video_compositor_plugin_pipeline, path: "./pipeline", only: :test},
 
       # Development
