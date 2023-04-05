@@ -4,7 +4,7 @@ use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
 use rustler::ResourceArc;
 
-mod elixir_structs;
+pub mod elixir_structs;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {

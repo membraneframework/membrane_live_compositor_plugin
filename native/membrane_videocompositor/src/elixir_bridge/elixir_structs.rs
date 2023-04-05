@@ -1,6 +1,7 @@
 #![allow(clippy::needless_borrow)]
 #![allow(clippy::from_over_into)]
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use rustler::NifUntaggedEnum;
 
@@ -10,6 +11,7 @@ use crate::compositor::texture_transformations::cropping::Cropping;
 use crate::compositor::texture_transformations::TextureTransformation;
 use crate::compositor::{self, VideoPlacement};
 use crate::elixir_bridge::{atoms, convert_z};
+use crate::scene::Node;
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
@@ -148,56 +150,621 @@ pub struct Resolution {
 
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly"]
-pub struct Texture<'a> {
-    input: rustler::Term<'a>,
-    // this is a term only temporarily, until we figure out encoding transformations
-    // then, it will be something like `rustler::ResourceArc<Box<dyn Transformation>>`
-    transformations: Vec<rustler::Term<'a>>,
-    resolution: TextureOutputResolution<'a>,
+pub struct Texture {
+    input: ObjectName,
+    // this is a placeholder only temporarily, until we figure out encoding transformations
+    // then, it will be something like `Arc<dyn Transformation>`
+    transformations: Vec<ImplementationPlaceholder>,
+    resolution: TextureOutputResolution,
 }
+
+impl Texture {
+    fn mentioned_names(&self) -> Vec<&Name> {
+        let mut names = vec![&self.input];
+
+        if let TextureOutputResolution::Name(name) = &self.resolution {
+            names.push(name);
+        }
+
+        names
+    }
+}
+
+#[derive(rustler::NifTaggedEnum, PartialEq, Eq, Hash, Clone)]
+pub enum Name {
+    Atom(String),
+    AtomPair(String, String),
+    AtomNum(String, u64),
+}
+
+impl std::fmt::Debug for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Atom(atom) => f.write_fmt(format_args!(":{atom}")),
+            Self::AtomPair(atom1, atom2) => f.write_fmt(format_args!("{{:{atom1}, :{atom2}}}")),
+            Self::AtomNum(atom1, num) => f.write_fmt(format_args!("{{:{atom1}, {num}}}")),
+        }
+    }
+}
+
+pub type ObjectName = Name;
+pub type LayoutInternalName = Name;
+pub type ImplementationPlaceholder = usize;
 
 #[derive(rustler::NifStruct, Debug)]
 #[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
-pub struct Layout<'a> {
-    inputs: HashMap<rustler::Term<'a>, rustler::Term<'a>>,
-    resolution: LayoutOutputResolution<'a>,
-    implementation: rustler::Term<'a>,
+pub struct Layout {
+    inputs: HashMap<LayoutInternalName, ObjectName>,
+    resolution: LayoutOutputResolution,
+    implementation: ImplementationPlaceholder,
 }
 
-#[derive(Debug, rustler::NifTaggedEnum)]
-pub enum TextureOutputResolution<'a> {
+impl Layout {
+    fn mentioned_names(&self) -> Vec<&Name> {
+        let mut names = self.inputs.values().collect::<Vec<_>>();
+
+        if let LayoutOutputResolution::Name(name) = &self.resolution {
+            names.push(name);
+        }
+
+        names
+    }
+}
+
+#[derive(Debug, rustler::NifTaggedEnum, Clone)]
+pub enum TextureOutputResolution {
     TransformedInputResolution,
     Resolution(Resolution),
-    Name(rustler::Term<'a>),
+    Name(ObjectName),
 }
 
-#[derive(Debug, rustler::NifTaggedEnum)]
-pub enum LayoutOutputResolution<'a> {
+#[derive(Debug, rustler::NifTaggedEnum, Clone)]
+pub enum LayoutOutputResolution {
     Resolution(Resolution),
-    Name(rustler::Term<'a>),
+    Name(ObjectName),
 }
 
 #[derive(Debug, rustler::NifTaggedEnum)]
-pub enum Object<'a> {
-    Layout(Layout<'a>),
-    Texture(Texture<'a>),
-    Video(InputVideo<'a>),
+pub enum Object {
+    Layout(Layout),
+    Texture(Texture),
+    Video(InputVideo),
+}
+
+impl Object {
+    fn mentioned_names(&self) -> Vec<&Name> {
+        match self {
+            Object::Layout(layout) => layout.mentioned_names(),
+            Object::Texture(texture) => texture.mentioned_names(),
+            Object::Video(_) => Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Scene.RustlerFriendly"]
-pub struct Scene<'a> {
-    objects: Vec<(rustler::Term<'a>, Object<'a>)>,
-    output: rustler::Term<'a>,
+pub struct Scene {
+    objects: Vec<(ObjectName, Object)>,
+    output: ObjectName,
 }
+
+impl Scene {
+    fn check_for_duplicate_pad_refs(
+        objects: &[(ObjectName, Object)],
+    ) -> Result<(), SceneParsingError> {
+        let mut set = HashSet::new();
+
+        for (_, object) in objects {
+            if let Object::Video(InputVideo { input_pad }) = object {
+                if set.contains(input_pad) {
+                    return Err(SceneParsingError::DuplicatePadReferences(input_pad.clone()));
+                }
+
+                set.insert(input_pad);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn check_for_duplicate_or_unidentified_names(
+        objects: &[(ObjectName, Object)],
+        final_object_name: &ObjectName,
+    ) -> Result<(), SceneParsingError> {
+        if objects.is_empty() {
+            return Err(SceneParsingError::UndefinedName(final_object_name.clone()));
+        }
+
+        let mut names = HashSet::new();
+        for (name, _) in objects {
+            if names.contains(name) {
+                return Err(SceneParsingError::DuplicateNames(name.clone()));
+            }
+
+            names.insert(name);
+        }
+
+        for (_, object) in objects {
+            for name in object.mentioned_names() {
+                if !names.contains(name) {
+                    return Err(SceneParsingError::UndefinedName(name.clone()));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn check_for_unused_objects(
+        objects: &[(ObjectName, Object)],
+        final_object_name: &ObjectName,
+    ) -> Result<(), SceneParsingError> {
+        let defined_names = objects.iter().map(|(name, _)| name).collect::<HashSet<_>>();
+
+        let used_names = objects
+            .iter()
+            .flat_map(|(_, object)| object.mentioned_names())
+            .collect::<HashSet<_>>();
+
+        let difference = defined_names.difference(&used_names).collect::<Vec<_>>();
+
+        if difference.is_empty() {
+            return Err(SceneParsingError::CycleDetected);
+        }
+
+        if *difference[0] != final_object_name {
+            return Err(SceneParsingError::UnusedObject((*difference[0]).clone()));
+        }
+
+        if difference.len() > 1 {
+            return Err(SceneParsingError::UnusedObject((*difference[1]).clone()));
+        }
+
+        Ok(())
+    }
+
+    /// returns true if a cycle exists in the scene graph
+    fn contains_cycle(
+        objects: &HashMap<&ObjectName, &Object>,
+        final_object: &ObjectName,
+    ) -> Result<(), SceneParsingError> {
+        enum NodeState {
+            BeingVisited,
+            Visited,
+        }
+
+        fn visit(
+            name: &ObjectName,
+            objects: &HashMap<&ObjectName, &Object>,
+            visited: &mut HashMap<ObjectName, NodeState>,
+        ) -> Result<(), SceneParsingError> {
+            match visited.get(name) {
+                Some(NodeState::BeingVisited) => return Err(SceneParsingError::CycleDetected),
+                Some(NodeState::Visited) => return Ok(()),
+                _ => {}
+            }
+
+            visited.insert(name.clone(), NodeState::BeingVisited);
+
+            match &objects[name] {
+                Object::Video(_) => Ok(()),
+                Object::Texture(Texture { input, .. }) => visit(&input, objects, visited),
+                Object::Layout(Layout { inputs, .. }) => inputs
+                    .values()
+                    .map(|name| visit(name, objects, visited))
+                    .collect::<Result<Vec<()>, SceneParsingError>>()
+                    .map(|_| ()),
+            }?;
+
+            visited.insert(name.clone(), NodeState::Visited);
+
+            Ok(())
+        }
+
+        let mut visited = HashMap::new();
+
+        visit(final_object, objects, &mut visited)
+    }
+
+    fn validate(&self) -> Result<(), SceneParsingError> {
+        Self::check_for_duplicate_pad_refs(&self.objects)?;
+
+        Self::check_for_duplicate_or_unidentified_names(&self.objects, &self.output)?;
+
+        Self::check_for_unused_objects(&self.objects, &self.output)?;
+
+        let objects = self
+            .objects
+            .iter()
+            .map(|(name, object)| (name, object))
+            .collect::<HashMap<_, _>>();
+
+        Self::contains_cycle(&objects, &self.output)?;
+
+        Ok(())
+    }
+
+    fn convert_to_graph(self) -> Result<Arc<Node>, SceneParsingError> {
+        let objects = HashMap::from_iter(self.objects);
+
+        let mut nodes = HashMap::new();
+        let final_object = &objects[&self.output];
+
+        fn parse_object(
+            name: &ObjectName,
+            object: &Object,
+            nodes: &mut HashMap<ObjectName, Arc<Node>>,
+            objects: &HashMap<ObjectName, Object>,
+        ) -> Result<Arc<Node>, SceneParsingError> {
+            if let Some(node) = nodes.get(name) {
+                return Ok(node.clone());
+            }
+
+            match object {
+                Object::Video(InputVideo { input_pad }) => {
+                    let node = Arc::new(Node::Video {
+                        pad: input_pad.clone(),
+                    });
+                    nodes.insert(name.clone(), node.clone());
+                    Ok(node)
+                }
+
+                Object::Texture(Texture {
+                    input,
+                    transformations,
+                    resolution,
+                }) => {
+                    let mut current = parse_object(input, &objects[input], nodes, objects)?;
+
+                    // we may need to get ownership of the transformation here later on in the project.
+                    // this means that we'll most likely need to remove `object` from `objects`, but since it's not certain
+                    // I'm leaving it as is for now
+                    for &transformation in transformations {
+                        current = Arc::new(Node::Transformation {
+                            previous: current,
+                            transformation,
+                            resolution: resolution.clone(),
+                        });
+                    }
+
+                    nodes.insert(name.clone(), current.clone());
+
+                    Ok(current)
+                }
+
+                Object::Layout(Layout {
+                    inputs,
+                    resolution,
+                    implementation,
+                }) => {
+                    let inputs = inputs
+                        .iter()
+                        .map(|(internal_name, object_name)| {
+                            parse_object(
+                                object_name,
+                                objects.get(object_name).ok_or_else(|| {
+                                    SceneParsingError::UndefinedName(object_name.clone())
+                                })?,
+                                nodes,
+                                objects,
+                            )
+                            .map(|node| (internal_name.clone(), node))
+                        })
+                        .collect::<Result<HashMap<_, _>, _>>()?;
+
+                    let result = Arc::new(Node::Layout {
+                        resolution: resolution.clone(),
+                        implementation: *implementation,
+                        inputs,
+                    });
+                    nodes.insert(name.clone(), result.clone());
+                    Ok(result)
+                }
+            }
+        }
+
+        parse_object(&self.output, &final_object, &mut nodes, &objects)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SceneParsingError {
+    #[error("cycle detected in the scene graph")]
+    CycleDetected,
+
+    #[error("the scene graph contains an object name that is not defined anywhere: {0:?}")]
+    UndefinedName(ObjectName),
+
+    #[error("object name {0:?} is defined multiple times in the scene graph")]
+    DuplicateNames(ObjectName),
+
+    #[error("the scene graph contains two InputVideos referencing the same Membrane.Pad: {0}")]
+    DuplicatePadReferences(String),
+
+    #[error("the scene graph contains an object which is not used in compositing: {0:?}")]
+    UnusedObject(ObjectName),
+}
+
+impl TryInto<crate::scene::Scene> for Scene {
+    type Error = SceneParsingError;
+
+    fn try_into(self) -> Result<crate::scene::Scene, Self::Error> {
+        self.validate()?;
+
+        let node = self.convert_to_graph()?;
+
+        Ok(crate::scene::Scene { final_node: node })
+    }
+}
+
+pub type PadRef = String;
 
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly"]
-pub struct InputVideo<'a> {
-    input_pad: rustler::Term<'a>,
+pub struct InputVideo {
+    input_pad: PadRef,
 }
 
 #[rustler::nif]
 pub fn test(obj: Scene) {
     println!("{obj:#?}");
+
+    let scene: crate::scene::Scene = obj.try_into().unwrap();
+    println!("{:#?}", scene);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scene_parsing_finds_cycle() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+        let c = Name::Atom("c".into());
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Texture(Texture {
+                        input: b.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+                (
+                    b,
+                    Object::Texture(Texture {
+                        input: c.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+                (
+                    c.clone(),
+                    Object::Texture(Texture {
+                        input: a,
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+            ],
+            output: c,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+
+        assert!(matches!(result, Err(SceneParsingError::CycleDetected)))
+    }
+
+    #[test]
+    fn scene_parsing_detects_undefined_name() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+        let c = Name::Atom("c".into());
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a,
+                    Object::Texture(Texture {
+                        input: b.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+                (
+                    b.clone(),
+                    Object::Texture(Texture {
+                        input: c.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+            ],
+            output: b,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        assert!(result.is_err());
+        if let Err(SceneParsingError::UndefinedName(name)) = result {
+            assert_eq!(name, c);
+        } else {
+            panic!("Parser failed to detect an undefined name")
+        }
+    }
+
+    #[test]
+    fn scene_parsing_detects_multiple_name_definitions() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad".into(),
+                    }),
+                ),
+                (
+                    a.clone(),
+                    Object::Texture(Texture {
+                        input: a.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+                (
+                    b.clone(),
+                    Object::Texture(Texture {
+                        input: a.clone(),
+                        transformations: vec![],
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                    }),
+                ),
+            ],
+            output: b,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        assert!(result.is_err());
+        if let Err(SceneParsingError::DuplicateNames(name)) = result {
+            assert_eq!(name, a);
+        } else {
+            panic!("Parser failed to detect a name defined multiple times")
+        }
+    }
+
+    #[test]
+    fn scene_parsing_detects_duplicated_pad_refs() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+        let c = Name::Atom("c".into());
+
+        let inputs = HashMap::from_iter(vec![(a.clone(), a.clone()), (b.clone(), b.clone())]);
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad".into(),
+                    }),
+                ),
+                (
+                    b,
+                    Object::Video(InputVideo {
+                        input_pad: "pad".into(),
+                    }),
+                ),
+                (
+                    c.clone(),
+                    Object::Layout(Layout {
+                        inputs,
+                        resolution: LayoutOutputResolution::Name(a),
+                        implementation: 42,
+                    }),
+                ),
+            ],
+            output: c,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        assert!(result.is_err());
+        if let Err(SceneParsingError::DuplicatePadReferences(pad)) = result {
+            assert_eq!(pad, "pad");
+        } else {
+            panic!("Parser failed to detect duplicate pad references")
+        }
+    }
+
+    #[test]
+    fn scene_parsing_detects_unused_objects() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+        let c = Name::Atom("c".into());
+        let d = Name::Atom("d".into());
+
+        let inputs = HashMap::from_iter(vec![(a.clone(), a.clone()), (b.clone(), b.clone())]);
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad1".into(),
+                    }),
+                ),
+                (
+                    b,
+                    Object::Video(InputVideo {
+                        input_pad: "pad2".into(),
+                    }),
+                ),
+                (
+                    c.clone(),
+                    Object::Layout(Layout {
+                        inputs,
+                        resolution: LayoutOutputResolution::Name(a),
+                        implementation: 42,
+                    }),
+                ),
+                (
+                    d.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad3".into(),
+                    }),
+                ),
+            ],
+            output: c,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        assert!(result.is_err());
+        if let Err(SceneParsingError::UnusedObject(name)) = result {
+            assert_eq!(name, d);
+        } else {
+            panic!("Parser failed to detect unused objects")
+        }
+    }
+
+    #[test]
+    fn scene_parsing_simple_success() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+        let c = Name::Atom("c".into());
+
+        let inputs = HashMap::from_iter(vec![(a.clone(), a.clone()), (b.clone(), b.clone())]);
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad1".into(),
+                    }),
+                ),
+                (
+                    b,
+                    Object::Video(InputVideo {
+                        input_pad: "pad2".into(),
+                    }),
+                ),
+                (
+                    c.clone(),
+                    Object::Layout(Layout {
+                        inputs,
+                        resolution: LayoutOutputResolution::Name(a),
+                        implementation: 42,
+                    }),
+                ),
+            ],
+            output: c,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        assert!(result.is_ok())
+    }
 }
