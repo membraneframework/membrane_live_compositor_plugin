@@ -12,16 +12,19 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   defmodule RustlerFriendly do
     @moduledoc false
 
-    alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
+    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
+    alias Membrane.VideoCompositor.Scene.{Resolution, Transformation}
 
     @type output_resolution ::
-            {:resolution, Resolution.t()} | {:name, Object.name()} | :transformed_input_resolution
+            {:resolution, Resolution.t()}
+            | {:name, RFObject.name()}
+            | :transformed_input_resolution
 
     @enforce_keys [:input]
     defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
 
     @type t :: %__MODULE__{
-            input: Object.name(),
+            input: RFObject.name(),
             transformations: [Transformation.rust_representation()],
             resolution: output_resolution()
           }
@@ -40,7 +43,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   (e.g. for corners rounding - same as input,
   for cropping - accordingly smaller than input)
   """
-  @type output_resolution :: Resolution.t() | Object.name() | :transformed_input_resolution
+  @type output_resolution ::
+          Resolution.t() | Object.RustlerFriendly.name() | :transformed_input_resolution
 
   @typedoc """
   Defines texture object, that takes frames from input Object (rendered frame),
@@ -67,7 +71,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
     encoded_resolution = Object.encode_output_resolution(texture.resolution)
 
     %RustlerFriendly{
-      input: texture.input,
+      input: Object.encode_name(texture.input),
       transformations: encoded_transformations,
       resolution: encoded_resolution
     }

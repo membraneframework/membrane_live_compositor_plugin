@@ -12,7 +12,10 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     alias Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly, as: RFLayout
     alias Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly, as: RFTexture
 
-    @type name :: Membrane.VideoCompositor.Scene.Object.name()
+    @type name ::
+            {:atom, binary()}
+            | {:atom_pair, binary(), binary()}
+            | {:atom_num, binary(), non_neg_integer()}
 
     @type t :: {:layout, RFLayout.t()} | {:texture, RFTexture.t()} | {:video, RFInputVideo.t()}
 
@@ -34,7 +37,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   Objects can be assigned to names and identified
   at other objects as inputs based on assigned names
   """
-  @type name :: tuple() | atom()
+  @type name :: atom() | {atom(), atom()} | {atom(), non_neg_integer()}
 
   @typedoc """
   Defines how the input of an object can be specified
@@ -51,8 +54,6 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   (e.g. for corners rounding - same as input,
   for cropping - accordingly smaller than input)
   """
-  # FIXME: This and Texture.output_resolution should be reworked in some way.
-  #        I don't know what these should look like on the rust side.
   @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
 
   @spec encode(t()) :: RustlerFriendly.t()
@@ -64,6 +65,16 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     end
   end
 
+  @spec encode_name(name()) :: RustlerFriendly.name()
+  def encode_name(name) do
+    case name do
+      a when is_atom(a) -> {:atom, Atom.to_string(a)}
+      {a, b} when is_atom(a) and is_atom(b) -> {:atom_pair, Atom.to_string(a), Atom.to_string(b)}
+      {a, b} when is_atom(a) and is_integer(b) and b >= 0 -> {:atom_num, Atom.to_string(a), b}
+      sth -> raise "improper object name #{inspect(sth)}"
+    end
+  end
+
   @spec encode_output_resolution(object_output_resolution()) ::
           RustlerFriendly.object_output_resolution()
   def encode_output_resolution(resolution) do
@@ -72,7 +83,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     case resolution do
       :transformed_input_resolution -> :transformed_input_resolution
       %Resolution{} = resolution -> {:resolution, resolution}
-      name -> {:name, name}
+      name -> {:name, encode_name(name)}
     end
   end
 end

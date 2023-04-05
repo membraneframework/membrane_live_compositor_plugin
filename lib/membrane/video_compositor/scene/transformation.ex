@@ -21,7 +21,10 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   @type definition :: struct() | module()
   @type name :: tuple() | atom()
 
-  @type rust_representation :: reference()
+  # in a more 'final' product this should be some kind of a layout identifier.
+  # I thought of making this a UUID that would correspond to an implementation
+  # on the rust side, paired with parameters.
+  @type rust_representation :: integer()
 
   @callback encode(transformation :: definition()) :: rust_representation()
 end

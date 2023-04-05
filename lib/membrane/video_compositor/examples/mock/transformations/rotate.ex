@@ -12,6 +12,6 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.Rotate do
 
   @impl true
   def encode(_rotate) do
-    make_ref()
+    2137
   end
 end

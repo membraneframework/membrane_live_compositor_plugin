@@ -22,6 +22,6 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
 
   @impl true
   def encode(_corners_rounding) do
-    make_ref()
+    0
   end
 end

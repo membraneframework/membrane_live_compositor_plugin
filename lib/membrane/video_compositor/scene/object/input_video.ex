@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
     @moduledoc false
 
     @type t :: %__MODULE__{
-            input_pad: Membrane.Pad.ref_t()
+            input_pad: binary()
           }
 
     @enforce_keys [:input_pad]
@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(video) do
     %RustlerFriendly{
-      input_pad: video.input_pad
+      input_pad: inspect(video.input_pad)
     }
   end
 end

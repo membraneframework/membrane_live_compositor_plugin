@@ -19,6 +19,6 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
 
   @impl true
   def encode(_merging) do
-    make_ref()
+    1
   end
 end

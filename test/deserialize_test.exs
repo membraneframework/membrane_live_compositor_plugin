@@ -76,10 +76,10 @@ defmodule Membrane.VideoCompositor.Test.Deserialize do
       final_object: %Overlay{
         @strip_overlay
         | inputs: %{
-            top_left: :video_1,
-            center_left: :video_2,
-            bottom_left: :video_3,
-            background: :video_4
+            top_left: :rounded_1,
+            center_left: :rounded_2,
+            bottom_left: :rounded_3,
+            background: :rounded_4
           },
           resolution: %Resolution{width: 1920, height: 1080}
       }

@@ -23,6 +23,6 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
 
   @impl true
   def encode(_grid) do
-    make_ref()
+    0
   end
 end

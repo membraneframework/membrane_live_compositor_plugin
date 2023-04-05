@@ -29,6 +29,6 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
         }
   @impl true
   def encode(_overlay) do
-    make_ref()
+    2
   end
 end

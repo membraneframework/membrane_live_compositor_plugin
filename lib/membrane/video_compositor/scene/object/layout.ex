@@ -15,14 +15,20 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
     alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
     alias Membrane.VideoCompositor.Scene.Resolution
 
-    @type inputs :: %{any() => RFObject.name()}
+    @type internal_name :: RFObject.name()
+
+    @type inputs :: %{internal_name() => RFObject.name()}
     @type output_resolution :: {:resolution, Resolution.t()} | {:name, Object.name()}
-    @type rust_representation :: reference()
+
+    # in a more 'final' product this should be some kind of a layout identifier.
+    # I thought of making this a UUID that would correspond to an implementation
+    # on the rust side, but layout names would work fine too.
+    @type rust_representation :: integer()
 
     @type t :: %__MODULE__{
             :inputs => inputs(),
             :resolution => output_resolution(),
-            # unsure about calling this `implementation`
+            # unsure about calling this `implementation`.
             :implementation => rust_representation()
           }
 
@@ -30,11 +36,13 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
     defstruct @enforce_keys
   end
 
+  @type internal_name :: Object.name()
+
   @typedoc """
   Type of a map defining on how to map internal layout's ids
   to Scene objects
   """
-  @type inputs :: %{any() => Object.name()}
+  @type inputs :: %{internal_name() => Object.name()}
 
   @typedoc """
   Defines how the output resolution of a layout texture can be specified.
@@ -58,7 +66,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
           optional(any()) => any()
         }
 
-  @type rust_representation :: reference()
+  @type rust_representation :: non_neg_integer()
 
   @callback encode(t()) :: rust_representation()
 
@@ -68,8 +76,12 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
 
     encoded_resolution = Object.encode_output_resolution(resolution)
 
+    encoded_inputs =
+      inputs
+      |> Map.new(fn {k, v} -> {Object.encode_name(k), Object.encode_name(v)} end)
+
     %RustlerFriendly{
-      inputs: inputs,
+      inputs: encoded_inputs,
       resolution: encoded_resolution,
       implementation: rust_representation
     }
