@@ -767,4 +767,52 @@ mod tests {
         let result: Result<crate::scene::Scene, _> = scene.try_into();
         assert!(result.is_ok())
     }
+
+    #[test]
+    fn scene_parsing_maintains_transformation_order() {
+        let a = Name::Atom("a".into());
+        let b = Name::Atom("b".into());
+
+        let scene = Scene {
+            objects: vec![
+                (
+                    a.clone(),
+                    Object::Video(InputVideo {
+                        input_pad: "pad1".into(),
+                    }),
+                ),
+                (
+                    b.clone(),
+                    Object::Texture(Texture {
+                        input: a,
+                        resolution: TextureOutputResolution::TransformedInputResolution,
+                        transformations: vec![0, 1, 2],
+                    }),
+                ),
+            ],
+            output: b,
+        };
+
+        let result: Result<crate::scene::Scene, _> = scene.try_into();
+        let scene = result.unwrap();
+
+        use crate::scene::Node;
+
+        let final_node = scene.final_node;
+
+        let Node::Transformation { ref previous, transformation, .. } = *final_node else {
+            panic!("unexpected scene structure");
+        };
+        assert_eq!(transformation, 2);
+
+        let Node::Transformation { ref previous, transformation, .. } = **previous else {
+            panic!("unexpected scene structure");
+        };
+        assert_eq!(transformation, 1);
+
+        let Node::Transformation { transformation, .. } = **previous else {
+            panic!("unexpected scene structure");
+        };
+        assert_eq!(transformation, 0);
+    }
 }
