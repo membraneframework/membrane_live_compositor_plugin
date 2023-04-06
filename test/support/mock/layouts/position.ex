@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Position do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Position do
   @moduledoc """
   A structure representing position of an object in rendered frame.
   """

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding do
+defmodule Membrane.VideoCompositor.Mock.Transformations.CornersRounding do
   @moduledoc false
 
   @behaviour Membrane.VideoCompositor.Scene.Transformation

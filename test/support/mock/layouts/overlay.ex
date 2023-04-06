@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
   @moduledoc """
   Mocks Overlay layout.
 

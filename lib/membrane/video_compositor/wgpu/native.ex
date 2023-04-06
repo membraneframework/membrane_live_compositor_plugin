@@ -52,8 +52,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec send_end_of_stream(wgpu_state(), id()) :: {:ok, [frame_with_pts()]} | {:error, atom()}
   def send_end_of_stream(_state, _id), do: error()
 
-  @spec test(any) :: any
-  def test(_scene), do: error()
+  @spec test_scene_deserialization(Membrane.VideoCompositor.Scene.RustlerFriendly.t()) ::
+          :ok | {:error, any()}
+  def test_scene_deserialization(_scene), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
 end

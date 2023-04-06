@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Merging do
   @moduledoc """
   Mocks simple component combing two videos / frames / inputs into one.
   """

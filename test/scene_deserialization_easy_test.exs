@@ -1,14 +1,12 @@
-defmodule Membrane.VideoCompositor.Examples.Easy do
-  @moduledoc """
-  An easy example simulates the layout of a video conferencing app.
+defmodule Membrane.VideoCompositor.Test.DeserializeEasy do
+  use ExUnit.Case
 
-  There are 4 video inputs. All of them get their corners rounded. Then,
-  one of them is chosen as a main video (which takes most of the screen),
-  while the rest are scaled-down and put in a side strip on top of the main video.
-  """
+  require Membrane.Pad
 
-  alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Overlay, Position}
-  alias Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
+  alias Membrane.VideoCompositor.Wgpu.Native
+
+  alias Membrane.VideoCompositor.Mock.Layouts.{Overlay, Position}
+  alias Membrane.VideoCompositor.Mock.Transformations.CornersRounding
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Texture}
   alias Membrane.VideoCompositor.Scene.Resolution
@@ -44,16 +42,21 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
         z_value: 1.0
       }
     },
-    inputs: %{},
+    inputs: %{
+      background: nil,
+      top_left: nil,
+      center_left: nil,
+      bottom_left: nil
+    },
     resolution: nil
   }
 
-  %Scene{
+  @scene %Scene{
     objects: [
-      video_1: %InputVideo{input_pad: :video_1},
-      video_2: %InputVideo{input_pad: :video_2},
-      video_3: %InputVideo{input_pad: :video_3},
-      video_4: %InputVideo{input_pad: :video_4},
+      video_1: %InputVideo{input_pad: Membrane.Pad.ref(:video, 1)},
+      video_2: %InputVideo{input_pad: Membrane.Pad.ref(:video, 2)},
+      video_3: %InputVideo{input_pad: Membrane.Pad.ref(:video, 3)},
+      video_4: %InputVideo{input_pad: Membrane.Pad.ref(:video, 4)},
       rounded_1: %Texture{
         input: :video_1,
         transformations: [@corners_rounding]
@@ -83,4 +86,8 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
     ],
     output: :final_object
   }
+
+  test "deserialize" do
+    assert :ok = Native.test_scene_deserialization(Scene.encode(@scene))
+  end
 end

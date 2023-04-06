@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Grid do
   @moduledoc """
   Mock Grid Layout.
 

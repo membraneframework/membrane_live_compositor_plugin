@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Transformations.Rotate do
+defmodule Membrane.VideoCompositor.Mock.Transformations.Rotate do
   @moduledoc false
 
   @behaviour Membrane.VideoCompositor.Scene.Transformation

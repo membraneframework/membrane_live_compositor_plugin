@@ -294,6 +294,13 @@ fn send_end_of_stream(
     Ok((atoms::ok(), outputs))
 }
 
+#[rustler::nif]
+pub fn test_scene_deserialization(obj: Scene) -> Result<rustler::Atom, rustler::Error> {
+    let _scene: crate::scene::Scene = obj.try_into()?;
+
+    Ok(atoms::ok())
+}
+
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [
@@ -306,7 +313,7 @@ rustler::init!(
         update_stream_format,
         update_placement,
         update_transformations,
-        elixir_structs::test,
+        test_scene_deserialization,
     ],
     load = |env, _| {
         rustler::resource!(State, env);

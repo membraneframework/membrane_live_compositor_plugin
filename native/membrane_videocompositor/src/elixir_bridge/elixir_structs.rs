@@ -485,6 +485,44 @@ pub enum SceneParsingError {
     UnusedObject(ObjectName),
 }
 
+impl rustler::Encoder for SceneParsingError {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        match self {
+            SceneParsingError::CycleDetected => rustler::Atom::from_str(env, "cycle_detected")
+                .unwrap()
+                .encode(env),
+
+            SceneParsingError::UndefinedName(name) => (
+                rustler::Atom::from_str(env, "undefined_name").unwrap(),
+                name,
+            )
+                .encode(env),
+
+            SceneParsingError::DuplicateNames(name) => (
+                rustler::Atom::from_str(env, "duplicate_names").unwrap(),
+                name,
+            )
+                .encode(env),
+
+            SceneParsingError::DuplicatePadReferences(pad) => (
+                rustler::Atom::from_str(env, "duplicate_pad_refs").unwrap(),
+                pad,
+            )
+                .encode(env),
+
+            SceneParsingError::UnusedObject(name) => {
+                (rustler::Atom::from_str(env, "unused_name").unwrap(), name).encode(env)
+            }
+        }
+    }
+}
+
+impl From<SceneParsingError> for rustler::Error {
+    fn from(err: SceneParsingError) -> Self {
+        Self::Term(Box::new(err))
+    }
+}
+
 impl TryInto<crate::scene::Scene> for Scene {
     type Error = SceneParsingError;
 
@@ -504,14 +542,6 @@ pub type PadRef = String;
 #[module = "Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly"]
 pub struct InputVideo {
     input_pad: PadRef,
-}
-
-#[rustler::nif]
-pub fn test(obj: Scene) {
-    println!("{obj:#?}");
-
-    let scene: crate::scene::Scene = obj.try_into().unwrap();
-    println!("{:#?}", scene);
 }
 
 #[cfg(test)]
