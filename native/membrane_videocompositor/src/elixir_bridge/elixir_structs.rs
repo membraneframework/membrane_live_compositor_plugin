@@ -267,7 +267,7 @@ impl Scene {
         Ok(())
     }
 
-    fn check_for_duplicate_or_unidentified_names(
+    fn check_for_duplicate_or_undefined_names(
         objects: &[(ObjectName, Object)],
         final_object_name: &ObjectName,
     ) -> Result<(), SceneParsingError> {
@@ -369,7 +369,7 @@ impl Scene {
     fn validate(&self) -> Result<(), SceneParsingError> {
         Self::check_for_duplicate_pad_refs(&self.objects)?;
 
-        Self::check_for_duplicate_or_unidentified_names(&self.objects, &self.output)?;
+        Self::check_for_duplicate_or_undefined_names(&self.objects, &self.output)?;
 
         Self::check_for_unused_objects(&self.objects, &self.output)?;
 
@@ -479,7 +479,7 @@ pub enum SceneParsingError {
     DuplicateNames(ObjectName),
 
     #[error("the scene graph contains two InputVideos referencing the same Membrane.Pad: {0}")]
-    DuplicatePadReferences(String),
+    DuplicatePadReferences(PadRef),
 
     #[error("the scene graph contains an object which is not used in compositing: {0:?}")]
     UnusedObject(ObjectName),
@@ -497,6 +497,7 @@ impl TryInto<crate::scene::Scene> for Scene {
     }
 }
 
+/// A reference to a Membrane.Pad
 pub type PadRef = String;
 
 #[derive(Debug, rustler::NifStruct)]
