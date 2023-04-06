@@ -12,11 +12,19 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
 
   defmodule RustlerFriendly do
     @moduledoc false
+    # A rustler-friendly version of the Layout, prepared for rust serialization
     alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
     alias Membrane.VideoCompositor.Scene.Resolution
 
+    @typedoc """
+    A rustler-friendly version of the internal name
+    """
     @type internal_name :: RFObject.name()
 
+    @typedoc """
+    A rustler-friendly version of the inputs map. Keep in mind that this maps
+    __internal names__ => __scene object names__.
+    """
     @type inputs :: %{internal_name() => RFObject.name()}
     @type output_resolution :: {:resolution, Resolution.t()} | {:name, Object.name()}
 
@@ -36,11 +44,26 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
     defstruct @enforce_keys
   end
 
+  @typedoc """
+  A layout-internal identifier, which the layout can use to determine
+  the way of rendering specific input objects. See `t:inputs/0` for more info.
+  """
   @type internal_name :: Object.name()
 
   @typedoc """
-  Type of a map defining on how to map internal layout's ids
-  to Scene objects
+  A map defining how to map internal layout's identifiers to scene objects.
+
+  For example, a simple layout could have an `inputs` map that looks like this:
+
+  ```elixir
+  %{
+    background: :video1,
+    main_presenter: :video2,
+    side_presenter: :video3,
+  }
+  ```
+
+  Keep in mind that this maps __internal names__ => __scene object names__
   """
   @type inputs :: %{internal_name() => Object.name()}
 
@@ -66,10 +89,21 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
           optional(any()) => any()
         }
 
+  @typedoc """
+  A rust representation of the layout, passed through elixir in an opaque way.
+  """
   @type rust_representation :: non_neg_integer()
 
+  @doc """
+  A callback used for encoding the static layout data into a rust-based representation.
+  We don't know yet how exactly this system is going to work, so this is just a placeholder
+  for now.
+  """
   @callback encode(t()) :: rust_representation()
 
+  @doc false
+  # Encode the layout to a Layout.RustlerFriendly in order to prepare it for
+  # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(layout = %module{inputs: inputs, resolution: resolution}) do
     rust_representation = module.encode(layout)

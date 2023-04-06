@@ -44,7 +44,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   for cropping - accordingly smaller than input)
   """
   @type output_resolution ::
-          Resolution.t() | Object.RustlerFriendly.name() | :transformed_input_resolution
+          Resolution.t() | Object.name() | :transformed_input_resolution
 
   @typedoc """
   Defines texture object, that takes frames from input Object (rendered frame),
@@ -57,6 +57,9 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
           resolution: output_resolution()
         }
 
+  @doc false
+  # Encode the texture to a Texture.RustlerFriendly in order to prepare it for
+  # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(texture) do
     encoded_transformations =

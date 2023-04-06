@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
 
   defmodule RustlerFriendly do
     @moduledoc false
-
+    # rustler-friendly versions of all types common to all objects
     alias Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly, as: RFInputVideo
     alias Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly, as: RFLayout
     alias Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly, as: RFTexture
@@ -56,6 +56,9 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   """
   @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
 
+  @doc false
+  # Encode the object to an Object.RustlerFriendly.t() in order to prepare it for
+  # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(object) do
     case object do
@@ -65,6 +68,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     end
   end
 
+  @doc false
   @spec encode_name(name()) :: RustlerFriendly.name()
   def encode_name(name) do
     case name do
@@ -75,6 +79,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     end
   end
 
+  @doc false
   @spec encode_output_resolution(object_output_resolution()) ::
           RustlerFriendly.object_output_resolution()
   def encode_output_resolution(resolution) do

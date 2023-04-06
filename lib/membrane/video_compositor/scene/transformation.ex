@@ -19,12 +19,19 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
     turning input object / frame / video into the ball
   """
   @type definition :: struct() | module()
-  @type name :: tuple() | atom()
 
-  # in a more 'final' product this should be some kind of a layout identifier.
+  @typedoc """
+  A rust representation of the transformation, passed through elixir in an opaque way.
+  """
+  # in a more 'final' product this should be some kind of a transformation identifier.
   # I thought of making this a UUID that would correspond to an implementation
   # on the rust side, paired with parameters.
   @type rust_representation :: integer()
 
+  @doc """
+  A callback used for encoding the static layout data into a rust-based representation.
+  We don't know yet how exactly this system is going to work, so this is just a placeholder
+  for now.
+  """
   @callback encode(transformation :: definition()) :: rust_representation()
 end

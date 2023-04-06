@@ -8,6 +8,7 @@ defmodule Membrane.VideoCompositor.Scene do
 
   defmodule RustlerFriendly do
     @moduledoc false
+    # A rustler-friendly version of the Scene, prepared for rust serialization
     alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
 
     @type t :: %__MODULE__{
@@ -37,6 +38,9 @@ defmodule Membrane.VideoCompositor.Scene do
           output: Object.name()
         }
 
+  @doc false
+  # Encode the scene to a Scene.RustlerFriendly in order to prepare it for
+  # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(scene) do
     encoded_objects =

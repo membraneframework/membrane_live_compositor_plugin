@@ -20,12 +20,15 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
   defstruct @enforce_keys
 
   @typedoc """
-  Defines pad wrapper.
+  Defines a pad wrapper.
   """
   @type t :: %__MODULE__{
           input_pad: Pad.ref_t()
         }
 
+  @doc false
+  # Encode the video to an InputVideo.RustlerFriendly in order to prepare it for
+  # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(video) do
     %RustlerFriendly{
