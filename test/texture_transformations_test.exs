@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
   alias Membrane.VideoCompositor.Test.Support.Utils
   alias Membrane.VideoCompositor.VideoTransformations
 
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.{
+  alias Membrane.VideoCompositor.TextureTransformations.{
     CornersRounding,
     Cropping
   }
