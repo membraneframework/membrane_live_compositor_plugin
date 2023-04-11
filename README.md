@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_video_compositor_plugin` to you
 ```elixir
 def deps do
   [
-    {:membrane_video_compositor_plugin, "~> 0.2.2"}
+    {:membrane_video_compositor_plugin, "~> 0.3.0"}
   ]
 end
 ```
