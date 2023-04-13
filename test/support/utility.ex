@@ -258,7 +258,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Utils do
   Compare contents of two raw files, succeeding when `mse < allowed_error`
   """
   @spec compare_contents_with_error(binary(), binary(), float()) :: boolean()
-  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 2.5) do
+  def compare_contents_with_error(output_path, reference_path, allowed_error \\ 1.5) do
     {:ok, reference_file} = File.read(reference_path)
     {:ok, output_file} = File.read(output_path)
 
