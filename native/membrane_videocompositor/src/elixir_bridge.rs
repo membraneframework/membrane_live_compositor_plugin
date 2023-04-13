@@ -5,6 +5,7 @@ use crate::errors::CompositorError;
 use rustler::ResourceArc;
 
 pub mod elixir_structs;
+mod scene_validation;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {
