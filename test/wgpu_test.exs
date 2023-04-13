@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
     framerate: {1, 1}
   }
 
-  defp two_overlapping_videos_setup() do
+  defp init_two_overlapping_videos() do
     stream_format = @stream_format_360p_1fps
 
     assert {:ok, state} = Native.init(stream_format)
@@ -128,7 +128,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      state = two_overlapping_videos_setup()
+      state = init_two_overlapping_videos()
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
@@ -150,7 +150,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
       assert {:ok, frame} = File.read(in_path)
 
       stream_format = @stream_format_360p_1fps
-      state = two_overlapping_videos_setup()
+      state = init_two_overlapping_videos()
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
@@ -183,7 +183,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
     @tag wgpu: true
     test "update transformations has correct return type" do
-      state = two_overlapping_videos_setup()
+      state = init_two_overlapping_videos()
 
       assert :ok =
                Native.update_transformations(
@@ -208,7 +208,7 @@ defmodule Membrane.VideoCompositor.Test.Wgpu do
 
       assert {:ok, frame} = File.read(in_path)
 
-      state = two_overlapping_videos_setup()
+      state = init_two_overlapping_videos()
 
       s = bit_size(frame)
       empty_frame = <<0::size(s)>>
