@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.InputVideo do
     @moduledoc false
 
     @type t :: %__MODULE__{
-            input_pad: binary()
+            input_pad: String.t()
           }
 
     @enforce_keys [:input_pad]

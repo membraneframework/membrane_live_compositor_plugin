@@ -62,9 +62,17 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(object) do
     case object do
-      %InputVideo{} -> {:video, InputVideo.encode(object)}
-      %Texture{} -> {:texture, Texture.encode(object)}
-      layout -> {:layout, Layout.encode(layout)}
+      %InputVideo{} ->
+        {:video, InputVideo.encode(object)}
+
+      %Texture{} ->
+        {:texture, Texture.encode(object)}
+
+      %_module{
+        inputs: _inputs,
+        resolution: _resolution
+      } = layout ->
+        {:layout, Layout.encode(layout)}
     end
   end
 
@@ -88,7 +96,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
     case resolution do
       :transformed_input_resolution -> :transformed_input_resolution
       %Resolution{} = resolution -> {:resolution, resolution}
-      name -> {:name, encode_name(name)}
+      object_name -> {:name, encode_name(object_name)}
     end
   end
 end

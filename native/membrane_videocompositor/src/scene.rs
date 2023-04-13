@@ -4,8 +4,8 @@ use crate::elixir_bridge::elixir_structs::{
     LayoutInternalName, LayoutOutputResolution, PadRef, TextureOutputResolution,
 };
 
-/// A node represents a single render, which typically means the application
-/// of one filter/layout
+/// A node represents a single object in the video-processing graph.
+/// It can produce frames when used as an input.
 #[derive(Debug)]
 pub enum Node {
     /// A layout is a transformation, which can take many inputs and produce a single output.

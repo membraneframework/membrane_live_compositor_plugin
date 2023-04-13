@@ -53,8 +53,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   @typedoc """
   A map defining how to map internal layout's identifiers to scene objects.
 
-  For example, a simple layout could have an `inputs` map that looks like this:
-
+  ## Examples
+  a simple layout could have an `inputs` map that looks like this:
   ```elixir
   %{
     background: :video1,
@@ -112,12 +112,19 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
 
     encoded_inputs =
       inputs
-      |> Map.new(fn {k, v} -> {Object.encode_name(k), Object.encode_name(v)} end)
+      |> Map.new(fn {internal_name, object_name} ->
+        {encode_internal_name(internal_name), Object.encode_name(object_name)}
+      end)
 
     %RustlerFriendly{
       inputs: encoded_inputs,
       resolution: encoded_resolution,
       implementation: rust_representation
     }
+  end
+
+  @spec encode_internal_name(internal_name()) :: RustlerFriendly.internal_name()
+  defp encode_internal_name(name) do
+    Object.encode_name(name)
   end
 end
