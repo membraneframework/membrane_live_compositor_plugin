@@ -34,4 +34,14 @@ defmodule Membrane.VideoCompositor.Scene.Transformation do
   for now.
   """
   @callback encode(transformation :: definition()) :: rust_representation()
+
+  @doc false
+  # This just cases upon the two possibilities of the definition.
+  @spec encode(definition()) :: rust_representation()
+  def encode(transformation) do
+    case transformation do
+      %module{} -> module.encode(transformation)
+      module -> module.encode(transformation)
+    end
+  end
 end
