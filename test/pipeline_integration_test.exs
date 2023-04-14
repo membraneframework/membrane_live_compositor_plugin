@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.PipelineTest do
+defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
   @moduledoc false
   use ExUnit.Case
 
