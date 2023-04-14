@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations.Cropping do
+defmodule Membrane.VideoCompositor.TextureTransformations.Cropping do
   @moduledoc """
   Describe cropping texture transformation parameters.
   ## Values
