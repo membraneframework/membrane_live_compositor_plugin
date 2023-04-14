@@ -1,4 +1,6 @@
 defmodule Membrane.VideoCompositor.Callbacks do
+  @moduledoc false
+
   alias __MODULE__.Context
   alias Membrane.{Pad, StreamFormat, Time}
   alias Membrane.VideoCompositor.Scene
@@ -28,6 +30,7 @@ defmodule Membrane.VideoCompositor.Callbacks do
 end
 
 defmodule Membrane.VideoCompositor.Callbacks.Context do
+  @moduledoc false
   alias Membrane.VideoCompositor.Scene
 
   @enforce_keys [:input_pads, :scenes_queue, :current_scene]
@@ -46,21 +49,26 @@ defmodule Membrane.VideoCompositor.Callbacks.Context do
 end
 
 defmodule Membrane.VideoCompositor.Callbacks.Context.Init do
+  @moduledoc false
   alias Membrane.VideoCompositor.Callbacks.Context
   @type t :: Context.t()
 end
 
 defmodule Membrane.VideoCompositor.Callbacks.Context.VideoAdd do
+  @moduledoc false
   alias Membrane.VideoCompositor.Callbacks.Context
   @type t :: Context.t()
 end
 
 defmodule Membrane.VideoCompositor.Callbacks.Context.VideoRemove do
+  @moduledoc false
   alias Membrane.VideoCompositor.Callbacks.Context
   @type t :: Context.t()
 end
 
 defmodule Membrane.VideoCompositor.Callbacks.Context.Info do
+  @moduledoc false
+
   alias Membrane.Time
   alias Membrane.VideoCompositor.Callbacks.Context
 
