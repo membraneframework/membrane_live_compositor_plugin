@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.HandlingPadRemoved do
+defmodule Membrane.VideoCompositor.HandlingPadRemovedTest do
   use ExUnit.Case
 
   alias Membrane.Buffer
