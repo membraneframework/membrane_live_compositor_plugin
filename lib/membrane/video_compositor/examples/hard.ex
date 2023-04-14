@@ -14,7 +14,8 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Texture}
+  alias Membrane.VideoCompositor.Scene.Object.Input.Video
+  alias Membrane.VideoCompositor.Scene.Object.Texture
   alias Membrane.VideoCompositor.Scene.Resolution
 
   @rotate %Rotate{degrees: 90}
@@ -24,9 +25,9 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
 
   %Scene{
     objects: [
-      video_1: %InputVideo{input_pad: :video_1},
-      video_2: %InputVideo{input_pad: :video_2},
-      video_3: %InputVideo{input_pad: :video_3},
+      video_1: %Video{input_pad: :video_1},
+      video_2: %Video{input_pad: :video_2},
+      video_3: %Video{input_pad: :video_3},
       rotated: %Texture{
         input: :video_1,
         transformations: [@rotate]
