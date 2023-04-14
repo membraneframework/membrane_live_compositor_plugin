@@ -1,7 +1,7 @@
-defmodule Membrane.VideoCompositor.Callbacks do
+defmodule Membrane.VideoCompositor.Handler do
   @moduledoc false
 
-  alias __MODULE__.Context
+  alias __MODULE__.CallbackCtx
   alias Membrane.{Pad, StreamFormat, Time}
   alias Membrane.VideoCompositor.Scene
 
@@ -11,25 +11,25 @@ defmodule Membrane.VideoCompositor.Callbacks do
 
   @type callback_return :: {scene :: Scene.t(), state :: state()}
 
-  @callback handle_init(ctx :: Context.Init.t()) :: callback_return()
+  @callback handle_init(ctx :: CallbackCtx.Init.t()) :: callback_return()
 
   @callback handle_video_add(
               video :: video_details(),
-              ctx :: Context.VideoAdd.t(),
+              ctx :: CallbackCtx.VideoAdd.t(),
               state :: state()
             ) :: callback_return()
 
   @callback handle_video_remove(
               video :: video_details(),
-              ctx :: Context.VideoRemove.t(),
+              ctx :: CallbackCtx.VideoRemove.t(),
               state :: state()
             ) :: callback_return()
 
-  @callback handle_info(msg :: any(), ctx :: Context.Info.t(), state :: state()) ::
+  @callback handle_info(msg :: any(), ctx :: CallbackCtx.Info.t(), state :: state()) ::
               callback_return() | {start_ts :: Time.t(), callback_return()}
 end
 
-defmodule Membrane.VideoCompositor.Callbacks.Context do
+defmodule Membrane.VideoCompositor.Handler.CallbackCtx do
   @moduledoc false
   alias Membrane.VideoCompositor.Scene
 
@@ -48,36 +48,36 @@ defmodule Membrane.VideoCompositor.Callbacks.Context do
         }
 end
 
-defmodule Membrane.VideoCompositor.Callbacks.Context.Init do
+defmodule Membrane.VideoCompositor.Handler.CallbackCtx.Init do
   @moduledoc false
-  alias Membrane.VideoCompositor.Callbacks.Context
-  @type t :: Context.t()
+  alias Membrane.VideoCompositor.Handler.CallbackCtx
+  @type t :: CallbackCtx.t()
 end
 
-defmodule Membrane.VideoCompositor.Callbacks.Context.VideoAdd do
+defmodule Membrane.VideoCompositor.Handler.CallbackCtx.VideoAdd do
   @moduledoc false
-  alias Membrane.VideoCompositor.Callbacks.Context
-  @type t :: Context.t()
+  alias Membrane.VideoCompositor.Handler.CallbackCtx
+  @type t :: CallbackCtx.t()
 end
 
-defmodule Membrane.VideoCompositor.Callbacks.Context.VideoRemove do
+defmodule Membrane.VideoCompositor.Handler.CallbackCtx.VideoRemove do
   @moduledoc false
-  alias Membrane.VideoCompositor.Callbacks.Context
-  @type t :: Context.t()
+  alias Membrane.VideoCompositor.Handler.CallbackCtx
+  @type t :: CallbackCtx.t()
 end
 
-defmodule Membrane.VideoCompositor.Callbacks.Context.Info do
+defmodule Membrane.VideoCompositor.Handler.CallbackCtx.Info do
   @moduledoc false
 
   alias Membrane.Time
-  alias Membrane.VideoCompositor.Callbacks.Context
+  alias Membrane.VideoCompositor.Handler.CallbackCtx
 
   @enforce_keys [:input_pads, :scenes_queue, :current_scene, :earliest_start]
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          input_pads: Context.intput_pads(),
-          scenes_queue: Context.scenes_queue(),
+          input_pads: CallbackCtx.intput_pads(),
+          scenes_queue: CallbackCtx.scenes_queue(),
           current_scene: Scene.t(),
           earliest_start: Time.t()
         }
