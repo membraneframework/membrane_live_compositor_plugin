@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   - The third video is turned into a ball and put in the middle bottom of the screen
   """
 
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding
+  alias Membrane.VideoCompositor.TextureTransformations.CornersRounding
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}

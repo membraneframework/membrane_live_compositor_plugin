@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations do
+defmodule Membrane.VideoCompositor.TextureTransformations do
   @moduledoc """
   Describes all texture transformations applied to video.
   Texture transformations can change resolution of frame.
@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.VideoTransformations.TextureTransformations d
   this type definition.
   """
 
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.{
+  alias Membrane.VideoCompositor.TextureTransformations.{
     CornersRounding,
     Cropping
   }
