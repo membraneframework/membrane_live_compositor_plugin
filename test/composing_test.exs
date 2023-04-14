@@ -22,6 +22,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
 
   @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
+  # In this test we need to increase allowed mean square error, due to differences in
+  # "rendering" between ffmpeg created ref and wgpu produced output
+  @allowed_mse 2.5
+
   describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
 
@@ -109,6 +113,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pipeline, blocking?: true)
 
-    assert Utils.compare_contents_with_error(output_path, reference_path, 2.5)
+    assert Utils.compare_contents_with_error(output_path, reference_path, @allowed_mse)
   end
 end
