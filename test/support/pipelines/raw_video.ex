@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Support.Pipeline.Raw do
+defmodule Membrane.VideoCompositor.Support.Pipeline.Raw do
   @moduledoc """
   Pipeline for testing composing of many videos.
   """

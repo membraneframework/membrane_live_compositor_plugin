@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
+defmodule Membrane.VideoCompositor.Support.Pipeline.H264 do
   @moduledoc """
   Pipeline for testing composing of many videos.
   """
@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Test.Support.Pipeline.H264 do
 
   @impl true
   def handle_init(ctx, options) do
-    decoder = %Membrane.VideoCompositor.Test.Support.Pipeline.H264.ParserDecoder{
+    decoder = %Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder{
       framerate: options.stream_format.framerate
     }
 

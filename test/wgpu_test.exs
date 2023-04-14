@@ -1,9 +1,9 @@
-defmodule Membrane.VideoCompositor.Test.Wgpu do
+defmodule Membrane.VideoCompositor.WgpuTest do
   use ExUnit.Case, async: false
 
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.{BaseVideoPlacement, RawVideo}
-  alias Membrane.VideoCompositor.Test.Support.Utils
+  alias Membrane.VideoCompositor.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
   @stream_format_360p_1fps %RawVideo{

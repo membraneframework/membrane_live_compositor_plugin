@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Composing do
+defmodule Membrane.VideoCompositor.ComposingTest do
   @moduledoc false
   use ExUnit.Case
 
@@ -7,8 +7,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
-  alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utils
+  alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Support.Utils
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
