@@ -5,23 +5,6 @@ defmodule Membrane.VideoCompositor.Scene.Object do
 
   alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Layout, Texture}
 
-  defmodule RustlerFriendly do
-    @moduledoc false
-    # rustler-friendly versions of all types common to all objects
-    alias Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly, as: RFInputVideo
-    alias Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly, as: RFLayout
-    alias Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly, as: RFTexture
-
-    @type name ::
-            {:atom, binary()}
-            | {:atom_pair, binary(), binary()}
-            | {:atom_num, binary(), non_neg_integer()}
-
-    @type t :: {:layout, RFLayout.t()} | {:texture, RFTexture.t()} | {:video, RFInputVideo.t()}
-
-    @type object_output_resolution :: RFTexture.output_resolution() | RFLayout.output_resolution()
-  end
-
   @typedoc """
   Objects are renderable entities in VC, that can serve as input for other
   objects or as an output of the video.
@@ -55,6 +38,23 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   for cropping - accordingly smaller than input)
   """
   @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
+
+  defmodule RustlerFriendly do
+    @moduledoc false
+    # rustler-friendly versions of all types common to all objects
+    alias Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly, as: RFInputVideo
+    alias Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly, as: RFLayout
+    alias Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly, as: RFTexture
+
+    @type name ::
+            {:atom, binary()}
+            | {:atom_pair, binary(), binary()}
+            | {:atom_num, binary(), non_neg_integer()}
+
+    @type t :: {:layout, RFLayout.t()} | {:texture, RFTexture.t()} | {:video, RFInputVideo.t()}
+
+    @type object_output_resolution :: RFTexture.output_resolution() | RFLayout.output_resolution()
+  end
 
   @doc false
   # Encode the object to an Object.RustlerFriendly.t() in order to prepare it for

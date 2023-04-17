@@ -9,27 +9,6 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
 
   alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
 
-  defmodule RustlerFriendly do
-    @moduledoc false
-
-    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
-    alias Membrane.VideoCompositor.Scene.{Resolution, Transformation}
-
-    @type output_resolution ::
-            {:resolution, Resolution.t()}
-            | {:name, RFObject.name()}
-            | :transformed_input_resolution
-
-    @enforce_keys [:input]
-    defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
-
-    @type t :: %__MODULE__{
-            input: RFObject.name(),
-            transformations: [Transformation.rust_representation()],
-            resolution: output_resolution()
-          }
-  end
-
   @enforce_keys [:input]
   defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
 
@@ -56,6 +35,27 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
           transformations: [Transformation.definition()],
           resolution: output_resolution()
         }
+
+  defmodule RustlerFriendly do
+    @moduledoc false
+
+    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
+    alias Membrane.VideoCompositor.Scene.{Resolution, Transformation}
+
+    @type output_resolution ::
+            {:resolution, Resolution.t()}
+            | {:name, RFObject.name()}
+            | :transformed_input_resolution
+
+    @enforce_keys [:input]
+    defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
+
+    @type t :: %__MODULE__{
+            input: RFObject.name(),
+            transformations: [Transformation.rust_representation()],
+            resolution: output_resolution()
+          }
+  end
 
   @doc false
   # Encode the texture to a Texture.RustlerFriendly in order to prepare it for

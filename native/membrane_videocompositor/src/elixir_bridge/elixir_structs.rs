@@ -13,6 +13,8 @@ use crate::compositor::{self, VideoPlacement};
 use crate::elixir_bridge::{atoms, convert_z};
 use crate::scene::Node;
 
+use super::scene_validation::SceneParsingError;
+
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
 pub struct ElixirRawVideo {
@@ -231,14 +233,10 @@ impl Scene {
                 return Ok(node.clone());
             }
 
-            match object {
-                Object::Video(InputVideo { input_pad }) => {
-                    let node = Arc::new(Node::Video {
-                        pad: input_pad.clone(),
-                    });
-                    nodes.insert(name.clone(), node.clone());
-                    Ok(node)
-                }
+            let node = match object {
+                Object::Video(InputVideo { input_pad }) => Arc::new(Node::Video {
+                    pad: input_pad.clone(),
+                }),
 
                 Object::Texture(Texture {
                     input,
@@ -258,9 +256,7 @@ impl Scene {
                         });
                     }
 
-                    nodes.insert(name.clone(), current.clone());
-
-                    Ok(current)
+                    current
                 }
 
                 Object::Layout(Layout {
@@ -271,86 +267,24 @@ impl Scene {
                     let inputs = inputs
                         .iter()
                         .map(|(internal_name, object_name)| {
-                            parse_object(
-                                object_name,
-                                objects.get(object_name).ok_or_else(|| {
-                                    SceneParsingError::UndefinedName(object_name.clone())
-                                })?,
-                                nodes,
-                                objects,
-                            )
-                            .map(|node| (internal_name.clone(), node))
+                            parse_object(object_name, &objects[object_name], nodes, objects)
+                                .map(|node| (internal_name.clone(), node))
                         })
                         .collect::<Result<HashMap<_, _>, _>>()?;
 
-                    let result = Arc::new(Node::Layout {
+                    Arc::new(Node::Layout {
                         resolution: resolution.clone(),
                         implementation: *implementation,
                         inputs,
-                    });
-                    nodes.insert(name.clone(), result.clone());
-                    Ok(result)
+                    })
                 }
-            }
+            };
+
+            nodes.insert(name.clone(), node.clone());
+            Ok(node)
         }
 
         parse_object(&self.output, &final_object, &mut nodes, &objects)
-    }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum SceneParsingError {
-    #[error("cycle detected in the scene graph")]
-    CycleDetected,
-
-    #[error("the scene graph contains an object name that is not defined anywhere: {0:?}")]
-    UndefinedName(ObjectName),
-
-    #[error("object name {0:?} is defined multiple times in the scene graph")]
-    DuplicateNames(ObjectName),
-
-    #[error("the scene graph contains two InputVideos referencing the same Membrane.Pad: {0}")]
-    DuplicatePadReferences(PadRef),
-
-    #[error("the scene graph contains an object which is not used in compositing: {0:?}")]
-    UnusedObject(ObjectName),
-}
-
-impl rustler::Encoder for SceneParsingError {
-    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
-        match self {
-            SceneParsingError::CycleDetected => rustler::Atom::from_str(env, "cycle_detected")
-                .unwrap()
-                .encode(env),
-
-            SceneParsingError::UndefinedName(name) => (
-                rustler::Atom::from_str(env, "undefined_name").unwrap(),
-                name,
-            )
-                .encode(env),
-
-            SceneParsingError::DuplicateNames(name) => (
-                rustler::Atom::from_str(env, "duplicate_names").unwrap(),
-                name,
-            )
-                .encode(env),
-
-            SceneParsingError::DuplicatePadReferences(pad) => (
-                rustler::Atom::from_str(env, "duplicate_pad_refs").unwrap(),
-                pad,
-            )
-                .encode(env),
-
-            SceneParsingError::UnusedObject(name) => {
-                (rustler::Atom::from_str(env, "unused_name").unwrap(), name).encode(env)
-            }
-        }
-    }
-}
-
-impl From<SceneParsingError> for rustler::Error {
-    fn from(err: SceneParsingError) -> Self {
-        Self::Term(Box::new(err))
     }
 }
 

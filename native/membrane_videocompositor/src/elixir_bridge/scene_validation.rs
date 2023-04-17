@@ -10,11 +10,19 @@ impl Object {
             Object::Video(_) => Vec::new(),
         }
     }
+
+    fn previous_names(&self) -> Vec<&Name> {
+        match self {
+            Object::Layout(layout) => layout.previous_names(),
+            Object::Texture(texture) => texture.previous_names(),
+            Object::Video(_) => Vec::new(),
+        }
+    }
 }
 
 impl Texture {
     fn mentioned_names(&self) -> Vec<&Name> {
-        let mut names = vec![&self.input];
+        let mut names = self.previous_names();
 
         if let TextureOutputResolution::Name(name) = &self.resolution {
             names.push(name);
@@ -22,11 +30,15 @@ impl Texture {
 
         names
     }
+
+    fn previous_names(&self) -> Vec<&Name> {
+        vec![&self.input]
+    }
 }
 
 impl Layout {
     fn mentioned_names(&self) -> Vec<&Name> {
-        let mut names = self.inputs.values().collect::<Vec<_>>();
+        let mut names = self.previous_names();
 
         if let LayoutOutputResolution::Name(name) = &self.resolution {
             names.push(name);
@@ -34,21 +46,25 @@ impl Layout {
 
         names
     }
+
+    fn previous_names(&self) -> Vec<&Name> {
+        self.inputs.values().collect::<Vec<_>>()
+    }
 }
 
 impl Scene {
     fn check_for_duplicate_pad_refs(
         objects: &[(ObjectName, Object)],
     ) -> Result<(), SceneParsingError> {
-        let mut set = HashSet::new();
+        let mut input_pads = HashSet::new();
 
         for (_, object) in objects {
             if let Object::Video(InputVideo { input_pad }) = object {
-                if set.contains(input_pad) {
+                if input_pads.contains(input_pad) {
                     return Err(SceneParsingError::DuplicatePadReferences(input_pad.clone()));
                 }
 
-                set.insert(input_pad);
+                input_pads.insert(input_pad);
             }
         }
 
@@ -89,23 +105,21 @@ impl Scene {
     ) -> Result<(), SceneParsingError> {
         let defined_names = objects.iter().map(|(name, _)| name).collect::<HashSet<_>>();
 
-        let used_names = objects
+        let mut used_names = objects
             .iter()
             .flat_map(|(_, object)| object.mentioned_names())
             .collect::<HashSet<_>>();
 
-        let difference = defined_names.difference(&used_names).collect::<Vec<_>>();
-
-        if difference.is_empty() {
+        if used_names.contains(final_object_name) {
             return Err(SceneParsingError::CycleDetected);
+        } else {
+            used_names.insert(final_object_name);
         }
 
-        if *difference[0] != final_object_name {
-            return Err(SceneParsingError::UnusedObject((*difference[0]).clone()));
-        }
+        let unused_names = defined_names.difference(&used_names).collect::<Vec<_>>();
 
-        if difference.len() > 1 {
-            return Err(SceneParsingError::UnusedObject((*difference[1]).clone()));
+        if !unused_names.is_empty() {
+            return Err(SceneParsingError::UnusedObject((*unused_names[0]).clone()));
         }
 
         Ok(())
@@ -134,15 +148,9 @@ impl Scene {
 
             visited.insert(name.clone(), NodeState::BeingVisited);
 
-            match &objects[name] {
-                Object::Video(_) => Ok(()),
-                Object::Texture(Texture { input, .. }) => visit(input, objects, visited),
-                Object::Layout(Layout { inputs, .. }) => inputs
-                    .values()
-                    .map(|name| visit(name, objects, visited))
-                    .collect::<Result<Vec<()>, SceneParsingError>>()
-                    .map(|_| ()),
-            }?;
+            for child in objects[name].previous_names() {
+                visit(child, objects, visited)?;
+            }
 
             visited.insert(name.clone(), NodeState::Visited);
 
@@ -170,6 +178,62 @@ impl Scene {
         Self::contains_cycle(&objects, &self.output)?;
 
         Ok(())
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum SceneParsingError {
+    #[error("cycle detected in the scene graph")]
+    CycleDetected,
+
+    #[error("the scene graph contains an object name that is not defined anywhere: {0:?}")]
+    UndefinedName(ObjectName),
+
+    #[error("object name {0:?} is defined multiple times in the scene graph")]
+    DuplicateNames(ObjectName),
+
+    #[error("the scene graph contains two InputVideos referencing the same Membrane.Pad: {0}")]
+    DuplicatePadReferences(PadRef),
+
+    #[error("the scene graph contains an object which is not used in compositing: {0:?}")]
+    UnusedObject(ObjectName),
+}
+
+impl rustler::Encoder for SceneParsingError {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        match self {
+            SceneParsingError::CycleDetected => rustler::Atom::from_str(env, "cycle_detected")
+                .unwrap()
+                .encode(env),
+
+            SceneParsingError::UndefinedName(name) => (
+                rustler::Atom::from_str(env, "undefined_name").unwrap(),
+                name,
+            )
+                .encode(env),
+
+            SceneParsingError::DuplicateNames(name) => (
+                rustler::Atom::from_str(env, "duplicate_names").unwrap(),
+                name,
+            )
+                .encode(env),
+
+            SceneParsingError::DuplicatePadReferences(pad) => (
+                rustler::Atom::from_str(env, "duplicate_pad_refs").unwrap(),
+                pad,
+            )
+                .encode(env),
+
+            SceneParsingError::UnusedObject(name) => {
+                (rustler::Atom::from_str(env, "unused_name").unwrap(), name).encode(env)
+            }
+        }
+    }
+}
+
+impl From<SceneParsingError> for rustler::Error {
+    fn from(err: SceneParsingError) -> Self {
+        Self::Term(Box::new(err))
     }
 }
 
