@@ -58,6 +58,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   defmodule RustlerFriendly do
     @moduledoc false
     # A rustler-friendly version of the Layout, prepared for rust serialization
+    alias Membrane.VideoCompositor.Scene.Object.Layout
     alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
     alias Membrane.VideoCompositor.Scene.Resolution
 
@@ -73,21 +74,26 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
     @type inputs :: %{internal_name() => RFObject.name()}
     @type output_resolution :: {:resolution, Resolution.t()} | {:name, Object.name()}
 
-    # in a more 'final' product this should be some kind of a layout identifier.
-    # I thought of making this a UUID that would correspond to an implementation
-    # on the rust side, but layout names would work fine too.
-    @type rust_representation :: integer()
-
     @type t :: %__MODULE__{
             :inputs => inputs(),
             :resolution => output_resolution(),
             # unsure about calling this `implementation`.
-            :implementation => rust_representation()
+            :implementation => Layout.rust_representation()
           }
 
     @enforce_keys [:inputs, :resolution, :implementation]
     defstruct @enforce_keys
   end
+
+  @typedoc """
+  This documentation is temporary, since something needs to be here and it
+  is currently unknown what this will look like.
+
+  in a more 'final' product this should be some kind of a layout identifier.
+  I thought of making this a UUID that would correspond to an implementation
+  on the rust side, but layout names would work fine too.
+  """
+  @type rust_representation :: integer()
 
   @doc """
   A callback used for encoding the static layout data into a rust-based representation.
@@ -96,7 +102,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   We don't know yet how exactly this system is going to work, so this is just a placeholder
   for now.
   """
-  @callback encode(t()) :: RustlerFriendly.rust_representation()
+  @callback encode(t()) :: rust_representation()
 
   @doc false
   # Encode the layout to a Layout.RustlerFriendly in order to prepare it for
