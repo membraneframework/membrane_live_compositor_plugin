@@ -12,9 +12,11 @@ defmodule Membrane.VideoCompositor.Scene.Object.Input.StaticFrame do
   defstruct @enforce_keys
 
   @typedoc """
-  Defines wrapper for static VC frame InputStatic. In `stream_format` only the
-  `width`, `height`, and `pixel_format` fields are used, the rest is ignored
-  (`framerate` and `aligned` don't have any meaning in the case of static image).
+  Defines wrapper for static VC frame InputStatic.
+  The `frame` is raw video binary.
+  In `stream_format` only the `width`, `height`, and `pixel_format`
+  fields are used, the rest is ignored (`framerate` and `aligned`
+  don't have any meaning in the case of static image).
   Currently, only `:I420` `pixel_format` is supported.
   """
   @type t :: %__MODULE__{
