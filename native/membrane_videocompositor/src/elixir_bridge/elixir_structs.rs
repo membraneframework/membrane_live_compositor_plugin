@@ -226,6 +226,13 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn objects_map(&self) -> HashMap<&ObjectName, &Object> {
+        self.objects
+            .iter()
+            .map(|(name, object)| (name, object))
+            .collect::<HashMap<_, _>>()
+    }
+
     fn convert_to_graph(self) -> Result<Arc<Node>, SceneParsingError> {
         let objects = HashMap::from_iter(self.objects);
 

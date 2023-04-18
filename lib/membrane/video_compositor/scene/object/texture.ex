@@ -64,7 +64,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   def encode(texture) do
     encoded_transformations =
       texture.transformations
-      |> Enum.map(&Transformation.encode(&1))
+      |> Enum.map(&Transformation.encode/1)
 
     encoded_resolution = Object.encode_output_resolution(texture.resolution)
 

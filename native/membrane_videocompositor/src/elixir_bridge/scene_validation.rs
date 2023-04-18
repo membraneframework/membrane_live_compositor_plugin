@@ -60,11 +60,9 @@ impl Scene {
 
         for (_, object) in objects {
             if let Object::Video(InputVideo { input_pad }) = object {
-                if input_pads.contains(input_pad) {
+                if !input_pads.insert(input_pad) {
                     return Err(SceneParsingError::DuplicatePadReferences(input_pad.clone()));
                 }
-
-                input_pads.insert(input_pad);
             }
         }
 
@@ -81,11 +79,9 @@ impl Scene {
 
         let mut names = HashSet::new();
         for (name, _) in objects {
-            if names.contains(name) {
+            if !names.insert(name) {
                 return Err(SceneParsingError::DuplicateNames(name.clone()));
             }
-
-            names.insert(name);
         }
 
         for (_, object) in objects {
@@ -125,7 +121,7 @@ impl Scene {
         Ok(())
     }
 
-    /// returns true if a cycle exists in the scene graph
+    /// returns `Err(SceneParsingError::CycleDetected)` if a cycle exists in the scene graph, `Ok(())` otherwise.
     fn contains_cycle(
         objects: &HashMap<&ObjectName, &Object>,
         final_object: &ObjectName,
@@ -169,11 +165,7 @@ impl Scene {
 
         Self::check_for_unused_objects(&self.objects, &self.output)?;
 
-        let objects = self
-            .objects
-            .iter()
-            .map(|(name, object)| (name, object))
-            .collect::<HashMap<_, _>>();
+        let objects = self.objects_map();
 
         Self::contains_cycle(&objects, &self.output)?;
 
