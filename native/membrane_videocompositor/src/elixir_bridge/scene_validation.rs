@@ -2,63 +2,30 @@ use std::collections::{HashMap, HashSet};
 
 use super::elixir_structs::*;
 
-impl Object {
-    fn mentioned_names(&self) -> Vec<&Name> {
-        match self {
-            Object::Layout(layout) => layout.mentioned_names(),
-            Object::Texture(texture) => texture.mentioned_names(),
-            Object::Video(_) => Vec::new(),
-        }
-    }
-
-    fn previous_names(&self) -> Vec<&Name> {
-        match self {
-            Object::Layout(layout) => layout.previous_names(),
-            Object::Texture(texture) => texture.previous_names(),
-            Object::Video(_) => Vec::new(),
-        }
-    }
+pub struct SceneValidator<'a> {
+    objects: &'a [(ObjectName, Object)],
+    final_object_name: &'a ObjectName,
 }
 
-impl Texture {
-    fn mentioned_names(&self) -> Vec<&Name> {
-        let mut names = self.previous_names();
-
-        if let TextureOutputResolution::Name(name) = &self.resolution {
-            names.push(name);
+impl<'a> SceneValidator<'a> {
+    pub fn new(scene: &'a Scene) -> Self {
+        Self {
+            objects: &scene.objects,
+            final_object_name: &scene.output,
         }
-
-        names
     }
 
-    fn previous_names(&self) -> Vec<&Name> {
-        vec![&self.input]
-    }
-}
-
-impl Layout {
-    fn mentioned_names(&self) -> Vec<&Name> {
-        let mut names = self.previous_names();
-
-        if let LayoutOutputResolution::Name(name) = &self.resolution {
-            names.push(name);
-        }
-
-        names
+    fn objects_map(&self) -> HashMap<&ObjectName, &Object> {
+        self.objects
+            .iter()
+            .map(|(name, object)| (name, object))
+            .collect::<HashMap<_, _>>()
     }
 
-    fn previous_names(&self) -> Vec<&Name> {
-        self.inputs.values().collect::<Vec<_>>()
-    }
-}
-
-impl Scene {
-    fn check_for_duplicate_pad_refs(
-        objects: &[(ObjectName, Object)],
-    ) -> Result<(), SceneParsingError> {
+    fn check_for_duplicate_pad_refs(&self) -> Result<(), SceneParsingError> {
         let mut input_pads = HashSet::new();
 
-        for (_, object) in objects {
+        for (_, object) in self.objects {
             if let Object::Video(InputVideo { input_pad }) = object {
                 if !input_pads.insert(input_pad) {
                     return Err(SceneParsingError::DuplicatePadReferences(input_pad.clone()));
@@ -69,22 +36,21 @@ impl Scene {
         Ok(())
     }
 
-    fn check_for_duplicate_or_undefined_names(
-        objects: &[(ObjectName, Object)],
-        final_object_name: &ObjectName,
-    ) -> Result<(), SceneParsingError> {
-        if objects.is_empty() {
-            return Err(SceneParsingError::UndefinedName(final_object_name.clone()));
+    fn check_for_duplicate_or_undefined_names(&self) -> Result<(), SceneParsingError> {
+        if self.objects.is_empty() {
+            return Err(SceneParsingError::UndefinedName(
+                self.final_object_name.clone(),
+            ));
         }
 
         let mut names = HashSet::new();
-        for (name, _) in objects {
+        for (name, _) in self.objects {
             if !names.insert(name) {
                 return Err(SceneParsingError::DuplicateNames(name.clone()));
             }
         }
 
-        for (_, object) in objects {
+        for (_, object) in self.objects {
             for name in object.mentioned_names() {
                 if !names.contains(name) {
                     return Err(SceneParsingError::UndefinedName(name.clone()));
@@ -95,21 +61,23 @@ impl Scene {
         Ok(())
     }
 
-    fn check_for_unused_objects(
-        objects: &[(ObjectName, Object)],
-        final_object_name: &ObjectName,
-    ) -> Result<(), SceneParsingError> {
-        let defined_names = objects.iter().map(|(name, _)| name).collect::<HashSet<_>>();
+    fn check_for_unused_objects(&self) -> Result<(), SceneParsingError> {
+        let defined_names = self
+            .objects
+            .iter()
+            .map(|(name, _)| name)
+            .collect::<HashSet<_>>();
 
-        let mut used_names = objects
+        let mut used_names = self
+            .objects
             .iter()
             .flat_map(|(_, object)| object.mentioned_names())
             .collect::<HashSet<_>>();
 
-        if used_names.contains(final_object_name) {
+        if used_names.contains(self.final_object_name) {
             return Err(SceneParsingError::CycleDetected);
         } else {
-            used_names.insert(final_object_name);
+            used_names.insert(self.final_object_name);
         }
 
         let unused_names = defined_names.difference(&used_names).collect::<Vec<_>>();
@@ -122,10 +90,7 @@ impl Scene {
     }
 
     /// returns `Err(SceneParsingError::CycleDetected)` if a cycle exists in the scene graph, `Ok(())` otherwise.
-    fn contains_cycle(
-        objects: &HashMap<&ObjectName, &Object>,
-        final_object: &ObjectName,
-    ) -> Result<(), SceneParsingError> {
+    fn contains_cycle(&self) -> Result<(), SceneParsingError> {
         enum NodeState {
             BeingVisited,
             Visited,
@@ -155,19 +120,17 @@ impl Scene {
 
         let mut visited = HashMap::new();
 
-        visit(final_object, objects, &mut visited)
+        visit(self.final_object_name, &self.objects_map(), &mut visited)
     }
 
     pub fn validate(&self) -> Result<(), SceneParsingError> {
-        Self::check_for_duplicate_pad_refs(&self.objects)?;
+        self.check_for_duplicate_pad_refs()?;
 
-        Self::check_for_duplicate_or_undefined_names(&self.objects, &self.output)?;
+        self.check_for_duplicate_or_undefined_names()?;
 
-        Self::check_for_unused_objects(&self.objects, &self.output)?;
+        self.check_for_unused_objects()?;
 
-        let objects = self.objects_map();
-
-        Self::contains_cycle(&objects, &self.output)?;
+        self.contains_cycle()?;
 
         Ok(())
     }

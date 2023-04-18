@@ -13,7 +13,7 @@ use crate::compositor::{self, VideoPlacement};
 use crate::elixir_bridge::{atoms, convert_z};
 use crate::scene::Node;
 
-use super::scene_validation::SceneParsingError;
+use super::scene_validation::{SceneParsingError, SceneValidator};
 
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.RawVideo"]
@@ -203,6 +203,22 @@ pub struct Texture {
     pub resolution: TextureOutputResolution,
 }
 
+impl Texture {
+    pub fn mentioned_names(&self) -> Vec<&Name> {
+        let mut names = self.previous_names();
+
+        if let TextureOutputResolution::Name(name) = &self.resolution {
+            names.push(name);
+        }
+
+        names
+    }
+
+    pub fn previous_names(&self) -> Vec<&Name> {
+        vec![&self.input]
+    }
+}
+
 #[derive(rustler::NifStruct, Debug)]
 #[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
 pub struct Layout {
@@ -211,11 +227,45 @@ pub struct Layout {
     pub implementation: ImplementationPlaceholder,
 }
 
+impl Layout {
+    pub fn mentioned_names(&self) -> Vec<&Name> {
+        let mut names = self.previous_names();
+
+        if let LayoutOutputResolution::Name(name) = &self.resolution {
+            names.push(name);
+        }
+
+        names
+    }
+
+    pub fn previous_names(&self) -> Vec<&Name> {
+        self.inputs.values().collect::<Vec<_>>()
+    }
+}
+
 #[derive(Debug, rustler::NifTaggedEnum)]
 pub enum Object {
     Layout(Layout),
     Texture(Texture),
     Video(InputVideo),
+}
+
+impl Object {
+    pub fn mentioned_names(&self) -> Vec<&Name> {
+        match self {
+            Object::Layout(layout) => layout.mentioned_names(),
+            Object::Texture(texture) => texture.mentioned_names(),
+            Object::Video(_) => Vec::new(),
+        }
+    }
+
+    pub fn previous_names(&self) -> Vec<&Name> {
+        match self {
+            Object::Layout(layout) => layout.previous_names(),
+            Object::Texture(texture) => texture.previous_names(),
+            Object::Video(_) => Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug, rustler::NifStruct)]
@@ -226,13 +276,6 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn objects_map(&self) -> HashMap<&ObjectName, &Object> {
-        self.objects
-            .iter()
-            .map(|(name, object)| (name, object))
-            .collect::<HashMap<_, _>>()
-    }
-
     fn convert_to_graph(self) -> Result<Arc<Node>, SceneParsingError> {
         let objects = HashMap::from_iter(self.objects);
 
@@ -308,7 +351,7 @@ impl TryInto<crate::scene::Scene> for Scene {
     type Error = SceneParsingError;
 
     fn try_into(self) -> Result<crate::scene::Scene, Self::Error> {
-        self.validate()?;
+        SceneValidator::new(&self).validate()?;
 
         let node = self.convert_to_graph()?;
 
