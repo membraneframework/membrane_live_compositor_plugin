@@ -89,8 +89,7 @@ impl<'a> SceneValidator<'a> {
         Ok(())
     }
 
-    /// returns `Err(SceneParsingError::CycleDetected)` if a cycle exists in the scene graph, `Ok(())` otherwise.
-    fn contains_cycle(&self) -> Result<(), SceneParsingError> {
+    fn check_for_cycles(&self) -> Result<(), SceneParsingError> {
         enum NodeState {
             BeingVisited,
             Visited,
@@ -130,7 +129,7 @@ impl<'a> SceneValidator<'a> {
 
         self.check_for_unused_objects()?;
 
-        self.contains_cycle()?;
+        self.check_for_cycles()?;
 
         Ok(())
     }
