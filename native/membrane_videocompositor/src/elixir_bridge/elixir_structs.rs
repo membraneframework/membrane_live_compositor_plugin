@@ -150,16 +150,6 @@ pub struct Resolution {
     height: u32,
 }
 
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly"]
-pub struct Texture {
-    pub input: ObjectName,
-    // this is a placeholder only temporarily, until we figure out encoding transformations
-    // then, it will be something like `Arc<dyn Transformation>`
-    pub transformations: Vec<ImplementationPlaceholder>,
-    pub resolution: TextureOutputResolution,
-}
-
 #[derive(rustler::NifTaggedEnum, PartialEq, Eq, Hash, Clone)]
 pub enum Name {
     Atom(String),
@@ -181,13 +171,8 @@ pub type ObjectName = Name;
 pub type LayoutInternalName = Name;
 pub type ImplementationPlaceholder = usize;
 
-#[derive(rustler::NifStruct, Debug)]
-#[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
-pub struct Layout {
-    pub inputs: HashMap<LayoutInternalName, ObjectName>,
-    pub resolution: LayoutOutputResolution,
-    pub implementation: ImplementationPlaceholder,
-}
+/// A reference to a Membrane.Pad
+pub type PadRef = String;
 
 #[derive(Debug, rustler::NifTaggedEnum, Clone)]
 pub enum TextureOutputResolution {
@@ -200,6 +185,30 @@ pub enum TextureOutputResolution {
 pub enum LayoutOutputResolution {
     Resolution(Resolution),
     Name(ObjectName),
+}
+
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly"]
+pub struct InputVideo {
+    pub input_pad: PadRef,
+}
+
+#[derive(Debug, rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Scene.Object.Texture.RustlerFriendly"]
+pub struct Texture {
+    pub input: ObjectName,
+    // this is a placeholder only temporarily, until we figure out encoding transformations
+    // then, it will be something like `Arc<dyn Transformation>`
+    pub transformations: Vec<ImplementationPlaceholder>,
+    pub resolution: TextureOutputResolution,
+}
+
+#[derive(rustler::NifStruct, Debug)]
+#[module = "Membrane.VideoCompositor.Scene.Object.Layout.RustlerFriendly"]
+pub struct Layout {
+    pub inputs: HashMap<LayoutInternalName, ObjectName>,
+    pub resolution: LayoutOutputResolution,
+    pub implementation: ImplementationPlaceholder,
 }
 
 #[derive(Debug, rustler::NifTaggedEnum)]
@@ -298,15 +307,6 @@ impl TryInto<crate::scene::Scene> for Scene {
 
         Ok(crate::scene::Scene { final_node: node })
     }
-}
-
-/// A reference to a Membrane.Pad
-pub type PadRef = String;
-
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.Scene.Object.InputVideo.RustlerFriendly"]
-pub struct InputVideo {
-    pub input_pad: PadRef,
 }
 
 #[cfg(test)]

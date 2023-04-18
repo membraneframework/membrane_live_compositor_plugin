@@ -6,20 +6,6 @@ defmodule Membrane.VideoCompositor.Scene do
   """
   alias Membrane.VideoCompositor.Scene.Object
 
-  defmodule RustlerFriendly do
-    @moduledoc false
-    # A rustler-friendly version of the Scene, prepared for rust serialization
-    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
-
-    @type t :: %__MODULE__{
-            objects: [{RFObject.name(), RFObject.t()}],
-            output: RFObject.name()
-          }
-
-    @enforce_keys [:objects, :output]
-    defstruct @enforce_keys
-  end
-
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys
 
@@ -37,6 +23,20 @@ defmodule Membrane.VideoCompositor.Scene do
           objects: [{Object.name(), Object.t()}],
           output: Object.name()
         }
+
+  defmodule RustlerFriendly do
+    @moduledoc false
+    # A rustler-friendly version of the Scene, prepared for rust serialization
+    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
+
+    @type t :: %__MODULE__{
+            objects: [{RFObject.name(), RFObject.t()}],
+            output: RFObject.name()
+          }
+
+    @enforce_keys [:objects, :output]
+    defstruct @enforce_keys
+  end
 
   @doc false
   # Encode the scene to a Scene.RustlerFriendly in order to prepare it for
