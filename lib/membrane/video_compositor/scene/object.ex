@@ -31,7 +31,6 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   @typedoc """
   Defines how the output resolution of an object can be specified.
 
-  Define how the output resolution of an object can be specified.
   Additionally, in Textures resolution can be specified as
   transformed resolution of the object input
   (e.g. for corners rounding - same as input,
