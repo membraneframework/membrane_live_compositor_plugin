@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
   A map defining how to map internal layout's identifiers to scene objects.
 
   ## Examples
-  a simple layout could have an `inputs` map that looks like this:
+  A simple layout could have an `inputs` map that looks like this:
   ```elixir
   %{
     background: :video1,
