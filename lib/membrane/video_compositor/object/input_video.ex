@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Object.Input.Video do
+defmodule Membrane.VideoCompositor.Object.InputVideo do
   @moduledoc """
   Structure representing `Video` wrapper for using input
   Membrane Pad of an element as a object in a scene.

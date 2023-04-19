@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
   """
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
-  alias Membrane.VideoCompositor.Scene.Object
+  alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:overlay_spec, :inputs, :resolution]
   defstruct @enforce_keys

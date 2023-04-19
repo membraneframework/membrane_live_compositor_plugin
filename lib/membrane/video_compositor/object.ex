@@ -1,10 +1,9 @@
-defmodule Membrane.VideoCompositor.Scene.Object do
+defmodule Membrane.VideoCompositor.Object do
   @moduledoc """
   This module holds common types for different kinds of Objects available.
   """
 
-  alias Membrane.VideoCompositor.Scene.Object.{Layout, Texture}
-  alias Membrane.VideoCompositor.Scene.Object.Input.{StaticFrame, Video}
+  alias Membrane.VideoCompositor.Object.{InputImage, InputVideo, Layout, Texture}
 
   @typedoc """
   Objects are renderable entities in VC, that can serve as input for other
@@ -15,7 +14,7 @@ defmodule Membrane.VideoCompositor.Scene.Object do
   - video processing nodes - Texture.t() or layouts defining following
   Layout.t() definition structs.
   """
-  @type t :: Layout.t() | Texture.t() | Video.t() | StaticFrame.t()
+  @type t :: Layout.t() | Texture.t() | InputImage.t() | InputVideo.t()
 
   @typedoc """
   Defines how an object can be referenced in Scene.

@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Scene do
   supposed to render.
   """
 
-  alias Membrane.VideoCompositor.Scene.Object
+  alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys

@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Examples.Hard do
   @moduledoc """
   A hard example takes three videos, applies varied transformations to them, and puts
-  them together on the final canvas. Membrane logo is used as a static background image.
+  them together on the final canvas. Placeholder image is used as a static background image.
 
   - The first video is simply rotated and then put in the top left corner
   - The second video is merged with the first video. The result gets
@@ -14,9 +14,8 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging, Overlay, Position}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Object.Input.{StaticFrame, Video}
-  alias Membrane.VideoCompositor.Scene.Object.Texture
-  alias Membrane.VideoCompositor.Scene.Resolution
+  alias Membrane.VideoCompositor.Object.{InputImage, InputVideo, Texture}
+  alias Membrane.VideoCompositor.Resolution
 
   @rotate %Rotate{degrees: 90}
   @ball ToBall
@@ -42,16 +41,16 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
     resolution: nil
   }
 
-  @background_frame_data File.read!(
-                           "lib/membrane/video_compositor/examples/mock/assets/membrane_logo.raw"
-                         )
+  # binary with placeholder data, matching size of
+  # a single yuv420p full hd frame
+  @background_frame_data <<0::3_110_400>>
 
   %Scene{
     objects: [
-      video_1: %Video{input_pad: :video_1},
-      video_2: %Video{input_pad: :video_2},
-      video_3: %Video{input_pad: :video_3},
-      static_background: %StaticFrame{
+      video_1: %InputVideo{input_pad: :video_1},
+      video_2: %InputVideo{input_pad: :video_2},
+      video_3: %InputVideo{input_pad: :video_3},
+      static_background: %InputImage{
         frame: @background_frame_data,
         stream_format: @full_hd
       },

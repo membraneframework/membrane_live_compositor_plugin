@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
   Mocks simple component combing two videos / frames / inputs into one.
   """
 
-  alias Membrane.VideoCompositor.Scene.{Object, Resolution}
+  alias Membrane.VideoCompositor.{Object, Resolution}
 
   @enforce_keys [:inputs, :resolution]
   defstruct @enforce_keys

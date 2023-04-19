@@ -1,7 +1,9 @@
-defmodule Membrane.VideoCompositor.Scene.Object.Input.StaticFrame do
+defmodule Membrane.VideoCompositor.Object.InputImage do
   @moduledoc """
-  Structure representing `StaticFrame` wrapper for using single frame as
-  an object in a scene. It's useful, when user want to use some single image
+  Structure representing `InputImage` wrapper for using single frame as
+  an object in a scene.
+
+  It's useful, when user want to use some single image
   for composing (e.g. some background). With this, user don't have to
   artificially turn image into video, to use it in composition.
   """
@@ -13,7 +15,8 @@ defmodule Membrane.VideoCompositor.Scene.Object.Input.StaticFrame do
 
   @typedoc """
   Defines wrapper for static VC frame InputStatic.
-  The `frame` is raw video binary.
+
+  The `frame` is a raw video binary.
   In `stream_format` only the `width`, `height`, and `pixel_format`
   fields are used, the rest is ignored (`framerate` and `aligned`
   don't have any meaning in the case of static image).

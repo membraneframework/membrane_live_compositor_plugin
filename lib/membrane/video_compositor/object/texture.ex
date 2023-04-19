@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Object.Texture do
+defmodule Membrane.VideoCompositor.Object.Texture do
   @moduledoc """
   Texture takes a frame received from Video Compositor objects,
   applies all transformations and can be passed as an input
@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Texture do
   Basically wraps multiple single-input, single-output processing graph nodes.
   """
 
-  alias Membrane.VideoCompositor.Scene.{Object, Resolution, Transformation}
+  alias Membrane.VideoCompositor.{Object, Resolution, Transformation}
 
   @enforce_keys [:input]
   defstruct @enforce_keys ++ [transformations: [], resolution: :transformed_input_resolution]
