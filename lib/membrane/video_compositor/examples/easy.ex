@@ -9,9 +9,8 @@ defmodule Membrane.VideoCompositor.Examples.Easy do
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Overlay, Position}
   alias Membrane.VideoCompositor.Examples.Mock.Transformations.CornersRounding
-  alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.Object.{InputVideo, Texture}
-  alias Membrane.VideoCompositor.Scene.Resolution
+  alias Membrane.VideoCompositor.{Resolution, Scene}
+  alias Membrane.VideoCompositor.Object.{InputVideo, Texture}
 
   @one_third 1.0 / 3.0
   @sixteen_ninths 16.0 / 9.0

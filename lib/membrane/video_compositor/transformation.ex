@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Transformation do
+defmodule Membrane.VideoCompositor.Transformation do
   @moduledoc """
   Module representing single-input, single-output frames processing graph nodes
   that apply a single effect on the input frame (e.g. crop them or round corners).

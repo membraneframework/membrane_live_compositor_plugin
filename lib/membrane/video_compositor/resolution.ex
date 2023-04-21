@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Resolution do
+defmodule Membrane.VideoCompositor.Resolution do
   @moduledoc """
   Simple resolution definition.
   """

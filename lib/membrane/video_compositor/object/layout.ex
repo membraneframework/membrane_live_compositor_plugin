@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Object.Layout do
+defmodule Membrane.VideoCompositor.Object.Layout do
   @moduledoc """
   Structure representing Layout objects.
 
@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Scene.Object.Layout do
 
   Basically it's a multi-input, single-output node in processing graph.
   """
-  alias Membrane.VideoCompositor.Scene.{Object, Resolution}
+  alias Membrane.VideoCompositor.{Object, Resolution}
 
   @typedoc """
   Type of a map defining on how to map internal layout's ids
