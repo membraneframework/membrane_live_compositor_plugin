@@ -2,9 +2,9 @@ defmodule Membrane.VideoCompositor.Scene do
   @moduledoc """
   Structure representing a top level specification of what is Video Compositor
   supposed to render.
-
   """
-  alias Membrane.VideoCompositor.Scene.Object
+
+  alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys
@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.Scene do
   defmodule RustlerFriendly do
     @moduledoc false
     # A rustler-friendly version of the Scene, prepared for rust serialization
-    alias Membrane.VideoCompositor.Scene.Object.RustlerFriendly, as: RFObject
+    alias Membrane.VideoCompositor.Object.RustlerFriendly, as: RFObject
 
     @type t :: %__MODULE__{
             objects: [{RFObject.name(), RFObject.t()}],

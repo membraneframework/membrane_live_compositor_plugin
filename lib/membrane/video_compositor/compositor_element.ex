@@ -273,6 +273,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
         # not receive end of stream. All videos that were added to the compositor need
         # to receive end of stream, so we need to send one here.
         {:ok, frames} = WgpuAdapter.send_end_of_stream(state.wgpu_state, pad_id)
+
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         buffers = frames |> Enum.map(fn {frame, pts} -> %Buffer{payload: frame, pts: pts} end)
 
         {[buffer: buffers], state}

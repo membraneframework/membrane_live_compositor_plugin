@@ -6,9 +6,9 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Grid do
   parameter. Mocks some components defining different
   video arrangements for a different number of input sources.
   """
-  @behaviour Membrane.VideoCompositor.Scene.Object.Layout
+  @behaviour Membrane.VideoCompositor.Object.Layout
 
-  alias Membrane.VideoCompositor.Scene.{Object, Resolution}
+  alias Membrane.VideoCompositor.{Object, Resolution}
 
   @enforce_keys [:videos_count, :inputs, :resolution]
   defstruct @enforce_keys

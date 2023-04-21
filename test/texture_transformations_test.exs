@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.TextureTransformations do
+defmodule Membrane.VideoCompositor.TextureTransformationsTest do
   @moduledoc false
   use ExUnit.Case
 
@@ -8,11 +8,11 @@ defmodule Membrane.VideoCompositor.Test.TextureTransformations do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
-  alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utils
+  alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Support.Utils
   alias Membrane.VideoCompositor.VideoTransformations
 
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations.{
+  alias Membrane.VideoCompositor.TextureTransformations.{
     CornersRounding,
     Cropping
   }

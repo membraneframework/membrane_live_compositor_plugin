@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Test.Composing do
+defmodule Membrane.VideoCompositor.ComposingTest do
   @moduledoc false
   use ExUnit.Case
 
@@ -7,8 +7,8 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
-  alias Membrane.VideoCompositor.Test.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Test.Support.Utils
+  alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
+  alias Membrane.VideoCompositor.Support.Utils
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
@@ -21,6 +21,10 @@ defmodule Membrane.VideoCompositor.Test.Composing do
   }
 
   @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
+
+  # In this test we need to increase allowed mean square error, due to differences in
+  # "rendering" between ffmpeg created ref and wgpu produced output
+  @allowed_mse 2.5
 
   describe "Checks composition and raw video pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
@@ -109,6 +113,6 @@ defmodule Membrane.VideoCompositor.Test.Composing do
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pipeline, blocking?: true)
 
-    assert Utils.compare_contents_with_error(output_path, reference_path)
+    assert Utils.compare_contents_with_error(output_path, reference_path, @allowed_mse)
   end
 end

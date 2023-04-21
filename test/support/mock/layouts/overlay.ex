@@ -5,10 +5,10 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
   Videos are places on output frame based on their
   given position.
   """
-  @behaviour Membrane.VideoCompositor.Scene.Object.Layout
+  @behaviour Membrane.VideoCompositor.Object.Layout
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
-  alias Membrane.VideoCompositor.Scene.Object
+  alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:overlay_spec, :inputs, :resolution]
   defstruct @enforce_keys

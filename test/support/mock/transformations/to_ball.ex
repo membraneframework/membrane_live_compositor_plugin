@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mock.Transformations.ToBall do
   @moduledoc false
 
-  @behaviour Membrane.VideoCompositor.Scene.Transformation
+  @behaviour Membrane.VideoCompositor.Transformation
 
   @impl true
   def encode(_rotate) do

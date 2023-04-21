@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mock.Transformations.CornersRounding do
   @moduledoc false
 
-  @behaviour Membrane.VideoCompositor.Scene.Transformation
+  @behaviour Membrane.VideoCompositor.Transformation
 
   @enforce_keys [:border_radius]
   defstruct @enforce_keys

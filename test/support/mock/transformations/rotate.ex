@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mock.Transformations.Rotate do
   @moduledoc false
 
-  @behaviour Membrane.VideoCompositor.Scene.Transformation
+  @behaviour Membrane.VideoCompositor.Transformation
 
   @enforce_keys [:degrees]
   defstruct @enforce_keys
