@@ -1,5 +1,6 @@
 #![allow(clippy::needless_borrow)]
 #![allow(clippy::from_over_into)]
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -193,6 +194,71 @@ pub struct InputVideo {
     pub input_pad: PadRef,
 }
 
+#[derive(rustler::NifStruct)]
+#[module = "Membrane.VideoCompositor.Object.InputImage.RustlerFriendly"]
+pub struct InputImage<'a> {
+    pub frame: Frame<'a>,
+    pub resolution: Resolution,
+}
+
+impl<'a> std::fmt::Debug for InputImage<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InputImage")
+            .field("frame", &"<data>")
+            .field("resolution", &self.resolution)
+            .finish()
+    }
+}
+
+/// It might be hard to figure out what this struct is for.
+///
+/// We need to get the `Binary` from rustler in some way. We can't use rustler types
+/// in any type we want to use in tests, because erlang libraries and the BEAM, which are
+/// necessary to use them, are not present in the process address space when running the
+/// tests with `cargo test`.
+///
+/// This struct abstracts the concrete type of the source of the image, allowing any type
+/// that can be borrowed as a `[u8]`. It also implements the `Decoder` and `Encoder` traits,
+/// which allows rustler to automatically serialize and deserialize it, however it can be created
+/// in a testing environment from a regular `[u8]`:
+///
+/// ```
+/// let frame_data: [u8] = [1, 2, 3];
+///
+/// let frame = Frame(Box::new(frame_data));
+/// ```
+///
+/// It is necessary for us to create a wrapper like this, since the orphan rule prevents us
+/// from implementing `Decoder` and `Encoder` on `Box<dyn std::borrow::Borrow<[u8]> + 'a>`
+pub struct Frame<'a>(Box<dyn std::borrow::Borrow<[u8]> + 'a>);
+
+impl<'a> std::borrow::Borrow<[u8]> for Frame<'a> {
+    fn borrow(&self) -> &[u8] {
+        (*self.0).borrow()
+    }
+}
+
+impl<'a> rustler::Decoder<'a> for Frame<'a> {
+    fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
+        Ok(Self(Box::new(rustler::Binary::from_term(term)?)))
+    }
+}
+
+impl rustler::Encoder for Frame<'_> {
+    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
+        let frame: &[u8] = self.borrow();
+
+        let mut binary = rustler::OwnedBinary::new(frame.len())
+            .expect("There is not enough free memory in the BEAM to return this back to elixir");
+
+        // we need to copy all of the data to a new binary here, since the frame may not be an elixir
+        // binary (e.g. it can just be a [u8])
+        binary.as_mut().copy_from_slice(frame);
+
+        binary.release(env).encode(env)
+    }
+}
+
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Object.Texture.RustlerFriendly"]
 pub struct Texture {
@@ -244,18 +310,19 @@ impl Layout {
 }
 
 #[derive(Debug, rustler::NifTaggedEnum)]
-pub enum Object {
+pub enum Object<'a> {
     Layout(Layout),
     Texture(Texture),
     Video(InputVideo),
+    Image(InputImage<'a>),
 }
 
-impl Object {
+impl<'a> Object<'a> {
     pub fn mentioned_names(&self) -> Vec<&Name> {
         match self {
             Object::Layout(layout) => layout.mentioned_names(),
             Object::Texture(texture) => texture.mentioned_names(),
-            Object::Video(_) => Vec::new(),
+            Object::Video(_) | Object::Image(_) => Vec::new(),
         }
     }
 
@@ -263,19 +330,19 @@ impl Object {
         match self {
             Object::Layout(layout) => layout.previous_names(),
             Object::Texture(texture) => texture.previous_names(),
-            Object::Video(_) => Vec::new(),
+            Object::Video(_) | Object::Image(_) => Vec::new(),
         }
     }
 }
 
 #[derive(Debug, rustler::NifStruct)]
 #[module = "Membrane.VideoCompositor.Scene.RustlerFriendly"]
-pub struct Scene {
-    pub objects: Vec<(ObjectName, Object)>,
+pub struct Scene<'a> {
+    pub objects: Vec<(ObjectName, Object<'a>)>,
     pub output: ObjectName,
 }
 
-impl Scene {
+impl<'a> Scene<'a> {
     fn convert_to_graph(self) -> Result<Arc<Node>, SceneParsingError> {
         let objects = HashMap::from_iter(self.objects);
 
@@ -296,6 +363,15 @@ impl Scene {
                 Object::Video(InputVideo { input_pad }) => Arc::new(Node::Video {
                     pad: input_pad.clone(),
                 }),
+
+                Object::Image(InputImage { frame, resolution }) => {
+                    let frame: &[u8] = frame.borrow();
+
+                    Arc::new(Node::Image {
+                        data: frame.to_vec(),
+                        resolution: *resolution,
+                    })
+                }
 
                 Object::Texture(Texture {
                     input,
@@ -347,7 +423,7 @@ impl Scene {
     }
 }
 
-impl TryInto<crate::scene::Scene> for Scene {
+impl<'a> TryInto<crate::scene::Scene> for Scene<'a> {
     type Error = SceneParsingError;
 
     fn try_into(self) -> Result<crate::scene::Scene, Self::Error> {

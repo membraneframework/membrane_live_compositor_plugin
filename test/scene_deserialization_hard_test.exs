@@ -1,12 +1,12 @@
 defmodule Membrane.VideoCompositor.Test.DeserializeHard do
   use ExUnit.Case
 
+  alias Membrane.RawVideo
+
   alias Membrane.VideoCompositor.Wgpu.Native
 
-  alias Membrane.VideoCompositor.TextureTransformations.CornersRounding
-
   alias Membrane.VideoCompositor.Mock.Layouts.{Grid, Merging, Overlay, Position}
-  alias Membrane.VideoCompositor.Mock.Transformations.{Rotate, ToBall}
+  alias Membrane.VideoCompositor.Mock.Transformations.{CornersRounding, Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Object.{InputImage, InputVideo, Texture}
   alias Membrane.VideoCompositor.Resolution
@@ -17,6 +17,15 @@ defmodule Membrane.VideoCompositor.Test.DeserializeHard do
   @three_vids_grid %Grid{videos_count: 3, inputs: nil, resolution: nil}
 
   @full_hd %Resolution{width: 1920, height: 1080}
+
+  @full_hd_image %RawVideo{
+    width: 1920,
+    height: 1080,
+    pixel_format: :I420,
+    framerate: nil,
+    aligned: true
+  }
+
   @full_video_position %Position{
     top_left_corner: {0.0, 0.0},
     width: 1.0,
@@ -46,7 +55,7 @@ defmodule Membrane.VideoCompositor.Test.DeserializeHard do
       video_3: %InputVideo{input_pad: :video_3},
       static_background: %InputImage{
         frame: @background_frame_data,
-        stream_format: @full_hd
+        stream_format: @full_hd_image
       },
       rotated: %Texture{
         input: :video_1,
@@ -64,9 +73,9 @@ defmodule Membrane.VideoCompositor.Test.DeserializeHard do
       grid: %Grid{
         @three_vids_grid
         | inputs: %{
-            0 => :rotated,
-            1 => :rounded,
-            2 => :ball
+            {:input, 0} => :rotated,
+            {:input, 1} => :rounded,
+            {:input, 2} => :ball
           },
           resolution: @full_hd
       },

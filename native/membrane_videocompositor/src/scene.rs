@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::elixir_bridge::elixir_structs::{
-    LayoutInternalName, LayoutOutputResolution, PadRef, TextureOutputResolution,
+    LayoutInternalName, LayoutOutputResolution, PadRef, Resolution, TextureOutputResolution,
 };
 
 /// A node represents a single object in the video-processing graph.
@@ -26,6 +26,11 @@ pub enum Node {
 
     /// This represents the node, through which video frames 'enter' the scene graph.
     Video { pad: PadRef },
+
+    Image {
+        data: Vec<u8>,
+        resolution: Resolution,
+    },
 }
 
 /// A scene represents the full pipeline from video inputs (that come via Membrane pads)

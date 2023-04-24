@@ -37,6 +37,7 @@ defmodule Membrane.VideoCompositor.Object do
   defmodule RustlerFriendly do
     @moduledoc false
     # rustler-friendly versions of all types common to all objects
+    alias Membrane.VideoCompositor.Object.InputImage.RustlerFriendly, as: RFInputImage
     alias Membrane.VideoCompositor.Object.InputVideo.RustlerFriendly, as: RFInputVideo
     alias Membrane.VideoCompositor.Object.Layout.RustlerFriendly, as: RFLayout
     alias Membrane.VideoCompositor.Object.Texture.RustlerFriendly, as: RFTexture
@@ -46,7 +47,11 @@ defmodule Membrane.VideoCompositor.Object do
             | {:atom_pair, binary(), binary()}
             | {:atom_num, binary(), non_neg_integer()}
 
-    @type t :: {:layout, RFLayout.t()} | {:texture, RFTexture.t()} | {:video, RFInputVideo.t()}
+    @type t ::
+            {:layout, RFLayout.t()}
+            | {:texture, RFTexture.t()}
+            | {:video, RFInputVideo.t()}
+            | {:image, RFInputImage.t()}
 
     @type object_output_resolution :: RFTexture.output_resolution() | RFLayout.output_resolution()
   end
@@ -59,6 +64,9 @@ defmodule Membrane.VideoCompositor.Object do
     case object do
       %InputVideo{} ->
         {:video, InputVideo.encode(object)}
+
+      %InputImage{} ->
+        {:image, InputImage.encode(object)}
 
       %Texture{} ->
         {:texture, Texture.encode(object)}

@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::elixir_structs::*;
 
 pub struct SceneValidator<'a> {
-    objects: &'a [(ObjectName, Object)],
+    objects: &'a [(ObjectName, Object<'a>)],
     final_object_name: &'a ObjectName,
 }
 
