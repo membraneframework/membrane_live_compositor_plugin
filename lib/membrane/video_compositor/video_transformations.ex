@@ -5,8 +5,7 @@ defmodule Membrane.VideoCompositor.VideoTransformations do
   applied in the order in which they appear in the list.
   """
 
-  alias Membrane.VideoCompositor.VideoTransformations
-  alias Membrane.VideoCompositor.VideoTransformations.TextureTransformations
+  alias Membrane.VideoCompositor.{TextureTransformations, VideoTransformations}
 
   @type t :: %__MODULE__{
           texture_transformations: list(TextureTransformations.t())

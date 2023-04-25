@@ -87,7 +87,7 @@ impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
 
 /// Elixir struct wrapping parameters describing corner rounding texture transformation
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.CornersRounding"]
+#[module = "Membrane.VideoCompositor.TextureTransformations.CornersRounding"]
 pub struct ElixirCornersRounding {
     pub border_radius: u32,
 }
@@ -104,7 +104,7 @@ impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
 
 /// Elixir struct wrapping parameters describing cropping texture transformation
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.VideoTransformations.TextureTransformations.Cropping"]
+#[module = "Membrane.VideoCompositor.TextureTransformations.Cropping"]
 pub struct ElixirCropping {
     pub crop_top_left_corner: (f32, f32),
     pub crop_size: (f32, f32),

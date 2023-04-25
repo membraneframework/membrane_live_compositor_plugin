@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.2.2"
+  @version "0.3.1"
   @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
@@ -94,13 +94,15 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
+      filter_modules:
+        ~r/Membrane\.VideoCompositor(\.VideoTransformations$|\.TextureTransformations.*|\.RustStructs\.BaseVideoPlacement|$)/,
       nest_modules_by_prefix: [
         Membrane.VideoCompositor,
-        Membrane.VideoCompositor.VideoTransformations
+        Membrane.VideoCompositor.TextureTransformations
       ],
       groups_for_modules: [
-        "Video transformations": [
-          ~r/^Membrane\.VideoCompositor\.VideoTransformations($|\.)/
+        "Texture transformations": [
+          ~r/^Membrane\.VideoCompositor\.TextureTransformations($|\.)/
         ]
       ]
     ]
