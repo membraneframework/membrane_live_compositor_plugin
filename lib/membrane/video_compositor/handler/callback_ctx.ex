@@ -1,5 +1,8 @@
 defmodule Membrane.VideoCompositor.Handler.CallbackCtx do
-  @moduledoc false
+  @moduledoc """
+  Structure representing a common part of the context
+  for all of the callbacks.
+  """
   alias Membrane.VideoCompositor.Scene
 
   @enforce_keys [:input_pads, :scenes_queue, :current_scene]
