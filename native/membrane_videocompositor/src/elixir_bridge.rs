@@ -4,7 +4,8 @@ use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
 use rustler::ResourceArc;
 
-mod elixir_structs;
+pub mod elixir_structs;
+mod scene_validation;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelFormat {
@@ -294,6 +295,13 @@ fn send_end_of_stream(
     Ok((atoms::ok(), outputs))
 }
 
+#[rustler::nif]
+pub fn test_scene_deserialization(obj: Scene) -> Result<rustler::Atom, rustler::Error> {
+    let _scene: crate::scene::Scene = obj.try_into()?;
+
+    Ok(atoms::ok())
+}
+
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [
@@ -305,10 +313,12 @@ rustler::init!(
         send_end_of_stream,
         update_stream_format,
         update_placement,
-        update_transformations
+        update_transformations,
+        test_scene_deserialization,
     ],
     load = |env, _| {
         rustler::resource!(State, env);
+
         true
     }
 );

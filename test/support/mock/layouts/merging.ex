@@ -1,7 +1,8 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Merging do
   @moduledoc """
   Mocks simple component combing two videos / frames / inputs into one.
   """
+  @behaviour Membrane.VideoCompositor.Object.Layout
 
   alias Membrane.VideoCompositor.{Object, Resolution}
 
@@ -15,4 +16,9 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Merging do
           },
           resolution: Resolution.t()
         }
+
+  @impl true
+  def encode(_merging) do
+    1
+  end
 end

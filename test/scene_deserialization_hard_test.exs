@@ -1,18 +1,12 @@
-defmodule Membrane.VideoCompositor.Examples.Hard do
-  @moduledoc """
-  A hard example takes three videos, applies varied transformations to them, and puts
-  them together on the final canvas. Placeholder image is used as a static background image.
+defmodule Membrane.VideoCompositor.Test.DeserializeHard do
+  use ExUnit.Case
 
-  - The first video is simply rotated and then put in the top left corner
-  - The second video is merged with the first video. The result gets
-  corner rounded and is put in the top right corner
-  - The third video is turned into a ball and put in the middle bottom of the screen
-  """
+  alias Membrane.RawVideo
 
-  alias Membrane.VideoCompositor.TextureTransformations.CornersRounding
+  alias Membrane.VideoCompositor.Wgpu.Native
 
-  alias Membrane.VideoCompositor.Examples.Mock.Layouts.{Grid, Merging, Overlay, Position}
-  alias Membrane.VideoCompositor.Examples.Mock.Transformations.{Rotate, ToBall}
+  alias Membrane.VideoCompositor.Mock.Layouts.{Grid, Merging, Overlay, Position}
+  alias Membrane.VideoCompositor.Mock.Transformations.{CornersRounding, Rotate, ToBall}
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Object.{InputImage, InputVideo, Texture}
   alias Membrane.VideoCompositor.Resolution
@@ -23,6 +17,15 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   @three_vids_grid %Grid{videos_count: 3, inputs: nil, resolution: nil}
 
   @full_hd %Resolution{width: 1920, height: 1080}
+
+  @full_hd_image %RawVideo{
+    width: 1920,
+    height: 1080,
+    pixel_format: :I420,
+    framerate: nil,
+    aligned: true
+  }
+
   @full_video_position %Position{
     top_left_corner: {0.0, 0.0},
     width: 1.0,
@@ -45,14 +48,14 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
   # a single yuv420p full hd frame
   @background_frame_data <<0::3_110_400>>
 
-  %Scene{
+  @scene %Scene{
     objects: [
       video_1: %InputVideo{input_pad: :video_1},
       video_2: %InputVideo{input_pad: :video_2},
       video_3: %InputVideo{input_pad: :video_3},
       static_background: %InputImage{
         frame: @background_frame_data,
-        stream_format: @full_hd
+        stream_format: @full_hd_image
       },
       rotated: %Texture{
         input: :video_1,
@@ -70,9 +73,9 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
       grid: %Grid{
         @three_vids_grid
         | inputs: %{
-            0 => :rotated,
-            1 => :rounded,
-            2 => :ball
+            {:input, 0} => :rotated,
+            {:input, 1} => :rounded,
+            {:input, 2} => :ball
           },
           resolution: @full_hd
       },
@@ -87,4 +90,8 @@ defmodule Membrane.VideoCompositor.Examples.Hard do
     ],
     output: :final_object
   }
+
+  test "deserialize" do
+    assert :ok = Native.test_scene_deserialization(Scene.encode(@scene))
+  end
 end

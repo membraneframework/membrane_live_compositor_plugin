@@ -1,10 +1,11 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
   @moduledoc """
   Mocks Overlay layout.
 
   Videos are places on output frame based on their
   given position.
   """
+  @behaviour Membrane.VideoCompositor.Object.Layout
 
   alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
   alias Membrane.VideoCompositor.Object
@@ -26,4 +27,8 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Overlay do
           inputs: %{placing_name() => Object.name()},
           resolution: Object.object_output_resolution()
         }
+  @impl true
+  def encode(_overlay) do
+    2
+  end
 end

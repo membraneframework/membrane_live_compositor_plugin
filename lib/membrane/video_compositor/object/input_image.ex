@@ -9,6 +9,7 @@ defmodule Membrane.VideoCompositor.Object.InputImage do
   """
 
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Resolution
 
   @enforce_keys [:frame, :stream_format]
   defstruct @enforce_keys
@@ -26,4 +27,36 @@ defmodule Membrane.VideoCompositor.Object.InputImage do
           frame: binary(),
           stream_format: RawVideo.t()
         }
+
+  defmodule RustlerFriendly do
+    @moduledoc false
+
+    @type t :: %__MODULE__{
+            frame: binary(),
+            resolution: Resolution.t()
+          }
+
+    @enforce_keys [:frame, :resolution]
+    defstruct @enforce_keys
+  end
+
+  @spec encode(t()) :: RustlerFriendly.t()
+  def encode(image) do
+    %__MODULE__{
+      frame: frame,
+      stream_format: %RawVideo{
+        width: width,
+        height: height,
+        pixel_format: :I420
+      }
+    } = image
+
+    %RustlerFriendly{
+      frame: frame,
+      resolution: %Resolution{
+        width: width,
+        height: height
+      }
+    }
+  end
 end

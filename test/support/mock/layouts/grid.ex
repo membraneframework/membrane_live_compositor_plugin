@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
+defmodule Membrane.VideoCompositor.Mock.Layouts.Grid do
   @moduledoc """
   Mock Grid Layout.
 
@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
   parameter. Mocks some components defining different
   video arrangements for a different number of input sources.
   """
+  @behaviour Membrane.VideoCompositor.Object.Layout
 
   alias Membrane.VideoCompositor.{Object, Resolution}
 
@@ -19,4 +20,9 @@ defmodule Membrane.VideoCompositor.Examples.Mock.Layouts.Grid do
           },
           resolution: Resolution.t()
         }
+
+  @impl true
+  def encode(_grid) do
+    0
+  end
 end

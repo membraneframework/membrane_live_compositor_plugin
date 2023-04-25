@@ -7,7 +7,7 @@ use super::TextureTransformation;
 
 /// Struct representing parameters for video cropping texture transformation.
 /// top_left_corner represents the coords of the top left corner of cropped (visible)
-/// part of the video (in x ∈ [0,1], y ∈ [0, 1] proportion range).
+/// part of the video (in x ∈ \[0,1\], y ∈ \[0, 1\] proportion range).
 /// crop_width represents the width of the cropped video (visible part) in [0, 1] relative range.
 /// crop_height represents the height of the cropped video (visible part) in [0, 1] relative range.
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
