@@ -3,6 +3,6 @@ defmodule Membrane.VideoCompositor.Handler.CallbackCtx.VideoRemove do
   Structure representing a context that is passed when
   an Input Video is removed.
   """
-  alias Membrane.VideoCompositor.Handler.CallbackCtx
-  @type t :: CallbackCtx.t()
+
+  use Membrane.VideoCompositor.Handler.CallbackCtx
 end

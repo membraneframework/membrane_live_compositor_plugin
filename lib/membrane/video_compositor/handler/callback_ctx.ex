@@ -3,19 +3,29 @@ defmodule Membrane.VideoCompositor.Handler.CallbackCtx do
   Structure representing a common part of the context
   for all of the callbacks.
   """
+  alias Membrane.{Pad, Time}
   alias Membrane.VideoCompositor.Scene
 
-  @enforce_keys [:input_pads, :scenes_queue, :current_scene]
-  defstruct @enforce_keys
-
-  @type intput_pads :: list(Membrane.Pad.ref_t())
-
-  @type start_scene_timestamp :: Membrane.Time.t()
-  @type scenes_queue :: list({Scene.t(), start_scene_timestamp()})
-
-  @type t :: %__MODULE__{
-          input_pads: intput_pads(),
-          scenes_queue: scenes_queue(),
+  defmacro __using__(fields) do
+    default_fields =
+      quote do
+        [
+          input_pads: list(Pad.ref_t()),
+          scenes_queue: list({scene :: Scene.t(), start_scene_timestamp :: Time.t()}),
           current_scene: Scene.t()
-        }
+        ]
+      end
+
+    quote do
+      @type t :: %__MODULE__{unquote_splicing(fields ++ default_fields)}
+
+      fields_names = unquote(Keyword.keys(fields))
+      default_fields_names = unquote(Keyword.keys(default_fields))
+
+      @enforce_keys Module.get_attribute(__MODULE__, :enforce_keys, fields_names) ++
+                      default_fields_names
+
+      defstruct fields_names ++ default_fields_names
+    end
+  end
 end
