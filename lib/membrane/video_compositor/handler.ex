@@ -19,11 +19,6 @@ defmodule Membrane.VideoCompositor.Handler do
   @type video_details :: {pad :: Pad.ref_t(), format :: StreamFormat.t()}
 
   @typedoc """
-  Type of a valid return value from a callback.
-  """
-  @type callback_return :: immediate_callback_return() | timed_callback_return()
-
-  @typedoc """
   Type of a valid return value from the callback. By returning this type,
   the scene will be changed immediate, i.e. at the moment when the event happens.
   """
@@ -34,10 +29,15 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @type timed_callback_return :: {{start_ts :: Time.t(), scene :: Scene.t()}, state :: state()}
 
+  @typedoc """
+  Type of a valid return value from callback not changing the current scene.
+  """
+  @type idle_callback_return :: {state :: state()}
+
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.Init.t()) :: immediate_callback_return()
+  @callback handle_init() :: immediate_callback_return()
 
   @doc """
   Callback invoked upon addition of the new
@@ -47,7 +47,7 @@ defmodule Membrane.VideoCompositor.Handler do
               video :: video_details(),
               ctx :: CallbackContext.VideoAdd.t(),
               state :: state()
-            ) :: immediate_callback_return()
+            ) :: immediate_callback_return() | idle_callback_return()
 
   @doc """
   Callback invoked upon removal of
@@ -57,7 +57,7 @@ defmodule Membrane.VideoCompositor.Handler do
               video :: video_details(),
               ctx :: CallbackContext.VideoRemove.t(),
               state :: state()
-            ) :: immediate_callback_return()
+            ) :: immediate_callback_return() | idle_callback_return()
 
   @doc """
   Callback invoked when video compositor receives a message
@@ -73,5 +73,7 @@ defmodule Membrane.VideoCompositor.Handler do
   `Membrane.VideoCompositor.Handler.CallbackContext.Info`.
   """
   @callback handle_info(msg :: any(), ctx :: CallbackContext.Info.t(), state :: state()) ::
-              callback_return()
+              immediate_callback_return()
+              | timed_callback_return()
+              | idle_callback_return()
 end

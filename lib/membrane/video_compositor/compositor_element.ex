@@ -110,8 +110,6 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_pad_added(pad, context, state = %State{}) do
-    # IO.inspect(callback: "addded", pad: pad, context: context.pads)
-
     timestamp_offset =
       case context.options.timestamp_offset do
         timestamp_offset when timestamp_offset < 0 ->

@@ -6,8 +6,6 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   alias Membrane.{Pad, Time}
   alias Membrane.VideoCompositor.Scene
 
-  @spec __using__(any) ::
-          {:__block__, [], [{:= | :@ | :defstruct | {any, any, any}, [...], [...]}, ...]}
   defmacro __using__(custom_fields_with_docs) do
     default_fields =
       quote do
