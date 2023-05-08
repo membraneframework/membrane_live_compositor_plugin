@@ -11,6 +11,9 @@ use textures::*;
 use videos::*;
 
 use crate::{elixir_bridge::RawVideo, errors::CompositorError};
+
+use membrane_video_compositor_common::wgpu;
+
 pub use math::{Vec2d, Vertex};
 pub use videos::{VideoPlacement, VideoProperties};
 

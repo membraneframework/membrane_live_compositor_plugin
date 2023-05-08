@@ -1,5 +1,5 @@
 {
-    "C_Cpp.errorSquiggles": "Disabled",
+    "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "__locale": "c",
         "filter.h": "c",
@@ -21,6 +21,7 @@
         "parseutils.h": "c"
     },
     "rust-analyzer.linkedProjects": [
-        "native/membrane_videocompositor/Cargo.toml"
+        "native/membrane_videocompositor/Cargo.toml",
+        "native/membrane_video_compositor_common/Cargo.toml"
     ]
 }

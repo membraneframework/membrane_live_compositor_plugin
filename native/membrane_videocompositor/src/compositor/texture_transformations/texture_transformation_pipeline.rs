@@ -6,6 +6,8 @@
 use crate::compositor::{pipeline_common::PipelineCommon, textures::RGBATexture, Vertex};
 use std::any::TypeId;
 
+use membrane_video_compositor_common::wgpu;
+
 use super::TextureTransformation;
 
 #[rustfmt::skip]

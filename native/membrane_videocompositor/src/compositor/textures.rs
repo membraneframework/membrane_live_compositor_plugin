@@ -1,5 +1,7 @@
 use super::colour_converters::RGBAToYUVConverter;
 
+use membrane_video_compositor_common::wgpu;
+
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YUVPlane {

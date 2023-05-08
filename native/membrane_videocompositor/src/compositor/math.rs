@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use membrane_video_compositor_common::wgpu;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 /// A point in 2D space

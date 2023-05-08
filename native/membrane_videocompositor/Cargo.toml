@@ -16,6 +16,6 @@ bytemuck = { version = "1.12.1", features = ["derive"] }
 cgmath = "0.18.0"
 futures-intrusive = "0.4.0"
 pollster = "0.2.5"
-rustler = "0.26.0"
 thiserror = "1.0.35"
-wgpu = "0.14.0"
+rustler = "0.28.0"
+membrane_video_compositor_common = { path = "../membrane_video_compositor_common" }

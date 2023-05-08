@@ -1,5 +1,5 @@
 use crate::compositor::Vertex;
-use wgpu::util::DeviceExt;
+use membrane_video_compositor_common::wgpu::{self, util::DeviceExt};
 
 const VERTICES: [Vertex; 4] = [
     Vertex {

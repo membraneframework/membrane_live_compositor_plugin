@@ -13,11 +13,8 @@ jobs:
       - run:
           name: Rust lint
           command: |
-            for path in native/*
-            do
-              cargo fmt --manifest-path $path/Cargo.toml -- --check
-              cargo clippy --manifest-path $path/Cargo.toml -- -D warnings
-            done
+              cargo fmt --all --manifest-path native/Cargo.toml -- --check
+              cargo clippy --workspace --manifest-path native/Cargo.toml -- -D warnings
 
   rust_tests:
     executor: 
@@ -29,10 +26,7 @@ jobs:
       - run:
           name: Rust tests
           command: |
-            for path in native/*
-            do
-              cargo test --manifest-path $path/Cargo.toml
-            done
+              cargo test --workspace --manifest-path native/Cargo.toml
 
   elixir_test_with_software_rendering:
     docker:
