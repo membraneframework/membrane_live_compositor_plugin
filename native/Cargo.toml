@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "membrane_video_compositor_common",
-    "membrane_videocompositor",
+    "membrane_video_compositor",
 ]
 
 resolver = "2"
