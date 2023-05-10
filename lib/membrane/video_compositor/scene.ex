@@ -25,12 +25,12 @@ defmodule Membrane.VideoCompositor.Scene do
 
     @spec add_video(Scene.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: Scene.t()
     def add_video(current_scene, added_pad, %{video_config: video_config}) do
-      Map.put(current_scene, added_pad, video_config)
+      Bunch.Struct.put_in(current_scene, [:videos_configs, added_pad], video_config)
     end
 
     @spec remove_video(Scene.t(), Pad.ref_t()) :: Scene.t()
     def remove_video(current_scene, removed_pad) do
-      Map.delete(current_scene, removed_pad)
+      Bunch.Struct.delete_in(current_scene, [:videos_configs, removed_pad])
     end
   end
 end

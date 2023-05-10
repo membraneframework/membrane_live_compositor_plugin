@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
               [
                 pads_states: %{},
                 previous_interval_end_pts: nil,
-                current_output_format: %CompositorCoreFormat{frames: %{}},
+                current_output_format: %CompositorCoreFormat{pads_formats: %{}},
                 current_scene: Scene.empty(),
                 most_recent_frame_pts: 0
               ]

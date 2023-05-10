@@ -4,8 +4,8 @@ defmodule Membrane.VideoCompositor.Scene.VideoConfig do
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
 
-  @enforce_keys [:placement, :transformations]
-  defstruct @enforce_keys
+  @enforce_keys [:placement]
+  defstruct @enforce_keys ++ [transformations: VideoTransformations.empty()]
 
   @type t :: %__MODULE__{
           placement: BaseVideoPlacement.t(),

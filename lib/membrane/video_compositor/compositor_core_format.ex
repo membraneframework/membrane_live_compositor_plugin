@@ -3,10 +3,10 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
 
   alias Membrane.{Pad, RawVideo}
 
-  @enforce_keys [:frames]
+  @enforce_keys [:pads_formats]
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          frames: %{Pad.ref_t() => RawVideo.t()}
+          pads_formats: %{Pad.ref_t() => RawVideo.t()}
         }
 end
