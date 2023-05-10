@@ -2,16 +2,16 @@ use std::{any::Any, sync::Arc};
 
 use crate::plugins::{layout::UntypedLayout, transformation::UntypedTransformation};
 
-pub struct ElixirTypePacket {
+pub struct ElixirCustomStructPacket {
     pointer: (usize, usize),
 }
 
-impl ElixirTypePacket {
-    pub fn encode<T: 'static>(payload: T) -> ElixirTypePacket {
+impl ElixirCustomStructPacket {
+    pub fn encode<T: 'static>(payload: T) -> ElixirCustomStructPacket {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer: (usize, usize) = unsafe { std::mem::transmute(payload) };
 
-        ElixirTypePacket { pointer }
+        ElixirCustomStructPacket { pointer }
     }
 
     /// # Safety
@@ -26,14 +26,14 @@ impl ElixirTypePacket {
     }
 }
 
-impl<'a> rustler::Decoder<'a> for ElixirTypePacket {
+impl<'a> rustler::Decoder<'a> for ElixirCustomStructPacket {
     fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
         let pointer: (usize, usize) = rustler::Decoder::decode(term)?;
         Ok(Self { pointer })
     }
 }
 
-impl rustler::Encoder for ElixirTypePacket {
+impl rustler::Encoder for ElixirCustomStructPacket {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         self.pointer.encode(env)
     }
