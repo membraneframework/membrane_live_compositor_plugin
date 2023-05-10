@@ -7,7 +7,7 @@ pub struct ElixirCustomStructPacket {
 }
 
 impl ElixirCustomStructPacket {
-    pub fn encode<T: 'static>(payload: T) -> ElixirCustomStructPacket {
+    pub fn encode<T: Send + 'static>(payload: T) -> ElixirCustomStructPacket {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer: (usize, usize) = unsafe { std::mem::transmute(payload) };
 
@@ -47,7 +47,7 @@ macro_rules! trait_packet {
         }
 
         impl $struct {
-            pub fn encode(payload: impl $trait) -> Self {
+            pub fn encode(payload: impl $trait + Send) -> Self {
                 let payload: ::std::sync::Arc<dyn $trait> = ::std::sync::Arc::new(payload);
                 let pointer: (usize, usize) = unsafe { ::std::mem::transmute(payload) };
                 Self { pointer }
