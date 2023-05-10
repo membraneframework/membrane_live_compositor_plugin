@@ -4,23 +4,33 @@ defmodule Membrane.VideoCompositor.Scene do
   supposed to render.
   """
 
-  alias Membrane.VideoCompositor.Scene.Object
+  alias Membrane.Pad
+  alias Membrane.VideoCompositor.Scene
+  alias Membrane.VideoCompositor.Scene.VideoConfig
 
-  @enforce_keys [:objects, :output]
+  @enforce_keys [:videos_configs]
   defstruct @enforce_keys
 
-  @typedoc """
-  The main part of the Scene are `Membrane.VideoCompositor.Scene.Object`s
-  and interactions between them. There are three kinds of Objects:
-  - `Membrane.VideoCompositor.Scene.Object.InputVideo` - which maps
-  an input pad of element into Scene object.
-  - `Membrane.VideoCompositor.Scene.Object.Texture` - single input object,
-  taking frames and applying a series of transformations onto it.
-  - `Membrane.VideoCompositor.Scene.Object.Layout` - combining
-  frames from multiple inputs into a single output.
-  """
   @type t :: %__MODULE__{
-          objects: [{Object.name(), Object.t()}],
-          output: Object.name()
+          videos_configs: %{Pad.ref_t() => VideoConfig.t()}
         }
+
+  @spec empty() :: t()
+  def empty() do
+    %Scene{videos_configs: %{}}
+  end
+
+  defmodule MockCallbacks do
+    @moduledoc false
+
+    @spec add_video(Scene.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: Scene.t()
+    def add_video(current_scene, added_pad, %{video_config: video_config}) do
+      Map.put(current_scene, added_pad, video_config)
+    end
+
+    @spec remove_video(Scene.t(), Pad.ref_t()) :: Scene.t()
+    def remove_video(current_scene, removed_pad) do
+      Map.delete(current_scene, removed_pad)
+    end
+  end
 end
