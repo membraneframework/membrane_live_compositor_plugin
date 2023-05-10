@@ -18,7 +18,8 @@ impl ElixirCustomStructPacket {
     /// The caller must ensure that all of the following conditions are met:
     ///  - The packet must have been encoded in the same address space as the call site
     ///  - The packet must have been encoded in a crate compiled in the same compilation as the call site
-    ///  - The packet must not have been cloned or duplicated in any way in elixir
+    ///  - This method can only be called **once** per packet's content, i.e. You cannot copy
+    ///    this struct in elixir and pass it to two separate rust functions that would decode it twice
     pub unsafe fn decode(self) -> Arc<dyn Any> {
         let payload: Arc<dyn Any> = unsafe { std::mem::transmute(self.pointer) };
 
