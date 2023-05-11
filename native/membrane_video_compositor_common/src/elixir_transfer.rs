@@ -2,18 +2,18 @@ use std::{any::Any, marker::PhantomData, sync::Arc};
 
 use crate::plugins::{layout::UntypedLayout, transformation::UntypedTransformation};
 
-pub struct ElixirCustomStructPacket {
+pub struct CustomStructElixirPacket {
     pointer: (usize, usize),
 }
 
 /// This struct is meant for encoding and transferring structs defined and used only in the plugins
 /// (i.e. unknown during the compilation of the compositor)
-impl ElixirCustomStructPacket {
-    pub fn encode<T: Send + 'static>(payload: T) -> ElixirCustomStructPacket {
+impl CustomStructElixirPacket {
+    pub fn encode<T: Send + 'static>(payload: T) -> Self {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer = unsafe { std::mem::transmute(payload) };
 
-        ElixirCustomStructPacket { pointer }
+        CustomStructElixirPacket { pointer }
     }
 
     /// # Safety
@@ -29,26 +29,26 @@ impl ElixirCustomStructPacket {
     }
 }
 
-impl<'a> rustler::Decoder<'a> for ElixirCustomStructPacket {
+impl<'a> rustler::Decoder<'a> for CustomStructElixirPacket {
     fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
         let pointer = rustler::Decoder::decode(term)?;
         Ok(Self { pointer })
     }
 }
 
-impl rustler::Encoder for ElixirCustomStructPacket {
+impl rustler::Encoder for CustomStructElixirPacket {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         self.pointer.encode(env)
     }
 }
 
 /// This struct is meant for encoding and transferring structs used both in the compositor and in the plugins
-pub struct ElixirStructPacket<T: Send + 'static> {
+pub struct StructElixirPacket<T: Send + 'static> {
     pointer: usize,
     _phantom: PhantomData<T>,
 }
 
-impl<T: Send + 'static> ElixirStructPacket<T> {
+impl<T: Send + 'static> StructElixirPacket<T> {
     pub fn encode(payload: T) -> Self {
         let payload = Arc::new(payload);
         let pointer = unsafe { std::mem::transmute(payload) };
@@ -70,7 +70,7 @@ impl<T: Send + 'static> ElixirStructPacket<T> {
     }
 }
 
-impl<'a, T: Send + 'static> rustler::Decoder<'a> for ElixirStructPacket<T> {
+impl<'a, T: Send + 'static> rustler::Decoder<'a> for StructElixirPacket<T> {
     fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
         let pointer = term.decode()?;
         Ok(Self {
@@ -80,7 +80,7 @@ impl<'a, T: Send + 'static> rustler::Decoder<'a> for ElixirStructPacket<T> {
     }
 }
 
-impl<T: Send + 'static> rustler::Encoder for ElixirStructPacket<T> {
+impl<T: Send + 'static> rustler::Encoder for StructElixirPacket<T> {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         self.pointer.encode(env)
     }
@@ -125,6 +125,6 @@ macro_rules! trait_packet {
     };
 }
 
-trait_packet!(UntypedTransformation, ElixirTransformationPacket);
+trait_packet!(UntypedTransformation, TransformationElixirPacket);
 
-trait_packet!(UntypedLayout, ElixirLayoutPacket);
+trait_packet!(UntypedLayout, LayoutElixirPacket);
