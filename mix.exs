@@ -82,9 +82,14 @@ defmodule Membrane.VideoCompositor.Mixfile do
       files:
         ["lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs"] ++
           Enum.map(
-            ["src", ".cargo/config", "Cargo.toml", "Cargo.lock"],
+            ["src", ".cargo/config", "Cargo.toml"],
             &"native/membrane_video_compositor/#{&1}"
-          )
+          ) ++
+          Enum.map(
+            ["src", ".cargo/config", "Cargo.toml"],
+            &"native/membrane_video_compositor_common/#{&1}"
+          ) ++
+          ["native/Cargo.toml", "native/Cargo.lock"]
     ]
   end
 
