@@ -95,7 +95,7 @@ impl InnerState {
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn init(
     #[allow(unused)] env: rustler::Env,
     output_stream_format: ElixirRawVideo,
@@ -120,7 +120,7 @@ impl rustler::Encoder for UploadFrameResult<'_> {
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn process_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,
@@ -140,7 +140,7 @@ fn process_frame<'a>(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn force_render(
     env: rustler::Env<'_>,
     state: ResourceArc<State>,
@@ -166,7 +166,7 @@ fn get_frame(state: &mut InnerState) -> (rustler::OwnedBinary, u64) {
     (output, pts)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn add_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
@@ -205,7 +205,7 @@ pub fn convert_z(z: f32) -> f32 {
     1.0 - z.max(1e-7)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn update_stream_format(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
@@ -227,7 +227,7 @@ fn update_stream_format(
     Ok(atoms::ok())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn update_placement(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
@@ -245,7 +245,7 @@ fn update_placement(
     Ok(atoms::ok())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn update_transformations(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
@@ -263,7 +263,7 @@ fn update_transformations(
     Ok(atoms::ok())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn remove_video(
     #[allow(unused)] env: rustler::Env<'_>,
     state: ResourceArc<State>,
@@ -273,7 +273,7 @@ fn remove_video(
     Ok(atoms::ok())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn send_end_of_stream(
     #[allow(unused)] env: rustler::Env<'_>,
     state: ResourceArc<State>,
