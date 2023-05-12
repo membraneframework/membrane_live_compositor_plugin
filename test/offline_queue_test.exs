@@ -25,8 +25,8 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   }
 
   @video_stream_format %RawVideo{
-    width: 16,
-    height: 9,
+    width: 1920,
+    height: 1080,
     framerate: {1, 1},
     pixel_format: :I420,
     aligned: true
@@ -35,7 +35,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   @pad1 {Pad, :input, 1}
   @pad2 {Pad, :input, 2}
 
-  @pad2_ts_offset 1_000_000_001
+  @pad2_pts_offset 1_000_000_001
 
   test "Check updating stream format and scene on send buffer" do
     state = setup_videos()
@@ -66,13 +66,35 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
   # test "Removed pad doesn't block queue" do
   #   state = setup_videos()
+  #   assert {[], state} = OfflineQueue.handle_process(@pad2, @buffer, {}, state)
+  #   assert {[], state} = OfflineQueue.handle_process(@pad2, @buffer, {}, state)
 
-  #   {actions, state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
+  #   stream_format_action = [
+  #     stream_format:
+  #       {:compositor_core, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}
+  #   ]
+
+  #   scene_action = [
+  #     notify_child:
+  #       {:compositor, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
+  #   ]
+
+  #   first_output_buffer = %Buffer{
+  #     pts: 0,
+  #     dts: 0,
+  #     payload: %{@pad1 => @frame}
+  #   }
+
+  #   buffer_action = [
+  #     buffer: {:compositor_core, first_output_buffer}
+  #   ]
+
+  #   {actions, state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
   # end
 
   defp setup_videos() do
     pad1_options = %{video_config: @video_config, timestamp_offset: 0}
-    pad2_options = %{video_config: @video_config, timestamp_offset: @pad2_ts_offset}
+    pad2_options = %{video_config: @video_config, timestamp_offset: @pad2_pts_offset}
 
     assert {[], state} = OfflineQueue.handle_init(%{}, %{target_fps: {1, 1}})
 

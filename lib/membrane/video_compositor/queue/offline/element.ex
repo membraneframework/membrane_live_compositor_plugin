@@ -54,7 +54,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   def handle_pad_removed(pad, _ctx, state = %State{}) do
     state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], :end_of_stream)
 
-    pop_frames_while_all_pads_ready({[], state})
+    pop_events_while_all_pads_ready({[], state})
   end
 
   @impl true
@@ -83,7 +83,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     if state.pads_states == %{} do
       {[end_of_stream: :compositor_core], state}
     else
-      pop_frames_while_all_pads_ready({[], state})
+      pop_events_while_all_pads_ready({[], state})
     end
   end
 
@@ -109,12 +109,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end
   end
 
-  @spec pop_frames_while_all_pads_ready({compositor_actions(), State.t()}) ::
+  @spec pop_events_while_all_pads_ready({compositor_actions(), State.t()}) ::
           {compositor_actions(), State.t()}
-  defp pop_frames_while_all_pads_ready({actions, state}) do
+  defp pop_events_while_all_pads_ready({actions, state}) do
+    state = drop_eos_pads(state)
+
     if all_pads_queues_ready?(state) do
       handle_all_pads_queues_ready(state)
-      |> pop_frames_while_all_pads_ready()
+      |> pop_events_while_all_pads_ready()
       |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
     else
       {actions, state}
