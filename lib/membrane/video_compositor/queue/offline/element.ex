@@ -33,6 +33,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     demand_mode: :auto,
     accepted_format: %CompositorCoreFormat{}
 
+  @type compositor_actions :: [
+          Membrane.Element.Action.stream_format_t()
+          | State.notify_compositor_scene()
+          | Membrane.Element.Action.buffer_t()
+        ]
+
   @impl true
   def handle_init(_ctx, _options = %{target_fps: target_fps}) do
     {[], %State{target_fps: target_fps}}
@@ -47,7 +53,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @impl true
   def handle_pad_removed(pad, _ctx, state = %State{}) do
     state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], :end_of_stream)
-    {[], state}
+
+    pop_frames_while_all_pads_ready({[], state})
   end
 
   @impl true
@@ -73,15 +80,10 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         &(&1 ++ [{:frame, frame_pts, buffer.payload}])
       )
 
-    cond do
-      state.pads_states == %{} ->
-        {[end_of_stream: :compositor_core], state}
-
-      all_pads_queues_ready?(state) ->
-        handle_all_pads_queues_ready(state)
-
-      true ->
-        {[], state}
+    if state.pads_states == %{} do
+      {[end_of_stream: :compositor_core], state}
+    else
+      pop_frames_while_all_pads_ready({[], state})
     end
   end
 
@@ -107,31 +109,20 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end
   end
 
-  @spec all_pads_queues_ready?(State.t()) :: boolean()
-  defp all_pads_queues_ready?(state = %State{pads_states: pads_states}) do
-    interval_end = next_interval_end(state)
-
-    Enum.all?(pads_states, fn {_pad, pad_state} -> pad_ready?(pad_state, interval_end) end)
-  end
-
-  @spec pad_ready?(PadState.t(), Time.non_neg_t()) :: boolean()
-  defp pad_ready?(
-         %PadState{events_queue: events_queue, timestamp_offset: timestamp_offset},
-         pts
-       ) do
-    if timestamp_offset > pts do
-      true
+  @spec pop_frames_while_all_pads_ready({compositor_actions(), State.t()}) ::
+          {compositor_actions(), State.t()}
+  defp pop_frames_while_all_pads_ready({actions, state}) do
+    if all_pads_queues_ready?(state) do
+      handle_all_pads_queues_ready(state)
+      |> pop_frames_while_all_pads_ready()
+      |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
     else
-      Enum.any?(events_queue, fn event -> PadState.event_type(event) == :frame end)
+      {actions, state}
     end
   end
 
   @spec handle_all_pads_queues_ready(State.t()) ::
-          {[
-             Membrane.Element.Action.stream_format_t()
-             | State.notify_compositor_scene()
-             | Membrane.Element.Action.buffer_t()
-           ], State.t()}
+          {compositor_actions(), State.t()}
   defp handle_all_pads_queues_ready(
          state = %State{current_output_format: last_output_format, current_scene: last_scene}
        ) do
@@ -163,6 +154,19 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     state = drop_eos_pads(state)
 
     {stream_format_action ++ scene_action ++ buffer_action, state}
+  end
+
+  @spec all_pads_queues_ready?(State.t()) :: boolean()
+  defp all_pads_queues_ready?(state = %State{pads_states: pads_states}) do
+    interval_end = next_interval_end(state)
+
+    Enum.all?(
+      pads_states,
+      fn {_pad, %PadState{events_queue: events_queue, timestamp_offset: timestamp_offset}} ->
+        timestamp_offset > interval_end or
+          Enum.any?(events_queue, fn event -> PadState.event_type(event) == :frame end)
+      end
+    )
   end
 
   @spec drop_eos_pads(State.t()) :: State.t()

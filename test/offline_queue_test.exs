@@ -64,6 +64,12 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     {^actions, _state} = OfflineQueue.handle_process(@pad1, @buffer, %{}, state)
   end
 
+  # test "Removed pad doesn't block queue" do
+  #   state = setup_videos()
+
+  #   {actions, state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
+  # end
+
   defp setup_videos() do
     pad1_options = %{video_config: @video_config, timestamp_offset: 0}
     pad2_options = %{video_config: @video_config, timestamp_offset: @pad2_ts_offset}
