@@ -3,6 +3,8 @@
 
 use std::{any::TypeId, fmt::Debug};
 
+use membrane_video_compositor_common::wgpu;
+
 pub mod corners_rounding;
 pub mod cropping;
 pub mod registry;
@@ -20,7 +22,7 @@ use super::VideoProperties;
 /// Keep in mind, that sometimes adding some padding might be required.
 /// For more reference on padding and alignment check: <https://www.w3.org/TR/WGSL/#memory-layouts>
 pub trait TextureTransformation: Send + Sync + Debug + 'static {
-    /// Returns struct data sliced passed to shader.
+    /// Returns struct data slice passed to shader.
     fn data(&self) -> &[u8];
 
     /// Set new video properties to struct with transformation parameters.

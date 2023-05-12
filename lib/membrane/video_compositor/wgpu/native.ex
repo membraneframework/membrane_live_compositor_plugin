@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
 
   use Rustler,
     otp_app: :membrane_video_compositor_plugin,
-    crate: "membrane_videocompositor"
+    crate: "membrane_video_compositor"
 
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.{BaseVideoPlacement, RawVideo}

@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use wgpu::util::DeviceExt;
+use membrane_video_compositor_common::wgpu::{self, util::DeviceExt};
 
 use crate::elixir_bridge::RawVideo;
 

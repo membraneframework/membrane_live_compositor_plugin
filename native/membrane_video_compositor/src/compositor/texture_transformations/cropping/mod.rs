@@ -1,5 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use cgmath::*;
+use membrane_video_compositor_common::wgpu;
 
 use crate::compositor::{math::Vec2d, VideoPlacement, VideoProperties};
 

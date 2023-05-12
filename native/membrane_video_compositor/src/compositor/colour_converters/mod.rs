@@ -1,4 +1,4 @@
-use wgpu::util::DeviceExt;
+use membrane_video_compositor_common::wgpu::{self, util::DeviceExt};
 
 use crate::compositor::pipeline_common::PipelineCommon;
 use crate::compositor::Vertex;

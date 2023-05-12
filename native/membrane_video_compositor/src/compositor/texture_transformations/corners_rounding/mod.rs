@@ -1,4 +1,5 @@
 use bytemuck::{Pod, Zeroable};
+use membrane_video_compositor_common::wgpu;
 
 use crate::compositor::VideoProperties;
 

@@ -4,6 +4,8 @@
 
 use std::{any::TypeId, collections::HashMap};
 
+use membrane_video_compositor_common::wgpu;
+
 use super::{
     texture_transformation_pipeline::TextureTransformationPipeline, TextureTransformation,
 };
