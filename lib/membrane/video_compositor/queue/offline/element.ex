@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
+  alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
   def_options target_fps: [
@@ -89,15 +90,21 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end
   end
 
-  # @impl true
-  # def handle_parent_notification(
-  #       {:update_scene, scene = %Scene{}},
-  #       _ctx,
-  #       state = %State{most_recent_frame_pts: most_recent_frame_pts}
-  #     ) do
-  #   state = State.register_event(state, :pad_added, {most_recent_frame_pts, scene})
-  #   {[], state}
-  # end
+  @impl true
+  def handle_parent_notification(
+        {:update_scene, scene = %Scene{}},
+        _ctx,
+        state = %State{most_recent_frame_pts: most_recent_frame_pts}
+      ) do
+    state =
+      Map.update!(
+        state,
+        :scene_update_events,
+        &(&1 ++ [{:update_scene, most_recent_frame_pts, scene}])
+      )
+
+    {[], state}
+  end
 
   @spec next_interval_end(State.t()) :: Time.non_neg_t()
   defp next_interval_end(%State{
@@ -160,11 +167,16 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   @spec handle_events(State.t()) :: {compositor_actions(), State.t()}
   defp handle_events(
-         state = %State{pads_states: pads_states, previous_interval_end_pts: buffer_pts}
+         initial_state = %State{
+           pads_states: pads_states,
+           previous_interval_end_pts: buffer_pts
+         }
        ) do
     check_timestamp_offset = fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
       timestamp_offset <= buffer_pts
     end
+
+    state = pop_scene_events(initial_state)
 
     {pads_frames, new_state} =
       pads_states
@@ -187,14 +199,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       end)
 
     stream_format_action =
-      if new_state.current_output_format != state.current_output_format do
+      if new_state.current_output_format != initial_state.current_output_format do
         [stream_format: {:compositor_core, new_state.current_output_format}]
       else
         []
       end
 
     scene_action =
-      if new_state.current_scene != state.current_scene do
+      if new_state.current_scene != initial_state.current_scene do
         [notify_child: {:compositor, {:update_scene, new_state.current_scene}}]
       else
         []
@@ -205,6 +217,22 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     ]
 
     {stream_format_action ++ scene_action ++ buffer_action, new_state}
+  end
+
+  @spec pop_scene_events(State.t()) :: State.t()
+  defp pop_scene_events(
+         state = %State{
+           scene_update_events: scene_update_events,
+           previous_interval_end_pts: buffer_pts
+         }
+       ) do
+    Enum.reduce_while(scene_update_events, state, fn {:update_scene, pts, new_scene}, state ->
+      if pts < buffer_pts do
+        {:cont, %State{state | current_scene: new_scene}}
+      else
+        {:halt, state}
+      end
+    end)
   end
 
   @spec pop_pad_events(Pad.ref_t(), list(PadState.pad_event()), State.t()) ::
