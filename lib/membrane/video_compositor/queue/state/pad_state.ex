@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Queue.State.PadState do
-  @moduledoc false
+  @moduledoc """
+  Responsible for keeping single pad queue state.
+  """
 
   alias Membrane.{RawVideo, Time}
 

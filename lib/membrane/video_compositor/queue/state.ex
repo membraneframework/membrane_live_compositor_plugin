@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Queue.State do
-  @moduledoc false
+  @moduledoc """
+  Responsible for keeping tract of queue state.
+  """
 
   alias Bunch
   alias Membrane.{Pad, RawVideo, Time}
@@ -34,7 +36,13 @@ defmodule Membrane.VideoCompositor.Queue.State do
         }
 
   defmodule MockCallbacks do
-    @moduledoc false
+    @moduledoc """
+    MockCallback system for updating scene with pad events.
+
+    Using separate module and functions for this might currently seem like overkill,
+    but this should be easier to adapt to new compositor scene API and callbacks systems.
+    """
+
     alias Membrane.VideoCompositor.Queue.State
     alias Membrane.VideoCompositor.Scene.VideoConfig
 

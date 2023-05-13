@@ -1,5 +1,8 @@
 defmodule Membrane.VideoCompositor.Scene.VideoConfig do
-  @moduledoc false
+  @moduledoc """
+  Structure representing a specification of how Video Compositor
+  should transform single input video.
+  """
 
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
@@ -7,6 +10,11 @@ defmodule Membrane.VideoCompositor.Scene.VideoConfig do
   @enforce_keys [:placement]
   defstruct @enforce_keys ++ [transformations: VideoTransformations.empty()]
 
+  @typedoc """
+  Describe video base placement and transformations.
+
+  For more information view BaseVideoPlacement and VideoTransformations.
+  """
   @type t :: %__MODULE__{
           placement: BaseVideoPlacement.t(),
           transformations: VideoTransformations.t()

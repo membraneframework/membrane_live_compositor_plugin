@@ -1,5 +1,14 @@
 defmodule Membrane.VideoCompositor.Queue.Offline.Element do
-  @moduledoc false
+  @moduledoc """
+  Module responsible for offline queueing strategy.
+
+  In this strategy frames are send to compositor only when all added input pads queues
+  with timestamp offset lower or equal to composed buffer pts
+  have at least one frame.
+
+  This element require all input pads to have equal fps to work properly.
+  Framerate converter should be used for every input pad to synchronize framerate.
+  """
 
   use Membrane.Filter
 
@@ -114,6 +123,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     previous_interval_end_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
   end
 
+  @spec frame_or_eos?(list(PadState.pad_event())) ::
+          {queue_have_frame_or_eos? :: boolean(), event_type :: :frame | :end_of_stream}
   defp frame_or_eos?(events_queue) do
     Enum.reduce_while(
       events_queue,
@@ -121,13 +132,19 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       fn event, _acc ->
         case PadState.event_type(event) do
           :frame -> {:halt, {true, :frame}}
-          :end_of_stream -> {:halt, {true, :eos}}
+          :end_of_stream -> {:halt, {true, :end_of_stream}}
           _other -> {:cont, false}
         end
       end
     )
   end
 
+  # Checks if all pads queues either have:
+  #   1. larger ts offset then next buffer pts or
+  #   2. at least one waiting frame or
+  #   3. eos event
+  # and if at least one pad has frame (to avoid sending empty buffer)
+  @spec all_queues_ready?(State.t()) :: boolean()
   defp all_queues_ready?(%State{
          pads_states: pads_states,
          previous_interval_end_pts: buffer_pts
@@ -142,7 +159,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
         cond do
           frame_or_eos == {true, :frame} -> {:cont, {true, false}}
-          frame_or_eos == {true, :eos} -> {:cont, {any_frame?, false}}
+          frame_or_eos == {true, :end_of_stream} -> {:cont, {any_frame?, false}}
           timestamp_offset > buffer_pts -> {:cont, {any_frame?, false}}
           true -> {:halt, {any_frame?, true}}
         end
@@ -159,6 +176,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     if all_queues_ready?(state) do
       handle_events(state)
       |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
+      # In some cases multiple buffers might be composed e.g. when dropping pad
+      # after handling :end_of_stream event on blocking pad queue pad
       |> check_pads_queues()
     else
       {actions, state}
@@ -184,8 +203,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       |> Enum.filter(check_timestamp_offset)
       |> Enum.reduce(
         {%{}, state},
-        fn {pad, %PadState{events_queue: events_queue}}, {pads_frames, state} ->
-          case pop_pad_events(pad, events_queue, state) do
+        fn {pad, _pad_state}, {pads_frames, state} ->
+          case pop_pad_events(pad, state) do
             {{:frame, _frame_pts, frame_data}, state} ->
               {Map.put(pads_frames, pad, frame_data), state}
 
@@ -235,9 +254,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end)
   end
 
-  @spec pop_pad_events(Pad.ref_t(), list(PadState.pad_event()), State.t()) ::
+  # Pops events from pad event queue, handles them and returns updated state
+  @spec pop_pad_events(Pad.ref_t(), State.t()) ::
           {PadState.frame_event() | PadState.end_of_stream_event(), State.t()}
-  defp pop_pad_events(pad, [event | events_tail], state) do
+  defp pop_pad_events(pad, state) do
+    [event | events_tail] = Bunch.Struct.get_in(state, [:pads_states, pad, :events_queue])
+
     state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], events_tail)
 
     case event do
@@ -255,13 +277,13 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
       {:pad_added, pad_options} ->
         state = MockCallbacks.add_video(state, pad, pad_options)
-        pop_pad_events(pad, events_tail, state)
+        pop_pad_events(pad, state)
 
       {:stream_format, stream_format} ->
         state =
           Bunch.Struct.put_in(state, [:current_output_format, :pads_formats, pad], stream_format)
 
-        pop_pad_events(pad, events_tail, state)
+        pop_pad_events(pad, state)
     end
   end
 end

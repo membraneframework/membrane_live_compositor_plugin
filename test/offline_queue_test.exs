@@ -76,7 +76,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {_pad1_buffer2_actions, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(1_000_000_000), %{}, state)
 
-    {second_pad_actions, state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    {second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
 
     scene_update_action = {:notify_child, {:compositor_core, {:update_scene, new_scene}}}
     assert ^scene_update_action = Enum.at(second_pad_actions, -2)
