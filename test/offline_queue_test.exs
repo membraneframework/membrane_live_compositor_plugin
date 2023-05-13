@@ -49,9 +49,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), {}, state)
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(1_000_000_000), {}, state)
 
-    pad1_buffer1_actions = pad1_actions()
-
-    assert {^pad1_buffer1_actions, state} =
+    assert {_pad1_buffer1_actions, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
 
     pad1_buffer2_action = get_buffer_action(@pad1, 1_000_000_000)
@@ -61,6 +59,27 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     second_pad_actions = unlocked_pad2_actions()
     assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+  end
+
+  test "Check update scene messages handling" do
+    state = setup_videos()
+
+    {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), %{}, state)
+    {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(1_000_000_000), %{}, state)
+
+    new_scene = %Scene{videos_configs: %{}}
+    {[], state} = OfflineQueue.handle_parent_notification({:update_scene, new_scene}, %{}, state)
+
+    assert {_pad1_buffer1_actions, state} =
+             OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
+
+    assert {_pad1_buffer2_actions, state} =
+             OfflineQueue.handle_process(@pad1, send_buffer(1_000_000_000), %{}, state)
+
+    {second_pad_actions, state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+
+    scene_update_action = {:notify_child, {:compositor_core, {:update_scene, new_scene}}}
+    assert ^scene_update_action = Enum.at(second_pad_actions, -2)
   end
 
   defp send_buffer(pts) do
@@ -101,7 +120,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     scene_action = [
       notify_child:
-        {:compositor, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}
+        {:compositor_core, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}
     ]
 
     buffer_action = get_buffer_action(@pad1, 0)
@@ -117,7 +136,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     scene_action = [
       notify_child:
-        {:compositor, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
+        {:compositor_core, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
     ]
 
     buffer_actions =

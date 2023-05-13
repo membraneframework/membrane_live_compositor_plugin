@@ -207,7 +207,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
     scene_action =
       if new_state.current_scene != initial_state.current_scene do
-        [notify_child: {:compositor, {:update_scene, new_state.current_scene}}]
+        [notify_child: {:compositor_core, {:update_scene, new_state.current_scene}}]
       else
         []
       end
