@@ -2,20 +2,16 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   @moduledoc false
   use ExUnit.Case
 
-  alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.{Buffer, Pad, RawVideo}
+  alias Membrane.Element.Action
+  alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueue
+  alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
   @frame <<0::3_110_400>>
-
-  @buffer %Buffer{
-    pts: 0,
-    dts: 0,
-    payload: @frame
-  }
 
   @video_config %VideoConfig{
     placement: %BaseVideoPlacement{
@@ -37,60 +33,43 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
   @pad2_pts_offset 1_000_000_001
 
+  test "Check queue doesn't send actions on init ad handle pad added" do
+    setup_videos()
+  end
+
   test "Check updating stream format and scene on send buffer" do
     state = setup_videos()
 
-    stream_format_action = [
-      stream_format:
-        {:compositor_core, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}
-    ]
-
-    scene_action = [
-      notify_child:
-        {:compositor, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}
-    ]
-
-    first_output_buffer = %Buffer{
-      pts: 0,
-      dts: 0,
-      payload: %{@pad1 => @frame}
-    }
-
-    buffer_action = [
-      buffer: {:compositor_core, first_output_buffer}
-    ]
-
-    actions = stream_format_action ++ scene_action ++ buffer_action
-    {^actions, _state} = OfflineQueue.handle_process(@pad1, @buffer, %{}, state)
+    actions = pad1_actions()
+    {^actions, _state} = OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
   end
 
-  # test "Removed pad doesn't block queue" do
-  #   state = setup_videos()
-  #   assert {[], state} = OfflineQueue.handle_process(@pad2, @buffer, {}, state)
-  #   assert {[], state} = OfflineQueue.handle_process(@pad2, @buffer, {}, state)
+  test "Check removed pad doesn't block queue and if stream format, scene and buffer actions are send" do
+    state = setup_videos()
+    assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), {}, state)
+    assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(1_000_000_000), {}, state)
 
-  #   stream_format_action = [
-  #     stream_format:
-  #       {:compositor_core, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}
-  #   ]
+    pad1_buffer1_actions = pad1_actions()
 
-  #   scene_action = [
-  #     notify_child:
-  #       {:compositor, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
-  #   ]
+    assert {^pad1_buffer1_actions, state} =
+             OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
 
-  #   first_output_buffer = %Buffer{
-  #     pts: 0,
-  #     dts: 0,
-  #     payload: %{@pad1 => @frame}
-  #   }
+    pad1_buffer2_action = get_buffer_action(@pad1, 1_000_000_000)
 
-  #   buffer_action = [
-  #     buffer: {:compositor_core, first_output_buffer}
-  #   ]
+    assert {^pad1_buffer2_action, state} =
+             OfflineQueue.handle_process(@pad1, send_buffer(1_000_000_000), %{}, state)
 
-  #   {actions, state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
-  # end
+    second_pad_actions = unlocked_pad2_actions()
+    assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+  end
+
+  defp send_buffer(pts) do
+    %Buffer{
+      pts: pts,
+      dts: pts,
+      payload: @frame
+    }
+  end
 
   defp setup_videos() do
     pad1_options = %{video_config: @video_config, timestamp_offset: 0}
@@ -109,5 +88,47 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
              OfflineQueue.handle_stream_format(@pad2, @video_stream_format, %{}, state)
 
     state
+  end
+
+  @spec pad1_actions() :: [
+          Action.stream_format_t() | [State.notify_compositor_scene() | Action.buffer_t()]
+        ]
+  defp pad1_actions() do
+    stream_format_action = [
+      stream_format:
+        {:compositor_core, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}
+    ]
+
+    scene_action = [
+      notify_child:
+        {:compositor, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}
+    ]
+
+    buffer_action = get_buffer_action(@pad1, 0)
+
+    stream_format_action ++ scene_action ++ buffer_action
+  end
+
+  defp unlocked_pad2_actions() do
+    stream_format_action = [
+      stream_format:
+        {:compositor_core, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}
+    ]
+
+    scene_action = [
+      notify_child:
+        {:compositor, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
+    ]
+
+    buffer_actions =
+      get_buffer_action(@pad2, 2_000_000_000) ++ get_buffer_action(@pad2, 3_000_000_000)
+
+    stream_format_action ++ scene_action ++ buffer_actions
+  end
+
+  defp get_buffer_action(pad, pts) do
+    [
+      buffer: {:compositor_core, %Buffer{pts: pts, dts: pts, payload: %{pad => @frame}}}
+    ]
   end
 end

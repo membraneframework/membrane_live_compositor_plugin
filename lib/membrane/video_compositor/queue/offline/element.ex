@@ -6,8 +6,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Queue.State.PadState
-  alias Membrane.VideoCompositor.Scene.{MockCallbacks, VideoConfig}
+  alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
+  alias Membrane.VideoCompositor.Scene.VideoConfig
 
   def_options target_fps: [
                 spec: RawVideo.framerate_t()
@@ -52,9 +52,10 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   @impl true
   def handle_pad_removed(pad, _ctx, state = %State{}) do
-    state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], :end_of_stream)
+    state =
+      Bunch.Struct.update_in(state, [:pads_states, pad, :events_queue], &(&1 ++ [:end_of_stream]))
 
-    pop_events_while_all_pads_ready({[], state})
+    check_pads_queues({[], state})
   end
 
   @impl true
@@ -79,11 +80,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         [:pads_states, pad, :events_queue],
         &(&1 ++ [{:frame, frame_pts, buffer.payload}])
       )
+      |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
     if state.pads_states == %{} do
       {[end_of_stream: :compositor_core], state}
     else
-      pop_events_while_all_pads_ready({[], state})
+      check_pads_queues({[], state})
     end
   end
 
@@ -102,174 +104,136 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
          previous_interval_end_pts: previous_interval_end_pts,
          target_fps: {fps_num, fps_den}
        }) do
-    if previous_interval_end_pts == nil do
-      0
-    else
-      previous_interval_end_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
-    end
+    previous_interval_end_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
   end
 
-  @spec pop_events_while_all_pads_ready({compositor_actions(), State.t()}) ::
-          {compositor_actions(), State.t()}
-  defp pop_events_while_all_pads_ready({actions, state}) do
-    state = drop_eos_pads(state)
-
-    if all_pads_queues_ready?(state) do
-      handle_all_pads_queues_ready(state)
-      |> pop_events_while_all_pads_ready()
-      |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
-    else
-      {actions, state}
-    end
-  end
-
-  @spec handle_all_pads_queues_ready(State.t()) ::
-          {compositor_actions(), State.t()}
-  defp handle_all_pads_queues_ready(
-         state = %State{current_output_format: last_output_format, current_scene: last_scene}
-       ) do
-    pts = next_interval_end(state)
-
-    {pads_frames, state} = pop_events(state, pts)
-
-    stream_format_action =
-      case state.current_output_format do
-        ^last_output_format -> []
-        new_output_format -> [stream_format: {:compositor_core, new_output_format}]
-      end
-
-    scene_action =
-      case state.current_scene do
-        ^last_scene -> []
-        new_scene -> [notify_child: {:compositor, {:update_scene, new_scene}}]
-      end
-
-    buffer = %Buffer{
-      payload: pads_frames,
-      pts: pts,
-      dts: pts
-    }
-
-    buffer_action = [buffer: {:compositor_core, buffer}]
-
-    state = %State{state | previous_interval_end_pts: pts}
-    state = drop_eos_pads(state)
-
-    {stream_format_action ++ scene_action ++ buffer_action, state}
-  end
-
-  @spec all_pads_queues_ready?(State.t()) :: boolean()
-  defp all_pads_queues_ready?(state = %State{pads_states: pads_states}) do
-    interval_end = next_interval_end(state)
-
-    Enum.all?(
-      pads_states,
-      fn {_pad, %PadState{events_queue: events_queue, timestamp_offset: timestamp_offset}} ->
-        timestamp_offset > interval_end or
-          Enum.any?(events_queue, fn event -> PadState.event_type(event) == :frame end)
-      end
-    )
-  end
-
-  @spec drop_eos_pads(State.t()) :: State.t()
-  defp drop_eos_pads(
-         state = %State{
-           pads_states: pads_states,
-           current_output_format: output_format,
-           current_scene: scene
-         }
-       ) do
-    eos_pads =
-      pads_states
-      |> Map.to_list()
-      |> Enum.filter(fn {_pad, pad_state} -> eos_pad?(pad_state) end)
-      |> Enum.map(fn {pad, _pad_state} -> pad end)
-
-    pads_states = Map.drop(pads_states, eos_pads)
-    output_format = Map.drop(output_format, eos_pads)
-
-    scene =
-      Enum.reduce(eos_pads, scene, fn pad, scene -> MockCallbacks.remove_video(scene, pad) end)
-
-    %State{
-      state
-      | pads_states: pads_states,
-        current_output_format: output_format,
-        current_scene: scene
-    }
-  end
-
-  @spec eos_pad?(PadState.t()) :: boolean()
-  defp eos_pad?(%PadState{events_queue: events_queue}) do
+  defp frame_or_eos?(events_queue) do
     Enum.reduce_while(
       events_queue,
       false,
       fn event, _acc ->
         case PadState.event_type(event) do
-          :frame -> {:halt, false}
-          :end_of_stream -> {:halt, true}
+          :frame -> {:halt, {true, :frame}}
+          :end_of_stream -> {:halt, {true, :eos}}
           _other -> {:cont, false}
         end
       end
     )
   end
 
-  @spec pop_events(State.t(), Time.non_neg_t()) ::
-          {%{Pad.ref_t() => binary}, updated_state :: State.t()}
-  defp pop_events(state = %State{pads_states: pads_states}, buffer_pts) do
+  defp all_queues_ready?(%State{
+         pads_states: pads_states,
+         previous_interval_end_pts: buffer_pts
+       }) do
     pads_states
-    |> Map.to_list()
-    |> Enum.filter(fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
-      timestamp_offset <= buffer_pts
-    end)
-    |> Enum.map_reduce(
-      state,
-      fn {pad, pad_state}, state ->
-        {events_before_frame, {:frame, _pts, frame_data}, events_after_frame} =
-          split_events_queue(pad_state)
+    |> Map.values()
+    |> Enum.reduce_while(
+      {false, false},
+      fn %PadState{timestamp_offset: timestamp_offset, events_queue: events_queue},
+         {any_frame?, _any_waiting_queue?} ->
+        frame_or_eos = frame_or_eos?(events_queue)
 
-        state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], events_after_frame)
-
-        {{pad, frame_data}, handle_events(state, pad, events_before_frame)}
-      end
-    )
-    |> then(fn {pads_frames, state} -> {Enum.into(pads_frames, %{}), state} end)
-  end
-
-  @spec handle_events(State.t(), Pad.ref_t(), [
-          PadState.pad_added_event() | PadState.stream_format_event()
-        ]) :: State.t()
-  defp handle_events(state, pad, events) do
-    Enum.reduce(
-      events,
-      state,
-      fn event, state = %State{current_scene: current_scene} ->
-        case event do
-          {:pad_added, pad_options} ->
-            Map.put(
-              state,
-              :current_scene,
-              MockCallbacks.add_video(current_scene, pad, pad_options)
-            )
-
-          {:stream_format, pad_stream_format} ->
-            Bunch.Struct.put_in(
-              state,
-              [:current_output_format, :pads_formats, pad],
-              pad_stream_format
-            )
+        cond do
+          frame_or_eos == {true, :frame} -> {:cont, {true, false}}
+          frame_or_eos == {true, :eos} -> {:cont, {any_frame?, false}}
+          timestamp_offset > buffer_pts -> {:cont, {any_frame?, false}}
+          true -> {:halt, {any_frame?, true}}
         end
       end
     )
+    |> then(fn {any_frame?, any_waiting_queue?} ->
+      any_frame? and not any_waiting_queue?
+    end)
   end
 
-  @spec split_events_queue(PadState.t()) ::
-          {[PadState.pad_added_event() | PadState.stream_format_event()], PadState.frame_event(),
-           [PadState.pad_event()]}
-  defp split_events_queue(%PadState{events_queue: events_queue}) do
-    {events_before_frame, [frame_event | events_after_frame]} =
-      Enum.split_while(events_queue, fn event -> PadState.event_type(event) != :frame end)
+  @spec check_pads_queues({compositor_actions(), State.t()}) ::
+          {compositor_actions(), State.t()}
+  defp check_pads_queues({actions, state = %State{}}) do
+    if all_queues_ready?(state) do
+      handle_events(state)
+      |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
+      |> check_pads_queues()
+    else
+      {actions, state}
+    end
+  end
 
-    {events_before_frame, frame_event, events_after_frame}
+  @spec handle_events(State.t()) :: {compositor_actions(), State.t()}
+  defp handle_events(
+         state = %State{pads_states: pads_states, previous_interval_end_pts: buffer_pts}
+       ) do
+    check_timestamp_offset = fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
+      timestamp_offset <= buffer_pts
+    end
+
+    {pads_frames, new_state} =
+      pads_states
+      |> Map.to_list()
+      |> Enum.filter(check_timestamp_offset)
+      |> Enum.reduce(
+        {%{}, state},
+        fn {pad, %PadState{events_queue: events_queue}}, {pads_frames, state} ->
+          case pop_pad_events(pad, events_queue, state) do
+            {{:frame, _frame_pts, frame_data}, state} ->
+              {Map.put(pads_frames, pad, frame_data), state}
+
+            {:end_of_stream, state} ->
+              {pads_frames, state}
+          end
+        end
+      )
+      |> then(fn {pads_frames, state} ->
+        {pads_frames, %State{state | previous_interval_end_pts: next_interval_end(state)}}
+      end)
+
+    stream_format_action =
+      if new_state.current_output_format != state.current_output_format do
+        [stream_format: {:compositor_core, new_state.current_output_format}]
+      else
+        []
+      end
+
+    scene_action =
+      if new_state.current_scene != state.current_scene do
+        [notify_child: {:compositor, {:update_scene, new_state.current_scene}}]
+      else
+        []
+      end
+
+    buffer_action = [
+      buffer: {:compositor_core, %Buffer{payload: pads_frames, pts: buffer_pts, dts: buffer_pts}}
+    ]
+
+    {stream_format_action ++ scene_action ++ buffer_action, new_state}
+  end
+
+  @spec pop_pad_events(Pad.ref_t(), list(PadState.pad_event()), State.t()) ::
+          {PadState.frame_event() | PadState.end_of_stream_event(), State.t()}
+  defp pop_pad_events(pad, [event | events_tail], state) do
+    state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], events_tail)
+
+    case event do
+      {:frame, _pts, _frame_data} = frame_event ->
+        {frame_event, state}
+
+      :end_of_stream ->
+        state =
+          state
+          |> MockCallbacks.remove_video(pad)
+          |> Bunch.Struct.delete_in([:current_output_format, :pads_formats, pad])
+          |> Bunch.Struct.delete_in([:pads_states, pad])
+
+        {:end_of_stream, state}
+
+      {:pad_added, pad_options} ->
+        state = MockCallbacks.add_video(state, pad, pad_options)
+        pop_pad_events(pad, events_tail, state)
+
+      {:stream_format, stream_format} ->
+        state =
+          Bunch.Struct.put_in(state, [:current_output_format, :pads_formats, pad], stream_format)
+
+        pop_pad_events(pad, events_tail, state)
+    end
   end
 end

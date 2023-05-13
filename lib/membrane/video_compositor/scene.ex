@@ -19,18 +19,4 @@ defmodule Membrane.VideoCompositor.Scene do
   def empty() do
     %Scene{videos_configs: %{}}
   end
-
-  defmodule MockCallbacks do
-    @moduledoc false
-
-    @spec add_video(Scene.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: Scene.t()
-    def add_video(current_scene, added_pad, %{video_config: video_config}) do
-      Bunch.Struct.put_in(current_scene, [:videos_configs, added_pad], video_config)
-    end
-
-    @spec remove_video(Scene.t(), Pad.ref_t()) :: Scene.t()
-    def remove_video(current_scene, removed_pad) do
-      Bunch.Struct.delete_in(current_scene, [:videos_configs, removed_pad])
-    end
-  end
 end

@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
 
   alias Membrane.{RawVideo, Time}
 
-  @enforce_keys [:timestamp_offset, :last_frame_pts, :events_queue]
+  @enforce_keys [:timestamp_offset, :events_queue]
   defstruct @enforce_keys
 
   @type frame_event :: {:frame, pts :: Time.non_neg_t(), frame_data :: binary()}
@@ -16,7 +16,6 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
 
   @type t :: %__MODULE__{
           timestamp_offset: Time.non_neg_t(),
-          last_frame_pts: Time.non_neg_t(),
           # ordered, we assume that queue element receive pts ordered frames
           events_queue: list(pad_event())
         }
@@ -25,7 +24,6 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
   def new(pad_options = %{timestamp_offset: timestamp_offset}) do
     %__MODULE__{
       timestamp_offset: timestamp_offset,
-      last_frame_pts: timestamp_offset,
       events_queue: [{:pad_added, pad_options}]
     }
   end
