@@ -12,6 +12,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   use Membrane.Filter
 
+  alias File.Stat
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.State
@@ -92,10 +93,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       )
       |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
-    if state.pads_states == %{} do
-      {[end_of_stream: :output], state}
-    else
-      check_pads_queues({[], state})
+    case check_pads_queues({[], state}) do
+      {actions, state} when state.pads_states == %{} ->
+        {actions ++ [end_of_stream: :output], state}
+
+      {actions, state} ->
+        {actions, state}
     end
   end
 
