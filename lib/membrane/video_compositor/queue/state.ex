@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
-                previous_interval_end_pts: 0,
+                next_buffer_pts: 0,
                 current_output_format: %CompositorCoreFormat{pads_formats: %{}},
                 current_scene: Scene.empty(),
                 scene_update_events: [],
@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   @type t :: %__MODULE__{
           target_fps: RawVideo.framerate_t(),
           pads_states: pads_states(),
-          previous_interval_end_pts: nil | Time.non_neg_t(),
+          next_buffer_pts: Time.non_neg_t(),
           current_output_format: CompositorCoreFormat.t(),
           current_scene: Scene.t(),
           scene_update_events: list(scene_update_event()),

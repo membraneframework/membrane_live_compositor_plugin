@@ -52,7 +52,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {_pad1_buffer1_actions, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
 
-    pad1_buffer2_action = get_buffer_action(@pad1, 1_000_000_000)
+    pad1_buffer2_action = [get_buffer_action(@pad1, 1_000_000_000)]
 
     assert {^pad1_buffer2_action, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(1_000_000_000), %{}, state)
@@ -113,39 +113,37 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
           Action.stream_format_t() | [State.notify_compositor_scene() | Action.buffer_t()]
         ]
   defp pad1_actions() do
-    stream_format_action = [
-      stream_format:
-        {:output, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}
-    ]
+    stream_format_action =
+      {:stream_format,
+       {:output, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}}
 
-    scene_action = [
-      notify_child: {:output, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}
-    ]
+    scene_action =
+      {:notify_child,
+       {:output, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}}
 
     buffer_action = get_buffer_action(@pad1, 0)
 
-    stream_format_action ++ scene_action ++ buffer_action
+    [stream_format_action, scene_action, buffer_action]
   end
 
   defp unlocked_pad2_actions() do
-    stream_format_action = [
-      stream_format:
-        {:output, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}
+    stream_format_action =
+      {:stream_format,
+       {:output, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}}
+
+    scene_action =
+      {:notify_child,
+       {:output, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}}
+
+    buffer_actions = [
+      get_buffer_action(@pad2, 2_000_000_000),
+      get_buffer_action(@pad2, 3_000_000_000)
     ]
 
-    scene_action = [
-      notify_child: {:output, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}
-    ]
-
-    buffer_actions =
-      get_buffer_action(@pad2, 2_000_000_000) ++ get_buffer_action(@pad2, 3_000_000_000)
-
-    stream_format_action ++ scene_action ++ buffer_actions
+    [stream_format_action, scene_action] ++ buffer_actions
   end
 
   defp get_buffer_action(pad, pts) do
-    [
-      buffer: {:output, %Buffer{pts: pts, dts: pts, payload: %{pad => @frame}}}
-    ]
+    {:buffer, {:output, %Buffer{pts: pts, dts: pts, payload: %{pad => @frame}}}}
   end
 end

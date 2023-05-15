@@ -12,7 +12,6 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   use Membrane.Filter
 
-  alias File.Stat
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.State
@@ -120,23 +119,22 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   @spec next_interval_end(State.t()) :: Time.non_neg_t()
   defp next_interval_end(%State{
-         previous_interval_end_pts: previous_interval_end_pts,
+         next_buffer_pts: next_buffer_pts,
          target_fps: {fps_num, fps_den}
        }) do
-    previous_interval_end_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
+    next_buffer_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
   end
 
-  @spec frame_or_eos?(list(PadState.pad_event())) ::
-          {queue_have_frame_or_eos? :: boolean(), event_type :: :frame | :end_of_stream}
+  @spec frame_or_eos?(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
   defp frame_or_eos?(events_queue) do
     Enum.reduce_while(
       events_queue,
-      false,
+      :neither_frame_nor_eos,
       fn event, _acc ->
         case PadState.event_type(event) do
-          :frame -> {:halt, {true, :frame}}
-          :end_of_stream -> {:halt, {true, :end_of_stream}}
-          _other -> {:cont, false}
+          :frame -> {:halt, :frame}
+          :end_of_stream -> {:halt, :eos}
+          _other -> {:cont, :neither_frame_nor_eos}
         end
       end
     )
@@ -150,7 +148,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @spec all_queues_ready?(State.t()) :: boolean()
   defp all_queues_ready?(%State{
          pads_states: pads_states,
-         previous_interval_end_pts: buffer_pts
+         next_buffer_pts: buffer_pts
        }) do
     pads_states
     |> Map.values()
@@ -161,8 +159,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         frame_or_eos = frame_or_eos?(events_queue)
 
         cond do
-          frame_or_eos == {true, :frame} -> {:cont, {true, false}}
-          frame_or_eos == {true, :end_of_stream} -> {:cont, {any_frame?, false}}
+          frame_or_eos == :frame -> {:cont, {true, false}}
+          frame_or_eos == :eos -> {:cont, {any_frame?, false}}
           timestamp_offset > buffer_pts -> {:cont, {any_frame?, false}}
           true -> {:halt, {any_frame?, true}}
         end
@@ -191,7 +189,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   defp handle_events(
          initial_state = %State{
            pads_states: pads_states,
-           previous_interval_end_pts: buffer_pts
+           next_buffer_pts: buffer_pts
          }
        ) do
     check_timestamp_offset = fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
@@ -217,7 +215,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         end
       )
       |> then(fn {pads_frames, state} ->
-        {pads_frames, %State{state | previous_interval_end_pts: next_interval_end(state)}}
+        {pads_frames, %State{state | next_buffer_pts: next_interval_end(state)}}
       end)
 
     stream_format_action =
@@ -245,7 +243,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   defp pop_scene_events(
          state = %State{
            scene_update_events: scene_update_events,
-           previous_interval_end_pts: buffer_pts
+           next_buffer_pts: buffer_pts
          }
        ) do
     Enum.reduce_while(scene_update_events, state, fn {:update_scene, pts, new_scene}, state ->
