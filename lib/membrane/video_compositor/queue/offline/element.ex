@@ -112,12 +112,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     {[], state}
   end
 
-  @spec next_interval_end(State.t()) :: Time.non_neg_t()
-  defp next_interval_end(%State{
-         next_buffer_pts: next_buffer_pts,
+  @spec calculate_next_buffer_pts(State.t()) :: Time.non_neg_t()
+  defp calculate_next_buffer_pts(%State{
+         next_buffer_pts: previous_buffer_pts,
          target_fps: {fps_num, fps_den}
        }) do
-    next_buffer_pts + Kernel.ceil(1_000_000_000 * fps_den / fps_num)
+    previous_buffer_pts + Kernel.ceil(Time.seconds(1) * fps_den / fps_num)
   end
 
   @spec frame_or_eos?(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
@@ -208,7 +208,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         end
       )
       |> then(fn {pads_frames, state} ->
-        {pads_frames, %State{state | next_buffer_pts: next_interval_end(state)}}
+        {pads_frames, %State{state | next_buffer_pts: calculate_next_buffer_pts(state)}}
       end)
 
     stream_format_action =
