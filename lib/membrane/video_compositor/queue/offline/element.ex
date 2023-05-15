@@ -14,6 +14,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
+  alias Membrane.VideoCompositor.Queue
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
   alias Membrane.VideoCompositor.Scene
@@ -42,12 +43,6 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   def_output_pad :output,
     demand_mode: :auto,
     accepted_format: %CompositorCoreFormat{}
-
-  @type compositor_actions :: [
-          Membrane.Element.Action.stream_format_t()
-          | State.notify_compositor_scene()
-          | Membrane.Element.Action.buffer_t()
-        ]
 
   @impl true
   def handle_init(_ctx, _options = %{target_fps: target_fps}) do
@@ -171,8 +166,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end)
   end
 
-  @spec check_pads_queues({compositor_actions(), State.t()}) ::
-          {compositor_actions(), State.t()}
+  @spec check_pads_queues({Queue.compositor_actions(), State.t()}) ::
+          {Queue.compositor_actions(), State.t()}
   defp check_pads_queues({actions, state = %State{}}) do
     if all_queues_ready?(state) do
       handle_events(state)
@@ -185,23 +180,21 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end
   end
 
-  @spec handle_events(State.t()) :: {compositor_actions(), State.t()}
+  @spec handle_events(State.t()) :: {Queue.compositor_actions(), State.t()}
   defp handle_events(
          initial_state = %State{
            pads_states: pads_states,
            next_buffer_pts: buffer_pts
          }
        ) do
-    check_timestamp_offset = fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
-      timestamp_offset <= buffer_pts
-    end
-
     state = pop_scene_events(initial_state)
 
     {pads_frames, new_state} =
       pads_states
       |> Map.to_list()
-      |> Enum.filter(check_timestamp_offset)
+      |> Enum.filter(fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
+        timestamp_offset <= buffer_pts
+      end)
       |> Enum.reduce(
         {%{}, state},
         fn {pad, _pad_state}, {pads_frames, state} ->
