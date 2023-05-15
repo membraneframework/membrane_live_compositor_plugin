@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
               ]
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
-  @type notify_compositor_scene :: [notify_child: {:compositor_core, {:update_scene, Scene.t()}}]
+  @type notify_compositor_scene :: [notify_child: {:output, {:update_scene, Scene.t()}}]
 
   @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
   @type t :: %__MODULE__{

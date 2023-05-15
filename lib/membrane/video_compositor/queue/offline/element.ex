@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ]
     ]
 
-  def_output_pad :compositor_core,
+  def_output_pad :output,
     demand_mode: :auto,
     accepted_format: %CompositorCoreFormat{}
 
@@ -93,7 +93,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
     if state.pads_states == %{} do
-      {[end_of_stream: :compositor_core], state}
+      {[end_of_stream: :output], state}
     else
       check_pads_queues({[], state})
     end
@@ -219,20 +219,20 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
     stream_format_action =
       if new_state.current_output_format != initial_state.current_output_format do
-        [stream_format: {:compositor_core, new_state.current_output_format}]
+        [stream_format: {:output, new_state.current_output_format}]
       else
         []
       end
 
     scene_action =
       if new_state.current_scene != initial_state.current_scene do
-        [notify_child: {:compositor_core, {:update_scene, new_state.current_scene}}]
+        [notify_child: {:output, {:update_scene, new_state.current_scene}}]
       else
         []
       end
 
     buffer_action = [
-      buffer: {:compositor_core, %Buffer{payload: pads_frames, pts: buffer_pts, dts: buffer_pts}}
+      buffer: {:output, %Buffer{payload: pads_frames, pts: buffer_pts, dts: buffer_pts}}
     ]
 
     {stream_format_action ++ scene_action ++ buffer_action, new_state}
