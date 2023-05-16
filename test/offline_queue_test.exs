@@ -67,7 +67,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     eos_message = [end_of_stream: :output]
 
-    assert {^eos_message, state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
+    assert {^eos_message, _state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
   end
 
   test "Check update scene messages handling" do
