@@ -44,7 +44,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     {^actions, _state} = OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
   end
 
-  test "Check removed pad doesn't block queue and if stream format, scene and buffer actions are send" do
+  test "Check removed pad doesn't block queue and if stream format, scene and buffer actions are send." do
     state = setup_videos()
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), {}, state)
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(1_000_000_000), {}, state)
@@ -59,6 +59,15 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     second_pad_actions = unlocked_pad2_actions()
     assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+  end
+
+  test "Check compositor sending EOS on all pads removed" do
+    state = setup_videos()
+    assert {[], state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+
+    eos_message = [end_of_stream: :output]
+
+    assert {^eos_message, state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
   end
 
   test "Check update scene messages handling" do

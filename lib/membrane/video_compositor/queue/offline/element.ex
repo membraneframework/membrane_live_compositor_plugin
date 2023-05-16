@@ -87,13 +87,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       )
       |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
-    case check_pads_queues({[], state}) do
-      {actions, state} when state.pads_states == %{} ->
-        {actions ++ [end_of_stream: :output], state}
-
-      {actions, state} ->
-        {actions, state}
-    end
+    check_pads_queues({[], state})
   end
 
   @impl true
@@ -135,48 +129,54 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     )
   end
 
-  # Checks if all pads queues either have:
-  #   1. larger ts offset then next buffer pts or
-  #   2. at least one waiting frame or
-  #   3. eos event
-  # and if at least one pad has frame (to avoid sending empty buffer)
-  @spec all_queues_ready?(State.t()) :: boolean()
-  defp all_queues_ready?(%State{
+  @spec queues_state(State.t()) :: :all_pads_eos | :all_pads_ready | :waiting
+  defp queues_state(%State{
          pads_states: pads_states,
          next_buffer_pts: buffer_pts
        }) do
     pads_states
     |> Map.values()
     |> Enum.reduce_while(
-      {false, false},
+      :all_pads_eos,
       fn %PadState{timestamp_offset: timestamp_offset, events_queue: events_queue},
-         {any_frame?, _any_waiting_queue?} ->
-        frame_or_eos = frame_or_eos?(events_queue)
+         current_state ->
+        case frame_or_eos?(events_queue) do
+          :frame ->
+            {:cont, :all_pads_ready}
 
-        cond do
-          frame_or_eos == :frame -> {:cont, {true, false}}
-          frame_or_eos == :eos -> {:cont, {any_frame?, false}}
-          timestamp_offset > buffer_pts -> {:cont, {any_frame?, false}}
-          true -> {:halt, {any_frame?, true}}
+          :eos ->
+            {:cont, current_state}
+
+          :neither_frame_nor_eos
+          when timestamp_offset > buffer_pts and current_state == :all_pads_eos ->
+            {:cont, :waiting}
+
+          :neither_frame_nor_eos when timestamp_offset > buffer_pts ->
+            {:cont, current_state}
+
+          :neither_frame_nor_eos ->
+            {:halt, :waiting}
         end
       end
     )
-    |> then(fn {any_frame?, any_waiting_queue?} ->
-      any_frame? and not any_waiting_queue?
-    end)
   end
 
   @spec check_pads_queues({Queue.compositor_actions(), State.t()}) ::
           {Queue.compositor_actions(), State.t()}
   defp check_pads_queues({actions, state = %State{}}) do
-    if all_queues_ready?(state) do
-      handle_events(state)
-      |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
-      # In some cases multiple buffers might be composed e.g. when dropping pad
-      # after handling :end_of_stream event on blocking pad queue pad
-      |> check_pads_queues()
-    else
-      {actions, state}
+    case queues_state(state) do
+      :all_pads_ready ->
+        handle_events(state)
+        |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
+        # In some cases multiple buffers might be composed e.g. when dropping pad
+        # after handling :end_of_stream event on blocking pad queue pad
+        |> check_pads_queues()
+
+      :all_pads_eos ->
+        {actions ++ [end_of_stream: :output], state}
+
+      :waiting ->
+        {actions, state}
     end
   end
 
