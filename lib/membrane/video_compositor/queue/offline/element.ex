@@ -114,8 +114,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     previous_buffer_pts + Kernel.ceil(Time.seconds(1) * fps_den / fps_num)
   end
 
-  @spec frame_or_eos?(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
-  defp frame_or_eos?(events_queue) do
+  @spec frame_or_eos(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
+  defp frame_or_eos(events_queue) do
     Enum.reduce_while(
       events_queue,
       :neither_frame_nor_eos,
@@ -129,6 +129,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     )
   end
 
+  # Returns :all_pads_eos when
+  # all pads queues have :eos event without any :frame event.
+  # Returns :all_pads_ready when
+  # 1. at least one pad queue has frame (to avoid sending empty buffer)
+  # 2. all pads queues have:
+  #   a. larger timestamp offset then next buffer pts or
+  #   b. at least one waiting frame
+  #   c. eos event
   @spec queues_state(State.t()) :: :all_pads_eos | :all_pads_ready | :waiting
   defp queues_state(%State{
          pads_states: pads_states,
@@ -140,7 +148,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       :all_pads_eos,
       fn %PadState{timestamp_offset: timestamp_offset, events_queue: events_queue},
          current_state ->
-        case frame_or_eos?(events_queue) do
+        case frame_or_eos(events_queue) do
           :frame ->
             {:cont, :all_pads_ready}
 
@@ -151,8 +159,9 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
           when timestamp_offset > buffer_pts and current_state == :all_pads_eos ->
             {:cont, :waiting}
 
-          :neither_frame_nor_eos when timestamp_offset > buffer_pts ->
-            {:cont, current_state}
+          :neither_frame_nor_eos
+          when timestamp_offset > buffer_pts and current_state == :all_pads_ready ->
+            {:cont, :all_pads_ready}
 
           :neither_frame_nor_eos ->
             {:halt, :waiting}
