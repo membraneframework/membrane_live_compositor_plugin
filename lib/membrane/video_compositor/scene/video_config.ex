@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor.Scene.VideoConfig do
   @typedoc """
   Describe video base placement and transformations.
 
-  For more information view BaseVideoPlacement and VideoTransformations.
+  For more information view `#{Membrane.VideoCompositor.RustStructs.BaseVideoPlacement}` and `#{Membrane.VideoCompositor.VideoTransformations}`.
   """
   @type t :: %__MODULE__{
           placement: BaseVideoPlacement.t(),

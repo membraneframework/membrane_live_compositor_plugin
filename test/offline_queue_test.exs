@@ -33,18 +33,18 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
   @pad2_pts_offset 1_000_000_001
 
-  test "Check queue doesn't send actions on init ad handle pad added" do
+  test "if queue doesn't send actions on init and handle pad added" do
     setup_videos()
   end
 
-  test "Check updating stream format and scene on send buffer" do
+  test "if updates stream format and scene on send buffer" do
     state = setup_videos()
 
     actions = pad1_actions()
     {^actions, _state} = OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
   end
 
-  test "Check removed pad doesn't block queue and if stream format, scene and buffer actions are send." do
+  test "if removed pad doesn't block queue and if stream format, scene and buffer actions are send." do
     state = setup_videos()
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), {}, state)
     assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(1_000_000_000), {}, state)
@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
   end
 
-  test "Check compositor sending EOS on all pads removed" do
+  test "if compositor is sending EOS once all pads are removed" do
     state = setup_videos()
     assert {[], state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
 
