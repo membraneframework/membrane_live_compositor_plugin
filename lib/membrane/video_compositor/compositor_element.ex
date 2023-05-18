@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   alias Membrane.Buffer
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.WgpuAdapter
 

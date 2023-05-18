@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
 

@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.InputStream do
   """
   @type t() :: %__MODULE__{
           stream_format: Membrane.RawVideo.t(),
-          placement: Membrane.VideoCompositor.RustStructs.BaseVideoPlacement,
+          placement: Membrane.VideoCompositor.Scene.BaseVideoPlacement,
           timestamp_offset: Membrane.Time.non_neg_t(),
           transformations: Membrane.VideoCompositor.VideoTransformations,
           input: String.t() | Membrane.Source

@@ -3,6 +3,7 @@ defmodule Membrane.VideoCompositor.WgpuTest do
 
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.RustStructs.{BaseVideoPlacement, RawVideo}
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.Support.Utils
   alias Membrane.VideoCompositor.Wgpu.Native
 
