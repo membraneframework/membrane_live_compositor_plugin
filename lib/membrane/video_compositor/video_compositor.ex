@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.FramerateConverter
   alias Membrane.Pad
   alias Membrane.VideoCompositor.CompositorElement
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
 
   @typedoc """

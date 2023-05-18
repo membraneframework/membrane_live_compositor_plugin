@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
   alias Membrane.VideoCompositor.VideoTransformations

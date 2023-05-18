@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.RustStructs.BaseVideoPlacement do
+defmodule Membrane.VideoCompositor.Scene.BaseVideoPlacement do
   @moduledoc """
   A struct describing the video position, size and z-value for use with the rust-based compositor
   on the output frame, before video transformations.
@@ -12,10 +12,10 @@ defmodule Membrane.VideoCompositor.RustStructs.BaseVideoPlacement do
   If you want to place the video in the bottom left quarter of the 4k output frame,
   above videos on 0.0 z_value level:
 
-        iex> alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
-        Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+        iex> alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
+        Membrane.VideoCompositor.Scene.BaseVideoPlacement
         iex> %BaseVideoPlacement{ position: {1920, 1080}, size: {1920, 1080}, z_value: 0.5}
-        %Membrane.VideoCompositor.RustStructs.BaseVideoPlacement{
+        %Membrane.VideoCompositor.Scene.BaseVideoPlacement{
           position: {1920, 1080},
           size: {1920, 1080},
           z_value: 0.5
