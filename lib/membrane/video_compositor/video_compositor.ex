@@ -58,7 +58,7 @@ defmodule Membrane.VideoCompositor do
   def handle_init(_ctx, options) do
     spec =
       child(:compositor, %CompositorElement{
-        stream_format: options.stream_format
+        output_stream_format: options.stream_format
       })
       |> bin_output()
 

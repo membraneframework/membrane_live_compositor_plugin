@@ -14,6 +14,8 @@ pub enum CompositorError {
     BadVideoResolution(u32, u32),
     #[error("video index {0} is already taken")]
     VideoIndexAlreadyTaken(usize),
+    #[error("stream format and scene video indexes are different")]
+    DifferentVideoIndexes,
 }
 
 impl rustler::Encoder for CompositorError {
@@ -47,6 +49,11 @@ impl rustler::Encoder for CompositorError {
                 *idx,
             )
                 .encode(env),
+            CompositorError::DifferentVideoIndexes => {
+                rustler::Atom::from_str(env, "different_video_indexes")
+                    .unwrap()
+                    .encode(env)
+            }
         }
     }
 }

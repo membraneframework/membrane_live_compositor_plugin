@@ -31,6 +31,7 @@ pub struct VideoPlacement {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Message {
     Frame { pts: u64, frame: RGBATexture },
     EndOfStream,
@@ -114,37 +115,6 @@ impl InputVideo {
             single_texture_bind_group_layout,
             was_just_added: true,
         }
-    }
-
-    pub fn update_properties(
-        &mut self,
-        device: &wgpu::Device,
-        single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
-        all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        base_properties: VideoProperties,
-        texture_transformations: Option<Vec<Box<dyn TextureTransformation>>>,
-    ) {
-        let yuv_textures = YUVTextures::new(
-            device,
-            base_properties.input_resolution.x,
-            base_properties.input_resolution.y,
-            wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            Some(&single_texture_bind_group_layout),
-            Some(all_textures_bind_group_layout),
-        );
-        self.yuv_textures = yuv_textures;
-        self.base_properties = base_properties;
-        match texture_transformations {
-            Some(mut texture_transformations) => {
-                self.transformed_properties =
-                    set_video_properties(base_properties, &mut texture_transformations);
-                self.texture_transformations = texture_transformations;
-            }
-            None => {
-                self.transformed_properties =
-                    set_video_properties(base_properties, &mut self.texture_transformations);
-            }
-        };
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -259,10 +229,6 @@ impl InputVideo {
         }
     }
 
-    pub fn base_properties(&self) -> &VideoProperties {
-        &self.base_properties
-    }
-
     pub fn transformed_properties(&self) -> &VideoProperties {
         &self.transformed_properties
     }
@@ -328,10 +294,6 @@ impl InputVideo {
         if let Some(Message::Frame { pts, frame }) = self.frames.pop_front() {
             self.previous_frame = Some(Message::Frame { pts, frame });
         }
-    }
-
-    pub fn send_end_of_stream(&mut self) {
-        self.frames.push_back(Message::EndOfStream);
     }
 
     pub fn is_front_frame_too_old(&self, interval: Option<(u64, u64)>) -> bool {
