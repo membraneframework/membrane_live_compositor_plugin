@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
 
   @type t :: %__MODULE__{
           timestamp_offset: Time.non_neg_t(),
-          # ordered, we assume that queue element receive pts ordered frames
+          # Ordered, we assume that queue element receive pts ordered frames
           events_queue: list(pad_event())
         }
 

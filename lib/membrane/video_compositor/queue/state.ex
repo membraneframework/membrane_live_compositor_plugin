@@ -36,7 +36,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   defmodule MockCallbacks do
     @moduledoc """
-    MockCallback system for updating scene with pad events.
+    MockCallback system for updating the scene with pad events.
 
     Using separate module and functions for this might currently seem like overkill,
     but this should be easier to adapt to new compositor scene API and callbacks systems.

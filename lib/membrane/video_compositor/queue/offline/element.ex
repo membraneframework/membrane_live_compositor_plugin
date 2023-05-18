@@ -1,13 +1,13 @@
 defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @moduledoc """
-  Module responsible for offline queueing strategy.
+  This module is responsible for offline queueing strategy.
 
-  In this strategy frames are send to compositor only when all added input pads queues
-  with timestamp offset lower or equal to composed buffer pts
+  In this strategy frames are sent to the compositor only when all added input pads queues,
+  with timestamp offset lower or equal to composed buffer pts,
   have at least one frame.
 
-  This element require all input pads to have equal fps to work properly.
-  Framerate converter should be used for every input pad to synchronize framerate.
+  This element requires all input pads to have equal fps to work properly.
+  A framerate converter should be used for every input pad to synchronize the framerate.
   """
 
   use Membrane.Filter
@@ -135,7 +135,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   # 1. at least one pad queue has frame (to avoid sending empty buffer)
   # 2. all pads queues have:
   #   a. larger timestamp offset then next buffer pts or
-  #   b. at least one waiting frame
+  #   b. at least one waiting frame or
   #   c. eos event
   @spec queues_state(State.t()) :: :all_pads_eos | :all_pads_ready | :waiting
   defp queues_state(%State{
@@ -177,8 +177,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       :all_pads_ready ->
         handle_events(state)
         |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
-        # In some cases multiple buffers might be composed e.g. when dropping pad
-        # after handling :end_of_stream event on blocking pad queue pad
+        # In some cases, multiple buffers might be composed,
+        # e.g. when dropping pad after handling :end_of_stream event on blocking pad queue
         |> check_pads_queues()
 
       :all_pads_eos ->
