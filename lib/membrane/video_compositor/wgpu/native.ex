@@ -8,7 +8,6 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
 
   alias Membrane.VideoCompositor.RustStructs.RawVideo
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.VideoTransformations
 
   @type wgpu_state() :: any()
   @type error() :: any()

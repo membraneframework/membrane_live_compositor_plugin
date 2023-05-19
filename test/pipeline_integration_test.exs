@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.VideoConfig
   alias Membrane.VideoCompositor.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Support.Utils
 
@@ -84,21 +85,24 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
     ]
 
     inputs =
-      for pos <- positions,
-          do: %InputStream{
+      Enum.map(positions, fn position ->
+        %InputStream{
+          input: input_path,
+          video_config: %VideoConfig{
             placement: %BaseVideoPlacement{
-              position: pos,
+              position: position,
               size: {video_stream_format.width, video_stream_format.height}
             },
-            transformations: @empty_video_transformations,
-            stream_format: video_stream_format,
-            input: input_path
-          }
+            transformations: @empty_video_transformations
+          },
+          stream_format: video_stream_format
+        }
+      end)
 
     options = %Options{
       inputs: inputs,
       output: output_path,
-      stream_format: out_stream_format
+      output_stream_format: out_stream_format
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)

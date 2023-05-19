@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.CompositorElement do
+defmodule Membrane.VideoCompositor.Core do
   @moduledoc false
   # The element responsible for composing frames.
 
@@ -33,11 +33,12 @@ defmodule Membrane.VideoCompositor.CompositorElement do
               ]
 
   def_input_pad :input,
-    availability: :on_request,
+    availability: :always,
     demand_mode: :auto,
     accepted_format: %CompositorCoreFormat{}
 
   def_output_pad :output,
+    availability: :always,
     demand_mode: :auto,
     accepted_format: %RawVideo{pixel_format: :I420}
 

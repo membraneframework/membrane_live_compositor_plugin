@@ -10,7 +10,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
-  @enforce_keys [:target_fps]
+  @enforce_keys [:output_framerate]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
@@ -25,7 +25,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
   @type t :: %__MODULE__{
-          target_fps: RawVideo.framerate_t(),
+          output_framerate: RawVideo.framerate_t(),
           pads_states: pads_states(),
           next_buffer_pts: Time.non_neg_t(),
           current_output_format: CompositorCoreFormat.t(),

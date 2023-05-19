@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.H264 do
   @impl true
   def handle_init(ctx, options) do
     decoder = %Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder{
-      framerate: options.stream_format.framerate
+      framerate: options.output_stream_format.framerate
     }
 
     encoder = Membrane.H264.FFmpeg.Encoder
@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.H264 do
       | decoder: decoder,
         encoder: encoder,
         compositor: %Membrane.VideoCompositor{
-          stream_format: options.stream_format
+          output_stream_format: options.output_stream_format
         }
     }
 

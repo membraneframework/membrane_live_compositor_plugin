@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
-  def_options target_fps: [
+  def_options output_framerate: [
                 spec: RawVideo.framerate_t()
               ]
 
@@ -45,8 +45,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     accepted_format: %CompositorCoreFormat{}
 
   @impl true
-  def handle_init(_ctx, _options = %{target_fps: target_fps}) do
-    {[], %State{target_fps: target_fps}}
+  def handle_init(_ctx, _options = %{output_framerate: output_framerate}) do
+    {[], %State{output_framerate: output_framerate}}
   end
 
   @impl true
@@ -109,7 +109,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @spec calculate_next_buffer_pts(State.t()) :: Time.non_neg_t()
   defp calculate_next_buffer_pts(%State{
          next_buffer_pts: previous_buffer_pts,
-         target_fps: {fps_num, fps_den}
+         output_framerate: {fps_num, fps_den}
        }) do
     previous_buffer_pts + Kernel.ceil(Time.seconds(1) * fps_den / fps_num)
   end

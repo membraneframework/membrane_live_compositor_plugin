@@ -8,6 +8,7 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.VideoConfig
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
   alias Membrane.VideoCompositor.VideoTransformations
@@ -79,47 +80,49 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
     ]
 
     background_video = %InputStream{
-      placement: %BaseVideoPlacement{
-        position: {0, 0},
-        size: {@video_stream_format.width * 2, @video_stream_format.height * 2}
-      },
-      transformations: %VideoTransformations{
-        texture_transformations: []
+      video_config: %VideoConfig{
+        placement: %BaseVideoPlacement{
+          position: {0, 0},
+          size: {@video_stream_format.width * 2, @video_stream_format.height * 2}
+        },
+        transformations: VideoTransformations.empty()
       },
       stream_format: @video_stream_format,
       input: input_path
     }
 
     transformed_videos =
-      for(
-        pos <- positions,
-        do: %InputStream{
-          placement: %BaseVideoPlacement{
-            position: pos,
-            size: {@video_stream_format.width, @video_stream_format.height},
-            z_value: 0.5
+      Enum.map(positions, fn position ->
+        %InputStream{
+          input: input_path,
+          video_config: %VideoConfig{
+            placement: %BaseVideoPlacement{
+              position: position,
+              size: {@video_stream_format.width, @video_stream_format.height},
+              z_value: 0.5
+            },
+            transformations: @transformations
           },
-          transformations: @transformations,
-          stream_format: @video_stream_format,
-          input: input_path
+          stream_format: @video_stream_format
         }
-      )
+      end)
 
     middle_video = %InputStream{
-      placement: %BaseVideoPlacement{
-        position: {-@video_stream_format.width, -@video_stream_format.height},
-        size: {@video_stream_format.width * 2, @video_stream_format.height * 2},
-        z_value: 0.2
+      input: input_path,
+      video_config: %VideoConfig{
+        placement: %BaseVideoPlacement{
+          position: {-@video_stream_format.width, -@video_stream_format.height},
+          size: {@video_stream_format.width * 2, @video_stream_format.height * 2},
+          z_value: 0.2
+        }
       },
-      transformations: @transformations,
-      stream_format: @video_stream_format,
-      input: input_path
+      stream_format: @video_stream_format
     }
 
     options = %Options{
       inputs: transformed_videos ++ [middle_video] ++ [background_video],
       output: output_path,
-      stream_format: out_stream_format
+      output_stream_format: out_stream_format
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineRaw, custom_args: options)

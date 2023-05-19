@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.VideoConfig
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
 
@@ -88,23 +89,27 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     ]
 
     inputs =
-      for(
-        pos <- positions,
-        do: %InputStream{
-          placement: %BaseVideoPlacement{
-            position: pos,
-            size: {video_stream_format.width, video_stream_format.height}
-          },
-          transformations: @empty_video_transformations,
-          stream_format: video_stream_format,
-          input: input_path
-        }
+      Enum.map(
+        positions,
+        fn position ->
+          %InputStream{
+            video_config: %VideoConfig{
+              placement: %BaseVideoPlacement{
+                position: position,
+                size: {video_stream_format.width, video_stream_format.height}
+              },
+              transformations: @empty_video_transformations
+            },
+            stream_format: video_stream_format,
+            input: input_path
+          }
+        end
       )
 
     options = %Options{
       inputs: inputs,
       output: output_path,
-      stream_format: out_stream_format
+      output_stream_format: out_stream_format
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineRaw, custom_args: options)
