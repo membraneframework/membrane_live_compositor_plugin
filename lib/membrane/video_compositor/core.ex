@@ -113,7 +113,7 @@ defmodule Membrane.VideoCompositor.Core do
         }
       ) do
     if stream_format != nil do
-      WgpuAdapter.set_scene(wgpu_state, stream_format, scene, pads_to_ids)
+      :ok = WgpuAdapter.set_scene(wgpu_state, stream_format, scene, pads_to_ids)
     end
 
     state = %State{state | scene: scene}

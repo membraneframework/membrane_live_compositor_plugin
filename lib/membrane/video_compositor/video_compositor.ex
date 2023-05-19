@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor do
       ) do
     spec =
       child(:queue, get_queue(options))
-      |> child(:compositor, %VC_Core{
+      |> child(:compositor_core, %VC_Core{
         output_stream_format: output_stream_format
       })
       |> bin_output()

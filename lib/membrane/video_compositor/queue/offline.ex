@@ -67,7 +67,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
     do: {[remove_child: {:queue, pad_id}], state}
 
   @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
+  def handle_parent_notification({:update_scene, scene = %Scene{}}, _context, state) do
     {[notify_child: {:queue_element, {:update_scene, scene}}], state}
   end
 end
