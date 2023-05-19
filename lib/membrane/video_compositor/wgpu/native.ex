@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_videocompositor"
 
-  alias Membrane.VideoCompositor.RustStructs.RawVideo
+  alias Membrane.VideoCompositor.RustStructs
   alias Membrane.VideoCompositor.Scene
 
   @type wgpu_state() :: any()
@@ -14,14 +14,14 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @type video_id() :: non_neg_integer()
   @type frame_with_pts() :: {binary(), Membrane.Time.t()}
 
-  @spec init(RawVideo.t()) :: {:ok, wgpu_state()} | {:error, error()}
+  @spec init(RustStructs.RawVideo.t()) :: {:ok, wgpu_state()} | {:error, error()}
   def init(_out_video), do: error()
 
   @spec process_frame(wgpu_state(), video_id(), binary(), Membrane.Time.t()) ::
           :ok | {:ok, frame_with_pts()} | {:error, atom()}
   def process_frame(_state, _id, _frame, _pts), do: error()
 
-  @spec set_videos(wgpu_state(), %{video_id() => RawVideo.t()}, Scene.t()) ::
+  @spec set_videos(wgpu_state(), %{video_id() => RustStructs.RawVideo.t()}, Scene.t()) ::
           :ok | {:error, error()}
   def set_videos(_state, _stream_format, _scene), do: error()
 

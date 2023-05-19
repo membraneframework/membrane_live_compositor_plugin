@@ -1,13 +1,13 @@
 defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @moduledoc """
-  Module responsible for offline queueing strategy.
+  This module is responsible for offline queueing strategy.
 
-  In this strategy frames are send to compositor only when all added input pads queues
-  with timestamp offset lower or equal to composed buffer pts
+  In this strategy frames are sent to the compositor only when all added input pads queues,
+  with timestamp offset lower or equal to composed buffer pts,
   have at least one frame.
 
-  This element require all input pads to have equal fps to work properly.
-  Framerate converter should be used for every input pad to synchronize framerate.
+  This element requires all input pads to have equal fps to work properly.
+  A framerate converter should be used for every input pad to synchronize the framerate.
   """
 
   use Membrane.Filter
@@ -114,8 +114,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     previous_buffer_pts + Kernel.ceil(Time.seconds(1) * fps_den / fps_num)
   end
 
-  @spec frame_or_eos?(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
-  defp frame_or_eos?(events_queue) do
+  @spec frame_or_eos(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
+  defp frame_or_eos(events_queue) do
     Enum.reduce_while(
       events_queue,
       :neither_frame_nor_eos,
@@ -129,6 +129,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     )
   end
 
+  # Returns :all_pads_eos when
+  # all pads queues have :eos event without any :frame event.
+  # Returns :all_pads_ready when
+  # 1. at least one pad queue has frame (to avoid sending empty buffer)
+  # 2. all pads queues have:
+  #   a. larger timestamp offset then next buffer pts or
+  #   b. at least one waiting frame or
+  #   c. eos event
   @spec queues_state(State.t()) :: :all_pads_eos | :all_pads_ready | :waiting
   defp queues_state(%State{
          pads_states: pads_states,
@@ -140,7 +148,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       :all_pads_eos,
       fn %PadState{timestamp_offset: timestamp_offset, events_queue: events_queue},
          current_state ->
-        case frame_or_eos?(events_queue) do
+        case frame_or_eos(events_queue) do
           :frame ->
             {:cont, :all_pads_ready}
 
@@ -151,8 +159,9 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
           when timestamp_offset > buffer_pts and current_state == :all_pads_eos ->
             {:cont, :waiting}
 
-          :neither_frame_nor_eos when timestamp_offset > buffer_pts ->
-            {:cont, current_state}
+          :neither_frame_nor_eos
+          when timestamp_offset > buffer_pts and current_state == :all_pads_ready ->
+            {:cont, :all_pads_ready}
 
           :neither_frame_nor_eos ->
             {:halt, :waiting}
@@ -168,8 +177,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       :all_pads_ready ->
         handle_events(state)
         |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
-        # In some cases multiple buffers might be composed e.g. when dropping pad
-        # after handling :end_of_stream event on blocking pad queue pad
+        # In some cases, multiple buffers might be composed,
+        # e.g. when dropping pad after handling :end_of_stream event on blocking pad queue
         |> check_pads_queues()
 
       :all_pads_eos ->

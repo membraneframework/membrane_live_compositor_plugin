@@ -101,15 +101,18 @@ impl InnerState {
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn init(
     #[allow(unused)] env: rustler::Env,
     output_stream_format: ElixirRawVideo,
 ) -> Result<(rustler::Atom, rustler::ResourceArc<State>), rustler::Error> {
-    Ok((
-        atoms::ok(),
-        rustler::ResourceArc::new(State::new(output_stream_format.try_into()?)?),
-    ))
+    let stream_format = output_stream_format.try_into()?;
+
+    let result = std::thread::spawn(move || State::new(stream_format))
+        .join()
+        .expect("Couldn't join the thread responsible for initializing the compositor")?;
+
+    Ok((atoms::ok(), rustler::ResourceArc::new(result)))
 }
 
 enum UploadFrameResult<'a> {
@@ -126,7 +129,7 @@ impl rustler::Encoder for UploadFrameResult<'_> {
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn process_frame<'a>(
     env: rustler::Env<'a>,
     state: ResourceArc<State>,

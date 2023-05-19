@@ -1,6 +1,9 @@
 defmodule Membrane.VideoCompositor.Queue.State.PadState do
   @moduledoc """
   Responsible for keeping single pad queue state.
+
+  We assume that the queue receives pts ordered frames on each pad,
+  therefore events in events_queue should be pts ordered.
   """
 
   alias Membrane.{RawVideo, Time}
@@ -18,7 +21,6 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
 
   @type t :: %__MODULE__{
           timestamp_offset: Time.non_neg_t(),
-          # ordered, we assume that queue element receive pts ordered frames
           events_queue: list(pad_event())
         }
 

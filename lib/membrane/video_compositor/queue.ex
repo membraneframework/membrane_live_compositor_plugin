@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Queue do
   @moduledoc """
-  Define input pads and compositor core contracts, that each
-  implementation of queuing should meet.
+  Defines input pads and compositor core contracts, that each
+  implementation of a queue should meet.
   """
 
   alias Membrane.Buffer
@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Queue do
 
   @type stream_format_action :: {:stream_format, {Pad.ref_t(), CompositorCoreFormat.t()}}
 
-  @type notify_compositor_scene :: [notify_child: {:output, {:update_scene, Scene.t()}}]
+  @type notify_compositor_scene :: {:notify_child, {:output, {:update_scene, Scene.t()}}}
 
   @type buffer :: %Buffer{payload: %{Pad.ref_t() => frame_data :: binary()}}
 

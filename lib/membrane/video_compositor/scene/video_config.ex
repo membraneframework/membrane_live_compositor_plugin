@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Scene.VideoConfig do
   should transform single input video.
   """
 
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
 
   @enforce_keys [:placement]
@@ -13,7 +13,7 @@ defmodule Membrane.VideoCompositor.Scene.VideoConfig do
   @typedoc """
   Describe video base placement and transformations.
 
-  For more information view BaseVideoPlacement and VideoTransformations.
+  For more information view `#{Membrane.VideoCompositor.Scene.BaseVideoPlacement}` and `#{Membrane.VideoCompositor.VideoTransformations}`.
   """
   @type t :: %__MODULE__{
           placement: BaseVideoPlacement.t(),

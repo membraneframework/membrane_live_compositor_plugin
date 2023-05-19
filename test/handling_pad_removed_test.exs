@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.HandlingPadRemovedTest do
   alias Membrane.Buffer
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Core, as: VC_Core
-  alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
   alias Membrane.VideoCompositor.VideoTransformations
 
   test "when a video that did not receive start of stream gets removed it should unblock others" do
