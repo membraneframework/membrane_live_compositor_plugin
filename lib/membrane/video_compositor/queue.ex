@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Queue do
 
   @type stream_format_action :: {:stream_format, {Pad.ref_t(), CompositorCoreFormat.t()}}
 
-  @type notify_compositor_scene :: {:notify_child, {:output, {:update_scene, Scene.t()}}}
+  @type compositor_scene_event_action :: {:event, {:output, Scene.t()}}
 
   @type buffer :: %Buffer{payload: %{Pad.ref_t() => frame_data :: binary()}}
 
@@ -19,7 +19,7 @@ defmodule Membrane.VideoCompositor.Queue do
 
   @type compositor_actions :: [
           stream_format_action()
-          | notify_compositor_scene()
+          | compositor_scene_event_action()
           | buffer_action()
         ]
 end

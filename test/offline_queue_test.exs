@@ -88,7 +88,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     {second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
 
-    scene_update_action = {:notify_child, {:output, {:update_scene, new_scene}}}
+    scene_update_action = {:event, {:output, new_scene}}
     assert ^scene_update_action = Enum.at(second_pad_actions, -2)
   end
 
@@ -127,9 +127,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
       {:stream_format,
        {:output, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}}
 
-    scene_action =
-      {:notify_child,
-       {:output, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}}
+    scene_action = {:event, {:output, %Scene{videos_configs: %{@pad1 => @video_config}}}}
 
     buffer_action = get_buffer_action(@pad1, 0)
 
@@ -141,9 +139,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
       {:stream_format,
        {:output, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}}
 
-    scene_action =
-      {:notify_child,
-       {:output, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}}
+    scene_action = {:event, {:output, %Scene{videos_configs: %{@pad2 => @video_config}}}}
 
     buffer_actions = [
       get_buffer_action(@pad2, Time.seconds(2)),

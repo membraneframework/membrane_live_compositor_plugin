@@ -15,8 +15,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
 
   @spec init(RawVideo.t()) :: {:error, wgpu_state()} | {:ok, wgpu_state()}
   def init(output_stream_format) do
-    {:ok, output_stream_format} =
-      RustStructs.RawVideo.from_membrane_raw_video(output_stream_format)
+    output_stream_format = RustStructs.RawVideo.from_membrane_raw_video(output_stream_format)
 
     Native.init(output_stream_format)
   end
@@ -41,15 +40,17 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
     end
   end
 
-  @spec set_scene(wgpu_state(), CompositorCoreFormat.t(), Scene.t(), %{Pad.ref_t() => video_id()}) ::
+  @spec set_videos(wgpu_state(), CompositorCoreFormat.t(), Scene.t(), %{Pad.ref_t() => video_id()}) ::
           :ok
-  def set_scene(state, %CompositorCoreFormat{pads_formats: pads_formats}, scene, pads_to_ids) do
+  def set_videos(state, %CompositorCoreFormat{pads_formats: pads_formats}, scene, pads_to_ids) do
     rust_stream_format =
       Map.new(pads_formats, fn {pad, raw_video = %RawVideo{}} ->
         {Map.get(pads_to_ids, pad), RustStructs.RawVideo.from_membrane_raw_video(raw_video)}
       end)
 
-    case Native.set_videos(state, rust_stream_format, scene) do
+    rust_scene = RustStructs.Scene.from_vc_scene(scene, pads_to_ids)
+
+    case Native.set_videos(state, rust_stream_format, rust_scene) do
       :ok ->
         :ok
 

@@ -73,7 +73,7 @@ defmodule Membrane.VideoCompositor.Core do
       |> Enum.into(%{})
 
     if state.scene != nil do
-      WgpuAdapter.set_scene(wgpu_state, stream_format, state.scene, pads_to_ids)
+      WgpuAdapter.set_videos(wgpu_state, stream_format, state.scene, pads_to_ids)
     end
 
     state = %State{state | pads_to_ids: pads_to_ids, input_stream_format: stream_format}
@@ -103,8 +103,9 @@ defmodule Membrane.VideoCompositor.Core do
   end
 
   @impl true
-  def handle_parent_notification(
-        {:update_scene, scene = %Scene{}},
+  def handle_event(
+        _pad,
+        scene = %Scene{},
         _ctx,
         state = %State{
           wgpu_state: wgpu_state,
@@ -113,7 +114,7 @@ defmodule Membrane.VideoCompositor.Core do
         }
       ) do
     if stream_format != nil do
-      :ok = WgpuAdapter.set_scene(wgpu_state, stream_format, scene, pads_to_ids)
+      :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
     end
 
     state = %State{state | scene: scene}

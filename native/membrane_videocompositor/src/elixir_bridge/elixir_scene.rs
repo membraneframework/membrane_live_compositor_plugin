@@ -48,7 +48,7 @@ impl Into<VideoConfig> for ElixirVideoConfig {
 }
 
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.RustStructs.BaseVideoPlacement"]
+#[module = "Membrane.VideoCompositor.Scene.BaseVideoPlacement"]
 pub struct ElixirBaseVideoPlacement {
     pub position: (i32, i32),
     pub size: (u32, u32),

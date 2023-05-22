@@ -8,6 +8,7 @@ defmodule Membrane.VideoCompositor.Scene do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
+  @derive [Membrane.EventProtocol]
   @enforce_keys [:videos_configs]
   defstruct @enforce_keys
 
