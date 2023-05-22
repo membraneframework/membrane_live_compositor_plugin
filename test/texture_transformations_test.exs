@@ -113,7 +113,8 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
           position: {-@video_stream_format.width, -@video_stream_format.height},
           size: {@video_stream_format.width * 2, @video_stream_format.height * 2},
           z_value: 0.2
-        }
+        },
+        transformations: @transformations
       },
       stream_format: @video_stream_format
     }

@@ -59,16 +59,16 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
              OfflineQueue.handle_process(@pad1, send_buffer(Time.seconds(1)), %{}, state)
 
     second_pad_actions = unlocked_pad2_actions()
-    assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    assert {^second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
   end
 
   test "if compositor is sending EOS once all pads are removed" do
     state = setup_videos()
-    assert {[], state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    assert {[], state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
     eos_message = [end_of_stream: :output]
 
-    assert {^eos_message, _state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
+    assert {^eos_message, _state} = OfflineQueue.handle_end_of_stream(@pad2, %{}, state)
   end
 
   test "Check update scene messages handling" do
@@ -86,7 +86,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {_pad1_buffer2_actions, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(Time.seconds(1)), %{}, state)
 
-    {second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    {second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
     scene_update_action = {:event, {:output, new_scene}}
     assert ^scene_update_action = Enum.at(second_pad_actions, -2)

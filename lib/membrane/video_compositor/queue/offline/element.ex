@@ -56,7 +56,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   end
 
   @impl true
-  def handle_pad_removed(pad, _ctx, state = %State{}) do
+  def handle_end_of_stream(pad, _ctx, state = %State{}) do
     state =
       Bunch.Struct.update_in(state, [:pads_states, pad, :events_queue], &(&1 ++ [:end_of_stream]))
 
