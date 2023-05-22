@@ -169,7 +169,7 @@ pub fn convert_z(z: f32) -> f32 {
     1.0 - z.max(1e-7)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn set_videos(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
