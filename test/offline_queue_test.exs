@@ -100,17 +100,32 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   end
 
   defp setup_videos() do
-    pad1_options = %{video_config: @video_config, timestamp_offset: 0}
-    pad2_options = %{video_config: @video_config, timestamp_offset: @pad2_pts_offset}
+    pad1_options = %{video_config: @video_config, timestamp_offset: 0, vc_input_ref: @pad1}
+
+    pad2_options = %{
+      video_config: @video_config,
+      timestamp_offset: @pad2_pts_offset,
+      vc_input_ref: @pad2
+    }
 
     assert {[], state} = OfflineQueue.handle_init(%{}, %{output_framerate: {1, 1}})
 
-    assert {[], state} = OfflineQueue.handle_pad_added(@pad1, %{options: pad1_options}, state)
+    assert {[], state} =
+             OfflineQueue.handle_pad_added(
+               @pad1,
+               %{options: pad1_options},
+               state
+             )
 
     assert {[], state} =
              OfflineQueue.handle_stream_format(@pad1, @video_stream_format, %{}, state)
 
-    assert {[], state} = OfflineQueue.handle_pad_added(@pad2, %{options: pad2_options}, state)
+    assert {[], state} =
+             OfflineQueue.handle_pad_added(
+               @pad2,
+               %{options: pad2_options},
+               state
+             )
 
     assert {[], state} =
              OfflineQueue.handle_stream_format(@pad2, @video_stream_format, %{}, state)

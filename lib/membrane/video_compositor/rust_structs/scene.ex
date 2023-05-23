@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.RustStructs.Scene do
           Membrane.VideoCompositor.RustStructs.Scene.t()
   def from_vc_scene(%Scene{videos_configs: videos_configs}, pads_to_ids) do
     videos_configs
-    |> Map.new(fn {pad, video_config} -> {Map.get(pads_to_ids, pad), video_config} end)
+    |> Map.new(fn {pad, video_config} -> {Map.fetch!(pads_to_ids, pad), video_config} end)
     |> then(fn videos_configs ->
       %__MODULE__{videos_configs: videos_configs}
     end)

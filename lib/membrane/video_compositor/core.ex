@@ -126,7 +126,7 @@ defmodule Membrane.VideoCompositor.Core do
   @spec send_pads_frames(any(), [{Pad.ref_t(), binary()}], Time.non_neg_t(), State.pads_to_ids()) ::
           {:ok, rendered_frame :: binary()} | {:error, reason :: String.t()}
   defp send_pads_frames(wgpu_state, [{pad, pad_frame} | []], pts, pads_to_ids) do
-    case WgpuAdapter.process_frame(wgpu_state, Map.get(pads_to_ids, pad), {pad_frame, pts}) do
+    case WgpuAdapter.process_frame(wgpu_state, Map.fetch!(pads_to_ids, pad), {pad_frame, pts}) do
       {:ok, {frame, _pts}} ->
         {:ok, frame}
 
@@ -136,7 +136,7 @@ defmodule Membrane.VideoCompositor.Core do
   end
 
   defp send_pads_frames(wgpu_state, [{pad, pad_frame} | tail], pts, pads_to_ids) do
-    case WgpuAdapter.process_frame(wgpu_state, Map.get(pads_to_ids, pad), {pad_frame, pts}) do
+    case WgpuAdapter.process_frame(wgpu_state, Map.fetch!(pads_to_ids, pad), {pad_frame, pts}) do
       :ok ->
         send_pads_frames(wgpu_state, tail, pts, pads_to_ids)
 

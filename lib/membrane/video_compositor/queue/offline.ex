@@ -54,7 +54,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           timestamp_offset: context.options.timestamp_offset,
-          video_config: context.options.video_config
+          video_config: context.options.video_config,
+          vc_input_ref: Pad.ref(:input, pad_id)
         ]
       )
       |> get_child(:queue_element)

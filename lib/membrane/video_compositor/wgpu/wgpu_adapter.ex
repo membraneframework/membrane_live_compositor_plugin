@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   def set_videos(state, %CompositorCoreFormat{pads_formats: pads_formats}, scene, pads_to_ids) do
     rust_stream_format =
       Map.new(pads_formats, fn {pad, raw_video = %RawVideo{}} ->
-        {Map.get(pads_to_ids, pad), RustStructs.RawVideo.from_membrane_raw_video(raw_video)}
+        {Map.fetch!(pads_to_ids, pad), RustStructs.RawVideo.from_membrane_raw_video(raw_video)}
       end)
 
     rust_scene = RustStructs.Scene.from_vc_scene(scene, pads_to_ids)
