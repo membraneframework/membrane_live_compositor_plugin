@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.Core do
-  @moduledoc false
-  # The element responsible for composing frames.
+  @moduledoc """
+  The element responsible for composing frames.
+  """
 
   use Membrane.Filter
 
@@ -8,8 +9,9 @@ defmodule Membrane.VideoCompositor.Core do
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, WgpuAdapter}
 
   defmodule State do
-    @moduledoc false
-    # The internal state of the compositor
+    @moduledoc """
+    The internal state of the compositor
+    """
 
     @type wgpu_state() :: any()
     @type pad_id() :: non_neg_integer()

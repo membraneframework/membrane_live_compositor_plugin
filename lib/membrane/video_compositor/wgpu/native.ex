@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.Wgpu.Native do
-  @moduledoc false
-  # Module with Rust NIFs - direct Rust communication.
+  @moduledoc """
+  Module with Rust NIFs - direct Rust communication.
+  """
 
   use Rustler,
     otp_app: :membrane_video_compositor_plugin,

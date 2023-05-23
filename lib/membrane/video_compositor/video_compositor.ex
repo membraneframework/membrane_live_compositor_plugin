@@ -10,7 +10,17 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
+  @typedoc """
+  Defines implemented VC queuing strategies.
+  Any queuing strategy should follow contracts defined in `Membrane.VideoCompositor.Queue` module.
+  """
   @type queuing_strategy :: :offline
+
+  @typedoc """
+  Defines how VC should be notified with new scene -
+  new composition schema.
+  """
+  @type scene_update_notification :: {:update_scene, Scene.t()}
 
   def_options output_stream_format: [
                 spec: Membrane.RawVideo.t(),

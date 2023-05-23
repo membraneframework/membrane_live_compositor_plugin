@@ -23,7 +23,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @doc """
   Uploads a frame to the compositor.
 
-  If all videos have provided input frames with a current enough pts, this will also render and return a composed frame.
+  Uploads frames to core part of VC one by one. If all videos have frames with proper pts values, this will return composed frame.
   """
   @spec process_frame(wgpu_state(), video_id(), frame_with_pts()) ::
           :ok | {:ok, frame_with_pts()}
@@ -40,6 +40,9 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
     end
   end
 
+  @doc """
+  Sets VC videos properties.
+  """
   @spec set_videos(wgpu_state(), CompositorCoreFormat.t(), Scene.t(), %{Pad.ref_t() => video_id()}) ::
           :ok
   def set_videos(state, %CompositorCoreFormat{pads_formats: pads_formats}, scene, pads_to_ids) do
