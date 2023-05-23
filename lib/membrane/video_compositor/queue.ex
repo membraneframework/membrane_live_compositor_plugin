@@ -4,10 +4,8 @@ defmodule Membrane.VideoCompositor.Queue do
   implementation of a queue should meet.
   """
 
-  alias Membrane.Buffer
-  alias Membrane.Pad
-  alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Scene
+  alias Membrane.{Buffer, Pad}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
 
   @typedoc """
   Defines stream format action send to VC Core by Queue.
