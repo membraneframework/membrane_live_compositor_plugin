@@ -9,15 +9,15 @@ defmodule Membrane.VideoCompositor.Scene do
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
   @derive [Membrane.EventProtocol]
-  @enforce_keys [:videos_configs]
+  @enforce_keys [:video_configs]
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          videos_configs: %{Pad.ref_t() => VideoConfig.t()}
+          video_configs: %{Pad.ref_t() => VideoConfig.t()}
         }
 
   @spec empty() :: t()
   def empty() do
-    %Scene{videos_configs: %{}}
+    %Scene{video_configs: %{}}
   end
 end

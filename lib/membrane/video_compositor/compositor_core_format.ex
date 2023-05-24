@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
 
   alias Membrane.{Pad, RawVideo}
 
-  @enforce_keys [:pads_formats]
+  @enforce_keys [:pad_formats]
   defstruct @enforce_keys
 
   @typedoc """
@@ -14,6 +14,6 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
   payload and this format describes each frame resolution.
   """
   @type t :: %__MODULE__{
-          pads_formats: %{Pad.ref_t() => RawVideo.t()}
+          pad_formats: %{Pad.ref_t() => RawVideo.t()}
         }
 end

@@ -177,10 +177,10 @@ fn set_videos(
     scene: ElixirScene,
 ) -> Result<rustler::Atom, rustler::Error> {
     let scene: Scene = scene.into();
-    let mut videos_resolutions: HashMap<VideoId, Vec2d<u32>> = HashMap::new();
+    let mut video_resolutions: HashMap<VideoId, Vec2d<u32>> = HashMap::new();
 
     for (video_id, video_format) in stream_format {
-        videos_resolutions.insert(
+        video_resolutions.insert(
             video_id,
             Vec2d {
                 x: video_format.width,
@@ -191,7 +191,7 @@ fn set_videos(
 
     let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
 
-    state.compositor.set_videos(scene, videos_resolutions)?;
+    state.compositor.set_videos(scene, video_resolutions)?;
 
     Ok(atoms::ok())
 }

@@ -244,13 +244,13 @@ impl State {
     pub fn set_videos(
         &mut self,
         scene: Scene,
-        videos_resolutions: HashMap<VideoId, Vec2d<u32>>,
+        video_resolutions: HashMap<VideoId, Vec2d<u32>>,
     ) -> Result<(), CompositorError> {
-        let has_same_keys = scene.videos_configs.len() == videos_resolutions.len()
+        let has_same_keys = scene.video_configs.len() == video_resolutions.len()
             && scene
-                .videos_configs
+                .video_configs
                 .keys()
-                .all(|video_id| videos_resolutions.contains_key(video_id));
+                .all(|video_id| video_resolutions.contains_key(video_id));
 
         if !has_same_keys {
             return Err(CompositorError::DifferentVideoIndexes);
@@ -264,9 +264,9 @@ impl State {
                 placement,
                 texture_transformations,
             },
-        ) in scene.videos_configs
+        ) in scene.video_configs
         {
-            match videos_resolutions.get(&video_id) {
+            match video_resolutions.get(&video_id) {
                 Some(input_resolution) => {
                     self.add_video(
                         video_id as usize,
@@ -288,7 +288,7 @@ impl State {
         &mut self,
         idx: usize,
         base_properties: VideoProperties,
-        textures_transformations: Vec<Box<dyn TextureTransformation>>,
+        texture_transformations: Vec<Box<dyn TextureTransformation>>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));
@@ -301,7 +301,7 @@ impl State {
                 self.single_texture_bind_group_layout.clone(),
                 &self.all_yuv_textures_bind_group_layout,
                 base_properties,
-                textures_transformations,
+                texture_transformations,
             ),
         );
 

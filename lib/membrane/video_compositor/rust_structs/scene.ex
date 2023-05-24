@@ -7,22 +7,22 @@ defmodule Membrane.VideoCompositor.RustStructs.Scene do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
-  @enforce_keys [:videos_configs]
+  @enforce_keys [:video_configs]
   defstruct @enforce_keys
 
   @type video_id :: non_neg_integer()
 
   @type t :: %__MODULE__{
-          videos_configs: %{video_id() => VideoConfig.t()}
+          video_configs: %{video_id() => VideoConfig.t()}
         }
 
   @spec from_vc_scene(Membrane.VideoCompositor.Scene.t(), %{Pad.ref_t() => video_id()}) ::
           Membrane.VideoCompositor.RustStructs.Scene.t()
-  def from_vc_scene(%Scene{videos_configs: videos_configs}, pads_to_ids) do
-    videos_configs
+  def from_vc_scene(%Scene{video_configs: video_configs}, pads_to_ids) do
+    video_configs
     |> Map.new(fn {pad, video_config} -> {Map.fetch!(pads_to_ids, pad), video_config} end)
-    |> then(fn videos_configs ->
-      %__MODULE__{videos_configs: videos_configs}
+    |> then(fn video_configs ->
+      %__MODULE__{video_configs: video_configs}
     end)
   end
 end

@@ -311,7 +311,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         state =
           state
           |> MockCallbacks.remove_video(pad)
-          |> Bunch.Struct.delete_in([:current_output_format, :pads_formats, pad])
+          |> Bunch.Struct.delete_in([:current_output_format, :pad_formats, pad])
           |> Bunch.Struct.delete_in([:pads_states, pad])
 
         {:end_of_stream, state}
@@ -322,7 +322,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
       {:stream_format, stream_format} ->
         state =
-          Bunch.Struct.put_in(state, [:current_output_format, :pads_formats, pad], stream_format)
+          Bunch.Struct.put_in(state, [:current_output_format, :pad_formats, pad], stream_format)
 
         pop_pad_events(pad, state)
     end

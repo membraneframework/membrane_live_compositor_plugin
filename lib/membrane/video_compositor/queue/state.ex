@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
               [
                 pads_states: %{},
                 next_buffer_pts: 0,
-                current_output_format: %CompositorCoreFormat{pads_formats: %{}},
+                current_output_format: %CompositorCoreFormat{pad_formats: %{}},
                 current_scene: Scene.empty(),
                 scene_update_events: [],
                 most_recent_frame_pts: 0,
@@ -53,12 +53,12 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
     @spec add_video(State.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: State.t()
     def add_video(state, added_pad, %{video_config: video_config}) do
-      Bunch.Struct.put_in(state, [:current_scene, :videos_configs, added_pad], video_config)
+      Bunch.Struct.put_in(state, [:current_scene, :video_configs, added_pad], video_config)
     end
 
     @spec remove_video(State.t(), Pad.ref_t()) :: State.t()
     def remove_video(state, removed_pad) do
-      Bunch.Struct.delete_in(state, [:current_scene, :videos_configs, removed_pad])
+      Bunch.Struct.delete_in(state, [:current_scene, :video_configs, removed_pad])
     end
   end
 end

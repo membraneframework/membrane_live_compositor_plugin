@@ -16,18 +16,18 @@ use super::elixir_structs::{ElixirCornersRounding, ElixirCropping};
 #[derive(Debug, rustler::NifStruct, Clone)]
 #[module = "Membrane.VideoCompositor.RustStructs.Scene"]
 pub struct ElixirScene {
-    pub videos_configs: HashMap<VideoId, ElixirVideoConfig>,
+    pub video_configs: HashMap<VideoId, ElixirVideoConfig>,
 }
 
 impl Into<Scene> for ElixirScene {
     fn into(self) -> Scene {
-        let mut videos_configs: HashMap<u32, VideoConfig> = HashMap::new();
+        let mut video_configs: HashMap<u32, VideoConfig> = HashMap::new();
 
-        for (id, elixir_config) in self.videos_configs {
-            videos_configs.insert(id, elixir_config.into());
+        for (id, elixir_config) in self.video_configs {
+            video_configs.insert(id, elixir_config.into());
         }
 
-        Scene { videos_configs }
+        Scene { video_configs }
     }
 }
 

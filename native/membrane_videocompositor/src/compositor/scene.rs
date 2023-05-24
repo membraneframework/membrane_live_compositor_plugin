@@ -6,13 +6,13 @@ type VideoId = u32;
 
 #[derive(Debug)]
 pub struct Scene {
-    pub videos_configs: HashMap<VideoId, VideoConfig>,
+    pub video_configs: HashMap<VideoId, VideoConfig>,
 }
 
 impl Scene {
     pub fn empty() -> Self {
         Self {
-            videos_configs: HashMap::new(),
+            video_configs: HashMap::new(),
         }
     }
 }

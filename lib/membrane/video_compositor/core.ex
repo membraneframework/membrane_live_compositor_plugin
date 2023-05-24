@@ -64,12 +64,12 @@ defmodule Membrane.VideoCompositor.Core do
   @impl true
   def handle_stream_format(
         _pad,
-        stream_format = %CompositorCoreFormat{pads_formats: pads_formats},
+        stream_format = %CompositorCoreFormat{pad_formats: pad_formats},
         _context,
         state = %State{wgpu_state: wgpu_state}
       ) do
     pads_to_ids =
-      pads_formats
+      pad_formats
       |> Map.keys()
       |> Enum.with_index(fn pad, index -> {pad, index} end)
       |> Enum.into(%{})
