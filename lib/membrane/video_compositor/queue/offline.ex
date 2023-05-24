@@ -5,9 +5,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
 
   use Membrane.Bin
   alias Membrane.{FramerateConverter, RawVideo}
-  alias Membrane.VideoCompositor.CompositorCoreFormat
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
-  alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
   def_options output_framerate: [

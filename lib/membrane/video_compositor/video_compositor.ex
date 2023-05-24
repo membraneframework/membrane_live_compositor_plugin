@@ -21,6 +21,10 @@ defmodule Membrane.VideoCompositor do
   """
   @type scene_update_notification :: {:update_scene, Scene.t()}
 
+  @type init_options :: %__MODULE__{
+          output_stream_format: RawVideo.t(),
+          queuing_strategy: queuing_strategy()
+        }
 
   def_options output_stream_format: [
                 spec: Membrane.RawVideo.t(),
@@ -54,7 +58,7 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_init(
         _ctx,
-        options = %{output_stream_format: output_stream_format = %RawVideo{framerate: framerate}}
+        options = %__MODULE__{output_stream_format: output_stream_format = %RawVideo{}}
       ) do
     spec =
       child(:queue, Queue.get_queue(options))
@@ -63,9 +67,7 @@ defmodule Membrane.VideoCompositor do
       })
       |> bin_output()
 
-    state = %{output_framerate: framerate}
-
-    {[spec: spec], state}
+    {[spec: spec], %{}}
   end
 
   @impl true
