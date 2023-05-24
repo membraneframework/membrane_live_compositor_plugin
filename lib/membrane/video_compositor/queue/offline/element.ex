@@ -54,7 +54,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         _ctx,
         _options = %{output_framerate: output_framerate}
       ) do
-    {[], %State{output_framerate: output_framerate}}
+    {[], %State{output_framerate: output_framerate, custom_strategy_state: %OfflineState{}}}
   end
 
   @impl true

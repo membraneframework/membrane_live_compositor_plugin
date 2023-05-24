@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
-  @enforce_keys [:output_framerate]
+  @enforce_keys [:output_framerate, :custom_strategy_state]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
@@ -19,8 +19,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 current_output_format: %CompositorCoreFormat{pad_formats: %{}},
                 current_scene: Scene.empty(),
                 scene_update_events: [],
-                most_recent_frame_pts: 0,
-                custom_strategy_state: OfflineStrategyState.empty()
+                most_recent_frame_pts: 0
               ]
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
