@@ -12,7 +12,6 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   use Membrane.Filter
 
-  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue
