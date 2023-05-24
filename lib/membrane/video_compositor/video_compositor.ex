@@ -84,10 +84,6 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
-    do: {[remove_child: {:queue, pad_id}], state}
-
-  @impl true
   def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
     {[notify_child: {:queue, {:update_scene, scene}}], state}
   end
