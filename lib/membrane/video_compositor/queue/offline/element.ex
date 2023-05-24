@@ -12,6 +12,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   use Membrane.Filter
 
+  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue
@@ -77,12 +78,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    state =
-      Bunch.Struct.update_in(
-        state,
-        [:pads_states, vc_input_ref, :events_queue],
-        &(&1 ++ [:end_of_stream])
-      )
+    state = State.put_event(state, {:end_of_stream, vc_input_ref})
 
     check_pads_queues({[], state})
   end
@@ -96,12 +92,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    state =
-      Bunch.Struct.update_in(
-        state,
-        [:pads_states, vc_input_ref, :events_queue],
-        &(&1 ++ [{:stream_format, stream_format}])
-      )
+    state = State.put_event(state, {{:stream_format, stream_format}, vc_input_ref})
 
     {[], state}
   end
@@ -115,14 +106,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    frame_pts = buffer.pts + Bunch.Struct.get_in(state, [:pads_states, pad, :timestamp_offset])
+    frame_pts =
+      buffer.pts + Bunch.Struct.get_in(state, [:pads_states, vc_input_ref, :timestamp_offset])
 
     state =
       state
-      |> Bunch.Struct.update_in(
-        [:pads_states, vc_input_ref, :events_queue],
-        &(&1 ++ [{:frame, frame_pts, buffer.payload}])
-      )
+      |> State.put_event({{:frame, frame_pts, buffer.payload}, vc_input_ref})
       |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
     check_pads_queues({[], state})
@@ -134,12 +123,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         _ctx,
         state = %State{most_recent_frame_pts: most_recent_frame_pts}
       ) do
-    state =
-      Map.update!(
-        state,
-        :scene_update_events,
-        &(&1 ++ [{:update_scene, most_recent_frame_pts, scene}])
-      )
+    state = State.put_event(state, {:update_scene, most_recent_frame_pts, scene})
 
     {[], state}
   end

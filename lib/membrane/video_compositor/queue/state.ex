@@ -39,6 +39,21 @@ defmodule Membrane.VideoCompositor.Queue.State do
           custom_strategy_state: strategy_state()
         }
 
+  @spec put_event(t(), scene_update_event() | {PadState.pad_event(), Pad.ref_t()}) :: t()
+  def put_event(state, event) do
+    case event do
+      {:update_scene, _pts, _scene} ->
+        Map.update!(state, :scene_update_events, &(&1 ++ [event]))
+
+      {pad_event, pad_ref} ->
+        Bunch.Struct.update_in(
+          state,
+          [:pads_states, pad_ref, :events_queue],
+          &(&1 ++ [pad_event])
+        )
+    end
+  end
+
   defmodule MockCallbacks do
     @moduledoc """
     MockCallback system for updating the scene with pad events.
