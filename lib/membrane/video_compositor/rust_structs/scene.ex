@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.RustStructs.Scene do
   @moduledoc """
-  Rustler Friendly version on Scene.
+  Rustler Friendly version of `Membrane.VideoCompositor.Scene`.
   """
 
   alias Membrane.Pad

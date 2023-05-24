@@ -123,9 +123,14 @@ defmodule Membrane.VideoCompositor.Core do
     {[], state}
   end
 
-  @spec send_pads_frames(any(), [{Pad.ref_t(), binary()}], Time.non_neg_t(), State.pads_to_ids()) ::
+  @spec send_pads_frames(
+          State.wgpu_state(),
+          [{Pad.ref_t(), binary()}],
+          Time.non_neg_t(),
+          State.pads_to_ids()
+        ) ::
           {:ok, rendered_frame :: binary()} | {:error, reason :: String.t()}
-  defp send_pads_frames(wgpu_state, [{pad, pad_frame} | []], pts, pads_to_ids) do
+  defp send_pads_frames(wgpu_state, [{pad, pad_frame}], pts, pads_to_ids) do
     case WgpuAdapter.process_frame(wgpu_state, Map.fetch!(pads_to_ids, pad), {pad_frame, pts}) do
       {:ok, {frame, _pts}} ->
         {:ok, frame}

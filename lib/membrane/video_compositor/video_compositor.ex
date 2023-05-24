@@ -5,9 +5,8 @@ defmodule Membrane.VideoCompositor do
 
   use Membrane.Bin
   alias Membrane.{Pad, RawVideo}
-  alias Membrane.VideoCompositor.Core, as: VC_Core
-  alias Membrane.VideoCompositor.Queue.Offline, as: OfflineQueue
-  alias Membrane.VideoCompositor.Scene
+  alias Membrane.VideoCompositor.Core, as: VCCore
+  alias Membrane.VideoCompositor.{Queue, Scene}
   alias Membrane.VideoCompositor.Scene.VideoConfig
 
   @typedoc """
@@ -21,6 +20,7 @@ defmodule Membrane.VideoCompositor do
   new composition schema.
   """
   @type scene_update_notification :: {:update_scene, Scene.t()}
+
 
   def_options output_stream_format: [
                 spec: Membrane.RawVideo.t(),
@@ -57,8 +57,8 @@ defmodule Membrane.VideoCompositor do
         options = %{output_stream_format: output_stream_format = %RawVideo{framerate: framerate}}
       ) do
     spec =
-      child(:queue, get_queue(options))
-      |> child(:compositor_core, %VC_Core{
+      child(:queue, Queue.get_queue(options))
+      |> child(:compositor_core, %VCCore{
         output_stream_format: output_stream_format
       })
       |> bin_output()
@@ -86,9 +86,5 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
     {[notify_child: {:queue, {:update_scene, scene}}], state}
-  end
-
-  defp get_queue(options = %{queuing_strategy: :offline}) do
-    %OfflineQueue{output_framerate: options.output_stream_format.framerate}
   end
 end
