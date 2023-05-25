@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Queue do
 
   alias Membrane.{Buffer, Pad, RawVideo}
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline, as: OfflineQueue
 
   @typedoc """
@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Queue do
   @typedoc """
   Defines scene update event action send to VC Core by Queue.
   """
-  @type compositor_scene_event_action :: {:event, {:output, Scene.t()}}
+  @type compositor_scene_event_action :: {:event, {:output, SceneChangeEvent.t()}}
 
   @typedoc """
   Defines frames buffer send to VC Core by Queue.

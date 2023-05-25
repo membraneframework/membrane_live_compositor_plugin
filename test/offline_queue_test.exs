@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.Element.Action
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueue
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Scene.{BaseVideoPlacement, VideoConfig}
@@ -87,7 +87,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     {second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
-    scene_update_action = {:event, {:output, new_scene}}
+    scene_update_action = {:event, {:output, %SceneChangeEvent{new_scene: new_scene}}}
     assert ^scene_update_action = Enum.at(second_pad_actions, -2)
   end
 
@@ -141,7 +141,8 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
       {:stream_format,
        {:output, %CompositorCoreFormat{pad_formats: %{@pad1 => @video_stream_format}}}}
 
-    scene_action = {:event, {:output, %Scene{video_configs: %{@pad1 => @video_config}}}}
+    scene = %Scene{video_configs: %{@pad1 => @video_config}}
+    scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}
 
     buffer_action = get_buffer_action(@pad1, 0)
 
@@ -153,7 +154,8 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
       {:stream_format,
        {:output, %CompositorCoreFormat{pad_formats: %{@pad2 => @video_stream_format}}}}
 
-    scene_action = {:event, {:output, %Scene{video_configs: %{@pad2 => @video_config}}}}
+    scene = %Scene{video_configs: %{@pad2 => @video_config}}
+    scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}
 
     buffer_actions = [
       get_buffer_action(@pad2, Time.seconds(2)),

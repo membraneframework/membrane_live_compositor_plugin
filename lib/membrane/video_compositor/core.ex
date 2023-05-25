@@ -5,8 +5,9 @@ defmodule Membrane.VideoCompositor.Core do
 
   use Membrane.Filter
 
+  alias Membrane.VideoCompositor.SceneChangeEvent
   alias Membrane.{Buffer, Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, WgpuAdapter}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
   defmodule State do
     @moduledoc """
@@ -107,7 +108,7 @@ defmodule Membrane.VideoCompositor.Core do
   @impl true
   def handle_event(
         _pad,
-        scene = %Scene{},
+        %SceneChangeEvent{new_scene: scene = %Scene{}},
         _ctx,
         state = %State{
           wgpu_state: wgpu_state,

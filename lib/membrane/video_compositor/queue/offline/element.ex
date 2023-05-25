@@ -13,8 +13,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   use Membrane.Filter
 
   alias Membrane.{Buffer, Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
@@ -250,7 +249,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
     scene_action =
       if new_state.current_scene != initial_state.current_scene do
-        [event: {:output, new_state.current_scene}]
+        [event: {:output, %SceneChangeEvent{new_scene: new_state.current_scene}}]
       else
         []
       end
