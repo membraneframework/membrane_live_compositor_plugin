@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor.Scene do
   """
 
   alias Membrane.VideoCompositor.Object
+  alias __MODULE__.{Expiring, Loop, Repeat}
 
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys
@@ -23,6 +24,11 @@ defmodule Membrane.VideoCompositor.Scene do
           objects: [{Object.name(), Object.t()}],
           output: Object.name()
         }
+
+  @typedoc """
+  TODO:
+  """
+  @type temporal_t :: Expiring.t() | Loop.t() | Repeat.t()
 
   defmodule RustlerFriendly do
     @moduledoc false
