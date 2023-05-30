@@ -88,8 +88,12 @@ defmodule Membrane.VideoCompositor.Core do
         _pad,
         %Buffer{pts: pts, payload: payload},
         _context,
-        state = %State{wgpu_state: wgpu_state, pads_to_ids: pads_to_ids}
+        state = %State{wgpu_state: wgpu_state, pads_to_ids: pads_to_ids, scene: scene}
       ) do
+    if scene == nil do
+      raise "VC core received buffer before scene"
+    end
+
     {:ok, rendered_frame} =
       payload
       |> Map.to_list()
