@@ -352,7 +352,6 @@ impl State {
             });
 
         let mut pts = 0;
-        let mut ended_video_ids = Vec::new();
         let mut rendered_video_ids = Vec::new();
 
         let mut videos_sorted_by_z_value = self.input_videos.iter_mut().collect::<Vec<_>>();
@@ -399,14 +398,9 @@ impl State {
                         rendered_video_ids.push(id);
                     }
                     DrawResult::NotRendered => {}
-                    DrawResult::EndOfStream => ended_video_ids.push(id),
                 }
             }
         }
-
-        ended_video_ids.iter().for_each(|id| {
-            self.input_videos.remove(id);
-        });
 
         rendered_video_ids
             .iter()

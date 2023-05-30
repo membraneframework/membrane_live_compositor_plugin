@@ -31,17 +31,14 @@ pub struct VideoPlacement {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum Message {
     Frame { pts: u64, frame: RGBATexture },
-    EndOfStream,
 }
 
 pub enum DrawResult {
     /// Contains the pts of the rendered frame
     Rendered(u64),
     NotRendered,
-    EndOfStream,
 }
 
 #[rustfmt::skip]
@@ -259,12 +256,8 @@ impl InputVideo {
                 (frame, *pts)
             }
 
-            Some(Message::EndOfStream) => return DrawResult::EndOfStream,
-
             None => match self.previous_frame.as_ref() {
                 Some(Message::Frame { pts, frame }) => (frame, *pts),
-
-                Some(Message::EndOfStream) => return DrawResult::EndOfStream,
 
                 None => return DrawResult::NotRendered,
             },
@@ -297,10 +290,6 @@ impl InputVideo {
     }
 
     pub fn is_front_frame_too_old(&self, interval: Option<(u64, u64)>) -> bool {
-        if let Some(Message::EndOfStream) = self.frames.front() {
-            return false;
-        }
-
         if interval.is_none() || self.front_pts().is_none() {
             return false;
         }
@@ -309,10 +298,6 @@ impl InputVideo {
     }
 
     pub fn is_frame_ready(&self, interval: Option<(u64, u64)>) -> bool {
-        if let Some(Message::EndOfStream) = self.frames.front() {
-            return true;
-        }
-
         // if the stream hasn't ended then we have to have a frame in the queue, then either:
         if self.front_pts().is_some() {
             // this is the first frame, which means a frame with any pts is good
