@@ -241,15 +241,15 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       end)
 
     stream_format_action =
-      if new_state.current_output_format != initial_state.current_output_format do
-        [stream_format: {:output, new_state.current_output_format}]
+      if new_state.output_format != initial_state.output_format do
+        [stream_format: {:output, new_state.output_format}]
       else
         []
       end
 
     scene_action =
-      if new_state.current_scene != initial_state.current_scene do
-        [event: {:output, %SceneChangeEvent{new_scene: new_state.current_scene}}]
+      if new_state.scene != initial_state.scene do
+        [event: {:output, %SceneChangeEvent{new_scene: new_state.scene}}]
       else
         []
       end
@@ -270,7 +270,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
        ) do
     Enum.reduce_while(scene_update_events, state, fn {:update_scene, pts, new_scene}, state ->
       if pts < buffer_pts do
-        {:cont, %State{state | current_scene: new_scene}}
+        {:cont, %State{state | scene: new_scene}}
       else
         {:halt, state}
       end
@@ -293,7 +293,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         state =
           state
           |> MockCallbacks.remove_video(pad)
-          |> Bunch.Struct.delete_in([:current_output_format, :pad_formats, pad])
+          |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
           |> Bunch.Struct.delete_in([:pads_states, pad])
 
         {:end_of_stream, state}
@@ -303,8 +303,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         pop_pad_events(pad, state)
 
       {:stream_format, stream_format} ->
-        state =
-          Bunch.Struct.put_in(state, [:current_output_format, :pad_formats, pad], stream_format)
+        state = Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
 
         pop_pad_events(pad, state)
     end
