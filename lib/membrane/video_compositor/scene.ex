@@ -36,25 +36,31 @@ defmodule Membrane.VideoCompositor.Scene do
     scene_pads = Scene.pads(scene)
 
     unless MapSet.subset?(scene_pads, input_pads) do
-      raise "The scene must include references only to VideoCompositor input pads. \n" <>
-              "Scene: #{inspect(scene)} \n" <>
-              "Scene pads: #{inspect(MapSet.to_list(scene_pads))} \n" <>
-              "Input pads: #{inspect(MapSet.to_list(input_pads))}"
+      raise """
+      The scene must include references only to VideoCompositor input pads.
+      Scene: #{inspect(scene)}
+      Scene pads: #{inspect(MapSet.to_list(scene_pads))}
+      Input pads: #{inspect(MapSet.to_list(input_pads))}
+      """
     end
 
-    video_configs
-    |> Map.to_list()
-    |> Enum.map(fn {pad, video_config} ->
-      case video_config do
-        %VideoConfig{} ->
-          :ok
+    _checked_video_configs =
+      video_configs
+      |> Map.to_list()
+      |> Enum.map(fn {pad, video_config} ->
+        case video_config do
+          %VideoConfig{} ->
+            :ok
 
-        _else ->
-          raise "The scene must include only #{VideoConfig} structs. \n" <>
-                  "Scene: #{inspect(scene)} \n" <>
-                  "Video config for pad: #{inspect(pad)} has improper config: #{inspect(video_config)}"
-      end
-    end)
-    |> then(fn _checked_video_configs -> :ok end)
+          _else ->
+            raise """
+            The scene must include only #{inspect(VideoConfig)} structs.
+            Scene: #{inspect(scene)}
+            Video config for pad: #{inspect(pad)} has improper config: #{inspect(video_config)}
+            """
+        end
+      end)
+
+    :ok
   end
 end
