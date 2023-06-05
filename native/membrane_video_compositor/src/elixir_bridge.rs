@@ -1,7 +1,11 @@
-use crate::compositor;
 use crate::compositor::math::Vec2d;
 use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
+use crate::{compositor, new_compositor};
+use membrane_video_compositor_common::elixir_transfer::{
+    LayoutElixirPacket, StructElixirPacket, TransformationElixirPacket,
+};
+use membrane_video_compositor_common::{elixir_transfer, WgpuContext};
 use rustler::ResourceArc;
 
 pub mod elixir_structs;
@@ -302,6 +306,41 @@ pub fn test_scene_deserialization(obj: Scene) -> Result<rustler::Atom, rustler::
     Ok(atoms::ok())
 }
 
+#[rustler::nif]
+pub fn init_new_compositor(
+) -> Result<(rustler::Atom, rustler::ResourceArc<new_compositor::State>), rustler::Error> {
+    Ok((atoms::ok(), ResourceArc::new(new_compositor::State::new())))
+}
+
+#[rustler::nif]
+pub fn wgpu_ctx(
+    state: ResourceArc<new_compositor::State>,
+) -> elixir_transfer::StructElixirPacket<WgpuContext> {
+    let state = state.lock().unwrap();
+    StructElixirPacket::<WgpuContext>::encode_arc(state.wgpu_ctx())
+}
+
+#[rustler::nif]
+pub fn register_transformation(
+    state: ResourceArc<new_compositor::State>,
+    transformation: TransformationElixirPacket,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut state = state.lock().unwrap();
+    state.register_transformation(unsafe { transformation.decode() })?;
+    Ok(atoms::ok())
+}
+
+#[rustler::nif]
+pub fn register_layout(
+    state: ResourceArc<new_compositor::State>,
+    layout: LayoutElixirPacket,
+) -> Result<rustler::Atom, rustler::Error> {
+    let mut state = state.lock().unwrap();
+    state.register_layout(unsafe { layout.decode() })?;
+    Ok(atoms::ok())
+}
+
+#[rustfmt::skip]
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [
@@ -315,9 +354,16 @@ rustler::init!(
         update_placement,
         update_transformations,
         test_scene_deserialization,
+
+        init_new_compositor,
+        wgpu_ctx,
+        register_transformation,
+        register_layout,
+        new_compositor::mock_transformation,
     ],
     load = |env, _| {
         rustler::resource!(State, env);
+        rustler::resource!(crate::new_compositor::State, env);
 
         true
     }

@@ -6,6 +6,7 @@ defmodule Membrane.VideoCompositor.Transformation do
   Transformations can change frame resolution. Cropping, CornersRounding, ColorFiler,
   RollToBall, etc. can be implemented as transformations.
   """
+  alias Membrane.VideoCompositor.WgpuAdapter
 
   @typedoc """
   Specify how Transformations can be defined:
@@ -18,12 +19,25 @@ defmodule Membrane.VideoCompositor.Transformation do
   @type definition :: struct() | module()
 
   @typedoc """
-  A rust representation of the transformation, passed through elixir in an opaque way.
+  A module implementing the `Transformation` behaviour
   """
-  # in a more 'final' product this should be some kind of a transformation identifier.
-  # I thought of making this a UUID that would correspond to an implementation
-  # on the rust side, paired with parameters.
-  @type rust_representation :: integer()
+  @type transformation_module :: module()
+
+  @typedoc """
+  A rust representation of the transformation as defined in a scene graph, passed through elixir
+  in an opaque way. In other words, those are the parameters that will be passed to the initialized
+  transformation.
+
+  Keep in mind the transformation needs to be registered before it's used in a scene graph.
+  """
+  @opaque rust_representation :: {non_neg_integer(), non_neg_integer()}
+
+  @typedoc """
+  This type is an initialized transformation that needs to be transported through elixir to the compositor.
+  In other words, this is the *brains* of the transformation, that will receive the parameters specified in
+  a scene graph.
+  """
+  @opaque initialized_transformation :: {non_neg_integer(), non_neg_integer()}
 
   @doc """
   A callback used for encoding the static layout data into a rust-based representation.
@@ -31,6 +45,12 @@ defmodule Membrane.VideoCompositor.Transformation do
   for now.
   """
   @callback encode(transformation :: definition()) :: rust_representation()
+
+  @doc """
+  This function receives the wgpu context from the compositor and needs to create the initialized
+  transformation
+  """
+  @callback initialize(WgpuAdapter.wgpu_ctx()) :: initialized_transformation()
 
   @doc false
   # This just cases upon the two possibilities of the definition.

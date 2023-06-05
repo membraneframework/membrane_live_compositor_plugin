@@ -1,7 +1,9 @@
 defmodule Membrane.VideoCompositor.WgpuAdapter do
   @moduledoc false
 
+  alias Membrane.VideoCompositor.Object.Layout
   alias Membrane.VideoCompositor.RustStructs
+  alias Membrane.VideoCompositor.Transformation
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.Wgpu.Native
 
@@ -11,6 +13,9 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @type frame() :: binary()
   @type pts() :: Membrane.Time.t()
   @type frame_with_pts :: {binary(), pts()}
+
+  @opaque new_compositor_state :: Native.new_compositor_state()
+  @opaque wgpu_ctx() :: Native.wgpu_ctx()
 
   @spec init(Membrane.RawVideo.t()) :: {:error, wgpu_state()} | {:ok, wgpu_state()}
   def init(output_stream_format) do
@@ -161,5 +166,75 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
       {:error, reason} ->
         raise "Error while sending an end of stream message to a video, reason: #{inspect(reason)}"
     end
+  end
+
+  @doc """
+  Initialize the new part of the compositor
+  """
+  @spec init_new_compositor() :: new_compositor_state()
+  def init_new_compositor() do
+    case Native.init_new_compositor() do
+      {:ok, state} ->
+        state
+
+      {:error, reason} ->
+        raise "Error while initializing the compositor, reason: #{inspect(reason)}"
+    end
+  end
+
+  # Question to the reviewers: since this function can potentially cause UB if misused, should we maybe make it private?
+  @doc """
+  Get the wgpu context necessary for initializing transformation modules and layout modules.
+
+  # Safety
+  It's vital that this struct is used according to the safety sections in the docs for the rust
+  mirror of the struct this function returns
+  (`membrane_video_compositor_common::elixir_transfer::StructElixirPacket::<WgpuContext>`)
+  """
+  @spec wgpu_ctx(new_compositor_state()) :: wgpu_ctx()
+  def wgpu_ctx(state) do
+    Native.wgpu_ctx(state)
+  end
+
+  @doc """
+  This function takes a list of transformation modules, initializes them and registers them in
+  the compositor so that they're available to use in the scene.
+  """
+  @spec register_transformations(
+          new_compositor_state(),
+          list(Transformation.transformation_module())
+        ) :: :ok
+  def register_transformations(state, transformations) do
+    transformations
+    |> Enum.each(fn transformation_module ->
+      wgpu_ctx = wgpu_ctx(state)
+      initialized = transformation_module.initialize(wgpu_ctx)
+
+      case Native.register_transformation(state, initialized) do
+        :ok -> :ok
+        {:error, reason} -> raise "Error when registering a transformation: #{inspect(reason)}"
+      end
+    end)
+  end
+
+  @doc """
+  This function takes a list of layout modules, initializes them and registers them in
+  the compositor so that they're available to use in the scene.
+  """
+  @spec register_layouts(
+          new_compositor_state(),
+          list(Layout.layout_module())
+        ) :: :ok
+  def register_layouts(state, layouts) do
+    layouts
+    |> Enum.each(fn layout_module ->
+      wgpu_ctx = wgpu_ctx(state)
+      initialized = layout_module.initialize(wgpu_ctx)
+
+      case Native.register_layout(state, initialized) do
+        :ok -> :ok
+        {:error, reason} -> raise "Error when registering layout: #{inspect(reason)}"
+      end
+    end)
   end
 end

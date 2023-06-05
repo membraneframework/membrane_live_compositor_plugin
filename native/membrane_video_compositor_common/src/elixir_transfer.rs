@@ -2,14 +2,17 @@ use std::{any::Any, marker::PhantomData, sync::Arc};
 
 use crate::plugins::{layout::UntypedLayout, transformation::UntypedTransformation};
 
+/// This struct is meant for encoding and transferring structs defined and used only in the plugins
+/// (i.e. unknown during the compilation of the compositor)
 pub struct CustomStructElixirPacket {
     pointer: (usize, usize),
 }
 
-/// This struct is meant for encoding and transferring structs defined and used only in the plugins
-/// (i.e. unknown during the compilation of the compositor)
 impl CustomStructElixirPacket {
-    pub fn encode<T: Send + 'static>(payload: T) -> Self {
+    /// # Safety
+    /// The struct created with this function has to be consumed with [CustomStructElixirPacket::decode].
+    /// Not consuming it will result in memory leaks or other unfortunate side-effects
+    pub unsafe fn encode<T: Send + 'static>(payload: T) -> Self {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer = unsafe { std::mem::transmute(payload) };
 
@@ -49,8 +52,18 @@ pub struct StructElixirPacket<T: Send + 'static> {
 }
 
 impl<T: Send + 'static> StructElixirPacket<T> {
-    pub fn encode(payload: T) -> Self {
+    /// # Safety
+    /// The struct created with this function has to be consumed with [StructElixirPacket::decode].
+    /// Not consuming it will result in memory leaks or other unfortunate side-effects
+    pub unsafe fn encode(payload: T) -> Self {
         let payload = Arc::new(payload);
+        Self::encode_arc(payload)
+    }
+
+    /// # Safety
+    /// The struct created with this function has to be consumed with [StructElixirPacket::decode].
+    /// Not consuming it will result in memory leaks or other unfortunate side-effects
+    pub fn encode_arc(payload: Arc<T>) -> Self {
         let pointer = unsafe { std::mem::transmute(payload) };
         Self {
             pointer,
@@ -93,7 +106,10 @@ macro_rules! trait_packet {
         }
 
         impl $struct {
-            pub fn encode(payload: impl $trait + Send) -> Self {
+            /// # Safety
+            /// The struct created with this function has to be consumed with the decode method.
+            /// Not consuming it will result in memory leaks or other unfortunate side-effects
+            pub unsafe fn encode(payload: impl $trait + Send) -> Self {
                 let payload: ::std::sync::Arc<dyn $trait> = ::std::sync::Arc::new(payload);
                 let pointer = unsafe { ::std::mem::transmute(payload) };
                 Self { pointer }

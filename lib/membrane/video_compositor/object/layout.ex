@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
 
   Basically it's a multi-input, single-output node in processing graph.
   """
-  alias Membrane.VideoCompositor.{Object, Resolution}
+  alias Membrane.VideoCompositor.{Object, Resolution, WgpuAdapter}
 
   @typedoc """
   A layout-internal identifier, which the layout can use to determine
@@ -41,6 +41,11 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   - resolution of another object
   """
   @type output_resolution :: Resolution.t() | Object.name()
+
+  @typedoc """
+  A module implementing the `Layout` behaviour
+  """
+  @type layout_module :: module()
 
   @typedoc """
   Specify that Layouts:
@@ -86,14 +91,26 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   end
 
   @typedoc """
-  This documentation is temporary, since something needs to be here and it
-  is currently unknown what this will look like.
+  A rust representation of the layout as defined in a scene graph, passed through elixir
+  in an opaque way. In other words, those are the parameters that will be passed to the
+  initialized layout.
 
-  in a more 'final' product this should be some kind of a layout identifier.
-  I thought of making this a UUID that would correspond to an implementation
-  on the rust side, but layout names would work fine too.
+  Keep in mind the layout needs to be registered before it's used in a scene graph.
   """
-  @type rust_representation :: integer()
+  @opaque rust_representation :: {non_neg_integer(), non_neg_integer()}
+
+  @typedoc """
+  This type is an initialized layout that needs to be transported through elixir to the compositor.
+  In other words, this is the *brains* of the layout, that will receive the parameters specified in
+  a scene graph.
+  """
+  @opaque initialized_layout :: {non_neg_integer(), non_neg_integer()}
+
+  @doc """
+  This function receives the wgpu context from the compositor and needs to create the initialized
+  layout
+  """
+  @callback initialize(WgpuAdapter.wgpu_ctx()) :: initialized_layout()
 
   @doc """
   A callback used for encoding the static layout data into a rust-based representation.

@@ -17,7 +17,9 @@ defmodule Membrane.VideoCompositor.HandlingPadRemovedTest do
     }
 
     init_opts = %{
-      stream_format: stream_format
+      stream_format: stream_format,
+      transformations: [],
+      layouts: []
     }
 
     assert {[], state} = CompositorElement.handle_init(%{}, init_opts)

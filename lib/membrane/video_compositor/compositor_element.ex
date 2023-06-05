@@ -9,7 +9,9 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   alias Membrane.Buffer
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Object.Layout
   alias Membrane.VideoCompositor.RustStructs.BaseVideoPlacement
+  alias Membrane.VideoCompositor.Transformation
   alias Membrane.VideoCompositor.VideoTransformations
   alias Membrane.VideoCompositor.WgpuAdapter
 
@@ -38,6 +40,7 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
     @type t() :: %__MODULE__{
             wgpu_state: wgpu_state_t(),
+            new_compositor_state: WgpuAdapter.new_compositor_state(),
             stream_format: RawVideo.t(),
             new_pad_id: pad_id_t(),
             pads_to_ids: pads_to_ids_t(),
@@ -45,9 +48,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
             videos_waiting_for_stream_format: videos_waiting_for_stream_format_t()
           }
 
-    @enforce_keys [:wgpu_state, :stream_format]
+    @enforce_keys [:wgpu_state, :new_compositor_state, :stream_format]
     defstruct [
       :wgpu_state,
+      :new_compositor_state,
       :stream_format,
       new_pad_id: 0,
       pads_to_ids: %{},
@@ -59,6 +63,20 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def_options stream_format: [
                 spec: RawVideo.t(),
                 description: "Struct with video width, height, framerate and pixel format."
+              ],
+              transformations: [
+                spec: list(Transformation.transformation_module()),
+                description: """
+                A list of modules that implement the Membrane.VideoCompositor.Transformation behaviour.
+                These modules can later be used in the scene passed to this compositor.
+                """
+              ],
+              layouts: [
+                spec: list(Layout.layout_module()),
+                description: """
+                A list of modules that implement the Membrane.VideoCompositor.Layout behaviour.
+                These modules can later be used in the scene passed to this compositor.
+                """
               ]
 
   def_input_pad :input,
@@ -94,9 +112,14 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   @impl true
   def handle_init(_ctx, options) do
     {:ok, wgpu_state} = WgpuAdapter.init(options.stream_format)
+    new_compositor_state = WgpuAdapter.init_new_compositor()
+
+    WgpuAdapter.register_transformations(new_compositor_state, options.transformations)
+    WgpuAdapter.register_layouts(new_compositor_state, options.layouts)
 
     state = %State{
       wgpu_state: wgpu_state,
+      new_compositor_state: new_compositor_state,
       stream_format: options.stream_format
     }
 

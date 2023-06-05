@@ -14,6 +14,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @type id() :: non_neg_integer()
   @type frame_with_pts() :: {binary(), Membrane.Time.t()}
 
+  @opaque new_compositor_state() :: reference()
+  @opaque wgpu_ctx() :: non_neg_integer()
+
   @spec init(RawVideo.t()) :: {:ok, wgpu_state()} | {:error, error()}
   def init(_out_video), do: error()
 
@@ -55,6 +58,28 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec test_scene_deserialization(Membrane.VideoCompositor.Scene.RustlerFriendly.t()) ::
           :ok | {:error, any()}
   def test_scene_deserialization(_scene), do: error()
+
+  @spec init_new_compositor() :: {:ok, new_compositor_state()} | {:error, error()}
+  def init_new_compositor(), do: error()
+
+  @spec wgpu_ctx(new_compositor_state()) :: wgpu_ctx()
+  def wgpu_ctx(_state), do: error()
+
+  @spec register_transformation(
+          new_compositor_state(),
+          Membrane.VideoCompositor.Transformation.initialized_transformation()
+        ) :: :ok | {:error, error()}
+  def register_transformation(_state, _transformation), do: error()
+
+  @spec register_layout(
+          new_compositor_state(),
+          Membrane.VideoCompositor.Object.Layout.initialized_layout()
+        ) :: :ok | {:error, error()}
+  def register_layout(_state, _layout), do: error()
+
+  @spec mock_transformation(wgpu_ctx()) ::
+          Membrane.VideoCompositor.Transformation.initialized_transformation()
+  def mock_transformation(_wgpu_ctx), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
 end
