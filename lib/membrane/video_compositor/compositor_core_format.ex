@@ -16,4 +16,10 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
   @type t :: %__MODULE__{
           pad_formats: %{Pad.ref_t() => RawVideo.t()}
         }
+
+  @spec pads(t()) :: MapSet.t()
+  def pads(%__MODULE__{pad_formats: pad_formats}) do
+    pad_formats
+    |> MapSet.new(fn {pad, _pad_format} -> pad end)
+  end
 end

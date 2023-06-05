@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Core do
   use Membrane.Filter
 
   alias Membrane.VideoCompositor.SceneChangeEvent
-  alias Membrane.{Buffer, Pad, RawVideo, Time}
+  alias Membrane.{Buffer, RawVideo, Time}
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
   defmodule State do
@@ -88,16 +88,18 @@ defmodule Membrane.VideoCompositor.Core do
         _pad,
         %Buffer{pts: pts, payload: payload},
         _context,
-        state = %State{wgpu_state: wgpu_state, pads_to_ids: pads_to_ids, scene: scene}
+        state = %State{
+          pads_to_ids: pads_to_ids,
+          wgpu_state: wgpu_state,
+          scene: %Scene{video_configs: video_configs}
+        }
       ) do
-    if scene == nil do
-      raise "VC core received buffer before scene"
-    end
-
     {:ok, rendered_frame} =
       payload
       |> Map.to_list()
-      |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames, pts, pads_to_ids) end)
+      |> Enum.filter(fn {pad, _frame} -> Map.has_key?(video_configs, pad) end)
+      |> Enum.map(fn {pad, frame} -> {Map.get(pads_to_ids, pad), frame, pts} end)
+      |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
 
     output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
 
@@ -124,19 +126,19 @@ defmodule Membrane.VideoCompositor.Core do
       :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
     end
 
+    :ok = Scene.validate(scene, CompositorCoreFormat.pads(stream_format))
+
     state = %State{state | scene: scene}
     {[], state}
   end
 
   @spec send_pads_frames(
           State.wgpu_state(),
-          [{Pad.ref_t(), binary()}],
-          Time.non_neg_t(),
-          State.pads_to_ids()
+          [{pad_id :: State.pad_id(), frame :: binary(), pts :: Time.non_neg_t()}]
         ) ::
           {:ok, rendered_frame :: binary()} | {:error, reason :: String.t()}
-  defp send_pads_frames(wgpu_state, [{pad, pad_frame}], pts, pads_to_ids) do
-    case WgpuAdapter.process_frame(wgpu_state, Map.fetch!(pads_to_ids, pad), {pad_frame, pts}) do
+  defp send_pads_frames(wgpu_state, [{pad, pad_frame, pts}]) do
+    case WgpuAdapter.process_frame(wgpu_state, pad, {pad_frame, pts}) do
       {:ok, {frame, _pts}} ->
         {:ok, frame}
 
@@ -145,10 +147,10 @@ defmodule Membrane.VideoCompositor.Core do
     end
   end
 
-  defp send_pads_frames(wgpu_state, [{pad, pad_frame} | tail], pts, pads_to_ids) do
-    case WgpuAdapter.process_frame(wgpu_state, Map.fetch!(pads_to_ids, pad), {pad_frame, pts}) do
+  defp send_pads_frames(wgpu_state, [{pad, pad_frame, pts} | tail]) do
+    case WgpuAdapter.process_frame(wgpu_state, pad, {pad_frame, pts}) do
       :ok ->
-        send_pads_frames(wgpu_state, tail, pts, pads_to_ids)
+        send_pads_frames(wgpu_state, tail)
 
       {:ok, {_frame, _pts}} ->
         {:error, "Wgpu should render frame only on last buffer!"}

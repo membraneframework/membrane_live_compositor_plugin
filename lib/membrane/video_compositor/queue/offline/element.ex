@@ -119,8 +119,11 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   def handle_parent_notification(
         {:update_scene, scene = %Scene{}},
         _ctx,
-        state = %State{most_recent_frame_pts: most_recent_frame_pts}
+        state = %State{most_recent_frame_pts: most_recent_frame_pts, pads_states: pads_states}
       ) do
+    input_pads = pads_states |> MapSet.new(fn {pad, _pad_state} -> pad end)
+    :ok = Scene.validate(scene, input_pads)
+
     state = State.put_event(state, {:update_scene, most_recent_frame_pts, scene})
 
     {[], state}

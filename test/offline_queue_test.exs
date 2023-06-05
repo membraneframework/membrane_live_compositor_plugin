@@ -18,6 +18,13 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     }
   }
 
+  @video_config2 %VideoConfig{
+    placement: %BaseVideoPlacement{
+      position: {960, 540},
+      size: {0.5, 0.0}
+    }
+  }
+
   @video_stream_format %RawVideo{
     width: 1920,
     height: 1080,
@@ -76,7 +83,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), %{}, state)
     {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(Time.seconds(1)), %{}, state)
 
-    new_scene = %Scene{video_configs: %{}}
+    new_scene = %Scene{video_configs: %{@pad1 => :exclude, @pad2 => @video_config2}}
     {[], state} = OfflineQueue.handle_parent_notification({:update_scene, new_scene}, %{}, state)
 
     assert {_pad1_buffer1_actions, state} =
