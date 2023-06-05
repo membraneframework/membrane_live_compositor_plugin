@@ -64,7 +64,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
 
   @impl true
   def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
-    do: {[remove_child: {:queue, pad_id}], state}
+    do: {[remove_child: {:framerate_converter, pad_id}], state}
 
   @impl true
   def handle_parent_notification({:update_scene, scene = %Scene{}}, _context, state) do
