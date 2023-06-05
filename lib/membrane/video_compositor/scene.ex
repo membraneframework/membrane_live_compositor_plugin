@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Scene do
   defstruct @enforce_keys
 
   @type t :: %__MODULE__{
-          video_configs: %{Pad.ref_t() => :exclude | VideoConfig.t()}
+          video_configs: %{Pad.ref_t() => VideoConfig.t()}
         }
 
   @spec empty() :: t()
@@ -30,8 +30,8 @@ defmodule Membrane.VideoCompositor.Scene do
   def validate(scene = %__MODULE__{video_configs: video_configs}, input_pads) do
     scene_pads = Scene.pads(scene)
 
-    unless MapSet.equal?(scene_pads, input_pads) do
-      raise "The scene must include references to all input pads and no others. \n" <>
+    unless MapSet.subset?(scene_pads, input_pads) do
+      raise "The scene must include references only to VideoCompositor input pads. \n" <>
               "Scene: #{inspect(scene)} \n" <>
               "Scene pads: #{inspect(MapSet.to_list(scene_pads))} \n" <>
               "Input pads: #{inspect(MapSet.to_list(input_pads))}"
@@ -41,14 +41,11 @@ defmodule Membrane.VideoCompositor.Scene do
     |> Map.to_list()
     |> Enum.map(fn {pad, video_config} ->
       case video_config do
-        :exclude ->
-          :ok
-
         %VideoConfig{} ->
           :ok
 
         _else ->
-          raise "The scene must include only :exclude of #{VideoConfig} struct as video config. \n" <>
+          raise "The scene must include only #{VideoConfig} structs. \n" <>
                   "Scene: #{inspect(scene)} \n" <>
                   "Video config for pad: #{inspect(pad)} has improper config: #{inspect(video_config)}"
       end
