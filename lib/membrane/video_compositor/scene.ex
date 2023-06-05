@@ -44,6 +44,10 @@ defmodule Membrane.VideoCompositor.Scene do
       """
     end
 
+    if video_configs == %{} do
+      raise "Scene can't be empty."
+    end
+
     _checked_video_configs =
       video_configs
       |> Map.to_list()
