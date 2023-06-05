@@ -11,6 +11,11 @@ defmodule Membrane.VideoCompositor.Scene do
   @enforce_keys [:video_configs]
   defstruct @enforce_keys
 
+  @typedoc """
+  Specify how output frame should look like.
+
+  If input pad isn't specified in `video_configs` it won't be used in composition.
+  """
   @type t :: %__MODULE__{
           video_configs: %{Pad.ref_t() => VideoConfig.t()}
         }
