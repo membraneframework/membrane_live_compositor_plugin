@@ -246,16 +246,6 @@ impl State {
         scene: Scene,
         video_resolutions: HashMap<VideoId, Vec2d<u32>>,
     ) -> Result<(), CompositorError> {
-        let has_same_keys = scene.video_configs.len() == video_resolutions.len()
-            && scene
-                .video_configs
-                .keys()
-                .all(|video_id| video_resolutions.contains_key(video_id));
-
-        if !has_same_keys {
-            return Err(CompositorError::DifferentVideoIndexes);
-        }
-
         self.input_videos = BTreeMap::new();
 
         for (

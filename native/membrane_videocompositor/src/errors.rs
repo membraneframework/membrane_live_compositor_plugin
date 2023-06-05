@@ -2,8 +2,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum CompositorError {
-    #[error("function not implemented")]
-    NotImplemented,
     #[error("bad video index: {0}")]
     BadVideoIndex(usize),
     #[error("bad framerate")]
@@ -14,18 +12,11 @@ pub enum CompositorError {
     BadVideoResolution(u32, u32),
     #[error("video index {0} is already taken")]
     VideoIndexAlreadyTaken(usize),
-    #[error("stream format and scene video indexes are different")]
-    DifferentVideoIndexes,
 }
 
 impl rustler::Encoder for CompositorError {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         match self {
-            CompositorError::NotImplemented => {
-                rustler::Atom::from_str(env, "function_not_implemented")
-                    .unwrap()
-                    .encode(env)
-            }
             CompositorError::BadVideoIndex(idx) => (
                 rustler::Atom::from_str(env, "bad_video_index").unwrap(),
                 *idx,
@@ -49,11 +40,6 @@ impl rustler::Encoder for CompositorError {
                 *idx,
             )
                 .encode(env),
-            CompositorError::DifferentVideoIndexes => {
-                rustler::Atom::from_str(env, "different_video_indexes")
-                    .unwrap()
-                    .encode(env)
-            }
         }
     }
 }
