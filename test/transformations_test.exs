@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.TextureTransformationsTest do
+defmodule Membrane.VideoCompositor.TransformationsTest do
   @moduledoc false
   use ExUnit.Case
 
@@ -7,12 +7,11 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
-  alias Membrane.VideoCompositor.Scene.{BaseVideoPlacement, VideoConfig}
+  alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
-  alias Membrane.VideoCompositor.VideoTransformations
 
-  alias Membrane.VideoCompositor.TextureTransformations.{
+  alias Membrane.VideoCompositor.Transformations.{
     CornersRounding,
     Cropping
   }
@@ -32,12 +31,12 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
     crop_top_left_corner: {0.5, 0.5},
     crop_size: {0.5, 0.5}
   }
+
   @corners_round %CornersRounding{
     border_radius: 100
   }
-  @transformations %VideoTransformations{
-    texture_transformations: [@crop, @corners_round]
-  }
+
+  @transformations [@crop, @corners_round]
 
   @reference_path "test/fixtures/texture_transformations/ref_cropping_and_corners_rounding.yuv"
 
@@ -83,8 +82,7 @@ defmodule Membrane.VideoCompositor.TextureTransformationsTest do
         placement: %BaseVideoPlacement{
           position: {0, 0},
           size: {@video_stream_format.width * 2, @video_stream_format.height * 2}
-        },
-        transformations: VideoTransformations.empty()
+        }
       },
       stream_format: @video_stream_format,
       input: input_path

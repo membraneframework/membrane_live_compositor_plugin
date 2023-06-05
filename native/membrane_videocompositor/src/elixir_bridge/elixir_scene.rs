@@ -7,7 +7,7 @@ use rustler::NifUntaggedEnum;
 
 use crate::compositor::{
     scene::{Scene, VideoConfig},
-    texture_transformations::TextureTransformation,
+    transformations::Transformation,
     Vec2d, VideoId, VideoPlacement,
 };
 
@@ -32,23 +32,29 @@ impl Into<Scene> for ElixirScene {
 }
 
 #[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.Scene.VideoConfig"]
+#[module = "Membrane.VideoCompositor.VideoConfig"]
 pub struct ElixirVideoConfig {
     pub placement: ElixirBaseVideoPlacement,
-    pub transformations: ElixirVideoTransformations,
+    pub transformations: Vec<ElixirTextureTransformations>,
 }
 
 impl Into<VideoConfig> for ElixirVideoConfig {
     fn into(self) -> VideoConfig {
+        let mut transformations = Vec::new();
+
+        for texture_transformation in self.transformations.into_iter() {
+            transformations.push(texture_transformation.into());
+        }
+
         VideoConfig {
             placement: self.placement.into(),
-            texture_transformations: self.transformations.into(),
+            transformations,
         }
     }
 }
 
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.Scene.BaseVideoPlacement"]
+#[module = "Membrane.VideoCompositor.BaseVideoPlacement"]
 pub struct ElixirBaseVideoPlacement {
     pub position: (i32, i32),
     pub size: (u32, u32),
@@ -71,30 +77,11 @@ impl Into<VideoPlacement> for ElixirBaseVideoPlacement {
     }
 }
 
-/// Describes all transformations applied to video
-#[derive(Debug, rustler::NifStruct, Clone)]
-#[module = "Membrane.VideoCompositor.VideoTransformations"]
-pub struct ElixirVideoTransformations {
-    pub texture_transformations: Vec<ElixirTextureTransformations>,
-}
-
-impl Into<Vec<Box<dyn TextureTransformation>>> for ElixirVideoTransformations {
-    fn into(self) -> Vec<Box<dyn TextureTransformation>> {
-        let mut texture_transformations = Vec::new();
-
-        for texture_transformation in self.texture_transformations.into_iter() {
-            texture_transformations.push(texture_transformation.into());
-        }
-
-        texture_transformations
-    }
-}
-
 /// Wraps video transformations parameters (wrapped in structs) into enum.
-/// Allows passing to rust elixir texture transformation type,
+/// Allows passing to rust elixir transformation type,
 /// which is algebraic sum type of all structs describing single
-/// texture transformation.
-/// As a developer adding new texture transformation, you need just to add
+/// transformation.
+/// As a developer adding new transformation, you need just to add
 /// new enum value and implement new match arm converting elixir structs to
 /// rust structs used in shader.
 #[derive(Debug, NifUntaggedEnum, Clone, Copy)]
@@ -103,8 +90,8 @@ pub enum ElixirTextureTransformations {
     Cropping(ElixirCropping),
 }
 
-impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
-    fn into(self) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn Transformation>> for ElixirTextureTransformations {
+    fn into(self) -> Box<dyn Transformation> {
         match self {
             ElixirTextureTransformations::CornersRounding(elixir_corners_rounding) => {
                 elixir_corners_rounding.into()

@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
   alias Membrane.VideoCompositor.{Queue, Scene}
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   @typedoc """
   Defines implemented VC queuing strategies.

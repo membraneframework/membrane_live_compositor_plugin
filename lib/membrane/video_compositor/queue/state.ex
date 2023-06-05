@@ -9,7 +9,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
   alias Membrane.VideoCompositor.Queue.State.PadState
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   @enforce_keys [:output_framerate, :custom_strategy_state]
   defstruct @enforce_keys ++
@@ -63,7 +63,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     """
 
     alias Membrane.VideoCompositor.Queue.State
-    alias Membrane.VideoCompositor.Scene.VideoConfig
+    alias Membrane.VideoCompositor.VideoConfig
 
     @spec add_video(State.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: State.t()
     def add_video(state, added_pad, %{video_config: video_config}) do

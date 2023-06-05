@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
   alias Membrane.{FramerateConverter, RawVideo}
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   def_options output_framerate: [
                 spec: RawVideo.framerate_t(),

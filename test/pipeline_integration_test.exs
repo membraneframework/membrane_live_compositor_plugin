@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.Scene.{BaseVideoPlacement, VideoConfig}
+  alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.H264, as: PipelineH264
   alias Membrane.VideoCompositor.Support.Utils
 
@@ -25,8 +25,6 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
     pixel_format: :I420,
     aligned: true
   }
-
-  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
   describe "Checks h264 pipeline on merging four videos on 2x2 grid" do
     @describetag :tmp_dir
@@ -91,8 +89,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
             placement: %BaseVideoPlacement{
               position: position,
               size: {video_stream_format.width, video_stream_format.height}
-            },
-            transformations: @empty_video_transformations
+            }
           },
           stream_format: video_stream_format
         }

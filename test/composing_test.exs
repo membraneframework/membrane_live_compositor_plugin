@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
 
   alias Membrane.RawVideo
   alias Membrane.Testing.Pipeline, as: TestingPipeline
-  alias Membrane.VideoCompositor.Scene.{BaseVideoPlacement, VideoConfig}
+  alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
   alias Membrane.VideoCompositor.Support.Utils
 
@@ -19,8 +19,6 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     pixel_format: :I420,
     aligned: true
   }
-
-  @empty_video_transformations Membrane.VideoCompositor.VideoTransformations.empty()
 
   # In this test we need to increase allowed mean square error, due to differences in
   # "rendering" between ffmpeg created ref and wgpu produced output
@@ -96,8 +94,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
               placement: %BaseVideoPlacement{
                 position: position,
                 size: {video_stream_format.width, video_stream_format.height}
-              },
-              transformations: @empty_video_transformations
+              }
             },
             stream_format: video_stream_format,
             input: input_path

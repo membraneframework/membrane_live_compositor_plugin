@@ -7,8 +7,8 @@ mod colour_converters;
 pub mod math;
 mod pipeline_common;
 pub mod scene;
-pub mod texture_transformations;
 mod textures;
+pub mod transformations;
 mod videos;
 
 use textures::*;
@@ -21,11 +21,9 @@ pub use videos::{VideoPlacement, VideoProperties};
 use self::{
     colour_converters::{RGBAToYUVConverter, YUVToRGBAConverter},
     scene::{Scene, VideoConfig},
-    texture_transformations::{filled_registry, TextureTransformation},
+    transformations::{filled_registry, Transformation},
 };
-use self::{
-    pipeline_common::Sampler, texture_transformations::registry::TextureTransformationRegistry,
-};
+use self::{pipeline_common::Sampler, transformations::registry::TransformationRegistry};
 
 pub type VideoId = u32;
 
@@ -42,7 +40,7 @@ pub struct State {
     rgba_to_yuv_converter: RGBAToYUVConverter,
     output_stream_format: RawVideo,
     last_pts: Option<u64>,
-    texture_transformation_pipelines: TextureTransformationRegistry,
+    texture_transformation_pipelines: TransformationRegistry,
 }
 
 impl State {
@@ -252,7 +250,7 @@ impl State {
             video_id,
             VideoConfig {
                 placement,
-                texture_transformations,
+                transformations: texture_transformations,
             },
         ) in scene.video_configs
         {
@@ -278,7 +276,7 @@ impl State {
         &mut self,
         idx: usize,
         base_properties: VideoProperties,
-        texture_transformations: Vec<Box<dyn TextureTransformation>>,
+        texture_transformations: Vec<Box<dyn Transformation>>,
     ) -> Result<(), CompositorError> {
         if self.input_videos.contains_key(&idx) {
             return Err(CompositorError::VideoIndexAlreadyTaken(idx));

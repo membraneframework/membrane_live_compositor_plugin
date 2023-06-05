@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.RustStructs.Scene do
 
   alias Membrane.Pad
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   @enforce_keys [:video_configs]
   defstruct @enforce_keys

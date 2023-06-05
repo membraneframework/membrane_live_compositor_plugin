@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::{texture_transformations::TextureTransformation, VideoPlacement};
+use super::{transformations::Transformation, VideoPlacement};
 
 type VideoId = u32;
 
@@ -20,5 +20,5 @@ impl Scene {
 #[derive(Debug)]
 pub struct VideoConfig {
     pub placement: VideoPlacement,
-    pub texture_transformations: Vec<Box<dyn TextureTransformation>>,
+    pub transformations: Vec<Box<dyn Transformation>>,
 }

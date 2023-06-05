@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   def_options output_framerate: [
                 spec: RawVideo.framerate_t()

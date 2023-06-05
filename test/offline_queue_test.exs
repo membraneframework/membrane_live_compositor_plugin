@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueue
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Scene.{BaseVideoPlacement, VideoConfig}
+  alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
 
   @frame <<0::3_110_400>>
 

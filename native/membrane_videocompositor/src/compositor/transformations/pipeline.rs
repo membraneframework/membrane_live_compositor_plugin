@@ -1,12 +1,12 @@
 //! The module is used for relieving users from the pain of creating 600+ lines long boilerplate
 //! wgpu render pipeline descriptions for creating textures transformations.
-//! When adding a new texture transformation user needs only to modify texture_transformations
+//! When adding a new transformation user needs only to modify texture_transformations
 //! module, without the burden of creating wgpu boilerplate.
 
 use crate::compositor::{pipeline_common::PipelineCommon, textures::RGBATexture, Vertex};
 use std::any::TypeId;
 
-use super::TextureTransformation;
+use super::Transformation;
 
 #[rustfmt::skip]
 const INDICES: [u16; 6] = [
@@ -14,18 +14,18 @@ const INDICES: [u16; 6] = [
     2, 3, 0,
 ];
 
-/// This an is abstraction for texture transformation rendering pipeline.
-/// It's created once for every type of texture transformation
-/// and is kept in main compositor state. Using specific texture transformation
-/// require calling transform function on created pipeline (TextureTransformationPipeline
-/// struct instance) with TextureTransformation struct instance
+/// This an is abstraction for transformation rendering pipeline.
+/// It's created once for every type of transformation
+/// and is kept in main compositor state. Using specific transformation
+/// require calling transform function on created pipeline (TransformationPipeline
+/// struct instance) with Transformation struct instance
 /// (passed to shader) describing transformation parameters.
-/// This way, we can apply the same type of texture transformation like
+/// This way, we can apply the same type of transformation like
 /// corner rounding or filer effect on multiple videos with different parameters
 /// (e.x. edge rounding radius or filter color) without the need to construct multiple
 /// rendering pipelines.
 #[derive(Debug)]
-pub struct TextureTransformationPipeline {
+pub struct TransformationPipeline {
     pub pipeline: wgpu::RenderPipeline,
     pub common: PipelineCommon,
     pub uniform_bind_group: wgpu::BindGroup,
@@ -33,9 +33,9 @@ pub struct TextureTransformationPipeline {
     transformation_id: TypeId,
 }
 
-impl TextureTransformationPipeline {
+impl TransformationPipeline {
     /// Creates a rendering pipeline for a specific transformation type.
-    pub fn new<T: super::TextureTransformation>(
+    pub fn new<T: super::Transformation>(
         device: &wgpu::Device,
         single_texture_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
@@ -44,7 +44,7 @@ impl TextureTransformationPipeline {
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some(&format!(
-                    "Texture transformation pipeline {} uniform bind group layout",
+                    "transformation pipeline {} uniform bind group layout",
                     T::transformation_name()
                 )),
                 entries: &[wgpu::BindGroupLayoutEntry {
@@ -63,7 +63,7 @@ impl TextureTransformationPipeline {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {} pipeline layout",
+                "transformation pipeline {} pipeline layout",
                 T::transformation_name(),
             )),
             bind_group_layouts: &[
@@ -76,7 +76,7 @@ impl TextureTransformationPipeline {
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {} pipeline",
+                "transformation pipeline {} pipeline",
                 T::transformation_name(),
             )),
             layout: Some(&pipeline_layout),
@@ -114,7 +114,7 @@ impl TextureTransformationPipeline {
 
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {} uniform buffer",
+                "transformation pipeline {} uniform buffer",
                 T::transformation_name(),
             )),
             mapped_at_creation: false,
@@ -124,7 +124,7 @@ impl TextureTransformationPipeline {
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {} uniform bind group",
+                "transformation pipeline {} uniform bind group",
                 T::transformation_name()
             )),
             entries: &[wgpu::BindGroupEntry {
@@ -152,7 +152,7 @@ impl TextureTransformationPipeline {
         queue: &wgpu::Queue,
         src: &RGBATexture,
         dst: &RGBATexture,
-        transformation: &dyn TextureTransformation,
+        transformation: &dyn Transformation,
     ) {
         assert_eq!(self.transformation_id, transformation.type_id(), "TextureTransformationPipeline: transform() called with a transformation of an incorrect type");
         // FIXME: handle the case of T.data().len() != T::buffer_size()
@@ -161,7 +161,7 @@ impl TextureTransformationPipeline {
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some(&format!(
-                "Texture transformation pipeline {:#?} encoder",
+                "transformation pipeline {:#?} encoder",
                 transformation.transformation_name_dyn(),
             )),
         });
@@ -169,7 +169,7 @@ impl TextureTransformationPipeline {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!(
-                    "Texture transformation pipeline {} render pass",
+                    "transformation pipeline {} render pass",
                     transformation.transformation_name_dyn(),
                 )),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {

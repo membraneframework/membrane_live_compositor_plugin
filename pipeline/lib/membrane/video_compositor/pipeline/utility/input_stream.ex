@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.Pipeline.Utils.InputStream do
-
   alias Membrane.{Time, RawVideo, Source}
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
   @doc """
   Specification of input video stream for a testing pipeline

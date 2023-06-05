@@ -8,9 +8,9 @@ use crate::elixir_bridge::RawVideo;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::texture_transformations::registry::TextureTransformationRegistry;
-use super::texture_transformations::{set_video_properties, TextureTransformation};
 use super::textures::{RGBATexture, YUVTextures};
+use super::transformations::registry::TransformationRegistry;
+use super::transformations::{set_video_properties, Transformation};
 use super::{Vec2d, Vertex};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -55,7 +55,7 @@ pub struct InputVideo {
     indices: wgpu::Buffer,
     pub base_properties: VideoProperties,
     pub transformed_properties: VideoProperties,
-    pub texture_transformations: Vec<Box<dyn TextureTransformation>>,
+    pub texture_transformations: Vec<Box<dyn Transformation>>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     /// When a video is created this is set to `true`. When `draw` is later called on it,
@@ -71,7 +71,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         base_properties: VideoProperties,
-        mut texture_transformations: Vec<Box<dyn TextureTransformation>>,
+        mut texture_transformations: Vec<Box<dyn Transformation>>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
@@ -123,7 +123,7 @@ impl InputVideo {
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
-        registry: &TextureTransformationRegistry,
+        registry: &TransformationRegistry,
     ) {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
@@ -135,7 +135,7 @@ impl InputVideo {
         converter.convert(device, queue, &self.yuv_textures, &frame);
 
         let mut transformed_properties = self.base_properties;
-        // Runs all texture transformations.
+        // Runs all transformations.
         for transformation in self.texture_transformations.iter() {
             transformed_properties =
                 transformation.transform_video_properties(transformed_properties);
