@@ -100,28 +100,28 @@ defmodule Membrane.VideoCompositor.Queue.Live do
         _ctx,
         initial_state = %State{next_buffer_pts: next_buffer_pts}
       ) do
-    {new_state, pad_frames} = pop_pads_events(initial_state)
+    {new_state, pads_frames} = pop_pads_events(initial_state)
 
-    actions = State.actions(initial_state, new_state, pad_frames, next_buffer_pts)
+    actions = State.actions(initial_state, new_state, pads_frames, next_buffer_pts)
     # calculate new buffer pts here
 
     {actions, new_state}
   end
 
   @spec pop_pads_events(State.t()) ::
-          {updated_state :: State.t(), pad_frames :: %{Pad.ref_t() => binary()}}
+          {updated_state :: State.t(), pads_frames :: %{Pad.ref_t() => binary()}}
   defp pop_pads_events(state = %State{pads_states: pads_states, next_buffer_pts: next_buffer_pts}) do
     pads_states
     |> Map.keys()
     |> Enum.reduce(
       {state, %{}},
-      fn pad, {state, pad_frames} ->
+      fn pad, {state, pads_frames} ->
         case pop_pad_events(state, pad, next_buffer_pts) do
           {state, :no_frame} ->
-            {state, pad_frames}
+            {state, pads_frames}
 
           {state, frame} ->
-            {state, Map.put(pad_frames, pad, frame)}
+            {state, Map.put(pads_frames, pad, frame)}
         end
       end
     )

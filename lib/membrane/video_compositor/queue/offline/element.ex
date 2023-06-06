@@ -12,8 +12,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   use Membrane.Filter
 
-  alias Membrane.{Buffer, Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue, SceneChangeEvent}
+  alias Membrane.{Pad, RawVideo, Time}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue}
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
@@ -245,25 +245,9 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         {pads_frames, %State{state | next_buffer_pts: calculate_next_buffer_pts(state)}}
       end)
 
-    stream_format_action =
-      if new_state.output_format != initial_state.output_format do
-        [stream_format: {:output, new_state.output_format}]
-      else
-        []
-      end
+    actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
 
-    scene_action =
-      if new_state.scene != initial_state.scene do
-        [event: {:output, %SceneChangeEvent{new_scene: new_state.scene}}]
-      else
-        []
-      end
-
-    buffer_action = [
-      buffer: {:output, %Buffer{payload: pads_frames, pts: buffer_pts, dts: buffer_pts}}
-    ]
-
-    {stream_format_action ++ scene_action ++ buffer_action, new_state}
+    {actions, new_state}
   end
 
   @spec pop_scene_events(State.t()) :: State.t()
