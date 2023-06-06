@@ -22,4 +22,19 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
     pad_formats
     |> MapSet.new(fn {pad, _pad_format} -> pad end)
   end
+
+  @spec validate(t(), MapSet.t()) :: :ok
+  def validate(compositor_core_format = %__MODULE__{pad_formats: pad_formats}, input_pads) do
+    format_pads = pad_formats |> Map.keys() |> MapSet.new()
+
+    unless MapSet.equal?(format_pads, input_pads) do
+      raise """
+      CompositorCoreFormat should contain all input pads formats.
+      CompositorCoreFormat: #{inspect(compositor_core_format)}
+      Input pads: #{inspect(MapSet.to_list(input_pads))}
+      """
+    end
+
+    :ok
+  end
 end

@@ -14,6 +14,10 @@ defmodule Membrane.VideoCompositor.Core do
     The internal state of the compositor
     """
 
+    @enforce_keys [:wgpu_state, :output_stream_format]
+    defstruct @enforce_keys ++
+                [input_stream_format: nil, scene: nil, pads_to_ids: %{}, update_videos?: true]
+
     @type wgpu_state() :: any()
     @type pad_id() :: non_neg_integer()
     @type pads_to_ids() :: %{Membrane.Pad.ref_t() => pad_id()}
@@ -23,11 +27,9 @@ defmodule Membrane.VideoCompositor.Core do
             input_stream_format: nil | CompositorCoreFormat.t(),
             output_stream_format: RawVideo.t(),
             scene: nil | Scene.t(),
-            pads_to_ids: pads_to_ids()
+            pads_to_ids: pads_to_ids(),
+            update_videos?: boolean()
           }
-
-    @enforce_keys [:wgpu_state, :output_stream_format]
-    defstruct @enforce_keys ++ [input_stream_format: nil, scene: nil, pads_to_ids: %{}]
   end
 
   def_options output_stream_format: [
@@ -67,7 +69,7 @@ defmodule Membrane.VideoCompositor.Core do
         _pad,
         stream_format = %CompositorCoreFormat{pad_formats: pad_formats},
         _context,
-        state = %State{wgpu_state: wgpu_state}
+        state = %State{}
       ) do
     pads_to_ids =
       pad_formats
@@ -75,11 +77,13 @@ defmodule Membrane.VideoCompositor.Core do
       |> Enum.with_index(fn pad, index -> {pad, index} end)
       |> Enum.into(%{})
 
-    if state.scene != nil do
-      WgpuAdapter.set_videos(wgpu_state, stream_format, state.scene, pads_to_ids)
-    end
+    state = %State{
+      state
+      | pads_to_ids: pads_to_ids,
+        input_stream_format: stream_format,
+        update_videos?: true
+    }
 
-    state = %State{state | pads_to_ids: pads_to_ids, input_stream_format: stream_format}
     {[], state}
   end
 
@@ -91,10 +95,19 @@ defmodule Membrane.VideoCompositor.Core do
         state = %State{
           pads_to_ids: pads_to_ids,
           wgpu_state: wgpu_state,
-          scene: scene
+          scene: scene,
+          input_stream_format: stream_format,
+          update_videos?: update_videos?
         }
       ) do
-    :ok = validate_scene(state)
+    if update_videos? do
+      input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
+
+      CompositorCoreFormat.validate(stream_format, input_pads)
+      Scene.validate(scene, input_pads)
+
+      :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
+    end
 
     {:ok, rendered_frame} =
       payload
@@ -105,7 +118,7 @@ defmodule Membrane.VideoCompositor.Core do
 
     output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
 
-    {[buffer: {:output, output_buffer}], state}
+    {[buffer: {:output, output_buffer}], %State{state | update_videos?: false}}
   end
 
   @impl true
@@ -118,34 +131,25 @@ defmodule Membrane.VideoCompositor.Core do
         _pad,
         %SceneChangeEvent{new_scene: scene = %Scene{}},
         _ctx,
-        state = %State{
-          wgpu_state: wgpu_state,
-          input_stream_format: stream_format,
-          pads_to_ids: pads_to_ids
-        }
+        state = %State{input_stream_format: stream_format}
       ) do
-    if stream_format != nil do
-      :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
-    end
-
     :ok = Scene.validate(scene, CompositorCoreFormat.pads(stream_format))
 
-    state = %State{state | scene: scene}
+    state = %State{state | scene: scene, update_videos?: true}
     {[], state}
   end
 
   @spec send_pads_frames(
           State.wgpu_state(),
           [{pad_id :: State.pad_id(), frame :: binary(), pts :: Time.non_neg_t()}]
-        ) ::
-          {:ok, rendered_frame :: binary()} | {:error, reason :: String.t()}
+        ) :: {:ok, rendered_frame :: binary()}
   defp send_pads_frames(wgpu_state, [{pad, pad_frame, pts}]) do
     case WgpuAdapter.process_frame(wgpu_state, pad, {pad_frame, pts}) do
       {:ok, {frame, _pts}} ->
         {:ok, frame}
 
       :ok ->
-        {:error, "Wgpu should render frame on last buffer!"}
+        raise "Core should render frame on last buffer"
     end
   end
 
@@ -155,19 +159,7 @@ defmodule Membrane.VideoCompositor.Core do
         send_pads_frames(wgpu_state, tail)
 
       {:ok, {_frame, _pts}} ->
-        {:error, "Wgpu should render frame only on last buffer!"}
+        raise "Core should render frame only on last buffer"
     end
-  end
-
-  @spec validate_scene(State.t()) :: :ok
-  defp validate_scene(%State{scene: %Scene{}}) do
-    :ok
-  end
-
-  defp validate_scene(state = %State{scene: nil}) do
-    raise """
-    Scene should be set on handle_process.
-    State: #{state}
-    """
   end
 end
