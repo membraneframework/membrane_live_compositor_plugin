@@ -13,14 +13,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   use Membrane.Filter
 
   alias Membrane.{Buffer, Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue, SceneChangeEvent}
+  alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.VideoConfig
 
-  def_options target_fps: [
+  def_options output_framerate: [
                 spec: RawVideo.framerate_t()
               ]
 
@@ -37,6 +37,10 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       video_config: [
         spec: VideoConfig.t(),
         description: "Specify layout and transformations of the video on final scene."
+      ],
+      vc_input_ref: [
+        spec: Pad.ref_t(),
+        description: "Reference to VC input pad."
       ]
     ]
 
@@ -45,46 +49,67 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     accepted_format: %CompositorCoreFormat{}
 
   @impl true
-  def handle_init(_ctx, _options = %{target_fps: target_fps}) do
-    {[], %State{target_fps: target_fps}}
+  def handle_init(
+        _ctx,
+        _options = %{output_framerate: output_framerate}
+      ) do
+    {[], %State{output_framerate: output_framerate, custom_strategy_state: %OfflineState{}}}
   end
 
   @impl true
   def handle_pad_added(pad, context, state = %State{}) do
-    state = Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(context.options))
+    vc_input_ref = context.options.vc_input_ref
+
+    state =
+      state
+      |> Bunch.Struct.put_in([:custom_strategy_state, :inputs_mapping, pad], vc_input_ref)
+      |> Bunch.Struct.put_in([:pads_states, vc_input_ref], PadState.new(context.options))
+
     {[], state}
   end
 
   @impl true
-  def handle_pad_removed(pad, _ctx, state = %State{}) do
-    state =
-      Bunch.Struct.update_in(state, [:pads_states, pad, :events_queue], &(&1 ++ [:end_of_stream]))
+  def handle_end_of_stream(
+        pad,
+        _ctx,
+        state = %State{custom_strategy_state: %OfflineState{inputs_mapping: inputs_mapping}}
+      ) do
+    vc_input_ref = Map.fetch!(inputs_mapping, pad)
+
+    state = State.put_event(state, {:end_of_stream, vc_input_ref})
 
     check_pads_queues({[], state})
   end
 
   @impl true
-  def handle_stream_format(pad, stream_format, _context, state = %State{}) do
-    state =
-      Bunch.Struct.update_in(
-        state,
-        [:pads_states, pad, :events_queue],
-        &(&1 ++ [{:stream_format, stream_format}])
-      )
+  def handle_stream_format(
+        pad,
+        stream_format,
+        _context,
+        state = %State{custom_strategy_state: %OfflineState{inputs_mapping: inputs_mapping}}
+      ) do
+    vc_input_ref = Map.fetch!(inputs_mapping, pad)
+
+    state = State.put_event(state, {{:stream_format, stream_format}, vc_input_ref})
 
     {[], state}
   end
 
   @impl true
-  def handle_process(pad, buffer, _context, state = %State{}) do
-    frame_pts = buffer.pts + Bunch.Struct.get_in(state, [:pads_states, pad, :timestamp_offset])
+  def handle_process(
+        pad,
+        buffer,
+        _context,
+        state = %State{custom_strategy_state: %OfflineState{inputs_mapping: inputs_mapping}}
+      ) do
+    vc_input_ref = Map.fetch!(inputs_mapping, pad)
+
+    frame_pts =
+      buffer.pts + Bunch.Struct.get_in(state, [:pads_states, vc_input_ref, :timestamp_offset])
 
     state =
       state
-      |> Bunch.Struct.update_in(
-        [:pads_states, pad, :events_queue],
-        &(&1 ++ [{:frame, frame_pts, buffer.payload}])
-      )
+      |> State.put_event({{:frame, frame_pts, buffer.payload}, vc_input_ref})
       |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
     check_pads_queues({[], state})
@@ -94,14 +119,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   def handle_parent_notification(
         {:update_scene, scene = %Scene{}},
         _ctx,
-        state = %State{most_recent_frame_pts: most_recent_frame_pts}
+        state = %State{most_recent_frame_pts: most_recent_frame_pts, pads_states: pads_states}
       ) do
-    state =
-      Map.update!(
-        state,
-        :scene_update_events,
-        &(&1 ++ [{:update_scene, most_recent_frame_pts, scene}])
-      )
+    input_pads = pads_states |> MapSet.new(fn {pad, _pad_state} -> pad end)
+    # here we can accept user sending empty scene,
+    # provided that it won't be empty on composing buffer
+    :ok = Scene.validate(scene, input_pads, false)
+
+    state = State.put_event(state, {:update_scene, most_recent_frame_pts, scene})
 
     {[], state}
   end
@@ -109,7 +134,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @spec calculate_next_buffer_pts(State.t()) :: Time.non_neg_t()
   defp calculate_next_buffer_pts(%State{
          next_buffer_pts: previous_buffer_pts,
-         target_fps: {fps_num, fps_den}
+         output_framerate: {fps_num, fps_den}
        }) do
     previous_buffer_pts + Kernel.ceil(Time.seconds(1) * fps_den / fps_num)
   end
@@ -221,15 +246,15 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       end)
 
     stream_format_action =
-      if new_state.current_output_format != initial_state.current_output_format do
-        [stream_format: {:output, new_state.current_output_format}]
+      if new_state.output_format != initial_state.output_format do
+        [stream_format: {:output, new_state.output_format}]
       else
         []
       end
 
     scene_action =
-      if new_state.current_scene != initial_state.current_scene do
-        [notify_child: {:output, {:update_scene, new_state.current_scene}}]
+      if new_state.scene != initial_state.scene do
+        [event: {:output, %SceneChangeEvent{new_scene: new_state.scene}}]
       else
         []
       end
@@ -250,7 +275,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
        ) do
     Enum.reduce_while(scene_update_events, state, fn {:update_scene, pts, new_scene}, state ->
       if pts < buffer_pts do
-        {:cont, %State{state | current_scene: new_scene}}
+        {:cont, %State{state | scene: new_scene}}
       else
         {:halt, state}
       end
@@ -273,7 +298,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         state =
           state
           |> MockCallbacks.remove_video(pad)
-          |> Bunch.Struct.delete_in([:current_output_format, :pads_formats, pad])
+          |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
           |> Bunch.Struct.delete_in([:pads_states, pad])
 
         {:end_of_stream, state}
@@ -283,8 +308,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         pop_pad_events(pad, state)
 
       {:stream_format, stream_format} ->
-        state =
-          Bunch.Struct.put_in(state, [:current_output_format, :pads_formats, pad], stream_format)
+        state = Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
 
         pop_pad_events(pad, state)
     end

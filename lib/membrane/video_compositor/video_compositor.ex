@@ -4,99 +4,89 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Bin
-  alias Membrane.FramerateConverter
-  alias Membrane.Pad
-  alias Membrane.VideoCompositor.CompositorElement
-  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
-  alias Membrane.VideoCompositor.VideoTransformations
+  alias Membrane.{Pad, RawVideo}
+  alias Membrane.VideoCompositor.Core, as: VCCore
+  alias Membrane.VideoCompositor.{Queue, Scene}
+  alias Membrane.VideoCompositor.VideoConfig
 
   @typedoc """
-  A message describing a compositor video placement update
+  Defines implemented VC queuing strategies.
+  Any queuing strategy should follow contracts defined in `Membrane.VideoCompositor.Queue` module.
   """
-  @type update_placement ::
-          {:update_placement, [{Membrane.Pad.ref_t(), BaseVideoPlacement.t()}]}
+  @type queuing_strategy :: :offline
 
   @typedoc """
-  A message describing a compositor video transformations update
+  Defines how VC should be notified with new scene -
+  new composition schema.
   """
-  @type update_transformations ::
-          {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
+  @type scene_update_notification :: {:update_scene, Scene.t()}
 
-  def_options stream_format: [
+  @type init_options :: %__MODULE__{
+          output_stream_format: RawVideo.t(),
+          queuing_strategy: queuing_strategy()
+        }
+
+  def_options output_stream_format: [
                 spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
+              ],
+              queuing_strategy: [
+                spec: queuing_strategy(),
+                description: "Specify used frames queueing strategy",
+                default: :offline
               ]
 
   def_input_pad :input,
-    accepted_format: %Membrane.RawVideo{pixel_format: :I420},
+    accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
-      initial_placement: [
-        spec: BaseVideoPlacement.t(),
-        description: "Initial placement of the video on the screen"
+      video_config: [
+        spec: VideoConfig.t(),
+        description: "Specify how single input video should be transformed"
       ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
-      ],
-      initial_video_transformations: [
-        spec: VideoTransformations.t(),
-        description:
-          "Specify the initial types and the order of transformations applied to video.",
-        # Can't set here struct, due to quote error (AST invalid node).
-        # Calling Macro.escape() returns tuple and makes code more error prone and less readable.
-        default: nil
       ]
     ]
 
   def_output_pad :output,
-    accepted_format: %Membrane.RawVideo{pixel_format: :I420},
+    accepted_format: %RawVideo{pixel_format: :I420},
     availability: :always
 
   @impl true
-  def handle_init(_ctx, options) do
+  def handle_init(
+        _ctx,
+        options = %__MODULE__{output_stream_format: output_stream_format = %RawVideo{}}
+      ) do
     spec =
-      child(:compositor, %CompositorElement{
-        stream_format: options.stream_format
+      child(:queue, Queue.get_queue(options))
+      |> child(:compositor_core, %VCCore{
+        output_stream_format: output_stream_format
       })
       |> bin_output()
 
-    state = %{output_stream_format: options.stream_format}
-
-    {[spec: spec], state}
+    {[spec: spec], %{}}
   end
-
-  @impl true
-  def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
-    do: {[remove_child: {:framerate_converter, pad_id}], state}
 
   @impl true
   def handle_pad_added(Pad.ref(:input, pad_id), context, state) do
     spec =
       bin_input(Pad.ref(:input, pad_id))
-      |> child({:framerate_converter, pad_id}, %FramerateConverter{
-        framerate: state.output_stream_format.framerate
-      })
       |> via_in(Pad.ref(:input, pad_id),
         options: [
-          initial_placement: context.options.initial_placement,
           timestamp_offset: context.options.timestamp_offset,
-          initial_video_transformations: context.options.initial_video_transformations
+          video_config: context.options.video_config
         ]
       )
-      |> get_child(:compositor)
+      |> get_child(:queue)
 
     {[spec: spec], state}
   end
 
   @impl true
-  def handle_parent_notification({:update_placement, placements}, _ctx, state) do
-    {[notify_child: {:compositor, {:update_placement, placements}}], state}
-  end
-
-  @impl true
-  def handle_parent_notification({:update_transformations, transformations}, _ctx, state) do
-    {[notify_child: {:compositor, {:update_transformations, transformations}}], state}
+  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
+    {[notify_child: {:queue, {:update_scene, scene}}], state}
   end
 end

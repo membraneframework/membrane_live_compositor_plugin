@@ -1,9 +1,15 @@
-use crate::compositor;
+use std::collections::HashMap;
+
 use crate::compositor::math::Vec2d;
+use crate::compositor::scene::Scene;
+use crate::compositor::{self, VideoId};
 use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
 use rustler::ResourceArc;
 
+use self::elixir_scene::ElixirScene;
+
+mod elixir_scene;
 mod elixir_structs;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -143,18 +149,6 @@ fn process_frame<'a>(
     }
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
-fn force_render(
-    env: rustler::Env<'_>,
-    state: ResourceArc<State>,
-) -> Result<(rustler::Atom, (rustler::Term<'_>, u64)), rustler::Error> {
-    let mut state = state.lock().unwrap();
-
-    let (output, pts) = get_frame(&mut state);
-
-    Ok((atoms::ok(), (output.release(env).to_term(env), pts)))
-}
-
 fn get_frame(state: &mut InnerState) -> (rustler::OwnedBinary, u64) {
     let mut output = rustler::OwnedBinary::new(
         state.output_stream_format.width.get() as usize
@@ -169,39 +163,6 @@ fn get_frame(state: &mut InnerState) -> (rustler::OwnedBinary, u64) {
     (output, pts)
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
-fn add_video(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: rustler::ResourceArc<State>,
-    id: usize,
-    stream_format: ElixirRawVideo,
-    placement: ElixirBaseVideoPlacement,
-    transformations: ElixirVideoTransformations,
-) -> Result<rustler::Atom, rustler::Error> {
-    let stream_format: RawVideo = stream_format.try_into()?;
-
-    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-
-    let base_placement = placement.into();
-
-    let base_properties = compositor::VideoProperties {
-        input_resolution: Vec2d {
-            x: stream_format.width.get(),
-            y: stream_format.height.get(),
-        },
-
-        placement: base_placement,
-    };
-
-    let texture_transformations = transformations.into();
-
-    state
-        .compositor
-        .add_video(id, base_properties, texture_transformations)?;
-
-    Ok(atoms::ok())
-}
-
 pub fn convert_z(z: f32) -> f32 {
     // we need to do this because 0.0 is an intuitively standard value and maps onto 1.0,
     // which is outside of the wgpu clip space
@@ -209,107 +170,35 @@ pub fn convert_z(z: f32) -> f32 {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-fn update_stream_format(
+fn set_videos(
     #[allow(unused)] env: rustler::Env<'_>,
     state: rustler::ResourceArc<State>,
-    id: usize,
-    stream_format: ElixirRawVideo,
+    stream_format: HashMap<VideoId, ElixirRawVideo>,
+    scene: ElixirScene,
 ) -> Result<rustler::Atom, rustler::Error> {
-    let stream_format: RawVideo = stream_format.try_into()?;
-    let stream_format = Vec2d {
-        x: stream_format.width.get(),
-        y: stream_format.height.get(),
-    };
+    let scene: Scene = scene.into();
+    let mut video_resolutions: HashMap<VideoId, Vec2d<u32>> = HashMap::new();
 
-    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-
-    state
-        .compositor
-        .update_properties(id, Some(stream_format), None, None)?;
-
-    Ok(atoms::ok())
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-fn update_placement(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: rustler::ResourceArc<State>,
-    id: usize,
-    placement: ElixirBaseVideoPlacement,
-) -> Result<rustler::Atom, rustler::Error> {
-    let placement = placement.into();
-
-    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-
-    state
-        .compositor
-        .update_properties(id, None, Some(placement), None)?;
-
-    Ok(atoms::ok())
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-fn update_transformations(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: rustler::ResourceArc<State>,
-    id: usize,
-    transformations: ElixirVideoTransformations,
-) -> Result<rustler::Atom, rustler::Error> {
-    let texture_transformations = transformations.into();
-
-    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
-
-    state
-        .compositor
-        .update_properties(id, None, None, Some(texture_transformations))?;
-
-    Ok(atoms::ok())
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-fn remove_video(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: ResourceArc<State>,
-    id: usize,
-) -> Result<rustler::Atom, rustler::Error> {
-    state.lock().unwrap().compositor.remove_video(id)?;
-    Ok(atoms::ok())
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-fn send_end_of_stream(
-    #[allow(unused)] env: rustler::Env<'_>,
-    state: ResourceArc<State>,
-    id: usize,
-) -> Result<(rustler::Atom, Vec<(rustler::Term<'_>, u64)>), rustler::Error> {
-    let mut state = state.lock().unwrap();
-
-    state.compositor.send_end_of_stream(id)?;
-
-    let mut outputs = Vec::new();
-
-    while state.compositor.all_frames_ready() {
-        let (output, pts) = get_frame(&mut state);
-        let output = output.release(env).to_term(env);
-        outputs.push((output, pts))
+    for (video_id, video_format) in stream_format {
+        video_resolutions.insert(
+            video_id,
+            Vec2d {
+                x: video_format.width,
+                y: video_format.height,
+            },
+        );
     }
 
-    Ok((atoms::ok(), outputs))
+    let mut state: std::sync::MutexGuard<InnerState> = state.lock().unwrap();
+
+    state.compositor.set_videos(scene, video_resolutions)?;
+
+    Ok(atoms::ok())
 }
 
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
-    [
-        init,
-        force_render,
-        add_video,
-        remove_video,
-        process_frame,
-        send_end_of_stream,
-        update_stream_format,
-        update_placement,
-        update_transformations
-    ],
+    [init, process_frame, set_videos],
     load = |env, _| {
         rustler::resource!(State, env);
         true

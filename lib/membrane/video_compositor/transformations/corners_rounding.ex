@@ -1,6 +1,6 @@
-defmodule Membrane.VideoCompositor.TextureTransformations.CornersRounding do
+defmodule Membrane.VideoCompositor.Transformations.CornersRounding do
   @moduledoc """
-  Describe corners rounding texture transformation parameter.
+  Describe corners rounding transformation parameter.
   Corner rounding transformation can be imagined as placing four circles with specified radius
   adjoining to frame borders, placed inside frame and making space between circle edge and
   nearest frame corner transparent.
@@ -10,16 +10,16 @@ defmodule Membrane.VideoCompositor.TextureTransformations.CornersRounding do
   ## Examples
     Example struct describing transformation which rounds corners with 100 pixel radius:
 
-      iex> alias Membrane.VideoCompositor.TextureTransformations.CornersRounding
-      Membrane.VideoCompositor.TextureTransformations.CornersRounding
+      iex> alias Membrane.VideoCompositor.Transformations.CornersRounding
+      Membrane.VideoCompositor.Transformations.CornersRounding
       iex> %CornersRounding{ border_radius: 100 }
-      %Membrane.VideoCompositor.TextureTransformations.CornersRounding{
+      %Membrane.VideoCompositor.Transformations.CornersRounding{
         border_radius: 100
       }
   """
 
   @typedoc """
-  Describe cropping texture transformation parameter.
+  Describe cropping transformation parameter.
   """
   @type t :: %__MODULE__{
           border_radius: non_neg_integer()
