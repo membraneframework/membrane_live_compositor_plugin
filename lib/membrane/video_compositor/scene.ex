@@ -31,9 +31,21 @@ defmodule Membrane.VideoCompositor.Scene do
     |> MapSet.new(fn {pad, _video_config} -> pad end)
   end
 
-  @spec validate(t(), MapSet.t()) :: :ok
-  def validate(scene = %__MODULE__{video_configs: video_configs}, input_pads) do
+  @spec validate(t(), MapSet.t(), boolean()) :: :ok
+  def validate(
+        scene = %__MODULE__{video_configs: video_configs},
+        input_pads,
+        check_empty? \\ true
+      ) do
     scene_pads = Scene.pads(scene)
+
+    if check_empty? and video_configs == %{} do
+      raise """
+      The scene must contain at least one video config.
+      Scene: #{inspect(scene)}
+      Input pads: #{inspect(MapSet.to_list(input_pads))}
+      """
+    end
 
     unless MapSet.subset?(scene_pads, input_pads) do
       raise """
@@ -42,10 +54,6 @@ defmodule Membrane.VideoCompositor.Scene do
       Scene pads: #{inspect(MapSet.to_list(scene_pads))}
       Input pads: #{inspect(MapSet.to_list(input_pads))}
       """
-    end
-
-    if video_configs == %{} do
-      raise "Scene can't be empty."
     end
 
     _checked_video_configs =

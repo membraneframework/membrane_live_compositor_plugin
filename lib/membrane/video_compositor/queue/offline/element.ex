@@ -122,7 +122,9 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         state = %State{most_recent_frame_pts: most_recent_frame_pts, pads_states: pads_states}
       ) do
     input_pads = pads_states |> MapSet.new(fn {pad, _pad_state} -> pad end)
-    :ok = Scene.validate(scene, input_pads)
+    # here we can accept user sending empty scene,
+    # provided that in won't be empty on composing buffer
+    :ok = Scene.validate(scene, input_pads, false)
 
     state = State.put_event(state, {:update_scene, most_recent_frame_pts, scene})
 

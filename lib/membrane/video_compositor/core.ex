@@ -127,16 +127,8 @@ defmodule Membrane.VideoCompositor.Core do
   end
 
   @impl true
-  def handle_event(
-        _pad,
-        %SceneChangeEvent{new_scene: scene = %Scene{}},
-        _ctx,
-        state = %State{input_stream_format: stream_format}
-      ) do
-    :ok = Scene.validate(scene, CompositorCoreFormat.pads(stream_format))
-
-    state = %State{state | scene: scene, update_videos?: true}
-    {[], state}
+  def handle_event(_pad, %SceneChangeEvent{new_scene: scene = %Scene{}}, _ctx, state) do
+    {[], %State{state | scene: scene, update_videos?: true}}
   end
 
   @spec send_pads_frames(
