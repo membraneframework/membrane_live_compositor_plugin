@@ -54,7 +54,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
     end
   end
 
-
   @spec actions(t(), t(), %{Pad.ref_t() => binary()}, Time.non_neg_t()) ::
           [Action.stream_format_t() | Action.event_t() | Action.buffer_t()]
   def actions(initial_state, new_state, pad_frames, buffer_pts) do
@@ -78,7 +77,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
     stream_format_action ++ scene_action ++ buffer_action
   end
-
 
   defmodule MockCallbacks do
     @moduledoc """
