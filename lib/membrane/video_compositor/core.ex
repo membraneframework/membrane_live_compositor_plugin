@@ -91,13 +91,15 @@ defmodule Membrane.VideoCompositor.Core do
         state = %State{
           pads_to_ids: pads_to_ids,
           wgpu_state: wgpu_state,
-          scene: %Scene{video_configs: video_configs}
+          scene: scene
         }
       ) do
+    :ok = validate_scene(state)
+
     {:ok, rendered_frame} =
       payload
       |> Map.to_list()
-      |> Enum.filter(fn {pad, _frame} -> Map.has_key?(video_configs, pad) end)
+      |> Enum.filter(fn {pad, _frame} -> Map.has_key?(scene.video_configs, pad) end)
       |> Enum.map(fn {pad, frame} -> {Map.get(pads_to_ids, pad), frame, pts} end)
       |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
 
@@ -155,5 +157,17 @@ defmodule Membrane.VideoCompositor.Core do
       {:ok, {_frame, _pts}} ->
         {:error, "Wgpu should render frame only on last buffer!"}
     end
+  end
+
+  @spec validate_scene(State.t()) :: :ok
+  defp validate_scene(%State{scene: %Scene{}}) do
+    :ok
+  end
+
+  defp validate_scene(state = %State{scene: nil}) do
+    raise """
+    Scene should be set on handle_process.
+    State: #{state}
+    """
   end
 end
