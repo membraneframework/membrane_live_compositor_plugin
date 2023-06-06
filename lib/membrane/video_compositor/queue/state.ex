@@ -4,14 +4,15 @@ defmodule Membrane.VideoCompositor.Queue.State do
   """
 
   alias Bunch
-  alias Membrane.{Pad, RawVideo, Time}
+  alias Membrane.{Buffer, Pad, RawVideo, Time}
+  alias Membrane.Element.Action
   alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
   alias Membrane.VideoCompositor.Queue.State.PadState
-  alias Membrane.VideoCompositor.Scene
+  alias Membrane.VideoCompositor.{Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.VideoConfig
 
-  @enforce_keys [:output_framerate, :custom_strategy_state]
+  @enforce_keys [:output_framerate]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
@@ -19,14 +20,15 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 output_format: %CompositorCoreFormat{pad_formats: %{}},
                 scene: Scene.empty(),
                 scene_update_events: [],
-                most_recent_frame_pts: 0
+                most_recent_frame_pts: 0,
+                custom_strategy_state: nil
               ]
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
 
   @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
 
-  @type strategy_state :: OfflineStrategyState.t()
+  @type strategy_state :: nil | OfflineStrategyState.t()
 
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
@@ -52,6 +54,30 @@ defmodule Membrane.VideoCompositor.Queue.State do
           &(&1 ++ [pad_event])
         )
     end
+  end
+
+  @spec actions(t(), t(), %{Pad.ref_t() => binary()}, Time.non_neg_t()) ::
+          [Action.stream_format_t() | Action.event_t() | Action.buffer_t()]
+  def actions(initial_state, new_state, pad_frames, buffer_pts) do
+    stream_format_action =
+      if new_state.output_format != initial_state.output_format do
+        [stream_format: {:output, new_state.output_format}]
+      else
+        []
+      end
+
+    scene_action =
+      if new_state.scene != initial_state.scene do
+        [event: {:output, %SceneChangeEvent{new_scene: new_state.scene}}]
+      else
+        []
+      end
+
+    buffer_action = [
+      buffer: {:output, %Buffer{payload: pad_frames, pts: buffer_pts, dts: buffer_pts}}
+    ]
+
+    stream_format_action ++ scene_action ++ buffer_action
   end
 
   defmodule MockCallbacks do
