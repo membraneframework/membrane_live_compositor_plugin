@@ -11,8 +11,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.VideoCompositor.Queue.State.PadState
   alias Membrane.VideoCompositor.{Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.VideoConfig
-
-  @enforce_keys [:output_framerate]
+  @enforce_keys [:output_framerate, :custom_strategy_state]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
@@ -20,15 +19,14 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 output_format: %CompositorCoreFormat{pad_formats: %{}},
                 scene: Scene.empty(),
                 scene_update_events: [],
-                most_recent_frame_pts: 0,
-                custom_strategy_state: nil
+                most_recent_frame_pts: 0
               ]
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
 
   @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
 
-  @type strategy_state :: nil | OfflineStrategyState.t()
+  @type strategy_state :: OfflineStrategyState.t()
 
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
@@ -56,6 +54,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     end
   end
 
+
   @spec actions(t(), t(), %{Pad.ref_t() => binary()}, Time.non_neg_t()) ::
           [Action.stream_format_t() | Action.event_t() | Action.buffer_t()]
   def actions(initial_state, new_state, pad_frames, buffer_pts) do
@@ -79,6 +78,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
     stream_format_action ++ scene_action ++ buffer_action
   end
+
 
   defmodule MockCallbacks do
     @moduledoc """
