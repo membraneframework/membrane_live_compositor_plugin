@@ -26,16 +26,18 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def_options transformations: [
                 spec: list(Transformation.transformation_module()),
                 description: """
-                A list of modules that implement the Membrane.VideoCompositor.Transformation behaviour.
+                A list of modules that implement the `Membrane.VideoCompositor.Transformation` behaviour.
                 These modules can later be used in the scene passed to this compositor.
-                """
+                """,
+                default: []
               ],
               layouts: [
                 spec: list(Layout.layout_module()),
                 description: """
-                A list of modules that implement the Membrane.VideoCompositor.Layout behaviour.
+                A list of modules that implement the `Membrane.VideoCompositor.Layout` behaviour.
                 These modules can later be used in the scene passed to this compositor.
-                """
+                """,
+                default: []
               ]
 
   def_input_pad :input,
@@ -58,8 +60,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_init(_ctx, options) do
     native_state = WgpuAdapter.init()
 
-    WgpuAdapter.register_transformations(native_state, options.transformations)
-    WgpuAdapter.register_layouts(native_state, options.layouts)
+    :ok = WgpuAdapter.register_transformations(native_state, options.transformations)
+    :ok = WgpuAdapter.register_layouts(native_state, options.layouts)
 
     state = %State{
       native_state: native_state

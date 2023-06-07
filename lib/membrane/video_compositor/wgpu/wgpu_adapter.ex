@@ -24,17 +24,14 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
     end
   end
 
-  # Question to the reviewers: since this function can potentially cause UB if misused, should we maybe make it private?
-  @doc """
-  Get the wgpu context necessary for initializing transformation modules and layout modules.
-
+  # Gets the wgpu context necessary for initializing transformation modules and layout modules.
+  #
   # Safety
-  It's vital that this struct is used according to the safety sections in the docs for the rust
-  mirror of the struct this function returns
-  (`membrane_video_compositor_common::elixir_transfer::StructElixirPacket::<WgpuContext>`)
-  """
+  # It's vital that this struct is used according to the safety sections in the docs for the rust
+  # mirror of the struct this function returns
+  # (`membrane_video_compositor_common::elixir_transfer::StructElixirPacket::<WgpuContext>`)
   @spec wgpu_ctx(native_state()) :: wgpu_ctx()
-  def wgpu_ctx(state) do
+  defp wgpu_ctx(state) do
     Native.wgpu_ctx(state)
   end
 
