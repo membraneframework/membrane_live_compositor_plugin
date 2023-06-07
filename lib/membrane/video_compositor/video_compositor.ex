@@ -4,14 +4,14 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Bin
-  alias Membrane.{Pad, RawVideo}
+  alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.Core, as: VCCore
   alias Membrane.VideoCompositor.{Queue, Scene}
   alias Membrane.VideoCompositor.VideoConfig
 
   @typedoc """
   Defines implemented VC queuing strategies.
-  Any queuing strategy should follow contracts defined in `Membrane.VideoCompositor.Queue` module.
+  Any queuing strategy should follow contracts defined in `#{inspect(Queue)}` module.
   """
   @type queuing_strategy :: :offline
 
@@ -25,6 +25,15 @@ defmodule Membrane.VideoCompositor do
           output_stream_format: RawVideo.t(),
           queuing_strategy: queuing_strategy()
         }
+
+  @input_pad_metadata_doc """
+  User-specified input stream metadata passed to handler callbacks.
+  Passing pad metadata into callbacks allows the user to alternate custom-implemented callbacks logic,
+  e.g. prioritizing input stream in the `#{inspect(Scene)}` structs returned from callback.
+  """
+
+  @typedoc @input_pad_metadata_doc
+  @type input_pad_metadata :: any()
 
   def_options output_stream_format: [
                 spec: Membrane.RawVideo.t(),
@@ -45,9 +54,14 @@ defmodule Membrane.VideoCompositor do
         description: "Specify how single input video should be transformed"
       ],
       timestamp_offset: [
-        spec: Membrane.Time.non_neg_t(),
+        spec: Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
+      ],
+      metadata: [
+        spec: input_pad_metadata(),
+        description: @input_pad_metadata_doc,
+        default: nil
       ]
     ]
 
