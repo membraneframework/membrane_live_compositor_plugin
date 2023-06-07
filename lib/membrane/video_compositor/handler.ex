@@ -23,14 +23,13 @@ defmodule Membrane.VideoCompositor.Handler do
   the scene will be changed immediate, i.e. at the moment when the event happens.
   """
   @type immediate_callback_return ::
-          {scene :: Scene.t() | Scene.Temporal.indefinite(), state :: state()}
+          {scene :: Scene.t() | Scene.Temporal.t(), state :: state()}
 
   @typedoc """
   Type of a valid return value from callback allowing to pick start time of a new scene.
   """
   @type timed_callback_return ::
-          {{start_ts :: Time.t(), scene :: Scene.t() | Scene.Temporal.indefinite()},
-           state :: state()}
+          {{start_ts :: Time.t(), scene :: Scene.t() | Scene.Temporal.t()}, state :: state()}
 
   @typedoc """
   Type of a valid return value from callback not changing the current scene.

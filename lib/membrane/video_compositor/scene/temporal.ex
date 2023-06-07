@@ -4,9 +4,9 @@ defmodule Membrane.VideoCompositor.Scene.Temporal do
 
   ## Expiration
 
-  As opposed to simple `t:Membrane.VideoCompositor.Scene.t/0`, this API allows
+  As opposed to a simple `t:Membrane.VideoCompositor.Scene.t/0`, this API allows
   you to define scenes or sequences of scenes that will expire after a finite time.
-  In such case, `c:Membrane.VideoCompositor.Handler.handle_scene_expire/2` callback will
+  In such cases, `c:Membrane.VideoCompositor.Handler.handle_scene_expire/2` callback will
   be called, allowing to specify the new scene.
 
   Types that are considered indefinite and will never expire:
@@ -53,7 +53,7 @@ defmodule Membrane.VideoCompositor.Scene.Temporal do
   {:repeat, {[{:expiring, :bobby_scene}, {:expiring, :alice_scene}], :inifinity}}
   ```
 
-  ### Not reachable scenes
+  ### Non reachable scenes
 
   In both of cases below Video Compositor will never render `mikey_scene`.
   `alice_scene` is indefinite, and so are the sequences.
@@ -77,11 +77,11 @@ defmodule Membrane.VideoCompositor.Scene.Temporal do
   ```
   """
 
-  @active_speaker_sequence {:repeat,
-                            {[{:expiring, :bobby_scene}, {:expiring, :alice_scene}], :inifinity}}
-
   alias Membrane.VideoCompositor.Scene
 
+  @typedoc """
+  Type that defines all possible temporal scenes.
+  """
   @type t() :: expiring() | repeat() | sequence()
 
   @typedoc """

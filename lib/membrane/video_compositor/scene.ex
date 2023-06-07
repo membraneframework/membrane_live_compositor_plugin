@@ -5,7 +5,6 @@ defmodule Membrane.VideoCompositor.Scene do
   """
 
   alias Membrane.VideoCompositor.Object
-  alias __MODULE__.{Expiring, Loop, Repeat}
 
   @enforce_keys [:objects, :output]
   defstruct @enforce_keys
