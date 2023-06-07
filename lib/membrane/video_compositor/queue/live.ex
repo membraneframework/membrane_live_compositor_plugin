@@ -87,6 +87,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @impl true
   def handle_tick(:initializer, _ctx, state) do
+    check_timer_started(state)
     {[stop_timer: :initializer, start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
@@ -99,7 +100,6 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     {new_state, pads_frames} = pop_pads_events(initial_state)
 
     actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
-
     new_state = State.update_next_buffer_pts(new_state)
 
     {actions, new_state}
@@ -107,11 +107,13 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @impl true
   def handle_parent_notification(:start_timer, _ctx, state) do
+    check_timer_started(state)
     {[start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
   @impl true
   def handle_parent_notification({:start_timer, delay}, _ctx, state) do
+    check_timer_started(state)
     {[start_timer: {:initializer, delay}], state}
   end
 
@@ -204,5 +206,11 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   defp get_tick_ratio(%State{output_framerate: {output_fps_num, output_fps_den}}) do
     %Ratio{numerator: output_fps_num, denominator: output_fps_den}
+  end
+
+  defp check_timer_started(state = %State{}) do
+    if state.custom_strategy_state.timer_started? do
+      raise "Failed to start timer. Timer already started."
+    end
   end
 end
