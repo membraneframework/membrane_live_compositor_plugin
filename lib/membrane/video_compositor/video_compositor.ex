@@ -31,7 +31,8 @@ defmodule Membrane.VideoCompositor do
 
   @type init_options :: %__MODULE__{
           output_stream_format: RawVideo.t(),
-          queuing_strategy: queuing_strategy()
+          queuing_strategy: queuing_strategy(),
+          metadata: init_metadata()
         }
 
   @input_pad_metadata_doc """
