@@ -63,6 +63,16 @@ defmodule Membrane.VideoCompositor.Handler do
             ) :: immediate_callback_return() | idle_callback_return()
 
   @doc """
+  Callback invoked upon expiration of Temporal Scene.
+
+  See `Membrane.VideoCompositor.Scene.Temporal`.
+  """
+  @callback handle_scene_expire(
+              ctx :: CallbackContext.SceneExpire.t(),
+              state :: state()
+            ) :: immediate_callback_return()
+
+  @doc """
   Callback invoked when video compositor receives a message
   that is not recognized as an internal membrane message.
 
