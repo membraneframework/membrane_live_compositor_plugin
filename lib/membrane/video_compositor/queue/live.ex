@@ -11,6 +11,8 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @type latency :: Time.non_neg_t() | :wait_for_start_event
 
+  @type start_timer_message :: :start_timer | {:start_timer, delay :: Time.non_neg_t()}
+
   def_options output_framerate: [
                 spec: RawVideo.framerate_t(),
                 description: "Framerate of the output video of the compositor"
@@ -84,28 +86,33 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   end
 
   @impl true
-  @spec handle_tick(:buffer_scheduler | :initializer, any, any) ::
-          {[{:start_timer, {any, any}} | {:stop_timer, :initializer}], any}
   def handle_tick(:initializer, _ctx, state) do
-    {output_fps_num, output_fps_den} = state.output_framerate
-    buffer_scheduler_tick_ratio = %Ratio{numerator: output_fps_num, denominator: output_fps_den}
-
-    {[stop_timer: :initializer, start_timer: {:buffer_scheduler, buffer_scheduler_tick_ratio}],
-     state}
+    {[stop_timer: :initializer, start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
   @impl true
   def handle_tick(
         :buffer_scheduler,
         _ctx,
-        initial_state = %State{next_buffer_pts: next_buffer_pts}
+        initial_state = %State{next_buffer_pts: buffer_pts}
       ) do
     {new_state, pads_frames} = pop_pads_events(initial_state)
 
-    actions = State.actions(initial_state, new_state, pads_frames, next_buffer_pts)
-    # calculate new buffer pts here
+    actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
+
+    new_state = State.update_next_buffer_pts(new_state)
 
     {actions, new_state}
+  end
+
+  @impl true
+  def handle_parent_notification(:start_timer, _ctx, state) do
+    {[start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
+  end
+
+  @impl true
+  def handle_parent_notification({:start_timer, delay}, _ctx, state) do
+    {[start_timer: {:initializer, delay}], state}
   end
 
   @spec pop_pads_events(State.t()) ::
@@ -193,5 +200,9 @@ defmodule Membrane.VideoCompositor.Queue.Live do
         end
       end
     )
+  end
+
+  defp get_tick_ratio(%State{output_framerate: {output_fps_num, output_fps_den}}) do
+    %Ratio{numerator: output_fps_num, denominator: output_fps_den}
   end
 end

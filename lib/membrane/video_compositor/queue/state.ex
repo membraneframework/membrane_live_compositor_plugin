@@ -11,11 +11,13 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.VideoCompositor.Queue.State.PadState
   alias Membrane.VideoCompositor.{Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.VideoConfig
+
   @enforce_keys [:output_framerate, :custom_strategy_state]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
                 next_buffer_pts: 0,
+                next_buffer_number: 1,
                 output_format: %CompositorCoreFormat{pad_formats: %{}},
                 scene: Scene.empty(),
                 scene_update_events: [],
@@ -76,6 +78,20 @@ defmodule Membrane.VideoCompositor.Queue.State do
     ]
 
     stream_format_action ++ scene_action ++ buffer_action
+  end
+
+  @spec update_next_buffer_pts(t()) :: t()
+  def update_next_buffer_pts(
+        state = %__MODULE__{
+          output_framerate: {fps_num, fps_den},
+          next_buffer_number: next_buffer_number
+        }
+      ) do
+    %__MODULE__{
+      state
+      | next_buffer_pts: Kernel.ceil(Time.second() * next_buffer_number * fps_den / fps_num),
+        next_buffer_number: next_buffer_number + 1
+    }
   end
 
   defmodule MockCallbacks do
