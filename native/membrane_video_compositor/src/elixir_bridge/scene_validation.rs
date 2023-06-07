@@ -342,7 +342,7 @@ mod test {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: 42,
+                        implementation: (42, 42),
                     }),
                 ),
             ],
@@ -386,7 +386,7 @@ mod test {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: 42,
+                        implementation: (42, 42),
                     }),
                 ),
                 (

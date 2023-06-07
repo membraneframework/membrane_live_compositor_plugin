@@ -13,12 +13,12 @@ defmodule Membrane.VideoCompositor.RegisteringTransformationTest do
 
     @impl true
     def encode(_transformation) do
-      42
+      {0xDEADBEEF, 0xDEADBEEF}
     end
   end
 
   test "initializes correctly with a mock transformation" do
-    compositor = WgpuAdapter.init_new_compositor()
+    compositor = WgpuAdapter.init()
     assert :ok = WgpuAdapter.register_transformations(compositor, [MockTransformation])
   end
 end

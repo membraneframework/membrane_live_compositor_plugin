@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-pub enum NewCompositorError {
+pub enum CompositorError {
     #[error("Tried to register a transformation called {0}. This name is already taken.")]
     TransformationNameTaken(String),
 
@@ -14,21 +14,21 @@ mod atoms {
     }
 }
 
-impl rustler::Encoder for NewCompositorError {
+impl rustler::Encoder for CompositorError {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         match self {
-            NewCompositorError::TransformationNameTaken(name) => {
+            CompositorError::TransformationNameTaken(name) => {
                 (atoms::transformation_name_taken(), name).encode(env)
             }
-            NewCompositorError::LayoutNameTaken(name) => {
+            CompositorError::LayoutNameTaken(name) => {
                 (atoms::layout_name_taken(), name).encode(env)
             }
         }
     }
 }
 
-impl From<NewCompositorError> for rustler::Error {
-    fn from(value: NewCompositorError) -> Self {
+impl From<CompositorError> for rustler::Error {
+    fn from(value: CompositorError) -> Self {
         Self::Term(Box::new(value))
     }
 }

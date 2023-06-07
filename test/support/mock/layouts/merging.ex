@@ -18,7 +18,12 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Merging do
         }
 
   @impl true
+  def initialize(_wgpu_ctx) do
+    {0xDEADBEEF, 0xDEADBEEF}
+  end
+
+  @impl true
   def encode(_merging) do
-    1
+    {0xDEADBEEF, 0xDEADBEEF}
   end
 end

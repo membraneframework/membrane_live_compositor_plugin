@@ -12,6 +12,11 @@ defmodule Membrane.VideoCompositor.Mock.Transformations.Rotate do
 
   @impl true
   def encode(_rotate) do
-    2137
+    {0xDEADBEEF, 0xDEADBEEF}
+  end
+
+  @impl true
+  def initialize(_wgpu_ctx) do
+    {0xDEADBEEF, 0xDEADBEEF}
   end
 end

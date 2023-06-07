@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
   """
   @behaviour Membrane.VideoCompositor.Object.Layout
 
-  alias Membrane.VideoCompositor.Examples.Mock.Layouts.Position
+  alias Membrane.VideoCompositor.Mock.Layouts.Position
   alias Membrane.VideoCompositor.Object
 
   @enforce_keys [:overlay_spec, :inputs, :resolution]
@@ -29,6 +29,11 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
         }
   @impl true
   def encode(_overlay) do
-    2
+    {0xDEADBEEF, 0xDEADBEEF}
+  end
+
+  @impl true
+  def initialize(_wgpu_ctx) do
+    {0xDEADBEEF, 0xDEADBEEF}
   end
 end

@@ -22,7 +22,12 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Grid do
         }
 
   @impl true
+  def initialize(_wgpu_ctx) do
+    {0xDEADBEEF, 0xDEADBEEF}
+  end
+
+  @impl true
   def encode(_grid) do
-    0
+    {0xDEADBEEF, 0xDEADBEEF}
   end
 end

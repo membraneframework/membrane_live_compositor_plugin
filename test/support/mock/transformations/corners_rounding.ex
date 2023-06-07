@@ -22,6 +22,11 @@ defmodule Membrane.VideoCompositor.Mock.Transformations.CornersRounding do
 
   @impl true
   def encode(_corners_rounding) do
-    0
+    {0xDEADBEEF, 0xDEADBEEF}
+  end
+
+  @impl true
+  def initialize(_wgpu_ctx) do
+    {0xDEADBEEF, 0xDEADBEEF}
   end
 end
