@@ -22,13 +22,15 @@ defmodule Membrane.VideoCompositor.Handler do
   Type of a valid return value from the callback. By returning this type,
   the scene will be changed immediate, i.e. at the moment when the event happens.
   """
-  @type immediate_callback_return :: {scene :: Scene.t() | Scene.temporal_t(), state :: state()}
+  @type immediate_callback_return ::
+          {scene :: Scene.t() | Scene.Temporal.indefinite(), state :: state()}
 
   @typedoc """
   Type of a valid return value from callback allowing to pick start time of a new scene.
   """
   @type timed_callback_return ::
-          {{start_ts :: Time.t(), scene :: Scene.t() | Scene.temporal_t()}, state :: state()}
+          {{start_ts :: Time.t(), scene :: Scene.t() | Scene.Temporal.indefinite()},
+           state :: state()}
 
   @typedoc """
   Type of a valid return value from callback not changing the current scene.
