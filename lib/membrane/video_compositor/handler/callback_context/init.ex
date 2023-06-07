@@ -10,6 +10,9 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext.Init do
   @enforce_keys [:init_options]
   defstruct @enforce_keys
 
+  @typedoc """
+  init_options - Initialization options of `Membrane.VideoCompositor`
+  """
   @type t :: %__MODULE__{
           init_options: VideoCompositor.init_options()
         }

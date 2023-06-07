@@ -6,8 +6,13 @@ defmodule Membrane.VideoCompositor do
   use Membrane.Bin
   alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Queue, Scene}
-  alias Membrane.VideoCompositor.VideoConfig
+  alias Membrane.VideoCompositor.{Queue, Scene, VideoConfig}
+
+  @typedoc """
+  Defines how VC should be notified with new scene -
+  new composition schema.
+  """
+  @type scene_update_notification :: {:update_scene, Scene.t()}
 
   @typedoc """
   Defines implemented VC queuing strategies.
@@ -15,11 +20,14 @@ defmodule Membrane.VideoCompositor do
   """
   @type queuing_strategy :: :offline
 
-  @typedoc """
-  Defines how VC should be notified with new scene -
-  new composition schema.
+  @init_metadata_doc """
+  User-specified init metadata passed to handler callbacks.
+  Passing init metadata into `c:Membrane.VideoCompositor.Handler.handle_init/1` callback allows
+  the user to alternate custom-implemented init callback logic.
   """
-  @type scene_update_notification :: {:update_scene, Scene.t()}
+
+  @typedoc @init_metadata_doc
+  @type init_metadata :: any()
 
   @type init_options :: %__MODULE__{
           output_stream_format: RawVideo.t(),
@@ -28,7 +36,8 @@ defmodule Membrane.VideoCompositor do
 
   @input_pad_metadata_doc """
   User-specified input stream metadata passed to handler callbacks.
-  Passing pad metadata into callbacks allows the user to alternate custom-implemented callbacks logic,
+  Passing pad metadata into `c:Membrane.VideoCompositor.Handler.handle_inputs_change/3`
+  callback, allows the user to alternate custom-implemented callbacks logic,
   e.g. prioritizing input stream in the `#{inspect(Scene)}` structs returned from callback.
   """
 
@@ -43,6 +52,11 @@ defmodule Membrane.VideoCompositor do
                 spec: queuing_strategy(),
                 description: "Specify used frames queueing strategy",
                 default: :offline
+              ],
+              metadata: [
+                spec: init_metadata(),
+                description: @init_metadata_doc,
+                default: nil
               ]
 
   def_input_pad :input,

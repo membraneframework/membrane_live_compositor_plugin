@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Handler do
   Module defining behaviour of handlers.
 
   Implementing handler allows to provide custom implementation and
-  react to various events, among others by setting a new scene and/or
+  react to various events, among others by setting a new scene and
   the inner custom state.
   """
   alias Membrane.VideoCompositor.Scene

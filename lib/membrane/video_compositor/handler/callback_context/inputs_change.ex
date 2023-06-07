@@ -12,6 +12,11 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext.InputsChange do
   @enforce_keys [:current_scene, :previous_inputs_description, :next_buffer_pts]
   defstruct @enforce_keys
 
+  @typedoc """
+  current_scene - scene used before callback invocation
+  previous_inputs_description - inputs description (see `#{inspect(InputsDescription)}`) before input video change
+  next_buffer_pts - presentation timestamp of first buffer composed with scene returned from callback
+  """
   @type t :: %__MODULE__{
           current_scene: Scene.t(),
           previous_inputs_description: InputsDescription.t(),
