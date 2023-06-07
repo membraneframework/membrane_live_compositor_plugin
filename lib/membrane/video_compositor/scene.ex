@@ -25,11 +25,6 @@ defmodule Membrane.VideoCompositor.Scene do
           output: Object.name()
         }
 
-  @typedoc """
-  TODO:
-  """
-  @type temporal_t :: Expiring.t() | Loop.t() | Repeat.t()
-
   defmodule RustlerFriendly do
     @moduledoc false
     # A rustler-friendly version of the Scene, prepared for rust serialization
