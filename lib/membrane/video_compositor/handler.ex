@@ -23,7 +23,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.Init) :: state()
+  @callback handle_init(ctx :: CallbackContext.Init.t()) :: state()
 
   @doc """
   Callback invoked upon change of VC input videos.
