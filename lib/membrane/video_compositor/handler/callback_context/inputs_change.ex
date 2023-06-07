@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Handler.CallbackContext.InputsChange do
   @moduledoc """
   Structure representing a context that is passed to the
-  `c:Membrane.VideoCompositor.Handler.handle_inputs_change/1` callback
+  `c:Membrane.VideoCompositor.Handler.handle_inputs_change/3` callback
   when Video Compositor `Membrane.VideoCompositor.Handler.InputsDescription` change.
   """
 
