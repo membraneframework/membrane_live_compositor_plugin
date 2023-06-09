@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Scene.Temporal do
+defmodule Membrane.VideoCompositor.TemporalScene do
   @moduledoc """
   This module contains types of Temporal Scene API.
 
