@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
 
   Types that are considered indefinite and will never expire:
   - `t:Membrane.VideoCompositor.Scene.t/0`
-  - `t:repeat/0` with infinite number of `iterations`
+  - `t:repeat/0` with an infinite number of `iterations`
   - `t:sequence/0` with one of above
 
   Please note that even indefinite types can be changed or ended by returning whole
@@ -21,12 +21,12 @@ defmodule Membrane.VideoCompositor.TemporalScene do
 
   ### Active Speaker
 
-  Video Compositor is used in offline pipeline which is supposed to compose recording from
-  videoconferencing tool. From the analysis of the audio files, active speaker can be determined.
-  Active speaker is supposed the main one in the layout. Such scenes are called `x_scene`
+  Video Compositor is used in the offline pipeline which is supposed to compose recording from the
+  videoconferencing tool. From the analysis of the audio files, the active speaker can be determined.
+  The active speaker is supposed the main one in the layout. Such scenes are called `x_scene`
   (as in x's video is the main one).
 
-  In this specific scenario, after brief greeting with Alice and Bobby, Mikey talks for the
+  In this specific scenario, after a brief greeting with Alice and Bobby, Mikey talks for the
   entire meeting.
 
   This sequence will expire after 7 minutes and
@@ -44,18 +44,18 @@ defmodule Membrane.VideoCompositor.TemporalScene do
 
   ### Live stream viewers loop
 
-  Video Compositor is used in live streaming pipeline. Viewers cameras should switch in loops (to show
-  feedback from the audience), while main presenter camera should always be the most important one.
+  Video Compositor is used in the live streaming pipeline. Viewer's cameras should switch in loops (to show
+  feedback from the audience), while the main presenter's camera should always be the most important one.
   Such scenes are called `x_scene` (as in x's video is shown in place for audience feed).
 
-  This repeatition of sequence of scenes will never expire, af the number of iteration is infinite.
+  This repetition of the sequence of scenes will never expire, as the number of iterations is infinite.
   ```
-  {:repeat, {[{:expiring, :bobby_scene}, {:expiring, :alice_scene}], :inifinity}}
+  {:repeat, {[{:expiring, :bobby_scene}, {:expiring, :alice_scene}], :infinity}}
   ```
 
-  ### Non reachable scenes
+  ### Non-reachable scenes
 
-  In both of cases below Video Compositor will never render `mikey_scene`.
+  In both of the cases below Video Compositor will never render `mikey_scene`.
   `alice_scene` is indefinite, and so are the sequences.
 
   ```
@@ -100,7 +100,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
   @type expiring :: {:expiring, {scene :: Scene.t(), duration :: Membrane.Time.non_neg_t()}}
 
   @typedoc """
-  Defines a temporal `sequence` of scenes, that will be repeated the nubmer of times specified by `iterations`.
+  Defines a temporal `sequence` of scenes, that will be repeated the number of times specified by `iterations`.
 
   If `iterations` are set to `:infinity`, this repeating sequence will never expire.
   """
