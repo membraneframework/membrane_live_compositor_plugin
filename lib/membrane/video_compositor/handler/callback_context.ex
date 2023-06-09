@@ -5,11 +5,11 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   before event invoking callback.
   """
 
-  alias Membrane.VideoCompositor.Handler.InputsDescription
+  alias Membrane.VideoCompositor.Handler.Inputs
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.TemporalScene
 
-  @enforce_keys [:scene, :inputs_description, :next_buffer_pts]
+  @enforce_keys [:scene, :inputs, :next_frame_pts]
   defstruct @enforce_keys
 
   @typedoc """
@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   """
   @type t :: %__MODULE__{
           scene: Scene.t() | TemporalScene.t(),
-          inputs_description: InputsDescription.t(),
-          next_buffer_pts: Membrane.Time.non_neg_t()
+          inputs: Inputs.t(),
+          next_frame_pts: Membrane.Time.non_neg_t()
         }
 end

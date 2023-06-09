@@ -24,6 +24,7 @@ defmodule Membrane.VideoCompositor do
 
   @init_metadata_doc """
   User-specified init metadata passed to handler callbacks.
+
   Passing init metadata into `c:Membrane.VideoCompositor.Handler.handle_init/1` callback allows
   the user to alternate custom-implemented init callback logic.
   """
@@ -45,6 +46,7 @@ defmodule Membrane.VideoCompositor do
 
   @input_pad_metadata_doc """
   User-specified input stream metadata passed to handler callbacks.
+
   Passing pad metadata into `c:Membrane.VideoCompositor.Handler.handle_inputs_change/3`
   callback, allows the user to alternate custom-implemented callbacks logic,
   e.g. prioritizing input stream in the `#{inspect(Scene)}` structs returned from callback.

@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Handler do
   the inner custom state.
   """
 
-  alias __MODULE__.{CallbackContext, InputsDescription}
+  alias __MODULE__.{CallbackContext, Inputs}
   alias Membrane.{Pad, StreamFormat, Time}
   alias Membrane.VideoCompositor.{Scene, TemporalScene}
 
@@ -43,13 +43,14 @@ defmodule Membrane.VideoCompositor.Handler do
 
   @doc """
   Callback invoked upon change of VC input videos.
+
   Events changing input videos:
   - video added
   - video removed
   - video stream format change
   """
   @callback handle_inputs_change(
-              inputs_description :: InputsDescription.t(),
+              inputs :: Inputs.t(),
               ctx :: CallbackContext.t(),
               state :: state()
             ) :: immediate_callback_return() | timed_callback_return() | idle_callback_return()
