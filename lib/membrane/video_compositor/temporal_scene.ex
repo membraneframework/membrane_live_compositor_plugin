@@ -38,7 +38,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
     {:expiring, {bobby_scene, Membrane.Time.seconds(48)}},
     {:expiring, {mikey_scene, Membrane.Time.seconds(21)}},
     {:expiring, {bobby_scene, Membrane.Time.seconds(37)}},
-    {:expiring, {mikey_scene, Membrane.Time.seconds(231)}},
+    {:expiring, {mikey_scene, Membrane.Time.seconds(231)}}
   ]
   ```
 
@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
   ```
     sequence = [
       alice_scene,
-      {:expiring, {mikey_scene, Membrane.Time.seconds(51)}},
+      {:expiring, {mikey_scene, Membrane.Time.seconds(51)}}
     ]
   ```
 
@@ -72,7 +72,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
 
     sequence = [
       {:repeat, {alice_sequence, :infinite}},
-      {:expiring, {mikey_scene, Membrane.Time.seconds(23)}},
+      {:expiring, {mikey_scene, Membrane.Time.seconds(23)}}
     ]
   ```
   """
@@ -88,7 +88,7 @@ defmodule Membrane.VideoCompositor.TemporalScene do
   Defines a `sequence` of scenes, including expiring ones.
 
   Please note that if the element of a sequence is `t:Membrane.VideoCompositor.Scene.t/0`
-   or `t:repeat/0` with an infinite number of `iterations`:
+  or `t:repeat/0` with an infinite number of `iterations`:
     - it will be used indefinitely
     - this sequence will never expire
   """
