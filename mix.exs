@@ -49,8 +49,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_file_plugin, "~> 0.13.2", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.26.2", only: :test},
       {:membrane_raw_video_parser_plugin, "~> 0.10.0", only: :test},
-      {:membrane_video_compositor_plugin_pipeline, path: "./pipeline", only: :test},
-
       # Development
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

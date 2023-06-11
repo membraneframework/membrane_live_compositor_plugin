@@ -1,7 +1,10 @@
-defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
+defmodule Membrane.VideoCompositor.Support.Pipeline.Options do
   @moduledoc """
   Options for the testing pipeline.
   """
+
+  @enforce_keys [:inputs, :output, :output_stream_format, :handler]
+  defstruct @enforce_keys ++ [:compositor, :decoder, :encoder, :input_filter]
 
   @typedoc """
   Specifications of the input video sources
@@ -14,9 +17,15 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
   @type output :: String.t() | Membrane.Sink
 
   @typedoc """
-  Specification of the output video, parameters of the final \"canvas\"
+  Specification of the output video, parameters of the rendered frame.
   """
   @type output_stream_format :: RawVideo.t()
+
+  @typedoc """
+  Specification of the handler.
+  Determine what VC should render by implementing callbacks.
+  """
+  @type handler :: Membrane.VideoCompositor.Handler.t()
 
   @typedoc """
   Multiple Frames Compositor
@@ -47,6 +56,4 @@ defmodule Membrane.VideoCompositor.Pipeline.Utils.Options do
           encoder: encoder(),
           input_filter: input_filter()
         }
-  @enforce_keys [:inputs, :output, :output_stream_format]
-  defstruct [:inputs, :output, :output_stream_format, :compositor, :decoder, :encoder, :input_filter]
 end

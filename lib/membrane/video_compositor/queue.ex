@@ -44,10 +44,12 @@ defmodule Membrane.VideoCompositor.Queue do
   @spec get_queue(VideoCompositor.init_options()) :: OfflineQueue.t()
   def get_queue(%VideoCompositor{
         queuing_strategy: queuing_strategy,
-        output_stream_format: %RawVideo{framerate: framerate}
+        output_stream_format: %RawVideo{framerate: framerate},
+        handler: handler,
+        metadata: metadata
       }) do
     case queuing_strategy do
-      :offline -> %OfflineQueue{output_framerate: framerate}
+      :offline -> %OfflineQueue{output_framerate: framerate, handler: handler, metadata: metadata}
     end
   end
 end

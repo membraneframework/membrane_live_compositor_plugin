@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.H264 do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Pipeline.Utils.Options
+  alias Membrane.VideoCompositor.Support.Pipeline.{ComposeMultipleInputs, Options}
 
   @impl true
   def handle_init(ctx, options) do
@@ -19,14 +19,15 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.H264 do
       | decoder: decoder,
         encoder: encoder,
         compositor: %Membrane.VideoCompositor{
-          output_stream_format: options.output_stream_format
+          output_stream_format: options.output_stream_format,
+          handler: options.handler
         }
     }
 
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(ctx, options)
+    ComposeMultipleInputs.handle_init(ctx, options)
   end
 
   @impl true
   defdelegate handle_element_end_of_stream(pad, ref, context, state),
-    to: Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs
+    to: ComposeMultipleInputs
 end

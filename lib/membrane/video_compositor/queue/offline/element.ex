@@ -13,15 +13,21 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   use Membrane.Filter
 
   alias Membrane.{Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue}
+  alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Queue}
+  alias Membrane.VideoCompositor.Handler.CallbackContext
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
-  alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.VideoConfig
+  alias Membrane.VideoCompositor.Queue.State.PadState
 
   def_options output_framerate: [
                 spec: RawVideo.framerate_t()
+              ],
+              handler: [
+                spec: Handler.t()
+              ],
+              metadata: [
+                spec: VideoCompositor.init_metadata()
               ]
 
   def_input_pad :input,
@@ -34,13 +40,13 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],
-      video_config: [
-        spec: VideoConfig.t(),
-        description: "Specify layout and transformations of the video on final scene."
-      ],
       vc_input_ref: [
         spec: Pad.ref_t(),
         description: "Reference to VC input pad."
+      ],
+      metadata: [
+        spec: VideoCompositor.input_pad_metadata(),
+        default: nil
       ]
     ]
 
@@ -51,9 +57,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @impl true
   def handle_init(
         _ctx,
-        _options = %{output_framerate: output_framerate}
+        options = %{output_framerate: output_framerate, handler: handler}
       ) do
-    {[], %State{output_framerate: output_framerate, custom_strategy_state: %OfflineState{}}}
+    {[],
+     %State{
+       output_framerate: output_framerate,
+       custom_strategy_state: %OfflineState{},
+       handler: {handler, handler.handle_init(%CallbackContext.Init{init_options: options})}
+     }}
   end
 
   @impl true
@@ -110,25 +121,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     state =
       state
       |> State.put_event({{:frame, frame_pts, buffer.payload}, vc_input_ref})
-      |> Map.update!(:most_recent_frame_pts, &max(&1, frame_pts))
 
     check_pads_queues({[], state})
-  end
-
-  @impl true
-  def handle_parent_notification(
-        {:update_scene, scene = %Scene{}},
-        _ctx,
-        state = %State{most_recent_frame_pts: most_recent_frame_pts, pads_states: pads_states}
-      ) do
-    input_pads = pads_states |> MapSet.new(fn {pad, _pad_state} -> pad end)
-    # here we can accept user sending empty scene,
-    # provided that it won't be empty on composing buffer
-    :ok = Scene.validate(scene, input_pads, false)
-
-    state = State.put_event(state, {:update_scene, most_recent_frame_pts, scene})
-
-    {[], state}
   end
 
   @spec frame_or_eos(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
@@ -213,8 +207,6 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
            next_buffer_pts: buffer_pts
          }
        ) do
-    state = pop_scene_events(initial_state)
-
     {pads_frames, new_state} =
       pads_states
       |> Map.to_list()
@@ -222,7 +214,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         timestamp_offset <= buffer_pts
       end)
       |> Enum.reduce(
-        {%{}, state},
+        {%{}, initial_state},
         fn {pad, _pad_state}, {pads_frames, state} ->
           case pop_pad_events(pad, state) do
             {{:frame, _frame_pts, frame_data}, state} ->
@@ -237,25 +229,10 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         {pads_frames, State.update_next_buffer_pts(state)}
       end)
 
+    new_state = State.check_callbacks(initial_state, new_state)
     actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
 
     {actions, new_state}
-  end
-
-  @spec pop_scene_events(State.t()) :: State.t()
-  defp pop_scene_events(
-         state = %State{
-           scene_update_events: scene_update_events,
-           next_buffer_pts: buffer_pts
-         }
-       ) do
-    Enum.reduce_while(scene_update_events, state, fn {:update_scene, pts, new_scene}, state ->
-      if pts < buffer_pts do
-        {:cont, %State{state | scene: new_scene}}
-      else
-        {:halt, state}
-      end
-    end)
   end
 
   # Pops events from pad event queue, handles them and returns updated state
@@ -267,26 +244,23 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], events_tail)
 
     case event do
+      {:pad_added, _pad_options} ->
+        pop_pad_events(pad, state)
+
+      {:stream_format, stream_format} ->
+        state = Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
+        pop_pad_events(pad, state)
+
       {:frame, _pts, _frame_data} = frame_event ->
         {frame_event, state}
 
       :end_of_stream ->
         state =
           state
-          |> MockCallbacks.remove_video(pad)
           |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
           |> Bunch.Struct.delete_in([:pads_states, pad])
 
         {:end_of_stream, state}
-
-      {:pad_added, pad_options} ->
-        state = MockCallbacks.add_video(state, pad, pad_options)
-        pop_pad_events(pad, state)
-
-      {:stream_format, stream_format} ->
-        state = Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
-
-        pop_pad_events(pad, state)
     end
   end
 end

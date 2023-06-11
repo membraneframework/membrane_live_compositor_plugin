@@ -4,9 +4,10 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Bin
+  alias Membrane.VideoCompositor.Handler
   alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Queue, Scene, VideoConfig}
+  alias Membrane.VideoCompositor.{Queue, Scene}
 
   @typedoc """
   Defines how VC should be notified with new scene -
@@ -32,6 +33,7 @@ defmodule Membrane.VideoCompositor do
   @type init_options :: %__MODULE__{
           output_stream_format: RawVideo.t(),
           queuing_strategy: queuing_strategy(),
+          handler: Handler.t(),
           metadata: init_metadata()
         }
 
@@ -49,6 +51,14 @@ defmodule Membrane.VideoCompositor do
                 spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
               ],
+              handler: [
+                spec: Handler.t(),
+                description: """
+                Module implementing callbacks reacting to VC events.
+                Specify how `#{inspect(Scene)}` should look like.
+                Describe what VC should compose.
+                """
+              ],
               queuing_strategy: [
                 spec: queuing_strategy(),
                 description: "Specify used frames queueing strategy",
@@ -64,10 +74,6 @@ defmodule Membrane.VideoCompositor do
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
-      video_config: [
-        spec: VideoConfig.t(),
-        description: "Specify how single input video should be transformed"
-      ],
       timestamp_offset: [
         spec: Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
@@ -106,7 +112,7 @@ defmodule Membrane.VideoCompositor do
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           timestamp_offset: context.options.timestamp_offset,
-          video_config: context.options.video_config
+          metadata: context.options.metadata
         ]
       )
       |> get_child(:queue)

@@ -3,32 +3,31 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   use Membrane.Filter
 
+  alias Membrane.VideoCompositor.Handler.CallbackContext
   alias Membrane.{Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, VideoConfig}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
   alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Queue.State.{MockCallbacks, PadState}
+  alias Membrane.VideoCompositor.Queue.State.PadState
 
   @type latency :: Time.non_neg_t() | :wait_for_start_event
 
   @type start_timer_message :: :start_timer | {:start_timer, delay :: Time.non_neg_t()}
 
-  def_options output_framerate: [
-                spec: RawVideo.framerate_t(),
-                description: "Framerate of the output video of the compositor"
-              ],
-              latency: [
+  def_options latency: [
                 spec: latency()
+              ],
+              output_framerate: [
+                spec: RawVideo.framerate_t()
+              ],
+              handler: [
+                spec: Handler.t()
               ]
 
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
-      video_config: [
-        spec: VideoConfig.t(),
-        description: "Specify how single input video should be transformed"
-      ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
@@ -41,11 +40,15 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     availability: :always
 
   @impl true
-  def handle_init(_ctx, %{output_framerate: output_framerate, latency: latency}) do
+  def handle_init(
+        _ctx,
+        options = %{output_framerate: output_framerate, latency: latency, handler: handler}
+      ) do
     {[],
      %State{
        output_framerate: output_framerate,
-       custom_strategy_state: %LiveState{latency: latency}
+       custom_strategy_state: %LiveState{latency: latency},
+       handler: {handler, handler.handle_init(%CallbackContext.Init{init_options: options})}
      }}
   end
 
@@ -97,7 +100,12 @@ defmodule Membrane.VideoCompositor.Queue.Live do
         _ctx,
         initial_state = %State{next_buffer_pts: buffer_pts}
       ) do
-    {new_state, pads_frames} = pop_pads_events(initial_state)
+    {new_state, pads_frames} =
+      initial_state
+      |> pop_pads_events()
+      |> then(fn {state, pads_frames} ->
+        {State.check_callbacks(initial_state, state), pads_frames}
+      end)
 
     actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
     new_state = State.update_next_buffer_pts(new_state)
@@ -189,16 +197,15 @@ defmodule Membrane.VideoCompositor.Queue.Live do
       fn event, state ->
         case event do
           {:pad_added, pad_options} ->
-            MockCallbacks.add_video(state, pad, pad_options)
-
-          :end_of_stream ->
-            state
-            |> MockCallbacks.remove_video(pad)
-            |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
-            |> Bunch.Struct.delete_in([:pads_states, pad])
+            Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(pad_options))
 
           {:stream_format, stream_format} ->
             Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
+
+          :end_of_stream ->
+            state
+            |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
+            |> Bunch.Struct.delete_in([:pads_states, pad])
         end
       end
     )

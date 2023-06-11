@@ -6,9 +6,10 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
   therefore events in events_queue should be pts ordered.
   """
 
+  alias Membrane.VideoCompositor
   alias Membrane.{RawVideo, Time}
 
-  @enforce_keys [:timestamp_offset, :events_queue]
+  @enforce_keys [:timestamp_offset, :events_queue, :metadata]
   defstruct @enforce_keys
 
   @type frame_event :: {:frame, pts :: Time.non_neg_t(), frame_data :: binary()}
@@ -17,18 +18,20 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
   @type stream_format_event :: {:stream_format, RawVideo.t()}
 
   @type pad_event ::
-          frame_event() | pad_added_event() | end_of_stream_event() | stream_format_event()
+          pad_added_event() | stream_format_event() | frame_event() | end_of_stream_event()
 
   @type t :: %__MODULE__{
           timestamp_offset: Time.non_neg_t(),
-          events_queue: list(pad_event())
+          events_queue: list(pad_event()),
+          metadata: VideoCompositor.input_pad_metadata()
         }
 
   @spec new(map()) :: t()
-  def new(pad_options = %{timestamp_offset: timestamp_offset}) do
+  def new(pad_options = %{timestamp_offset: timestamp_offset, metadata: metadata}) do
     %__MODULE__{
       timestamp_offset: timestamp_offset,
-      events_queue: [{:pad_added, pad_options}]
+      events_queue: [{:pad_added, pad_options}],
+      metadata: metadata
     }
   end
 

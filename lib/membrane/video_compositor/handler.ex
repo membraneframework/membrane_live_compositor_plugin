@@ -3,11 +3,16 @@ defmodule Membrane.VideoCompositor.Handler do
   Module defining behaviour of handlers.
 
   Implementing handler allows to provide custom implementation and
-  react to various events, among others by setting a new scene and
+  react to various events, by setting a new scene and
   the inner custom state.
   """
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Handler.{CallbackContext, Inputs}
+
+  @typedoc """
+  Module implementing `#{inspect(__MODULE__)}` behaviour.
+  """
+  @type t :: module()
 
   @typedoc """
   Type of a valid return value from callback not changing the current scene.
@@ -40,7 +45,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.t()) :: idle_callback_return()
+  @callback handle_init(ctx :: CallbackContext.Init.t()) :: idle_callback_return()
 
   @doc """
   Callback invoked upon change of VC input videos.
