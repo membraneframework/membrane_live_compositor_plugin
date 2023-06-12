@@ -7,8 +7,8 @@ defmodule Membrane.VideoCompositor.Handler do
   the inner custom state.
   """
 
-  alias __MODULE__.{CallbackContext, Inputs}
-  alias Membrane.{Pad, StreamFormat, Time}
+  alias __MODULE__.{CallbackContext, InputProperties}
+  alias Membrane.{Pad, StreamFormat}
   alias Membrane.VideoCompositor.{Scene, TemporalScene}
 
   @typedoc """
@@ -22,15 +22,12 @@ defmodule Membrane.VideoCompositor.Handler do
   Type of a valid return value from the callback. By returning this type,
   the scene will be changed immediately, i.e. at the moment when the event happens.
   """
-  @type immediate_callback_return ::
-          {scene :: Scene.t() | TemporalScene.t(), state :: state()}
+  @type callback_return :: {scene :: Scene.t() | TemporalScene.t(), state :: state()}
 
   @typedoc """
-  Type of a valid return value from callback allowing to pick the start time of a new scene.
-  The `state` will be changed immediately.
+  Describe all VC input videos used in composition.
   """
-  @type timed_callback_return ::
-          {{start_ts :: Time.t(), scene :: Scene.t() | TemporalScene.t()}, state :: state()}
+  @type inputs :: %{Pad.ref_t() => InputProperties.t()}
 
   @doc """
   Callback invoked upon initialization of Video Compositor.
@@ -40,16 +37,16 @@ defmodule Membrane.VideoCompositor.Handler do
   @doc """
   Callback invoked upon change of VC input videos.
 
-  Events changing input videos:
+  `input` changing events:
   - video added
   - video removed
   - video stream format change
   """
-  @callback handle_inputs_change(
-              inputs :: Inputs.t(),
+  @callback handle_input_change(
+              input :: inputs(),
               ctx :: CallbackContext.t(),
               state :: state()
-            ) :: immediate_callback_return() | timed_callback_return()
+            ) :: callback_return()
 
   @doc """
   Callback invoked upon expiration of Temporal Scene.
@@ -60,7 +57,7 @@ defmodule Membrane.VideoCompositor.Handler do
               expired_scene :: TemporalScene.t(),
               ctx :: CallbackContext.t(),
               state :: state()
-            ) :: immediate_callback_return()
+            ) :: callback_return()
 
   @doc """
   Callback invoked when video compositor receives a message
@@ -70,5 +67,5 @@ defmodule Membrane.VideoCompositor.Handler do
   sending custom messages and reacting to them.
   """
   @callback handle_info(msg :: any(), ctx :: CallbackContext.t(), state :: state()) ::
-              immediate_callback_return() | timed_callback_return()
+              callback_return()
 end

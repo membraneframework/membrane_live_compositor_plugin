@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   before event invoking callback.
   """
 
-  alias Membrane.VideoCompositor.Handler.Inputs
+  alias Membrane.VideoCompositor.Handler
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.TemporalScene
 
@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   """
   @type t :: %__MODULE__{
           scene: Scene.t() | TemporalScene.t(),
-          inputs: Inputs.t(),
+          inputs: Handler.inputs(),
           next_frame_pts: Membrane.Time.non_neg_t()
         }
 end
