@@ -119,8 +119,8 @@ defmodule Membrane.VideoCompositor.TransformationsTest do
     end
 
     @impl Membrane.VideoCompositor.Handler
-    def handle_info(_msg, _ctx, state) do
-      {state.current_scene, state}
+    def handle_info(_msg, ctx, state) do
+      {ctx.current_scene, state}
     end
   end
 

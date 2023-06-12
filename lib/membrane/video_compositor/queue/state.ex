@@ -148,34 +148,34 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   @spec check_callbacks(t(), t()) :: t()
   defp check_callbacks(new_state, previous_state) do
-    new_state =
-      if previous_state.output_format != new_state.output_format do
-        {handler, handler_state} = new_state.handler
+    if previous_state.output_format != new_state.output_format do
+      handle_inputs_change(new_state, previous_state)
+    else
+      new_state
+    end
+  end
 
-        callback_return =
-          handler.handle_inputs_change(
-            get_inputs(new_state),
-            get_callback_context(previous_state),
-            handler_state
-          )
+  defp handle_inputs_change(new_state, previous_state) do
+    {handler, handler_state} = new_state.handler
 
-        {scene, handler_state} =
-          case callback_return do
-            {scene = %Scene{}, state} ->
-              {scene, state}
+    callback_return =
+      handler.handle_inputs_change(
+        get_inputs(new_state),
+        get_callback_context(previous_state),
+        handler_state
+      )
 
-            state ->
-              {new_state.scene, state}
-          end
-
-        %__MODULE__{
-          new_state
-          | handler: {handler, handler_state},
-            scene: scene
-        }
+    {scene, handler_state} =
+      case callback_return do
+        {scene = %Scene{}, state} ->
+          {scene, state}
       end
 
-    new_state
+    %__MODULE__{
+      new_state
+      | handler: {handler, handler_state},
+        scene: scene
+    }
   end
 
   @spec update_next_buffer_pts(t()) :: t()

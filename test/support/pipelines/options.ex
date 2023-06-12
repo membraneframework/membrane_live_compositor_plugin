@@ -3,6 +3,8 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.Options do
   Options for the testing pipeline.
   """
 
+  alias Membrane.VideoCompositor.Support.Pipeline.InputStream
+
   @enforce_keys [:inputs, :output, :output_stream_format, :handler]
   defstruct @enforce_keys ++ [:compositor, :decoder, :encoder, :input_filter]
 
