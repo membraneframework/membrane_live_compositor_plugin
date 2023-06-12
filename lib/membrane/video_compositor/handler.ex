@@ -6,13 +6,19 @@ defmodule Membrane.VideoCompositor.Handler do
   react to various events, among others by setting a new scene and
   the inner custom state.
   """
+  alias Membrane.Pad
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Handler.{CallbackContext, Inputs}
+  alias Membrane.VideoCompositor.Handler.{CallbackContext, InputProperties}
 
   @typedoc """
   Type of user-managed inner state of the handler.
   """
   @type state :: any()
+
+  @typedoc """
+  Describe all VC input videos used in composition.
+  """
+  @type inputs() :: %{Pad.ref_t() => InputProperties.t()}
 
   @typedoc """
   Type of a valid return value from the callback. By returning this type,
@@ -32,14 +38,15 @@ defmodule Membrane.VideoCompositor.Handler do
   @callback handle_init(ctx :: CallbackContext.t()) :: state()
 
   @doc """
-  Callback invoked upon change of VC input videos.
-  Events changing input videos:
+  Callback invoked upon change of VC `t:inputs()`.
+
+  `inputs` changing input videos:
   - video added
   - video removed
   - video stream format change
   """
   @callback handle_inputs_change(
-              inputs :: Inputs.t(),
+              inputs :: inputs(),
               ctx :: CallbackContext.t(),
               state :: state()
             ) :: immediate_callback_return()
