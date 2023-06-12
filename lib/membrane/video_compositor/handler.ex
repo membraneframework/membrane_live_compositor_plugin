@@ -7,6 +7,7 @@ defmodule Membrane.VideoCompositor.Handler do
   the inner custom state.
   """
   alias Membrane.Pad
+  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.Scene
   alias Membrane.VideoCompositor.Handler.{CallbackContext, InputProperties}
 
@@ -35,7 +36,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.t()) :: state()
+  @callback handle_init(init_options :: VideoCompositor.init_options()) :: state()
 
   @doc """
   Callback invoked upon change of VC `t:inputs()`.
