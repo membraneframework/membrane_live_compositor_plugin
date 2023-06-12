@@ -65,7 +65,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @type state :: any()
 
   @typedoc """
-  Contains state of VC before event invoking of callback.
+  Contains state of VC before handling event invoking callback.
   """
   @type context :: %{
           scene: Scene.t() | temporal_scene(),
