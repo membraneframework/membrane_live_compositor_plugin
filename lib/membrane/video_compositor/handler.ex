@@ -5,6 +5,54 @@ defmodule Membrane.VideoCompositor.Handler do
   Implementing a handler allows to provide custom implementation and
   react to various events, among others by setting a new scene and/or
   the inner custom state.
+
+  ## Examples
+
+  ### Simple video conference room
+  Video Compositor is used in video conference app like the videoroom.
+  Composition is determined by number of users.
+  This is how handler module might look like:
+
+  ```
+  defmodule ExampleHandler do
+    @moduledoc false
+
+    @behaviour Membrane.VideoCompositor.Handler
+
+    alias Membrane.VideoCompositor.Scene
+
+    @impl true
+    def handle_init(_init_options) do
+      %{user_count_to_scene: get_users_scene_mapping()}
+    end
+
+    @impl true
+    def handle_inputs_change(inputs, _ctx, state) do
+      {Map.get(state.user_count_to_scene, map_size(inputs), default_scene), state}
+    end
+
+    @impl true
+    def handle_info(msg, _ctx, _state) do
+      raise "Unsupported message \#{msg}"
+    end
+
+    @impl true
+    def handle_scene_expire(_expired_scene, _ctx, _state) do
+      raise "This shouldn't happen"
+    end
+
+    @spec get_users_scene_mapping() :: %{(users_count :: non_neg_integer()) => Scene.t()}
+    defp get_users_scene_mapping() do
+      :do_stuff
+    end
+
+    @spec default_scene() :: Scene.t()
+    defp default_scene() do
+      :do_stuff
+    end
+  end
+
+  ```
   """
 
   alias __MODULE__.{CallbackContext, InputProperties}
@@ -148,9 +196,9 @@ defmodule Membrane.VideoCompositor.Handler do
             ) :: callback_return()
 
   @doc """
-  Callback invoked upon expiration of Temporal Scene.
+  Callback invoked upon expiration of `temporal scene`.
 
-  See `Membrane.VideoCompositor.TemporalScene`.
+  See `t:temporal_scene()`.
   """
   @callback handle_scene_expire(
               expired_scene :: temporal_scene(),
