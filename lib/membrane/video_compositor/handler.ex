@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Handler do
   """
 
   alias __MODULE__.{CallbackContext, InputProperties}
-  alias Membrane.{Pad, StreamFormat}
+  alias Membrane.{Pad, StreamFormat, VideoCompositor}
   alias Membrane.VideoCompositor.{Scene, TemporalScene}
 
   @typedoc """
@@ -32,7 +32,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.Init.t()) :: state()
+  @callback handle_init(init_options :: VideoCompositor.init_options()) :: state()
 
   @doc """
   Callback invoked upon change of VC `inputs`.
