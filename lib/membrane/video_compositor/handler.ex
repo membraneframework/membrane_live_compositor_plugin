@@ -8,13 +8,23 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   alias Membrane.Pad
   alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.Handler.InputProperties
   alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Handler.{CallbackContext, InputProperties}
 
   @typedoc """
   Type of user-managed inner state of the handler.
   """
   @type state :: any()
+
+  @typedoc """
+  Contains state of VC before handling event invoking callback.
+  """
+  @type context :: %{
+          scene: Scene.t(),
+          inputs: inputs(),
+          next_frame_pts: Membrane.Time.non_neg_t(),
+          scenes_queue: [{start_pts :: Membrane.Time.non_neg_t(), new_scene :: Scene.t()}]
+        }
 
   @typedoc """
   Describe all VC input videos used in composition.
@@ -48,7 +58,7 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @callback handle_inputs_change(
               inputs :: inputs(),
-              ctx :: CallbackContext.t(),
+              ctx :: context(),
               state :: state()
             ) :: immediate_callback_return()
 
@@ -61,7 +71,7 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @callback handle_info(
               msg :: any(),
-              ctx :: CallbackContext.t(),
+              ctx :: context(),
               state :: state()
             ) :: immediate_callback_return() | timed_callback_return()
 end
