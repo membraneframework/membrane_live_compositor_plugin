@@ -10,23 +10,6 @@ defmodule Membrane.VideoCompositor.Handler do
   alias Membrane.VideoCompositor.Handler.{CallbackContext, Inputs}
 
   @typedoc """
-  Type of a valid return value from callback not changing the current scene.
-  """
-  @type idle_callback_return :: state()
-
-  @typedoc """
-  Type of a valid return value from the callback. By returning this type,
-  the scene will be changed immediate, i.e. at the moment when the event happens.
-  """
-  @type update_callback_return :: {scene :: Scene.t(), state :: state()}
-
-  @typedoc """
-  Type of a valid return value from callback allowing to pick start time of a new scene.
-  """
-  @type timed_update_callback_return ::
-          {{scene :: Scene.t(), start_pts :: Membrane.Time.non_neg_t()}, state :: state()}
-
-  @typedoc """
   Type of user-managed inner state of the handler.
   """
   @type state :: any()
@@ -35,12 +18,18 @@ defmodule Membrane.VideoCompositor.Handler do
   Type of a valid return value from the callback. By returning this type,
   the scene will be changed immediate, i.e. at the moment when the event happens.
   """
-  @type callback_return :: update_callback_return()
+  @type immediate_callback_return :: {scene :: Scene.t(), state :: state()}
+
+  @typedoc """
+  Type of a valid return value from callback allowing to pick start time of a new scene.
+  """
+  @type timed_callback_return ::
+          {{scene :: Scene.t(), start_pts :: Membrane.Time.non_neg_t()}, state :: state()}
 
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.t()) :: idle_callback_return()
+  @callback handle_init(ctx :: CallbackContext.t()) :: state()
 
   @doc """
   Callback invoked upon change of VC input videos.
@@ -53,19 +42,18 @@ defmodule Membrane.VideoCompositor.Handler do
               inputs :: Inputs.t(),
               ctx :: CallbackContext.t(),
               state :: state()
-            ) :: idle_callback_return() | update_callback_return()
+            ) :: immediate_callback_return()
 
   @doc """
   Callback invoked when video compositor receives a message
   that is not recognized as an internal membrane message.
 
-  This callback allow to communicate with a Video Compositor by
-  sending custom messages and react to them. Therefore, it allows to
-  react to custom events not specified by the other callbacks.
+  This callback allows one to communicate with a Video Compositor by
+  sending custom messages and react to them.
   """
   @callback handle_info(
               msg :: any(),
               ctx :: CallbackContext.t(),
               state :: state()
-            ) :: idle_callback_return() | update_callback_return()
+            ) :: immediate_callback_return() | timed_callback_return()
 end
