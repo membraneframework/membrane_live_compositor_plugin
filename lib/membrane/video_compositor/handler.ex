@@ -2,7 +2,7 @@ defmodule Membrane.VideoCompositor.Handler do
   @moduledoc """
   Module defining behaviour of handlers.
 
-  Implementing handler allows to provide custom implementation and
+  Implementing a handler allows to provide custom implementation and
   react to various events, among others by setting a new scene and/or
   the inner custom state.
   """
@@ -20,26 +20,22 @@ defmodule Membrane.VideoCompositor.Handler do
 
   @typedoc """
   Type of a valid return value from the callback. By returning this type,
-  the scene will be changed immediate, i.e. at the moment when the event happens.
+  the scene will be changed immediately, i.e. at the moment when the event happens.
   """
   @type immediate_callback_return ::
           {scene :: Scene.t() | TemporalScene.t(), state :: state()}
 
   @typedoc """
-  Type of a valid return value from callback allowing to pick start time of a new scene.
+  Type of a valid return value from callback allowing to pick the start time of a new scene.
+  The `state` will be changed immediately.
   """
   @type timed_callback_return ::
           {{start_ts :: Time.t(), scene :: Scene.t() | TemporalScene.t()}, state :: state()}
 
-  @typedoc """
-  Type of a valid return value from callback not changing the current scene.
-  """
-  @type idle_callback_return :: {state :: state()}
-
   @doc """
   Callback invoked upon initialization of Video Compositor.
   """
-  @callback handle_init(ctx :: CallbackContext.Init.t()) :: immediate_callback_return()
+  @callback handle_init(ctx :: CallbackContext.Init.t()) :: state()
 
   @doc """
   Callback invoked upon change of VC input videos.
@@ -53,7 +49,7 @@ defmodule Membrane.VideoCompositor.Handler do
               inputs :: Inputs.t(),
               ctx :: CallbackContext.t(),
               state :: state()
-            ) :: immediate_callback_return() | timed_callback_return() | idle_callback_return()
+            ) :: immediate_callback_return() | timed_callback_return()
 
   @doc """
   Callback invoked upon expiration of Temporal Scene.
@@ -70,12 +66,9 @@ defmodule Membrane.VideoCompositor.Handler do
   Callback invoked when video compositor receives a message
   that is not recognized as an internal membrane message.
 
-  This callback allow to communicate with a Video Compositor by
-  sending custom messages and react to them. Therefore, it allows to
-  react to custom events not specified by the other callbacks.
+  This callback allows one to communicate with a Video Compositor by
+  sending custom messages and reacting to them.
   """
   @callback handle_info(msg :: any(), ctx :: CallbackContext.t(), state :: state()) ::
-              immediate_callback_return()
-              | timed_callback_return()
-              | idle_callback_return()
+              immediate_callback_return() | timed_callback_return()
 end
