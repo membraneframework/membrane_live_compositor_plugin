@@ -22,10 +22,38 @@ defmodule Membrane.VideoCompositor do
   @type update_transformations ::
           {:update_transformations, [{Membrane.Pad.ref_t(), VideoTransformations.t()}]}
 
+  @init_metadata_doc """
+  User-specified init metadata passed to handler callbacks.
+
+  Passing init metadata into `c:Membrane.VideoCompositor.Handler.handle_init/1` callback allows
+  the user to alternate custom-implemented init callback logic.
+  """
+
+  @typedoc @init_metadata_doc
+  @type init_metadata :: any()
+
+  @type init_options :: %{:stream_format => Membrane.RawVideo.t(), :metadata => init_metadata()}
+
   def_options stream_format: [
                 spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
+              ],
+              metadata: [
+                spec: init_metadata(),
+                description: @init_metadata_doc,
+                default: nil
               ]
+
+  @input_pad_metadata_doc """
+  User-specified input stream metadata passed to handler callbacks.
+
+  Passing pad metadata into `c:Membrane.VideoCompositor.Handler.handle_inputs_change/3`
+  callback, allows the user to alternate custom-implemented callbacks logic,
+  e.g. prioritizing input stream in the `#{inspect(Scene)}` structs returned from callback.
+  """
+
+  @typedoc @input_pad_metadata_doc
+  @type input_pad_metadata :: any()
 
   def_input_pad :input,
     accepted_format: %Membrane.RawVideo{pixel_format: :I420},
@@ -46,6 +74,11 @@ defmodule Membrane.VideoCompositor do
           "Specify the initial types and the order of transformations applied to video.",
         # Can't set here struct, due to quote error (AST invalid node).
         # Calling Macro.escape() returns tuple and makes code more error prone and less readable.
+        default: nil
+      ],
+      metadata: [
+        spec: init_metadata(),
+        description: @init_metadata_doc,
         default: nil
       ]
     ]
