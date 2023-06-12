@@ -5,9 +5,7 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   before event invoking callback.
   """
 
-  alias Membrane.VideoCompositor.Handler
-  alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.TemporalScene
+  alias Membrane.VideoCompositor.{Handler, Scene}
 
   @enforce_keys [:scene, :inputs, :next_frame_pts]
   defstruct @enforce_keys
@@ -16,7 +14,7 @@ defmodule Membrane.VideoCompositor.Handler.CallbackContext do
   Contains state of VC before event invoking of callback.
   """
   @type t :: %__MODULE__{
-          scene: Scene.t() | TemporalScene.t(),
+          scene: Scene.t() | Handler.temporal_scene(),
           inputs: Handler.inputs(),
           next_frame_pts: Membrane.Time.non_neg_t()
         }
