@@ -49,7 +49,7 @@ defmodule Membrane.VideoCompositor.Handler do
   that is not recognized as an internal membrane message.
 
   This callback allows one to communicate with a Video Compositor by
-  sending custom messages and react to them.
+  sending custom messages and reacting to them.
   """
   @callback handle_info(
               msg :: any(),
