@@ -55,7 +55,7 @@ defmodule Membrane.VideoCompositor.Handler do
   ```
   """
 
-  alias __MODULE__.{CallbackContext, InputProperties}
+  alias __MODULE__.InputProperties
   alias Membrane.{Pad, VideoCompositor}
   alias Membrane.VideoCompositor.Scene
 
@@ -63,6 +63,15 @@ defmodule Membrane.VideoCompositor.Handler do
   Type of user-managed inner state of the handler.
   """
   @type state :: any()
+
+  @typedoc """
+  Contains state of VC before event invoking of callback.
+  """
+  @type context :: %{
+          scene: Scene.t() | temporal_scene(),
+          inputs: inputs(),
+          next_frame_pts: Membrane.Time.non_neg_t()
+        }
 
   @typedoc """
   Type that defines all possible temporal scenes.
@@ -191,7 +200,7 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @callback handle_inputs_change(
               inputs :: inputs(),
-              ctx :: CallbackContext.t(),
+              ctx :: context(),
               state :: state()
             ) :: callback_return()
 
@@ -202,7 +211,7 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @callback handle_scene_expire(
               expired_scene :: temporal_scene(),
-              ctx :: CallbackContext.t(),
+              ctx :: context(),
               state :: state()
             ) :: callback_return()
 
@@ -213,6 +222,6 @@ defmodule Membrane.VideoCompositor.Handler do
   This callback allows one to communicate with a Video Compositor by
   sending custom messages and reacting to them.
   """
-  @callback handle_info(msg :: any(), ctx :: CallbackContext.t(), state :: state()) ::
+  @callback handle_info(msg :: any(), ctx :: context(), state :: state()) ::
               callback_return()
 end
