@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor do
 
   use Membrane.Bin
   alias Membrane.VideoCompositor.Handler
-  alias Membrane.{Pad, RawVideo, Time}
+  alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
   alias Membrane.VideoCompositor.{Queue, Scene}
 
@@ -70,12 +70,17 @@ defmodule Membrane.VideoCompositor do
                 default: nil
               ]
 
+  @type input_pad_options :: %{
+          :metadata => input_pad_metadata(),
+          :timestamp_offset => Membrane.Time.non_neg_t()
+        }
+
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
       timestamp_offset: [
-        spec: Time.non_neg_t(),
+        spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],

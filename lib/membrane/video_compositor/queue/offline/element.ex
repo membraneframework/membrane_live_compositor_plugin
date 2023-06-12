@@ -69,12 +69,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   @impl true
   def handle_pad_added(pad, context, state = %State{}) do
-    vc_input_ref = context.options.vc_input_ref
+    vc_input_ref = Bunch.Struct.get_in(context, [:options, :vc_input_ref])
 
     state =
       state
       |> Bunch.Struct.put_in([:custom_strategy_state, :inputs_mapping, pad], vc_input_ref)
-      |> Bunch.Struct.put_in([:pads_states, vc_input_ref], PadState.new(context.options))
+      |> State.register_pad(vc_input_ref, context.options)
 
     {[], state}
   end
@@ -115,12 +115,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    frame_pts =
-      buffer.pts + Bunch.Struct.get_in(state, [:pads_states, vc_input_ref, :timestamp_offset])
-
-    state =
-      state
-      |> State.put_event({{:frame, frame_pts, buffer.payload}, vc_input_ref})
+    state = State.register_buffer(state, buffer, vc_input_ref)
 
     check_pads_queues({[], state})
   end
@@ -186,7 +181,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   defp check_pads_queues({actions, state = %State{}}) do
     case queues_state(state) do
       :all_pads_ready ->
-        handle_events(state)
+        pop_events(state)
         |> then(fn {new_actions, state} -> {actions ++ new_actions, state} end)
         # In some cases, multiple buffers might be composed,
         # e.g. when dropping pad after handling :end_of_stream event on blocking pad queue
@@ -200,67 +195,30 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     end
   end
 
-  @spec handle_events(State.t()) :: {Queue.compositor_actions(), State.t()}
-  defp handle_events(
+  @spec pop_events(State.t()) :: {Queue.compositor_actions(), State.t()}
+  defp pop_events(
          initial_state = %State{
            pads_states: pads_states,
            next_buffer_pts: buffer_pts
          }
        ) do
-    {pads_frames, new_state} =
+    frame_indexes =
       pads_states
       |> Map.to_list()
       |> Enum.filter(fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
         timestamp_offset <= buffer_pts
       end)
-      |> Enum.reduce(
-        {%{}, initial_state},
-        fn {pad, _pad_state}, {pads_frames, state} ->
-          case pop_pad_events(pad, state) do
-            {{:frame, _frame_pts, frame_data}, state} ->
-              {Map.put(pads_frames, pad, frame_data), state}
-
-            {:end_of_stream, state} ->
-              {pads_frames, state}
-          end
-        end
-      )
-      |> then(fn {pads_frames, state} ->
-        {pads_frames, State.update_next_buffer_pts(state)}
+      |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
+        {pad, Enum.find_index(events_queue, &(PadState.event_type(&1) == :frame))}
       end)
+      |> Enum.into(%{})
 
-    new_state = State.check_callbacks(initial_state, new_state)
-    actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
+    {pads_frames, new_state} =
+      initial_state
+      |> State.pop_events(frame_indexes, false)
+
+    actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
     {actions, new_state}
-  end
-
-  # Pops events from pad event queue, handles them and returns updated state
-  @spec pop_pad_events(Pad.ref_t(), State.t()) ::
-          {PadState.frame_event() | PadState.end_of_stream_event(), State.t()}
-  defp pop_pad_events(pad, state) do
-    [event | events_tail] = Bunch.Struct.get_in(state, [:pads_states, pad, :events_queue])
-
-    state = Bunch.Struct.put_in(state, [:pads_states, pad, :events_queue], events_tail)
-
-    case event do
-      {:pad_added, _pad_options} ->
-        pop_pad_events(pad, state)
-
-      {:stream_format, stream_format} ->
-        state = Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
-        pop_pad_events(pad, state)
-
-      {:frame, _pts, _frame_data} = frame_event ->
-        {frame_event, state}
-
-      :end_of_stream ->
-        state =
-          state
-          |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
-          |> Bunch.Struct.delete_in([:pads_states, pad])
-
-        {:end_of_stream, state}
-    end
   end
 end

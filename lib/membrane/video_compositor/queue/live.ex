@@ -3,16 +3,16 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   use Membrane.Filter
 
+  alias Membrane.RawVideo
   alias Membrane.VideoCompositor.Handler.CallbackContext
-  alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
   alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.PadState
 
-  @type latency :: Time.non_neg_t() | :wait_for_start_event
+  @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
 
-  @type start_timer_message :: :start_timer | {:start_timer, delay :: Time.non_neg_t()}
+  @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
 
   def_options latency: [
                 spec: latency()
@@ -98,17 +98,16 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   def handle_tick(
         :buffer_scheduler,
         _ctx,
-        initial_state = %State{next_buffer_pts: buffer_pts}
+        initial_state = %State{pads_states: pads_states, next_buffer_pts: buffer_pts}
       ) do
-    {new_state, pads_frames} =
-      initial_state
-      |> pop_pads_events()
-      |> then(fn {state, pads_frames} ->
-        {State.check_callbacks(initial_state, state), pads_frames}
-      end)
+    indexes =
+      pads_states
+      |> Map.keys()
+      |> Enum.map(fn pad -> {pad, nearest_frame_index(pad, buffer_pts)} end)
+      |> Enum.into(%{})
 
-    actions = State.actions(initial_state, new_state, pads_frames, buffer_pts)
-    new_state = State.update_next_buffer_pts(new_state)
+    {pads_frames, new_state} = State.pop_events(initial_state, indexes, true)
+    actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
     {actions, new_state}
   end
@@ -125,48 +124,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     {[start_timer: {:initializer, delay}], state}
   end
 
-  @spec pop_pads_events(State.t()) ::
-          {updated_state :: State.t(), pads_frames :: %{Pad.ref_t() => binary()}}
-  defp pop_pads_events(state = %State{pads_states: pads_states, next_buffer_pts: next_buffer_pts}) do
-    pads_states
-    |> Map.keys()
-    |> Enum.reduce(
-      {state, %{}},
-      fn pad, {state, pads_frames} ->
-        case pop_pad_events(state, pad, next_buffer_pts) do
-          {state, :no_frame} ->
-            {state, pads_frames}
-
-          {state, frame} ->
-            {state, Map.put(pads_frames, pad, frame)}
-        end
-      end
-    )
-  end
-
-  @spec pop_pad_events(State.t(), Pad.ref_t(), Time.non_neg_t()) ::
-          {updated_state :: State.t(), binary() | :no_frame}
-  defp pop_pad_events(state = %State{}, pad, tick_pts) do
-    events_queue = Bunch.Struct.get_in(state, [:pads_states, pad, :events_queue])
-
-    case nearest_frame_index(events_queue, tick_pts) do
-      :no_frame ->
-        {state, :no_frame}
-
-      index ->
-        {events_before_best_frame, tail = [{:frame, _pts, frame_data} | _]} =
-          Enum.split(events_queue, index)
-
-        state =
-          state
-          |> Bunch.Struct.put_in([:pad_states, pad, :events_queue], tail)
-          |> handle_events_before_best_frame(pad, events_before_best_frame)
-
-        {state, frame_data}
-    end
-  end
-
-  @spec nearest_frame_index([PadState.pad_event()], Time.non_neg_t()) ::
+  @spec nearest_frame_index([PadState.pad_event()], Membrane.Time.non_neg_t()) ::
           non_neg_integer() | :no_frame
   defp nearest_frame_index(events_queue, tick_pts) do
     events_queue
@@ -188,27 +146,6 @@ defmodule Membrane.VideoCompositor.Queue.Live do
       end
     )
     |> then(fn {_best_diff, best_diff_index} -> best_diff_index end)
-  end
-
-  defp handle_events_before_best_frame(state, pad, events) do
-    Enum.reduce(
-      events,
-      state,
-      fn event, state ->
-        case event do
-          {:pad_added, pad_options} ->
-            Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(pad_options))
-
-          {:stream_format, stream_format} ->
-            Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
-
-          :end_of_stream ->
-            state
-            |> Bunch.Struct.delete_in([:output_format, :pad_formats, pad])
-            |> Bunch.Struct.delete_in([:pads_states, pad])
-        end
-      end
-    )
   end
 
   defp get_tick_ratio(%State{output_framerate: {output_fps_num, output_fps_den}}) do

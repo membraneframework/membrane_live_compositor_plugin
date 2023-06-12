@@ -26,7 +26,7 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
           metadata: VideoCompositor.input_pad_metadata()
         }
 
-  @spec new(map()) :: t()
+  @spec new(VideoCompositor.input_pad_options()) :: t()
   def new(pad_options = %{timestamp_offset: timestamp_offset, metadata: metadata}) do
     %__MODULE__{
       timestamp_offset: timestamp_offset,
