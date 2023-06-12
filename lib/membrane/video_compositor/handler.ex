@@ -35,15 +35,15 @@ defmodule Membrane.VideoCompositor.Handler do
   @callback handle_init(ctx :: CallbackContext.Init.t()) :: state()
 
   @doc """
-  Callback invoked upon change of VC input videos.
+  Callback invoked upon change of VC `inputs`.
 
-  `input` changing events:
+  `inputs` changing events:
   - video added
   - video removed
   - video stream format change
   """
-  @callback handle_input_change(
-              input :: inputs(),
+  @callback handle_inputs_change(
+              inputs :: inputs(),
               ctx :: CallbackContext.t(),
               state :: state()
             ) :: callback_return()
