@@ -6,15 +6,17 @@ defmodule Membrane.VideoCompositor.Handler do
   react to various events, among others by setting a new scene and/or
   the inner custom state.
 
+  For more explanation on scene see: `Membrane.VideoCompositor.Scene`
+
   ## Examples
 
   ### Simple video conference room
-  Video Compositor is used in video conference app like the videoroom.
+  Video Compositor is used in video conference app like the [Membrane Videoroom](https://github.com/membraneframework/membrane_videoroom).
   Composition is determined by number of users.
-  This is how handler module might look like:
 
+  This is how handler module might look like (assuming user implemented SceneMaker.get_scene(users_count)):
   ```
-  defmodule ExampleHandler do
+  defmodule ConferenceHandler do
     @moduledoc false
 
     @behaviour Membrane.VideoCompositor.Handler
@@ -28,27 +30,20 @@ defmodule Membrane.VideoCompositor.Handler do
 
     @impl true
     def handle_inputs_change(inputs, _ctx, state) do
-      {Map.get(state.user_count_to_scene, map_size(inputs), default_scene), state}
-    end
-
-    @impl true
-    def handle_info(msg, _ctx, _state) do
-      raise "Unsupported message \#{msg}"
-    end
-
-    @impl true
-    def handle_scene_expire(_expired_scene, _ctx, _state) do
-      raise "This shouldn't happen"
+      {Map.get(state.user_count_to_scene, map_size(inputs), default_scene()), state}
     end
 
     @spec get_users_scene_mapping() :: %{(users_count :: non_neg_integer()) => Scene.t()}
     defp get_users_scene_mapping() do
-      :do_stuff
+      Map.new(0..10, fn users_count -> {users_count, SceneMaker.get_scene(users_count)} end)
     end
 
     @spec default_scene() :: Scene.t()
     defp default_scene() do
-      :do_stuff
+      %Scene{
+        objects: default_objects,
+        output: default_output
+      }
     end
   end
 
