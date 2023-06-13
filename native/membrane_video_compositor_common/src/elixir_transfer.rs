@@ -1,10 +1,13 @@
 use std::{any::Any, marker::PhantomData, sync::Arc};
 
-use crate::plugins::{layout::UntypedLayout, transformation::UntypedTransformation};
+use crate::plugins::{
+    layout::UntypedLayout, transformation::UntypedTransformation, PluginRegistryKey,
+};
 
 /// This struct is meant for encoding and transferring structs defined and used only in the plugins
 /// (i.e. unknown during the compilation of the compositor)
 pub struct CustomStructElixirPacket {
+    recipient_registry_key: String,
     pointer: (usize, usize),
 }
 
@@ -12,11 +15,14 @@ impl CustomStructElixirPacket {
     /// # Safety
     /// The struct created with this function has to be consumed with [CustomStructElixirPacket::decode].
     /// Not consuming it will result in memory leaks or other unfortunate side-effects
-    pub unsafe fn encode<T: Send + 'static>(payload: T) -> Self {
+    pub unsafe fn encode<T: Send + 'static>(payload: T, recipient: PluginRegistryKey<'_>) -> Self {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer = unsafe { std::mem::transmute(payload) };
 
-        CustomStructElixirPacket { pointer }
+        CustomStructElixirPacket {
+            recipient_registry_key: recipient.0.to_owned(),
+            pointer,
+        }
     }
 
     /// # Safety
@@ -25,23 +31,40 @@ impl CustomStructElixirPacket {
     ///  - The packet must have been encoded in a crate compiled in the same compilation as the call site
     ///  - This method can only be called **once** per packet's content, i.e. You cannot copy
     ///    this struct in elixir and pass it to two separate rust functions that would decode it twice
-    pub unsafe fn decode(self) -> Arc<dyn Any> {
+    pub unsafe fn decode(self) -> DecodedCustomStructElixirPacket {
         let payload: Arc<dyn Any> = unsafe { std::mem::transmute(self.pointer) };
 
-        payload
+        DecodedCustomStructElixirPacket {
+            recipient_registry_key: self.recipient_registry_key,
+            payload,
+        }
     }
 }
 
 impl<'a> rustler::Decoder<'a> for CustomStructElixirPacket {
     fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
-        let pointer = rustler::Decoder::decode(term)?;
-        Ok(Self { pointer })
+        let (recipient, pointer) = rustler::Decoder::decode(term)?;
+        Ok(Self {
+            recipient_registry_key: recipient,
+            pointer,
+        })
     }
 }
 
 impl rustler::Encoder for CustomStructElixirPacket {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
-        self.pointer.encode(env)
+        (self.recipient_registry_key.clone(), self.pointer).encode(env)
+    }
+}
+
+pub struct DecodedCustomStructElixirPacket {
+    recipient_registry_key: String,
+    pub payload: Arc<dyn Any>,
+}
+
+impl DecodedCustomStructElixirPacket {
+    pub fn recipient_registry_key(&self) -> PluginRegistryKey {
+        PluginRegistryKey(&self.recipient_registry_key)
     }
 }
 

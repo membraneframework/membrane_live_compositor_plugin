@@ -66,6 +66,7 @@ rustler::init!(
         register_transformation,
         register_layout,
         compositor::mock_transformation,
+        compositor::encode_mock_transformation,
     ],
     load = |env, _| {
         rustler::resource!(crate::compositor::State, env);

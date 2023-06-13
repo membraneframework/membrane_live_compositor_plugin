@@ -37,5 +37,9 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
           Membrane.VideoCompositor.Transformation.initialized_transformation()
   def mock_transformation(_wgpu_ctx), do: error()
 
+  @spec encode_mock_transformation(String.t()) ::
+          Membrane.VideoCompositor.Transformation.rust_representation()
+  def encode_mock_transformation(_arg), do: error()
+
   defp error(), do: :erlang.nif_error(:nif_not_loaded)
 end

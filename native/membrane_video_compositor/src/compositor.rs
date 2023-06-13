@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use membrane_video_compositor_common::elixir_transfer::{
-    StructElixirPacket, TransformationElixirPacket,
+    CustomStructElixirPacket, StructElixirPacket, TransformationElixirPacket,
 };
 use membrane_video_compositor_common::plugins::layout::UntypedLayout;
 use membrane_video_compositor_common::plugins::transformation::{
     Transformation, UntypedTransformation,
 };
+use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey};
 use membrane_video_compositor_common::WgpuContext;
 
 use self::errors::CompositorError;
@@ -25,6 +26,11 @@ impl std::ops::Deref for State {
     }
 }
 
+enum PluginRegistryEntry {
+    Layout(Arc<dyn UntypedLayout>),
+    Transformation(Arc<dyn UntypedTransformation>),
+}
+
 impl State {
     pub fn new() -> Self {
         Self(Mutex::new(InnerState::new()))
@@ -39,16 +45,14 @@ impl Default for State {
 
 pub struct InnerState {
     wgpu_ctx: Arc<WgpuContext>,
-    transformations: HashMap<&'static str, Arc<dyn UntypedTransformation>>,
-    layouts: HashMap<&'static str, Arc<dyn UntypedLayout>>,
+    plugin_registry: HashMap<PluginRegistryKey<'static>, PluginRegistryEntry>,
 }
 
 impl InnerState {
     fn new() -> Self {
         Self {
             wgpu_ctx: Arc::new(wgpu_interface::create_new_wgpu_context()),
-            transformations: HashMap::new(),
-            layouts: HashMap::new(),
+            plugin_registry: HashMap::new(),
         }
     }
 
@@ -60,14 +64,19 @@ impl InnerState {
         &mut self,
         transformation: Arc<dyn UntypedTransformation>,
     ) -> Result<(), CompositorError> {
-        if self.transformations.contains_key(transformation.name()) {
-            return Err(CompositorError::TransformationNameTaken(
-                transformation.name().to_string(),
+        if self
+            .plugin_registry
+            .contains_key(&transformation.registry_key())
+        {
+            return Err(CompositorError::RegistryKeyTaken(
+                transformation.registry_key().0.to_string(),
             ));
         }
 
-        self.transformations
-            .insert(transformation.name(), transformation);
+        self.plugin_registry.insert(
+            transformation.registry_key(),
+            PluginRegistryEntry::Transformation(transformation),
+        );
 
         Ok(())
     }
@@ -76,24 +85,40 @@ impl InnerState {
         &mut self,
         layout: Arc<dyn UntypedLayout>,
     ) -> Result<(), CompositorError> {
-        if self.layouts.contains_key(layout.name()) {
-            return Err(CompositorError::LayoutNameTaken(layout.name().to_string()));
+        if self.plugin_registry.contains_key(&layout.registry_key()) {
+            return Err(CompositorError::RegistryKeyTaken(
+                layout.registry_key().0.to_string(),
+            ));
         }
 
-        self.layouts.insert(layout.name(), layout);
+        self.plugin_registry
+            .insert(layout.registry_key(), PluginRegistryEntry::Layout(layout));
         Ok(())
     }
 }
 
-struct MockTransformation {}
+pub struct MockTransformation {}
 
-impl Transformation for MockTransformation {
+impl MockTransformation {
+    const NAME: &str = "mock_transformation";
+}
+
+impl CustomProcessor for MockTransformation {
     type Arg = String;
 
-    fn name(&self) -> &'static str {
-        "mock_transformation"
+    fn registry_key() -> PluginRegistryKey<'static>
+    where
+        Self: Sized,
+    {
+        PluginRegistryKey(Self::NAME)
     }
 
+    fn registry_key_dyn(&self) -> PluginRegistryKey<'static> {
+        PluginRegistryKey(Self::NAME)
+    }
+}
+
+impl Transformation for MockTransformation {
     fn do_stuff(&self, arg: &Self::Arg) {
         println!("This is a mock transformation called with the string \"{arg}\" :^)")
     }
@@ -110,4 +135,11 @@ impl Transformation for MockTransformation {
 pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
     let ctx = unsafe { ctx.decode() };
     unsafe { TransformationElixirPacket::encode(MockTransformation::new(ctx)) }
+}
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn encode_mock_transformation(
+    arg: <MockTransformation as CustomProcessor>::Arg,
+) -> CustomStructElixirPacket {
+    unsafe { MockTransformation::encode_arg(arg) }
 }

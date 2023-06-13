@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.Transformation do
 
   Keep in mind the transformation needs to be registered before it's used in a scene graph.
   """
-  @opaque rust_representation :: {non_neg_integer(), non_neg_integer()}
+  @opaque rust_representation :: {String.t(), {non_neg_integer(), non_neg_integer()}}
 
   @typedoc """
   This type is an initialized transformation that needs to be transported through elixir to the compositor.

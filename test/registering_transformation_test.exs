@@ -12,8 +12,8 @@ defmodule Membrane.VideoCompositor.RegisteringTransformationTest do
     end
 
     @impl true
-    def encode(_transformation) do
-      {0xDEADBEEF, 0xDEADBEEF}
+    def encode(transformation) do
+      Native.encode_mock_transformation(transformation)
     end
   end
 

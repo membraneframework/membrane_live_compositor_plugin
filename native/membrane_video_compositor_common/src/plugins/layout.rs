@@ -2,12 +2,11 @@ use std::{any::Any, sync::Arc};
 
 use crate::WgpuContext;
 
+use super::{CustomProcessor, PluginRegistryKey};
+
 // NOTE: Send + Sync is necessary to store these in the compositor's state later.
 //       'static is necessary for sending across elixir
-pub trait Layout: Send + Sync + 'static {
-    type Arg: Send + Sync + 'static;
-
-    fn name(&self) -> &'static str;
+pub trait Layout: CustomProcessor {
     fn do_stuff(&self, arg: &Self::Arg);
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -15,13 +14,17 @@ pub trait Layout: Send + Sync + 'static {
 }
 
 pub trait UntypedLayout: Send + Sync + 'static {
-    fn name(&self) -> &'static str;
+    fn registry_key(&self) -> PluginRegistryKey<'static>;
     fn do_stuff(&self, arg: &dyn Any);
 }
 
 impl<T: Layout> UntypedLayout for T {
-    fn name(&self) -> &'static str {
-        self.name()
+    fn registry_key(&self) -> PluginRegistryKey<'static> {
+        assert_eq!(
+            <Self as CustomProcessor>::registry_key(),
+            self.registry_key_dyn()
+        );
+        <Self as CustomProcessor>::registry_key()
     }
 
     fn do_stuff(&self, arg: &dyn Any) {
