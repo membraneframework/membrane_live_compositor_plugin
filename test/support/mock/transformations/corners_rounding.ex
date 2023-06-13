@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.Mock.Transformations.CornersRounding do
 
   @impl true
   def encode(_corners_rounding) do
-    {0xDEADBEEF, 0xDEADBEEF}
+    {"corners_rounding", {0xDEADBEEF, 0xDEADBEEF}}
   end
 
   @impl true

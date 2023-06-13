@@ -24,6 +24,6 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Merging do
 
   @impl true
   def encode(_merging) do
-    {0xDEADBEEF, 0xDEADBEEF}
+    {"merging", {0xDEADBEEF, 0xDEADBEEF}}
   end
 end

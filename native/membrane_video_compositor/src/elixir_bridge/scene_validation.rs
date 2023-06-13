@@ -193,6 +193,10 @@ impl From<SceneParsingError> for rustler::Error {
 
 #[cfg(test)]
 mod test {
+    use membrane_video_compositor_common::{
+        elixir_transfer::CustomStructElixirPacket, plugins::PluginRegistryKey,
+    };
+
     use super::*;
 
     #[test]
@@ -342,7 +346,9 @@ mod test {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: (42, 42),
+                        params: unsafe {
+                            CustomStructElixirPacket::encode(0, PluginRegistryKey("a"))
+                        },
                     }),
                 ),
             ],
@@ -386,7 +392,9 @@ mod test {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: (42, 42),
+                        params: unsafe {
+                            CustomStructElixirPacket::encode(0, PluginRegistryKey("a"))
+                        },
                     }),
                 ),
                 (

@@ -7,7 +7,7 @@ use crate::plugins::{
 /// This struct is meant for encoding and transferring structs defined and used only in the plugins
 /// (i.e. unknown during the compilation of the compositor)
 pub struct CustomStructElixirPacket {
-    recipient_registry_key: String,
+    pub recipient_registry_key: String,
     pointer: (usize, usize),
 }
 
@@ -41,6 +41,18 @@ impl CustomStructElixirPacket {
     }
 }
 
+impl std::fmt::Debug for CustomStructElixirPacket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CustomStructElixirPacket")
+            .field("recipient_registry_key", &self.recipient_registry_key)
+            .field(
+                "pointer",
+                &(self.pointer.0 as *const (), self.pointer.1 as *const ()),
+            )
+            .finish()
+    }
+}
+
 impl<'a> rustler::Decoder<'a> for CustomStructElixirPacket {
     fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
         let (recipient, pointer) = rustler::Decoder::decode(term)?;
@@ -69,6 +81,7 @@ impl DecodedCustomStructElixirPacket {
 }
 
 /// This struct is meant for encoding and transferring structs used both in the compositor and in the plugins
+// TODO: shouldn't this be `Sync`?
 pub struct StructElixirPacket<T: Send + 'static> {
     pointer: usize,
     _phantom: PhantomData<T>,

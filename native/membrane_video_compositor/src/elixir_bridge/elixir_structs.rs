@@ -2,6 +2,8 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use membrane_video_compositor_common::elixir_transfer::CustomStructElixirPacket;
+
 use crate::scene::Node;
 
 use super::scene_validation::{SceneParsingError, SceneValidator};
@@ -41,7 +43,6 @@ impl std::fmt::Debug for Name {
 
 pub type ObjectName = Name;
 pub type LayoutInternalName = Name;
-pub type ImplementationPlaceholder = (usize, usize);
 
 /// A reference to a Membrane.Pad
 pub type PadRef = String;
@@ -136,7 +137,7 @@ pub struct Texture {
     pub input: ObjectName,
     // this is a placeholder only temporarily, until we figure out encoding transformations
     // then, it will be something like `Arc<dyn Transformation>`
-    pub transformations: Vec<ImplementationPlaceholder>,
+    pub transformations: Vec<CustomStructElixirPacket>,
     pub resolution: TextureOutputResolution,
 }
 
@@ -161,7 +162,7 @@ impl Texture {
 pub struct Layout {
     pub inputs: HashMap<LayoutInternalName, ObjectName>,
     pub resolution: LayoutOutputResolution,
-    pub implementation: ImplementationPlaceholder,
+    pub params: CustomStructElixirPacket,
 }
 
 impl Layout {
@@ -215,32 +216,32 @@ pub struct Scene<'a> {
 
 impl<'a> Scene<'a> {
     fn convert_to_graph(self) -> Result<Arc<Node>, SceneParsingError> {
-        let objects = HashMap::from_iter(self.objects);
+        let mut objects = HashMap::from_iter(self.objects);
 
         let mut nodes = HashMap::new();
-        let final_object = &objects[&self.output];
 
         fn parse_object(
             name: &ObjectName,
-            object: &Object,
             nodes: &mut HashMap<ObjectName, Arc<Node>>,
-            objects: &HashMap<ObjectName, Object>,
+            objects: &mut HashMap<ObjectName, Object>,
         ) -> Result<Arc<Node>, SceneParsingError> {
             if let Some(node) = nodes.get(name) {
                 return Ok(node.clone());
             }
 
+            let Some(object) = objects.remove(name) else {
+                panic!("object {:?} not present in scene. expected since the scene passed validation.", name)
+            };
+
             let node = match object {
-                Object::Video(InputVideo { input_pad }) => Arc::new(Node::Video {
-                    pad: input_pad.clone(),
-                }),
+                Object::Video(InputVideo { input_pad }) => Arc::new(Node::Video { pad: input_pad }),
 
                 Object::Image(InputImage { frame, resolution }) => {
                     let frame: &[u8] = frame.borrow();
 
                     Arc::new(Node::Image {
                         data: frame.to_vec(),
-                        resolution: *resolution,
+                        resolution,
                     })
                 }
 
@@ -249,12 +250,9 @@ impl<'a> Scene<'a> {
                     transformations,
                     resolution,
                 }) => {
-                    let mut current = parse_object(input, &objects[input], nodes, objects)?;
+                    let mut current = parse_object(&input, nodes, objects)?;
 
-                    // we may need to get ownership of the transformation here later on in the project.
-                    // this means that we'll most likely need to remove `object` from `objects`, but since it's not certain
-                    // I'm leaving it as is for now
-                    for &transformation in transformations {
+                    for transformation in transformations {
                         current = Arc::new(Node::Transformation {
                             previous: current,
                             transformation,
@@ -268,19 +266,19 @@ impl<'a> Scene<'a> {
                 Object::Layout(Layout {
                     inputs,
                     resolution,
-                    implementation,
+                    params,
                 }) => {
                     let inputs = inputs
                         .iter()
                         .map(|(internal_name, object_name)| {
-                            parse_object(object_name, &objects[object_name], nodes, objects)
+                            parse_object(object_name, nodes, objects)
                                 .map(|node| (internal_name.clone(), node))
                         })
                         .collect::<Result<HashMap<_, _>, _>>()?;
 
                     Arc::new(Node::Layout {
-                        resolution: resolution.clone(),
-                        implementation: *implementation,
+                        resolution,
+                        params,
                         inputs,
                     })
                 }
@@ -290,7 +288,7 @@ impl<'a> Scene<'a> {
             Ok(node)
         }
 
-        parse_object(&self.output, final_object, &mut nodes, &objects)
+        parse_object(&self.output, &mut nodes, &mut objects)
     }
 }
 
@@ -308,6 +306,8 @@ impl<'a> TryInto<crate::scene::Scene> for Scene<'a> {
 
 #[cfg(test)]
 mod tests {
+    use membrane_video_compositor_common::plugins::PluginRegistryKey;
+
     use super::*;
 
     #[test]
@@ -337,7 +337,9 @@ mod tests {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: (42, 42),
+                        params: unsafe {
+                            CustomStructElixirPacket::encode(0, PluginRegistryKey("a"))
+                        },
                     }),
                 ),
             ],
@@ -366,7 +368,11 @@ mod tests {
                     Object::Texture(Texture {
                         input: a,
                         resolution: TextureOutputResolution::TransformedInputResolution,
-                        transformations: vec![(0, 0), (1, 1), (2, 2)],
+                        transformations: vec![
+                            unsafe { CustomStructElixirPacket::encode(0, PluginRegistryKey("a")) },
+                            unsafe { CustomStructElixirPacket::encode(0, PluginRegistryKey("b")) },
+                            unsafe { CustomStructElixirPacket::encode(0, PluginRegistryKey("c")) },
+                        ],
                     }),
                 ),
             ],
@@ -380,19 +386,19 @@ mod tests {
 
         let final_node = scene.final_node;
 
-        let Node::Transformation { ref previous, transformation, .. } = *final_node else {
+        let Node::Transformation { ref previous, transformation, .. } = &*final_node else {
             panic!("unexpected scene structure");
         };
-        assert_eq!(transformation, (2, 2));
+        assert_eq!(transformation.recipient_registry_key, "c");
 
-        let Node::Transformation { ref previous, transformation, .. } = **previous else {
+        let Node::Transformation { ref previous, transformation, .. } = &**previous else {
             panic!("unexpected scene structure");
         };
-        assert_eq!(transformation, (1, 1));
+        assert_eq!(transformation.recipient_registry_key, "b");
 
-        let Node::Transformation { transformation, .. } = **previous else {
+        let Node::Transformation { transformation, .. } = &**previous else {
             panic!("unexpected scene structure");
         };
-        assert_eq!(transformation, (0, 0));
+        assert_eq!(transformation.recipient_registry_key, "a");
     }
 }

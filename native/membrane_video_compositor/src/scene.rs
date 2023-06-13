@@ -1,8 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
+use membrane_video_compositor_common::elixir_transfer::CustomStructElixirPacket;
+
 use crate::elixir_bridge::elixir_structs::{
-    ImplementationPlaceholder, LayoutInternalName, LayoutOutputResolution, PadRef, Resolution,
-    TextureOutputResolution,
+    LayoutInternalName, LayoutOutputResolution, PadRef, Resolution, TextureOutputResolution,
 };
 
 /// A node represents a single object in the video-processing graph.
@@ -13,7 +14,8 @@ pub enum Node {
     /// This could, for example, arrange a couple of videos in a grid.
     Layout {
         resolution: LayoutOutputResolution,
-        implementation: ImplementationPlaceholder,
+        // TODO: When we're ready, this should be swapped for `DecodedCustomStructElixirPacket`
+        params: CustomStructElixirPacket,
         inputs: HashMap<LayoutInternalName, Arc<Node>>,
     },
 
@@ -22,7 +24,8 @@ pub enum Node {
     Transformation {
         resolution: TextureOutputResolution,
         previous: Arc<Node>,
-        transformation: ImplementationPlaceholder,
+        // TODO: When we're ready, this should be swapped for `DecodedCustomStructElixirPacket`
+        transformation: CustomStructElixirPacket,
     },
 
     /// This represents the node, through which video frames 'enter' the scene graph.

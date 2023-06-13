@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Mock.Transformations.Rotate do
 
   @impl true
   def encode(_rotate) do
-    {0xDEADBEEF, 0xDEADBEEF}
+    {"rotate", {0xDEADBEEF, 0xDEADBEEF}}
   end
 
   @impl true

@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Overlay do
         }
   @impl true
   def encode(_overlay) do
-    {0xDEADBEEF, 0xDEADBEEF}
+    {"overlay", {0xDEADBEEF, 0xDEADBEEF}}
   end
 
   @impl true

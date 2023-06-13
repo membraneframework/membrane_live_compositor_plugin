@@ -28,6 +28,6 @@ defmodule Membrane.VideoCompositor.Mock.Layouts.Grid do
 
   @impl true
   def encode(_grid) do
-    {0xDEADBEEF, 0xDEADBEEF}
+    {"grid", {0xDEADBEEF, 0xDEADBEEF}}
   end
 end

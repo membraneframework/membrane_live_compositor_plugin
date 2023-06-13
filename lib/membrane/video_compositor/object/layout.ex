@@ -82,11 +82,10 @@ defmodule Membrane.VideoCompositor.Object.Layout do
     @type t :: %__MODULE__{
             :inputs => inputs(),
             :resolution => output_resolution(),
-            # unsure about calling this `implementation`.
-            :implementation => Layout.rust_representation()
+            :params => Layout.rust_representation()
           }
 
-    @enforce_keys [:inputs, :resolution, :implementation]
+    @enforce_keys [:inputs, :resolution, :params]
     defstruct @enforce_keys
   end
 
@@ -139,7 +138,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
     %RustlerFriendly{
       inputs: encoded_inputs,
       resolution: encoded_resolution,
-      implementation: rust_representation
+      params: rust_representation
     }
   end
 
