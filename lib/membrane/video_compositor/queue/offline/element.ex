@@ -37,16 +37,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     options: [
       timestamp_offset: [
         spec: Time.non_neg_t(),
-        description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
-        default: 0
+        description: "Input stream PTS offset in nanoseconds. Must be non-negative."
       ],
       vc_input_ref: [
         spec: Pad.ref_t(),
         description: "Reference to VC input pad."
       ],
       metadata: [
-        spec: VideoCompositor.input_pad_metadata(),
-        default: nil
+        spec: VideoCompositor.input_pad_metadata()
       ]
     ]
 

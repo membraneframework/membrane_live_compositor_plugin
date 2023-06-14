@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Support.Utils
+  alias Membrane.VideoCompositor.Support.{Handler, Utils}
 
   @hd_video %RawVideo{
     width: 1280,
@@ -75,8 +75,13 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
       Enum.map(positions, fn position ->
         %InputStream{
           input: input_path,
-          metadata: position,
-          stream_format: video_stream_format
+          stream_format: video_stream_format,
+          metadata: %VideoConfig{
+            placement: %BaseVideoPlacement{
+              position: position,
+              size: {video_stream_format.width, video_stream_format.height}
+            }
+          }
         }
       end)
 
@@ -84,47 +89,12 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
       inputs: inputs,
       output: output_path,
       output_stream_format: out_stream_format,
-      handler: __MODULE__.Handler
+      handler: Handler
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)
     assert_pipeline_play(pipeline)
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
     TestingPipeline.terminate(pipeline, blocking?: true)
-  end
-
-  defmodule Handler do
-    @moduledoc false
-
-    @behaviour Membrane.VideoCompositor.Handler
-
-    alias Membrane.VideoCompositor.Handler.Inputs.InputProperties
-    alias Membrane.VideoCompositor.Scene
-
-    @impl true
-    def handle_init(_ctx) do
-      %{}
-    end
-
-    @impl true
-    def handle_inputs_change(inputs, _ctx, state) do
-      inputs
-      |> Enum.map(fn {pad, %InputProperties{stream_format: stream_format, metadata: position}} ->
-        {pad,
-         %VideoConfig{
-           placement: %BaseVideoPlacement{
-             position: position,
-             size: {stream_format.width, stream_format.height}
-           }
-         }}
-      end)
-      |> Enum.into(%{})
-      |> then(fn video_configs -> {%Scene{video_configs: video_configs}, state} end)
-    end
-
-    @impl true
-    def handle_info(_msg, ctx, state) do
-      {ctx.current_scene, state}
-    end
   end
 end
