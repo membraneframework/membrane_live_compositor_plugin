@@ -12,6 +12,6 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.InputStream do
           metadata: any()
         }
 
-  @enforce_keys [:input, :stream_format]
-  defstruct @enforce_keys ++ [timestamp_offset: 0, metadata: nil]
+  @enforce_keys [:input, :stream_format, :metadata]
+  defstruct @enforce_keys ++ [timestamp_offset: 0]
 end

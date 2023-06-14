@@ -13,12 +13,10 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
   defstruct @enforce_keys
 
   @type frame_event :: {:frame, pts :: Time.non_neg_t(), frame_data :: binary()}
-  @type pad_added_event :: {:pad_added, pad_options :: map()}
   @type end_of_stream_event :: :end_of_stream
   @type stream_format_event :: {:stream_format, RawVideo.t()}
 
-  @type pad_event ::
-          pad_added_event() | stream_format_event() | frame_event() | end_of_stream_event()
+  @type pad_event :: stream_format_event() | frame_event() | end_of_stream_event()
 
   @type t :: %__MODULE__{
           timestamp_offset: Time.non_neg_t(),
@@ -27,21 +25,20 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
         }
 
   @spec new(VideoCompositor.input_pad_options()) :: t()
-  def new(pad_options = %{timestamp_offset: timestamp_offset, metadata: metadata}) do
+  def new(%{timestamp_offset: timestamp_offset, metadata: metadata}) do
     %__MODULE__{
       timestamp_offset: timestamp_offset,
-      events_queue: [{:pad_added, pad_options}],
+      events_queue: [],
       metadata: metadata
     }
   end
 
-  @spec event_type(pad_event()) :: :frame | :pad_added | :end_of_stream | :stream_format
+  @spec event_type(pad_event()) :: :stream_format | :frame | :end_of_stream
   def event_type(event) do
     case event do
-      {:frame, _pts, _frame_data} -> :frame
-      {:pad_added, _pad_options} -> :pad_added
-      :end_of_stream -> :end_of_stream
       {:stream_format, _pad_stream_format} -> :stream_format
+      {:frame, _pts, _frame_data} -> :frame
+      :end_of_stream -> :end_of_stream
     end
   end
 end

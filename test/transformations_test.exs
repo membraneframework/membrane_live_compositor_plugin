@@ -121,7 +121,7 @@ defmodule Membrane.VideoCompositor.TransformationsTest do
       end)
 
     options = %Options{
-      inputs: transformed_videos ++ [middle_video] ++ [background_video],
+      inputs: transformed_videos ++ [middle_video, background_video],
       output: output_path,
       output_stream_format: out_stream_format,
       handler: Handler
