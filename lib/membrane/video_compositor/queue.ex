@@ -4,9 +4,10 @@ defmodule Membrane.VideoCompositor.Queue do
   implementation of a queue should meet.
   """
 
-  alias Membrane.{Buffer, Pad, RawVideo}
+  alias Membrane.{Buffer, Pad}
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, SceneChangeEvent}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, QueueingStrategy, SceneChangeEvent}
+  alias Membrane.VideoCompositor.Queue.Live, as: LiveQueue
   alias Membrane.VideoCompositor.Queue.Offline, as: OfflineQueue
 
   @typedoc """
@@ -42,14 +43,13 @@ defmodule Membrane.VideoCompositor.Queue do
   @type queue_bin :: OfflineQueue.t()
 
   @spec get_queue(VideoCompositor.init_options()) :: OfflineQueue.t()
-  def get_queue(%VideoCompositor{
-        queuing_strategy: queuing_strategy,
-        output_stream_format: %RawVideo{framerate: framerate},
-        handler: handler,
-        metadata: metadata
-      }) do
-    case queuing_strategy do
-      :offline -> %OfflineQueue{output_framerate: framerate, handler: handler, metadata: metadata}
+  def get_queue(options = %VideoCompositor{}) do
+    case options.queuing_strategy do
+      QueueingStrategy.Offline ->
+        %OfflineQueue{vc_init_options: options}
+
+      %QueueingStrategy.Live{latency: latency} ->
+        %LiveQueue{vc_init_options: options, latency: latency}
     end
   end
 end

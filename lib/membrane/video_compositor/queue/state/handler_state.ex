@@ -2,6 +2,7 @@ defmodule Membrane.VideoCompositor.Queue.State.HandlerState do
   @moduledoc """
   Keep state of VC handler.
   """
+  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Scene}
   alias Membrane.VideoCompositor.Handler.InputProperties
   alias Membrane.VideoCompositor.Queue.State
@@ -14,11 +15,11 @@ defmodule Membrane.VideoCompositor.Queue.State.HandlerState do
           handler_state: Handler.state()
         }
 
-  @spec new(Handler.t(), any()) :: t()
-  def new(handler_module, init_options) do
+  @spec new(VideoCompositor.init_options()) :: t()
+  def new(init_options) do
     %__MODULE__{
-      handler_module: handler_module,
-      handler_state: handler_module.handle_init(init_options)
+      handler_module: init_options.handler,
+      handler_state: init_options.handler.handle_init(init_options)
     }
   end
 

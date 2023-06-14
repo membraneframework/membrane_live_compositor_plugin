@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
+  alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
@@ -14,17 +14,11 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
 
-  def_options latency: [
+  def_options vc_init_options: [
+                spec: VideoCompositor.init_options()
+              ],
+              latency: [
                 spec: latency()
-              ],
-              output_framerate: [
-                spec: RawVideo.framerate_t()
-              ],
-              handler: [
-                spec: Handler.t()
-              ],
-              metadata: [
-                spec: VideoCompositor.init_metadata()
               ]
 
   def_input_pad :input,
@@ -43,20 +37,14 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     availability: :always
 
   @impl true
-  def handle_init(
-        _ctx,
-        %{
-          output_framerate: output_framerate,
-          latency: latency,
-          handler: handler,
-          metadata: metadata
-        }
-      ) do
+  def handle_init(_ctx, options) do
     {[],
      %State{
-       output_framerate: output_framerate,
-       custom_strategy_state: %LiveState{latency: latency},
-       handler: HandlerState.new(handler, metadata)
+       output_framerate: options.vc_init_options.output_stream_format.framerate,
+       custom_strategy_state: %LiveState{
+         latency: options.latency
+       },
+       handler: HandlerState.new(options.vc_init_options)
      }}
   end
 

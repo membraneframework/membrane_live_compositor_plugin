@@ -8,13 +8,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.VideoCompositor.Handler
   alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Handler, Queue, Scene}
-
-  @typedoc """
-  Defines implemented VC queuing strategies.
-  Any queuing strategy should follow contracts defined in `#{inspect(Queue)}` module.
-  """
-  @type queuing_strategy :: :offline
+  alias Membrane.VideoCompositor.{Handler, Queue, QueueingStrategy, Scene}
 
   @init_metadata_doc """
   User-specified init metadata passed to handler callbacks.
@@ -27,7 +21,7 @@ defmodule Membrane.VideoCompositor do
 
   @type init_options :: %__MODULE__{
           output_stream_format: RawVideo.t(),
-          queuing_strategy: queuing_strategy(),
+          queuing_strategy: QueueingStrategy.t(),
           handler: Handler.t(),
           metadata: init_metadata()
         }
@@ -55,9 +49,9 @@ defmodule Membrane.VideoCompositor do
                 """
               ],
               queuing_strategy: [
-                spec: queuing_strategy(),
+                spec: QueueingStrategy.t(),
                 description: "Specify used frames queueing strategy",
-                default: :offline
+                default: QueueingStrategy.Offline
               ],
               metadata: [
                 spec: init_metadata(),

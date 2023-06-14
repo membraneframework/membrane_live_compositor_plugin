@@ -14,19 +14,13 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Queue}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Queue}
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
-  def_options output_framerate: [
-                spec: RawVideo.framerate_t()
-              ],
-              handler: [
-                spec: Handler.t()
-              ],
-              metadata: [
-                spec: VideoCompositor.init_metadata()
+  def_options vc_init_options: [
+                spec: VideoCompositor.init_options()
               ]
 
   def_input_pad :input,
@@ -52,15 +46,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     accepted_format: %CompositorCoreFormat{}
 
   @impl true
-  def handle_init(
-        _ctx,
-        %{output_framerate: output_framerate, handler: handler, metadata: metadata}
-      ) do
+  def handle_init(_ctx, options) do
     {[],
      %State{
-       output_framerate: output_framerate,
+       output_framerate: options.vc_init_options.output_stream_format.framerate,
        custom_strategy_state: %OfflineState{},
-       handler: HandlerState.new(handler, metadata)
+       handler: HandlerState.new(options.vc_init_options)
      }}
   end
 

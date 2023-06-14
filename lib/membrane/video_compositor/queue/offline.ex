@@ -6,17 +6,11 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
   use Membrane.Bin
   alias Membrane.VideoCompositor
   alias Membrane.{FramerateConverter, RawVideo}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
+  alias Membrane.VideoCompositor.CompositorCoreFormat
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
 
-  def_options output_framerate: [
-                spec: RawVideo.framerate_t()
-              ],
-              handler: [
-                spec: Handler.t()
-              ],
-              metadata: [
-                spec: VideoCompositor.input_pad_metadata()
+  def_options vc_init_options: [
+                spec: VideoCompositor.init_options()
               ]
 
   def_input_pad :input,
@@ -39,20 +33,15 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
     availability: :always
 
   @impl true
-  def handle_init(_ctx, %{
-        output_framerate: output_framerate,
-        handler: handler,
-        metadata: metadata
-      }) do
+  def handle_init(_ctx, %__MODULE__{vc_init_options: options}) do
+    output_framerate = options.output_stream_format.framerate
+
     spec =
-      child(:queue_element, %OfflineQueueElement{
-        output_framerate: output_framerate,
-        handler: handler,
-        metadata: metadata
-      })
+      child(:queue_element, %OfflineQueueElement{vc_init_options: options})
       |> bin_output()
 
     state = %{output_framerate: output_framerate}
+
     {[spec: spec], state}
   end
 

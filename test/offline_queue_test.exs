@@ -2,6 +2,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   @moduledoc false
   use ExUnit.Case
 
+  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.Support.Handler
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.Element.Action
@@ -90,9 +91,12 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
     assert {[], state} =
              OfflineQueue.handle_init(%{}, %{
-               output_framerate: {1, 1},
-               handler: Handler,
-               metadata: nil
+               vc_init_options: %VideoCompositor{
+                 output_stream_format: @video_stream_format,
+                 queuing_strategy: Membrane.VideoCompositor.QueueingStrategy.Offline,
+                 handler: Handler,
+                 metadata: nil
+               }
              })
 
     assert {[], state} =
