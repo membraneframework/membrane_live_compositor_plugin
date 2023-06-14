@@ -20,12 +20,11 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 next_buffer_pts: 0,
                 next_buffer_number: 1,
                 output_format: %CompositorCoreFormat{pad_formats: %{}},
-                scene: Scene.empty()
+                scene: Scene.empty(),
+                user_messages: []
               ]
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
-
-  @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
 
   @type strategy_state :: OfflineStrategyState.t()
 
@@ -36,7 +35,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
           pads_states: pads_states(),
           next_buffer_pts: Time.non_neg_t(),
           output_format: CompositorCoreFormat.t(),
-          scene: Scene.t()
+          scene: Scene.t(),
+          user_messages: list(any())
         }
 
   @spec register_pad(t(), Pad.ref_t(), VideoCompositor.input_pad_options()) :: t()
@@ -55,11 +55,11 @@ defmodule Membrane.VideoCompositor.Queue.State do
     )
   end
 
-  @spec put_event(t(), scene_update_event() | {PadState.pad_event(), Pad.ref_t()}) :: t()
+  @spec put_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, any()}) :: t()
   def put_event(state, event) do
     case event do
-      {:update_scene, _pts, _scene} ->
-        Map.update!(state, :scene_update_events, &(&1 ++ [event]))
+      {:message, msg} ->
+        Map.update!(state, :custom_messages, &(&1 ++ [msg]))
 
       {pad_event, pad_ref} ->
         Bunch.Struct.update_in(
@@ -149,6 +149,13 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   @spec check_callbacks(t(), t()) :: t()
   defp check_callbacks(new_state, previous_state) do
+    new_state
+    |> check_handle_inputs_change(previous_state)
+    |> check_handle_infos()
+  end
+
+  @spec check_handle_inputs_change(t(), t()) :: t()
+  defp check_handle_inputs_change(new_state, previous_state) do
     if previous_state.output_format != new_state.output_format do
       handle_inputs_change(new_state, previous_state)
     else
@@ -156,20 +163,65 @@ defmodule Membrane.VideoCompositor.Queue.State do
     end
   end
 
+  @spec check_handle_infos(t()) :: t()
+  defp check_handle_infos(new_state) do
+    new_state.user_messages
+    |> Enum.reduce(new_state, fn msg, state -> handle_info(msg, state) end)
+  end
+
+  @spec handle_inputs_change(t(), t()) :: t()
   defp handle_inputs_change(new_state, previous_state) do
     {handler, handler_state} = new_state.handler
 
-    callback_return =
-      handler.handle_inputs_change(
-        get_inputs(new_state),
-        get_callback_context(previous_state),
-        handler_state
-      )
+    inputs = get_inputs(new_state)
+    ctx = get_callback_context(previous_state)
 
     {scene, handler_state} =
-      case callback_return do
+      case handler.handle_inputs_change(inputs, ctx, handler_state) do
         {scene = %Scene{}, state} ->
           {scene, state}
+
+        other ->
+          raise """
+          Improper return from handler #{handler} for `handle_inputs_change` implementation.
+          Improper return: #{other}
+          for arguments:
+          inputs: #{inputs}
+          context: #{ctx}
+          handler_state: #{handler_state}
+
+          Check callbacks API specification in #{Membrane.VideoCompositor.Handler}
+          """
+      end
+
+    %__MODULE__{
+      new_state
+      | handler: {handler, handler_state},
+        scene: scene
+    }
+  end
+
+  @spec handle_info(any(), t()) :: t()
+  defp handle_info(msg, new_state) do
+    {handler, handler_state} = new_state.handler
+    ctx = get_callback_context(new_state)
+
+    {scene, handler_state} =
+      case handler.handle_info(msg, ctx, handler_state) do
+        {scene = %Scene{}, state} ->
+          {scene, state}
+
+        other ->
+          raise """
+          Improper return from handler #{handler} for `handle_info` implementation.
+          Improper return: #{other}
+          for arguments:
+          msg: #{msg}
+          context: #{ctx}
+          handler_state: #{handler_state}
+
+          Check callbacks API specification in #{Membrane.VideoCompositor.Handler}
+          """
       end
 
     %__MODULE__{
@@ -202,7 +254,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
       ) do
     eos_pads =
       pads_states
-      |> Enum.filter(fn {_pad, pad_state} -> is_eos_pad?(pad_state) end)
+      |> Enum.filter(fn {_pad, pad_state} -> PadState.no_frame_eos?(pad_state) end)
       |> Enum.map(fn {pad, _pad_state} -> pad end)
 
     %__MODULE__{
@@ -210,21 +262,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
       | pads_states: Map.drop(pads_states, eos_pads),
         output_format: %CompositorCoreFormat{pad_formats: Map.drop(pad_formats, eos_pads)}
     }
-  end
-
-  @spec is_eos_pad?(PadState.t()) :: boolean()
-  defp is_eos_pad?(%PadState{events_queue: events_queue}) do
-    Enum.reduce_while(
-      events_queue,
-      false,
-      fn event, _is_eos? ->
-        case PadState.event_type(event) do
-          :frame -> {:halt, false}
-          :end_of_stream -> {:halt, true}
-          _other -> {:cont, false}
-        end
-      end
-    )
   end
 
   @spec get_inputs(t()) :: Inputs.t()

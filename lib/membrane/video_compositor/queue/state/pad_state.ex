@@ -41,4 +41,19 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
       :end_of_stream -> :end_of_stream
     end
   end
+
+  @spec no_frame_eos?(t()) :: boolean()
+  def no_frame_eos?(%__MODULE__{events_queue: events_queue}) do
+    Enum.reduce_while(
+      events_queue,
+      false,
+      fn event, _is_eos? ->
+        case event_type(event) do
+          :frame -> {:halt, false}
+          :end_of_stream -> {:halt, true}
+          _other -> {:cont, false}
+        end
+      end
+    )
+  end
 end

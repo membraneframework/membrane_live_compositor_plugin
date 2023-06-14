@@ -118,6 +118,12 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     check_pads_queues({[], state})
   end
 
+  @impl true
+  def handle_parent_notification(msg, _ctx, state) do
+    state = State.put_event(state, {:message, msg})
+    {[], state}
+  end
+
   @spec frame_or_eos(list(PadState.pad_event())) :: :neither_frame_nor_eos | :frame | :eos
   defp frame_or_eos(events_queue) do
     Enum.reduce_while(
@@ -203,8 +209,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     frame_indexes =
       pads_states
       |> Map.to_list()
-      |> Enum.filter(fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
-        timestamp_offset <= buffer_pts
+      |> Enum.reject(fn {_pad, pad_state = %PadState{timestamp_offset: timestamp_offset}} ->
+        timestamp_offset > buffer_pts or PadState.no_frame_eos?(pad_state)
       end)
       |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
         {pad, Enum.find_index(events_queue, &(PadState.event_type(&1) == :frame))}

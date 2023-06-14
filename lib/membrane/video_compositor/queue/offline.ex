@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
   use Membrane.Bin
   alias Membrane.VideoCompositor
   alias Membrane.{FramerateConverter, RawVideo}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Scene}
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
 
   def_options output_framerate: [
@@ -80,7 +80,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
     do: {[remove_child: {:framerate_converter, pad_id}], state}
 
   @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _context, state) do
-    {[notify_child: {:queue_element, {:update_scene, scene}}], state}
+  def handle_parent_notification(msg, _context, state) do
+    {[notify_child: {:queue_element, msg}], state}
   end
 end
