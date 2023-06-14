@@ -7,10 +7,9 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.Element.Action
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Scene, SceneChangeEvent}
-  alias Membrane.VideoCompositor.Handler.InputProperties
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
-  alias Membrane.VideoCompositor.Queue.State.PadState
+  alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
   @enforce_keys [:output_framerate, :custom_strategy_state, :handler]
   defstruct @enforce_keys ++
@@ -30,7 +29,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
           custom_strategy_state: strategy_state(),
-          handler: {handler_module :: Handler.t(), state :: Handler.state()},
+          handler: HandlerState.t(),
           pads_states: pads_states(),
           next_buffer_pts: Time.non_neg_t(),
           output_format: CompositorCoreFormat.t(),
@@ -97,7 +96,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
     state =
       state
-      |> check_callbacks(state)
+      |> HandlerState.check_callbacks(state)
       |> update_next_buffer_pts()
 
     {pads_frames, state}
@@ -123,7 +122,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   @spec get_actions(t(), t(), %{Pad.ref_t() => binary()}, Membrane.Time.non_neg_t()) ::
           [Action.stream_format_t() | Action.event_t() | Action.buffer_t()]
   def get_actions(new_state, previous_state, pads_frames, buffer_pts) do
-    new_state = new_state |> check_callbacks(previous_state)
+    new_state = new_state |> HandlerState.check_callbacks(previous_state)
 
     stream_format_action =
       if new_state.output_format != previous_state.output_format do
@@ -144,90 +143,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
     ]
 
     stream_format_action ++ scene_action ++ buffer_action
-  end
-
-  @spec check_callbacks(t(), t()) :: t()
-  defp check_callbacks(new_state, previous_state) do
-    new_state
-    |> check_handle_inputs_change(previous_state)
-    |> check_handle_infos()
-  end
-
-  @spec check_handle_inputs_change(t(), t()) :: t()
-  defp check_handle_inputs_change(new_state, previous_state) do
-    if previous_state.output_format != new_state.output_format do
-      handle_inputs_change(new_state, previous_state)
-    else
-      new_state
-    end
-  end
-
-  @spec check_handle_infos(t()) :: t()
-  defp check_handle_infos(new_state) do
-    new_state.user_messages
-    |> Enum.reduce(new_state, fn msg, state -> handle_info(msg, state) end)
-  end
-
-  @spec handle_inputs_change(t(), t()) :: t()
-  defp handle_inputs_change(new_state, previous_state) do
-    {handler, handler_state} = new_state.handler
-
-    inputs = get_inputs(new_state)
-    ctx = get_callback_context(previous_state)
-
-    {scene, handler_state} =
-      case handler.handle_inputs_change(inputs, ctx, handler_state) do
-        {scene = %Scene{}, state} ->
-          {scene, state}
-
-        other ->
-          raise """
-          Improper return from handler #{handler} for `handle_inputs_change` implementation.
-          Improper return: #{other}
-          for arguments:
-          inputs: #{inputs}
-          context: #{ctx}
-          handler_state: #{handler_state}
-
-          Check callbacks API specification in #{Membrane.VideoCompositor.Handler}
-          """
-      end
-
-    %__MODULE__{
-      new_state
-      | handler: {handler, handler_state},
-        scene: scene
-    }
-  end
-
-  @spec handle_info(any(), t()) :: t()
-  defp handle_info(msg, new_state) do
-    {handler, handler_state} = new_state.handler
-    ctx = get_callback_context(new_state)
-
-    {scene, handler_state} =
-      case handler.handle_info(msg, ctx, handler_state) do
-        {scene = %Scene{}, state} ->
-          {scene, state}
-
-        other ->
-          raise """
-          Improper return from handler #{handler} for `handle_info` implementation.
-          Improper return: #{other}
-          for arguments:
-          msg: #{msg}
-          context: #{ctx}
-          handler_state: #{handler_state}
-
-          Check callbacks API specification in #{Membrane.VideoCompositor.Handler}
-          """
-      end
-
-    %__MODULE__{
-      new_state
-      | handler: {handler, handler_state},
-        scene: scene
-    }
   end
 
   @spec update_next_buffer_pts(t()) :: t()
@@ -260,32 +175,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
       state
       | pads_states: Map.drop(pads_states, eos_pads),
         output_format: %CompositorCoreFormat{pad_formats: Map.drop(pad_formats, eos_pads)}
-    }
-  end
-
-  @spec get_inputs(t()) :: Handler.inputs()
-  defp get_inputs(%__MODULE__{
-         output_format: %CompositorCoreFormat{pad_formats: pad_formats},
-         pads_states: pads_states
-       }) do
-    pad_formats
-    |> Enum.map(fn {pad, pad_format} ->
-      {pad,
-       %InputProperties{
-         stream_format: pad_format,
-         metadata: Bunch.Struct.get_in(pads_states, [pad, :metadata])
-       }}
-    end)
-    |> Enum.into(%{})
-  end
-
-  @spec get_callback_context(t()) :: Handler.context()
-  defp get_callback_context(state) do
-    %{
-      scene: state.scene,
-      inputs: get_inputs(state),
-      next_frame_pts: state.next_buffer_pts,
-      scenes_queue: []
     }
   end
 end

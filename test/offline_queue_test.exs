@@ -89,7 +89,11 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     }
 
     assert {[], state} =
-             OfflineQueue.handle_init(%{}, %{output_framerate: {1, 1}, handler: Handler})
+             OfflineQueue.handle_init(%{}, %{
+               output_framerate: {1, 1},
+               handler: Handler,
+               metadata: nil
+             })
 
     assert {[], state} =
              OfflineQueue.handle_pad_added(

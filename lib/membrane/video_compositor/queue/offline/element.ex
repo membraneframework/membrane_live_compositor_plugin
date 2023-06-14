@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Queue}
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Queue.State.PadState
+  alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
   def_options output_framerate: [
                 spec: RawVideo.framerate_t()
@@ -54,13 +54,13 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   @impl true
   def handle_init(
         _ctx,
-        options = %{output_framerate: output_framerate, handler: handler}
+        %{output_framerate: output_framerate, handler: handler, metadata: metadata}
       ) do
     {[],
      %State{
        output_framerate: output_framerate,
        custom_strategy_state: %OfflineState{},
-       handler: {handler, handler.handle_init(options)}
+       handler: HandlerState.new(handler, metadata)
      }}
   end
 
