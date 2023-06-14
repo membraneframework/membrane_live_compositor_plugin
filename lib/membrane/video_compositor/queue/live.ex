@@ -24,11 +24,15 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
+    demand_mode: :auto,
     options: [
       timestamp_offset: [
         spec: Membrane.Time.non_neg_t(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
+      ],
+      metadata: [
+        spec: VideoCompositor.init_metadata()
       ]
     ]
 
