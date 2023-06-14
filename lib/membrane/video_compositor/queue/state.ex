@@ -57,7 +57,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   def put_event(state, event) do
     case event do
       {:message, msg} ->
-        Map.update!(state, :custom_messages, &(&1 ++ [msg]))
+        Map.update!(state, :user_messages, &(&1 ++ [msg]))
 
       {pad_event, pad_ref} ->
         Bunch.Struct.update_in(
