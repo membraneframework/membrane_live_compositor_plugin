@@ -124,6 +124,12 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     {[start_timer: {:initializer, delay}], state}
   end
 
+  @impl true
+  def handle_parent_notification(msg, _ctx, state) do
+    state = State.put_event(state, {:message, msg})
+    {[], state}
+  end
+
   @spec nearest_frame_index([PadState.pad_event()], Membrane.Time.non_neg_t()) ::
           non_neg_integer() | :no_frame
   defp nearest_frame_index(events_queue, tick_pts) do
