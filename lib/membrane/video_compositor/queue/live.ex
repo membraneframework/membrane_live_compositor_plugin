@@ -4,7 +4,6 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   use Membrane.Filter
 
   alias Membrane.RawVideo
-  alias Membrane.VideoCompositor.Handler.CallbackContext
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler}
   alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
@@ -48,7 +47,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
      %State{
        output_framerate: output_framerate,
        custom_strategy_state: %LiveState{latency: latency},
-       handler: {handler, handler.handle_init(%CallbackContext.Init{init_options: options})}
+       handler: {handler, handler.handle_init(options)}
      }}
   end
 

@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.Support.Handler do
 
   @behaviour Membrane.VideoCompositor.Handler
 
-  alias Membrane.VideoCompositor.Handler.Inputs.InputProperties
+  alias Membrane.VideoCompositor.Handler.InputProperties
   alias Membrane.VideoCompositor.Scene
 
   @impl true

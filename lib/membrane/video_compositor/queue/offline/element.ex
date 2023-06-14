@@ -15,7 +15,6 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Queue}
-  alias Membrane.VideoCompositor.Handler.CallbackContext
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.PadState
@@ -61,7 +60,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
      %State{
        output_framerate: output_framerate,
        custom_strategy_state: %OfflineState{},
-       handler: {handler, handler.handle_init(%CallbackContext.Init{init_options: options})}
+       handler: {handler, handler.handle_init(options)}
      }}
   end
 

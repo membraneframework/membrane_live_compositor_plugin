@@ -7,9 +7,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.Element.Action
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.Handler.{CallbackContext, Inputs}
-  alias Membrane.VideoCompositor.Handler.Inputs.InputProperties
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Scene, SceneChangeEvent}
+  alias Membrane.VideoCompositor.Handler.InputProperties
   alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
   alias Membrane.VideoCompositor.Queue.State.PadState
 
@@ -264,7 +263,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     }
   end
 
-  @spec get_inputs(t()) :: Inputs.t()
+  @spec get_inputs(t()) :: Handler.inputs()
   defp get_inputs(%__MODULE__{
          output_format: %CompositorCoreFormat{pad_formats: pad_formats},
          pads_states: pads_states
@@ -280,12 +279,13 @@ defmodule Membrane.VideoCompositor.Queue.State do
     |> Enum.into(%{})
   end
 
-  @spec get_callback_context(t()) :: CallbackContext.t()
+  @spec get_callback_context(t()) :: Handler.context()
   defp get_callback_context(state) do
-    %CallbackContext{
+    %{
       scene: state.scene,
       inputs: get_inputs(state),
-      next_frame_pts: state.next_buffer_pts
+      next_frame_pts: state.next_buffer_pts,
+      scenes_queue: []
     }
   end
 end

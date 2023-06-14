@@ -4,16 +4,11 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Bin
+
   alias Membrane.VideoCompositor.Handler
   alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Queue, Scene}
-
-  @typedoc """
-  Defines how VC should be notified with new scene -
-  new composition schema.
-  """
-  @type scene_update_notification :: {:update_scene, Scene.t()}
+  alias Membrane.VideoCompositor.{Handler, Queue, Scene}
 
   @typedoc """
   Defines implemented VC queuing strategies.
@@ -126,7 +121,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
-    {[notify_child: {:queue, {:update_scene, scene}}], state}
+  def handle_parent_notification(msg, _ctx, state) do
+    {[notify_child: {:queue, msg}], state}
   end
 end
