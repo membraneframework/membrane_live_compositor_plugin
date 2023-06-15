@@ -103,8 +103,9 @@ defmodule Membrane.VideoCompositor.Queue.Live do
       ) do
     indexes =
       pads_states
-      |> Map.keys()
-      |> Enum.map(fn pad -> {pad, nearest_frame_index(pad, buffer_pts)} end)
+      |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
+        {pad, nearest_frame_index(events_queue, buffer_pts)}
+      end)
       |> Enum.into(%{})
 
     {pads_frames, new_state} = State.pop_events(initial_state, indexes, true)
