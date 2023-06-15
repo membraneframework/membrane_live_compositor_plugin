@@ -38,7 +38,8 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   def_output_pad :output,
     accepted_format: %CompositorCoreFormat{},
-    availability: :always
+    availability: :always,
+    demand_mode: :auto
 
   @impl true
   def handle_init(_ctx, options) do
