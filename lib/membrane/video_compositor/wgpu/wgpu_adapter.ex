@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @opaque wgpu_ctx() :: Native.wgpu_ctx()
 
   @doc """
-  Initialize the new part of the compositor
+  Initialize the native part of the compositor
   """
   @spec init() :: native_state()
   def init() do
