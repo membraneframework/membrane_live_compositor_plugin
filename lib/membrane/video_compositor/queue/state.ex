@@ -71,7 +71,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   @spec pop_events(t(), %{Pad.ref_t() => non_neg_integer()}, boolean()) ::
           {pads_frames :: %{Pad.ref_t() => binary()}, t()}
   def pop_events(state, frame_indexes, keep_frame?) do
-    state = drop_oes_pads(state)
+    state = drop_eos_pads(state)
 
     {pads_frames, state} =
       frame_indexes
@@ -159,8 +159,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
     }
   end
 
-  @spec drop_oes_pads(t()) :: t()
-  def drop_oes_pads(
+  @spec drop_eos_pads(t()) :: t()
+  def drop_eos_pads(
         state = %__MODULE__{
           pads_states: pads_states,
           output_format: %CompositorCoreFormat{pad_formats: pad_formats}

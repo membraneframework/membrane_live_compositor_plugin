@@ -84,6 +84,12 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   end
 
   @impl true
+  def handle_end_of_stream(pad, _ctx, state) do
+    state = State.put_event(state, {:end_of_stream, pad})
+    {[], state}
+  end
+
+  @impl true
   def handle_process(pad, buffer, _ctx, state) do
     state = State.put_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
     {[], state}
@@ -112,7 +118,11 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
     actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
-    {actions, new_state}
+    if all_pads_eos?(new_state) do
+      {actions ++ [stop_timer: :buffer_scheduler, end_of_stream: :output], new_state}
+    else
+      {actions, new_state}
+    end
   end
 
   @impl true
@@ -161,9 +171,18 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     %Ratio{numerator: output_fps_num, denominator: output_fps_den}
   end
 
-  defp check_timer_started(state = %State{}) do
+  defp check_timer_started(state) do
     if state.custom_strategy_state.timer_started? do
       raise "Failed to start timer. Timer already started."
     end
+  end
+
+  @spec all_pads_eos?(State.t()) :: boolean()
+  defp all_pads_eos?(%State{pads_states: pads_states}) do
+    pads_states
+    |> Map.values()
+    |> Enum.any?(fn %PadState{events_queue: events_queue} ->
+      Enum.at(events_queue, -1) == :end_of_stream
+    end)
   end
 end
