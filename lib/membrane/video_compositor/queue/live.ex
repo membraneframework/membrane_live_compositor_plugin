@@ -106,9 +106,11 @@ defmodule Membrane.VideoCompositor.Queue.Live do
       |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
         {pad, nearest_frame_index(events_queue, buffer_pts)}
       end)
+      |> Enum.reject(fn {_pad, index} -> index == :no_frame end)
       |> Enum.into(%{})
 
     {pads_frames, new_state} = State.pop_events(initial_state, indexes, true)
+
     actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
     {actions, new_state}
