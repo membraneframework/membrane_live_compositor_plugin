@@ -65,7 +65,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     if state.custom_strategy_state.timer_started? do
       {[], state}
     else
-      state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started], true)
+      state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started?], true)
 
       case state.custom_strategy_state.latency do
         :wait_for_start_event ->
