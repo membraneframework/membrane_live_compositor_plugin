@@ -60,8 +60,8 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   def handle_init(_ctx, options) do
     native_state = WgpuAdapter.init()
 
-    :ok = WgpuAdapter.register_transformations(native_state, options.transformations)
-    :ok = WgpuAdapter.register_layouts(native_state, options.layouts)
+    :ok = WgpuAdapter.init_and_register_transformations(native_state, options.transformations)
+    :ok = WgpuAdapter.init_and_register_layouts(native_state, options.layouts)
 
     state = %State{
       native_state: native_state

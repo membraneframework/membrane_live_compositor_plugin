@@ -39,11 +39,11 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   This function takes a list of transformation modules, initializes them and registers them in
   the compositor so that they're available to use in the scene.
   """
-  @spec register_transformations(
+  @spec init_and_register_transformations(
           native_state(),
           list(Transformation.transformation_module())
         ) :: :ok
-  def register_transformations(state, transformations) do
+  def init_and_register_transformations(state, transformations) do
     transformations
     |> Enum.each(fn transformation_module ->
       wgpu_ctx = wgpu_ctx(state)
@@ -60,11 +60,11 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   This function takes a list of layout modules, initializes them and registers them in
   the compositor so that they're available to use in the scene.
   """
-  @spec register_layouts(
+  @spec init_and_register_layouts(
           native_state(),
           list(Layout.layout_module())
         ) :: :ok
-  def register_layouts(state, layouts) do
+  def init_and_register_layouts(state, layouts) do
     layouts
     |> Enum.each(fn layout_module ->
       wgpu_ctx = wgpu_ctx(state)
