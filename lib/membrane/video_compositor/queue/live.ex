@@ -91,7 +91,6 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @impl true
   def handle_tick(:initializer, _ctx, state) do
-    check_timer_started(state)
     {[stop_timer: :initializer, start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
