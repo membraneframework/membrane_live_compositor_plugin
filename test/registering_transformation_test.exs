@@ -19,6 +19,6 @@ defmodule Membrane.VideoCompositor.RegisteringTransformationTest do
 
   test "initializes correctly with a mock transformation" do
     compositor = WgpuAdapter.init()
-    assert :ok = WgpuAdapter.register_transformations(compositor, [MockTransformation])
+    assert :ok = WgpuAdapter.init_and_register_transformations(compositor, [MockTransformation])
   end
 end
