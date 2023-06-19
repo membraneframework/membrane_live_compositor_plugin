@@ -28,25 +28,6 @@ jobs:
           command: |
               cargo test --workspace --manifest-path native/Cargo.toml
 
-  elixir_test_with_software_rendering:
-    docker:
-      - image: membraneframeworklabs/docker_membrane:opengl-experimental
-        environment:
-          XDG_RUNTIME_DIR: /tmp
-
-    steps:
-      - checkout
-      - setup_remote_docker
-      - elixir/get_mix_deps
-      # - elixir/use_build_cache:
-      #     env: test
-      - run:
-          command: mix deps.compile
-          name: Ensure native deps are compiled
-      - run:
-          command: mix test --warnings-as-errors
-          name: Run all tests
-
 workflows:
   build:
     jobs:
@@ -54,7 +35,7 @@ workflows:
           filters: &filters
             tags:
               only: /v.*/
-      - elixir_test_with_software_rendering:
+      - elixir/test:
           filters:
             <<: *filters
       - elixir/lint:
@@ -69,7 +50,7 @@ workflows:
       - elixir/hex_publish:
           requires:
             - elixir/build_test
-            - elixir_test_with_software_rendering
+            - elixir/test
             - elixir/lint
             - rust_lint
             - rust_tests
