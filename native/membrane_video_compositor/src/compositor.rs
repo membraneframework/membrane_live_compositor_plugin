@@ -64,35 +64,32 @@ impl InnerState {
         &mut self,
         transformation: Arc<dyn UntypedTransformation>,
     ) -> Result<(), CompositorError> {
-        if self
-            .plugin_registry
-            .contains_key(&transformation.registry_key())
-        {
-            return Err(CompositorError::RegistryKeyTaken(
-                transformation.registry_key().0.to_string(),
-            ));
-        }
-
-        self.plugin_registry.insert(
+        self.register(
             transformation.registry_key(),
             PluginRegistryEntry::Transformation(transformation),
-        );
-
-        Ok(())
+        )
     }
 
     pub fn register_layout(
         &mut self,
         layout: Arc<dyn UntypedLayout>,
     ) -> Result<(), CompositorError> {
-        if self.plugin_registry.contains_key(&layout.registry_key()) {
+        self.register(layout.registry_key(), PluginRegistryEntry::Layout(layout))
+    }
+
+    fn register(
+        &mut self,
+        registry_key: PluginRegistryKey<'static>,
+        plugin: PluginRegistryEntry,
+    ) -> Result<(), CompositorError> {
+        if self.plugin_registry.contains_key(&registry_key) {
             return Err(CompositorError::RegistryKeyTaken(
-                layout.registry_key().0.to_string(),
+                registry_key.0.to_string(),
             ));
         }
 
-        self.plugin_registry
-            .insert(layout.registry_key(), PluginRegistryEntry::Layout(layout));
+        self.plugin_registry.insert(registry_key, plugin);
+
         Ok(())
     }
 }
