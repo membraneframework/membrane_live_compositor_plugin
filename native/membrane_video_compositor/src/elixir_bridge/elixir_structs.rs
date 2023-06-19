@@ -255,7 +255,7 @@ impl<'a> Scene<'a> {
                     for transformation in transformations {
                         current = Arc::new(Node::Transformation {
                             previous: current,
-                            transformation,
+                            params: transformation,
                             resolution: resolution.clone(),
                         });
                     }
@@ -386,17 +386,17 @@ mod tests {
 
         let final_node = scene.final_node;
 
-        let Node::Transformation { ref previous, transformation, .. } = &*final_node else {
+        let Node::Transformation { ref previous, params: transformation, .. } = &*final_node else {
             panic!("unexpected scene structure");
         };
         assert_eq!(transformation.recipient_registry_key, "c");
 
-        let Node::Transformation { ref previous, transformation, .. } = &**previous else {
+        let Node::Transformation { ref previous, params: transformation, .. } = &**previous else {
             panic!("unexpected scene structure");
         };
         assert_eq!(transformation.recipient_registry_key, "b");
 
-        let Node::Transformation { transformation, .. } = &**previous else {
+        let Node::Transformation { params: transformation, .. } = &**previous else {
             panic!("unexpected scene structure");
         };
         assert_eq!(transformation.recipient_registry_key, "a");

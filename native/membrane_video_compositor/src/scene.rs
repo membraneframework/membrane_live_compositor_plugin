@@ -25,7 +25,7 @@ pub enum Node {
         resolution: TextureOutputResolution,
         previous: Arc<Node>,
         // TODO: When we're ready, this should be swapped for `DecodedCustomStructElixirPacket`
-        transformation: CustomStructElixirPacket,
+        params: CustomStructElixirPacket,
     },
 
     /// This represents the node, through which video frames 'enter' the scene graph.
