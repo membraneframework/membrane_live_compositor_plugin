@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor do
         description: "Specify how single input video should be transformed"
       ],
       timestamp_offset: [
-        spec: Time.non_neg_t(),
+        spec: Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],

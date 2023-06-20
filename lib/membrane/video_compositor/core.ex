@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Core do
 
     @type wgpu_state() :: any()
     @type pad_id() :: non_neg_integer()
-    @type pads_to_ids() :: %{Membrane.Pad.ref_t() => pad_id()}
+    @type pads_to_ids() :: %{Membrane.Pad.ref() => pad_id()}
 
     @type t() :: %__MODULE__{
             wgpu_state: wgpu_state(),
@@ -133,7 +133,7 @@ defmodule Membrane.VideoCompositor.Core do
 
   @spec send_pads_frames(
           State.wgpu_state(),
-          [{pad_id :: State.pad_id(), frame :: binary(), pts :: Time.non_neg_t()}]
+          [{pad_id :: State.pad_id(), frame :: binary(), pts :: Time.non_neg()}]
         ) :: {:ok, rendered_frame :: binary()}
   defp send_pads_frames(wgpu_state, [{pad, pad_frame, pts}]) do
     case WgpuAdapter.process_frame(wgpu_state, pad, {pad_frame, pts}) do

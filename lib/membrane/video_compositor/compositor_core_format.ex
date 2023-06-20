@@ -10,11 +10,11 @@ defmodule Membrane.VideoCompositor.CompositorCoreFormat do
 
   @typedoc """
   Stream format of Queue - VC Core communication.
-  Queue sends %{Pad.ref_t() => binary()} map in buffer
+  Queue sends %{Pad.ref() => binary()} map in buffer
   payload and this format describes each frame resolution.
   """
   @type t :: %__MODULE__{
-          pad_formats: %{Pad.ref_t() => RawVideo.t()}
+          pad_formats: %{Pad.ref() => RawVideo.t()}
         }
 
   @spec pads(t()) :: MapSet.t()

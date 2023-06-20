@@ -22,14 +22,14 @@ defmodule Membrane.VideoCompositor.Handler do
   @type context :: %{
           scene: Scene.t(),
           inputs: inputs(),
-          next_frame_pts: Membrane.Time.non_neg_t(),
-          scenes_queue: [{start_pts :: Membrane.Time.non_neg_t(), new_scene :: Scene.t()}]
+          next_frame_pts: Membrane.Time.non_neg(),
+          scenes_queue: [{start_pts :: Membrane.Time.non_neg(), new_scene :: Scene.t()}]
         }
 
   @typedoc """
   Describe all VC input videos used in composition.
   """
-  @type inputs() :: %{Pad.ref_t() => InputProperties.t()}
+  @type inputs() :: %{Pad.ref() => InputProperties.t()}
 
   @typedoc """
   Type of a valid return value from the callback. By returning this type,
@@ -41,7 +41,7 @@ defmodule Membrane.VideoCompositor.Handler do
   Type of a valid return value from callback allowing to pick start time of a new scene.
   """
   @type timed_callback_return ::
-          {{scene :: Scene.t(), start_pts :: Membrane.Time.non_neg_t()}, state :: state()}
+          {{scene :: Scene.t(), start_pts :: Membrane.Time.non_neg()}, state :: state()}
 
   @doc """
   Callback invoked upon initialization of Video Compositor.

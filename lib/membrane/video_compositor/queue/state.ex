@@ -22,24 +22,24 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 most_recent_frame_pts: 0
               ]
 
-  @type pads_states :: %{Pad.ref_t() => PadState.t()}
+  @type pads_states :: %{Pad.ref() => PadState.t()}
 
-  @type scene_update_event :: {:update_scene, pts :: Time.non_neg_t(), scene :: Scene.t()}
+  @type scene_update_event :: {:update_scene, pts :: Time.non_neg(), scene :: Scene.t()}
 
   @type strategy_state :: OfflineStrategyState.t()
 
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
           pads_states: pads_states(),
-          next_buffer_pts: Time.non_neg_t(),
+          next_buffer_pts: Time.non_neg(),
           output_format: CompositorCoreFormat.t(),
           scene: Scene.t(),
           scene_update_events: list(scene_update_event()),
-          most_recent_frame_pts: Time.non_neg_t(),
+          most_recent_frame_pts: Time.non_neg(),
           custom_strategy_state: strategy_state()
         }
 
-  @spec put_event(t(), scene_update_event() | {PadState.pad_event(), Pad.ref_t()}) :: t()
+  @spec put_event(t(), scene_update_event() | {PadState.pad_event(), Pad.ref()}) :: t()
   def put_event(state, event) do
     case event do
       {:update_scene, _pts, _scene} ->
@@ -65,12 +65,12 @@ defmodule Membrane.VideoCompositor.Queue.State do
     alias Membrane.VideoCompositor.Queue.State
     alias Membrane.VideoCompositor.VideoConfig
 
-    @spec add_video(State.t(), Pad.ref_t(), %{:video_config => VideoConfig.t()}) :: State.t()
+    @spec add_video(State.t(), Pad.ref(), %{:video_config => VideoConfig.t()}) :: State.t()
     def add_video(state, added_pad, %{video_config: video_config}) do
       Bunch.Struct.put_in(state, [:scene, :video_configs, added_pad], video_config)
     end
 
-    @spec remove_video(State.t(), Pad.ref_t()) :: State.t()
+    @spec remove_video(State.t(), Pad.ref()) :: State.t()
     def remove_video(state, removed_pad) do
       Bunch.Struct.delete_in(state, [:scene, :video_configs, removed_pad])
     end

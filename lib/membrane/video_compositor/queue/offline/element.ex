@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     accepted_format: %RawVideo{pixel_format: :I420},
     options: [
       timestamp_offset: [
-        spec: Time.non_neg_t(),
+        spec: Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],
@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
         description: "Specify layout and transformations of the video on final scene."
       ],
       vc_input_ref: [
-        spec: Pad.ref_t(),
+        spec: Pad.ref(),
         description: "Reference to VC input pad."
       ]
     ]
@@ -131,7 +131,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
     {[], state}
   end
 
-  @spec calculate_next_buffer_pts(State.t()) :: Time.non_neg_t()
+  @spec calculate_next_buffer_pts(State.t()) :: Time.non_neg()
   defp calculate_next_buffer_pts(%State{
          next_buffer_pts: previous_buffer_pts,
          output_framerate: {fps_num, fps_den}
@@ -283,7 +283,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   end
 
   # Pops events from pad event queue, handles them and returns updated state
-  @spec pop_pad_events(Pad.ref_t(), State.t()) ::
+  @spec pop_pad_events(Pad.ref(), State.t()) ::
           {PadState.frame_event() | PadState.end_of_stream_event(), State.t()}
   defp pop_pad_events(pad, state) do
     [event | events_tail] = Bunch.Struct.get_in(state, [:pads_states, pad, :events_queue])

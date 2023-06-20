@@ -24,9 +24,9 @@ defmodule Membrane.VideoCompositor.Pipeline.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:membrane_core, "~> 0.11.2"},
+      {:membrane_core, "~> 0.12.1"},
       {:membrane_raw_video_format, "~> 0.3.0"},
-      {:membrane_file_plugin, "~> 0.13.2"}
+      {:membrane_file_plugin, "~> 0.14.0"}
     ]
   end
 end

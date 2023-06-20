@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.Queue do
   @typedoc """
   Defines stream format action send to VC Core by Queue.
   """
-  @type stream_format_action :: {:stream_format, {Pad.ref_t(), CompositorCoreFormat.t()}}
+  @type stream_format_action :: {:stream_format, {Pad.ref(), CompositorCoreFormat.t()}}
 
   @typedoc """
   Defines scene update event action send to VC Core by Queue.
@@ -22,12 +22,12 @@ defmodule Membrane.VideoCompositor.Queue do
   @typedoc """
   Defines frames buffer send to VC Core by Queue.
   """
-  @type buffer :: %Buffer{payload: %{Pad.ref_t() => frame_data :: binary()}}
+  @type buffer :: %Buffer{payload: %{Pad.ref() => frame_data :: binary()}}
 
   @typedoc """
   Defines buffer action send to VC Core by Queue.
   """
-  @type buffer_action :: {:buffer, {Pad.ref_t(), buffer()}}
+  @type buffer_action :: {:buffer, {Pad.ref(), buffer()}}
 
   @typedoc """
   Defines actions send to VC Core by Queue.
