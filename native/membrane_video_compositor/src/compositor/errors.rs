@@ -1,21 +1,20 @@
 #[derive(Debug, thiserror::Error)]
 pub enum CompositorError {
-    #[error("Tried to register a transformation or layout with registry key \"{0}\". This registry key is already taken.")]
-    RegistryKeyTaken(String),
+    #[error("Plugin registry error")]
+    PluginRegistryError(#[from] super::registry::PluginRegistryError),
 }
 
 mod atoms {
     rustler::atoms! {
-        transformation_name_taken,
-        layout_name_taken,
+        plugin_registry_error,
     }
 }
 
 impl rustler::Encoder for CompositorError {
     fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
         match self {
-            CompositorError::RegistryKeyTaken(name) => {
-                (atoms::transformation_name_taken(), name).encode(env)
+            CompositorError::PluginRegistryError(err) => {
+                (atoms::plugin_registry_error(), err.to_string()).encode(env)
             }
         }
     }

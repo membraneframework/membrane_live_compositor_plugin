@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use membrane_video_compositor_common::elixir_transfer::{
@@ -12,8 +11,10 @@ use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryK
 use membrane_video_compositor_common::WgpuContext;
 
 use self::errors::CompositorError;
+use self::registry::PluginRegistry;
 
 pub mod errors;
+mod registry;
 mod wgpu_interface;
 
 pub struct State(Mutex<InnerState>);
@@ -24,11 +25,6 @@ impl std::ops::Deref for State {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
-}
-
-enum PluginRegistryEntry {
-    Layout(Arc<dyn UntypedLayout>),
-    Transformation(Arc<dyn UntypedTransformation>),
 }
 
 impl State {
@@ -45,14 +41,14 @@ impl Default for State {
 
 pub struct InnerState {
     wgpu_ctx: Arc<WgpuContext>,
-    plugin_registry: HashMap<PluginRegistryKey<'static>, PluginRegistryEntry>,
+    plugin_registry: PluginRegistry,
 }
 
 impl InnerState {
     fn new() -> Self {
         Self {
             wgpu_ctx: Arc::new(wgpu_interface::create_new_wgpu_context()),
-            plugin_registry: HashMap::new(),
+            plugin_registry: PluginRegistry::new(),
         }
     }
 
@@ -64,32 +60,21 @@ impl InnerState {
         &mut self,
         transformation: Arc<dyn UntypedTransformation>,
     ) -> Result<(), CompositorError> {
-        self.register(
+        self.plugin_registry.register(
             transformation.registry_key(),
-            PluginRegistryEntry::Transformation(transformation),
-        )
+            registry::PluginRegistryEntry::Transformation(transformation),
+        )?;
+        Ok(())
     }
 
     pub fn register_layout(
         &mut self,
         layout: Arc<dyn UntypedLayout>,
     ) -> Result<(), CompositorError> {
-        self.register(layout.registry_key(), PluginRegistryEntry::Layout(layout))
-    }
-
-    fn register(
-        &mut self,
-        registry_key: PluginRegistryKey<'static>,
-        plugin: PluginRegistryEntry,
-    ) -> Result<(), CompositorError> {
-        if self.plugin_registry.contains_key(&registry_key) {
-            return Err(CompositorError::RegistryKeyTaken(
-                registry_key.0.to_string(),
-            ));
-        }
-
-        self.plugin_registry.insert(registry_key, plugin);
-
+        self.plugin_registry.register(
+            layout.registry_key(),
+            registry::PluginRegistryEntry::Layout(layout),
+        )?;
         Ok(())
     }
 }
