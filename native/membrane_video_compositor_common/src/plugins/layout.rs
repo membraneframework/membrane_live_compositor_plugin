@@ -20,10 +20,6 @@ pub trait UntypedLayout: Send + Sync + 'static {
 
 impl<T: Layout> UntypedLayout for T {
     fn registry_key(&self) -> PluginRegistryKey<'static> {
-        assert_eq!(
-            <Self as PluginArgumentEncoder>::registry_key(),
-            self.registry_key_dyn()
-        );
         <Self as PluginArgumentEncoder>::registry_key()
     }
 

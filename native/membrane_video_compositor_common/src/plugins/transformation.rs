@@ -30,10 +30,6 @@ use super::PluginRegistryKey;
 /// #     {
 /// #         PluginRegistryKey("custom transformation")
 /// #     }
-/// #
-/// #     fn registry_key_dyn(&self) -> PluginRegistryKey<'static> {
-/// #         PluginRegistryKey("custom transformation")
-/// #     }
 /// # }
 /// #
 /// # impl Transformation for CustomTransformation {
@@ -66,10 +62,6 @@ pub trait UntypedTransformation: Send + Sync + 'static {
 
 impl<T: Transformation> UntypedTransformation for T {
     fn registry_key(&self) -> PluginRegistryKey<'static> {
-        assert_eq!(
-            <Self as PluginArgumentEncoder>::registry_key(),
-            self.registry_key_dyn()
-        );
         <Self as PluginArgumentEncoder>::registry_key()
     }
 

@@ -94,10 +94,6 @@ impl PluginArgumentEncoder for MockTransformation {
     {
         PluginRegistryKey(Self::NAME)
     }
-
-    fn registry_key_dyn(&self) -> PluginRegistryKey<'static> {
-        PluginRegistryKey(Self::NAME)
-    }
 }
 
 impl Transformation for MockTransformation {
