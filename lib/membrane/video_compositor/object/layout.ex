@@ -21,13 +21,12 @@ defmodule Membrane.VideoCompositor.Object.Layout do
 
   ## Examples
   A simple layout could have an `inputs` map that looks like this:
-  ```elixir
-  %{
-    background: :video1,
-    main_presenter: :video2,
-    side_presenter: :video3,
-  }
-  ```
+
+    %{
+      background: :video1,
+      main_presenter: :video2,
+      side_presenter: :video3,
+    }
 
   Keep in mind that this maps __internal names__ => __scene object names__
   """
@@ -37,8 +36,8 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   Defines how the output resolution of a layout texture can be specified.
 
   Texture resolution can be specified as:
-  - plain `Membrane.VideoCompositor.Resolution.t()`
-  - resolution of another object
+    - plain `Membrane.VideoCompositor.Resolution.t()`
+    - resolution of another object
   """
   @type output_resolution :: Resolution.t() | Object.name()
 
