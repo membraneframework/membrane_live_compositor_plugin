@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.RustStructs.Scene do
           video_configs: %{video_id() => VideoConfig.t()}
         }
 
-  @spec from_vc_scene(Membrane.VideoCompositor.Scene.t(), %{Pad.ref_t() => video_id()}) ::
+  @spec from_vc_scene(Membrane.VideoCompositor.Scene.t(), %{Pad.ref() => video_id()}) ::
           Membrane.VideoCompositor.RustStructs.Scene.t()
   def from_vc_scene(%Scene{video_configs: video_configs}, pads_to_ids) do
     video_configs
