@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::{plugins::CustomProcessor, WgpuContext};
+use crate::{plugins::CustomProcessor, WgpuContext, texture::Texture};
 
 use super::PluginRegistryKey;
 
@@ -52,7 +52,7 @@ use super::PluginRegistryKey;
 /// }
 /// ```
 pub trait Transformation: CustomProcessor {
-    fn do_stuff(&self, arg: &Self::Arg);
+    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture);
 
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -61,7 +61,7 @@ pub trait Transformation: CustomProcessor {
 
 pub trait UntypedTransformation: Send + Sync + 'static {
     fn registry_key(&self) -> PluginRegistryKey<'static>;
-    fn do_stuff(&self, arg: &dyn Any);
+    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture);
 }
 
 impl<T: Transformation> UntypedTransformation for T {
@@ -73,12 +73,14 @@ impl<T: Transformation> UntypedTransformation for T {
         <Self as CustomProcessor>::registry_key()
     }
 
-    fn do_stuff(&self, arg: &dyn Any) {
-        self.do_stuff(
+    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) {
+        self.apply(
             arg.downcast_ref().unwrap_or_else(|| panic!(
                 "in {}, expected a successful cast to user-defined Arg type. Something went seriously wrong here.", 
                 module_path!()
-            ))
+            )),
+            source,
+            target
         )
     }
 }

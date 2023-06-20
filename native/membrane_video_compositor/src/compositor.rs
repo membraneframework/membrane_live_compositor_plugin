@@ -9,6 +9,7 @@ use membrane_video_compositor_common::plugins::transformation::{
 };
 use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey};
 use membrane_video_compositor_common::WgpuContext;
+use membrane_video_compositor_common::texture::Texture;
 
 use self::errors::CompositorError;
 use self::registry::PluginRegistry;
@@ -101,7 +102,7 @@ impl CustomProcessor for MockTransformation {
 }
 
 impl Transformation for MockTransformation {
-    fn do_stuff(&self, arg: &Self::Arg) {
+    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) {
         println!("This is a mock transformation called with the string \"{arg}\" :^)")
     }
 
