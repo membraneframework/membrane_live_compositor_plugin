@@ -15,12 +15,15 @@ impl CustomStructElixirPacket {
     /// # Safety
     /// The struct created with this function has to be consumed with [CustomStructElixirPacket::decode].
     /// Not consuming it will result in memory leaks or other unfortunate side-effects
-    pub unsafe fn encode<T: Send + 'static>(payload: T, recipient: PluginRegistryKey<'_>) -> Self {
+    pub unsafe fn encode<T: Send + 'static>(
+        payload: T,
+        recipient_key: PluginRegistryKey<'_>,
+    ) -> Self {
         let payload: Arc<dyn Any> = Arc::new(payload);
         let pointer = unsafe { std::mem::transmute(payload) };
 
         CustomStructElixirPacket {
-            recipient_registry_key: recipient.0.to_owned(),
+            recipient_registry_key: recipient_key.0.to_owned(),
             pointer,
         }
     }

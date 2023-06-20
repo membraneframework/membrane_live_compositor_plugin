@@ -10,12 +10,12 @@ pub struct PluginRegistryKey<'a>(pub &'a str);
 pub trait CustomProcessor: Send + Sync + 'static {
     type Arg: Send + 'static;
 
-    /// Should return the same thing as `name_dyn`
+    /// Should return the same thing as `registry_key_dyn`
     fn registry_key() -> PluginRegistryKey<'static>
     where
         Self: Sized;
 
-    /// Should return the same thing as `name`
+    /// Should return the same thing as `registry_key`
     fn registry_key_dyn(&self) -> PluginRegistryKey<'static>;
 
     /// # Safety
