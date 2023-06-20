@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::{plugins::CustomProcessor, WgpuContext, texture::Texture};
+use crate::{plugins::CustomProcessor, texture::Texture, WgpuContext};
 
 use super::PluginRegistryKey;
 

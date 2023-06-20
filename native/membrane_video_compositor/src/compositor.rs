@@ -8,8 +8,8 @@ use membrane_video_compositor_common::plugins::transformation::{
     Transformation, UntypedTransformation,
 };
 use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey};
-use membrane_video_compositor_common::WgpuContext;
 use membrane_video_compositor_common::texture::Texture;
+use membrane_video_compositor_common::WgpuContext;
 
 use self::errors::CompositorError;
 use self::registry::PluginRegistry;
