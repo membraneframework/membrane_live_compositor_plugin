@@ -3,9 +3,9 @@ use cgmath::*;
 
 use crate::compositor::{math::Vec2d, VideoPlacement, VideoProperties};
 
-use super::TextureTransformation;
+use super::Transformation;
 
-/// Struct representing parameters for video cropping texture transformation.
+/// Struct representing parameters for video cropping transformation.
 /// top_left_corner represents the coords of the top left corner of cropped (visible)
 /// part of the video (in x ∈ [0,1], y ∈ [0, 1] proportion range).
 /// crop_width represents the width of the cropped video (visible part) in [0, 1] relative range.
@@ -47,7 +47,7 @@ impl Cropping {
     }
 }
 
-impl TextureTransformation for Cropping {
+impl Transformation for Cropping {
     fn update_video_properties(&mut self, _properties: VideoProperties) {}
 
     fn transform_video_properties(&self, properties: VideoProperties) -> VideoProperties {

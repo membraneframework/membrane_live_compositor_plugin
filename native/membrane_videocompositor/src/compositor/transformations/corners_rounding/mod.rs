@@ -2,9 +2,9 @@ use bytemuck::{Pod, Zeroable};
 
 use crate::compositor::VideoProperties;
 
-use super::TextureTransformation;
+use super::Transformation;
 
-/// Struct representing parameters for video corners rounding texture transformation.
+/// Struct representing parameters for video corners rounding transformation.
 /// border_radius is value representing the radius of the circle in pixels "cutting"
 /// frame corner part.
 #[derive(Debug, Clone, Copy, Zeroable, Pod, PartialEq)]
@@ -15,7 +15,7 @@ pub struct CornersRounding {
     pub video_height: f32,
 }
 
-impl TextureTransformation for CornersRounding {
+impl Transformation for CornersRounding {
     fn update_video_properties(&mut self, properties: VideoProperties) {
         self.video_width = properties.placement.size.x as f32;
         self.video_height = properties.placement.size.y as f32;

@@ -3,9 +3,9 @@
 use rustler::NifUntaggedEnum;
 
 use crate::compositor::math::Vec2d;
-use crate::compositor::texture_transformations::corners_rounding::CornersRounding;
-use crate::compositor::texture_transformations::cropping::Cropping;
-use crate::compositor::texture_transformations::TextureTransformation;
+use crate::compositor::transformations::corners_rounding::CornersRounding;
+use crate::compositor::transformations::cropping::Cropping;
+use crate::compositor::transformations::Transformation;
 use crate::compositor::{self, VideoPlacement};
 use crate::elixir_bridge::{atoms, convert_z};
 
@@ -19,7 +19,7 @@ pub struct ElixirRawVideo {
 }
 
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.Scene.BaseVideoPlacement"]
+#[module = "Membrane.VideoCompositor.BaseVideoPlacement"]
 pub struct ElixirBaseVideoPlacement {
     pub position: (i32, i32),
     pub size: (u32, u32),
@@ -42,30 +42,11 @@ impl Into<VideoPlacement> for ElixirBaseVideoPlacement {
     }
 }
 
-/// Describes all transformations applied to video
-#[derive(Debug, rustler::NifStruct)]
-#[module = "Membrane.VideoCompositor.VideoTransformations"]
-pub struct ElixirVideoTransformations {
-    pub texture_transformations: Vec<ElixirTextureTransformations>,
-}
-
-impl Into<Vec<Box<dyn TextureTransformation>>> for ElixirVideoTransformations {
-    fn into(self) -> Vec<Box<dyn TextureTransformation>> {
-        let mut texture_transformations = Vec::new();
-
-        for texture_transformation in self.texture_transformations.into_iter() {
-            texture_transformations.push(texture_transformation.into());
-        }
-
-        texture_transformations
-    }
-}
-
 /// Wraps video transformations parameters (wrapped in structs) into enum.
-/// Allows passing to rust elixir texture transformation type,
+/// Allows passing to rust elixir transformation type,
 /// which is algebraic sum type of all structs describing single
-/// texture transformation.
-/// As a developer adding new texture transformation, you need just to add
+/// transformation.
+/// As a developer adding new transformation, you need just to add
 /// new enum value and implement new match arm converting elixir structs to
 /// rust structs used in shader.
 #[derive(Debug, NifUntaggedEnum, Clone, Copy)]
@@ -74,8 +55,8 @@ pub enum ElixirTextureTransformations {
     Cropping(ElixirCropping),
 }
 
-impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
-    fn into(self) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn Transformation>> for ElixirTextureTransformations {
+    fn into(self) -> Box<dyn Transformation> {
         match self {
             ElixirTextureTransformations::CornersRounding(elixir_corners_rounding) => {
                 elixir_corners_rounding.into()
@@ -85,15 +66,15 @@ impl Into<Box<dyn TextureTransformation>> for ElixirTextureTransformations {
     }
 }
 
-/// Elixir struct wrapping parameters describing corner rounding texture transformation
+/// Elixir struct wrapping parameters describing corner rounding transformation
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.TextureTransformations.CornersRounding"]
+#[module = "Membrane.VideoCompositor.Transformations.CornersRounding"]
 pub struct ElixirCornersRounding {
     pub border_radius: u32,
 }
 
-impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
-    fn into(self) -> Box<dyn TextureTransformation> {
+impl Into<Box<dyn Transformation>> for ElixirCornersRounding {
+    fn into(self) -> Box<dyn Transformation> {
         Box::new(CornersRounding {
             border_radius: self.border_radius as f32,
             video_width: 0.0,  // will be updated in compositor
@@ -102,16 +83,16 @@ impl Into<Box<dyn TextureTransformation>> for ElixirCornersRounding {
     }
 }
 
-/// Elixir struct wrapping parameters describing cropping texture transformation
+/// Elixir struct wrapping parameters describing cropping transformation
 #[derive(Debug, rustler::NifStruct, Clone, Copy)]
-#[module = "Membrane.VideoCompositor.TextureTransformations.Cropping"]
+#[module = "Membrane.VideoCompositor.Transformations.Cropping"]
 pub struct ElixirCropping {
     pub crop_top_left_corner: (f32, f32),
     pub crop_size: (f32, f32),
     pub cropped_video_position: rustler::Atom,
 }
 
-impl From<ElixirCropping> for Box<dyn TextureTransformation> {
+impl From<ElixirCropping> for Box<dyn Transformation> {
     fn from(val: ElixirCropping) -> Self {
         let transform_position: bool;
 

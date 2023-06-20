@@ -95,14 +95,17 @@ defmodule Membrane.VideoCompositor.Mixfile do
       formatters: ["html"],
       source_ref: "v#{@version}",
       filter_modules:
-        ~r/Membrane\.VideoCompositor(\.VideoTransformations$|\.TextureTransformations.*|\.RustStructs\.BaseVideoPlacement|$)/,
+        ~r/Membrane\.VideoCompositor($|.BaseVideoPlacement|.Handler($|\.)|.Scene|\.Transformations.*|.VideoConfig)/,
       nest_modules_by_prefix: [
         Membrane.VideoCompositor,
-        Membrane.VideoCompositor.TextureTransformations
+        Membrane.VideoCompositor.Transformations
       ],
       groups_for_modules: [
-        "Texture transformations": [
-          ~r/^Membrane\.VideoCompositor\.TextureTransformations($|\.)/
+        Transformations: [
+          ~r/^Membrane\.VideoCompositor\.Transformations($|\.)/
+        ],
+        Handler: [
+          ~r/^Membrane\.VideoCompositor\.Handler($|\.)/
         ]
       ]
     ]

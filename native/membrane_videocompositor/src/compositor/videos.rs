@@ -8,9 +8,9 @@ use crate::elixir_bridge::RawVideo;
 
 use super::colour_converters::YUVToRGBAConverter;
 
-use super::texture_transformations::registry::TextureTransformationRegistry;
-use super::texture_transformations::{set_video_properties, TextureTransformation};
 use super::textures::{RGBATexture, YUVTextures};
+use super::transformations::registry::TransformationRegistry;
+use super::transformations::{set_video_properties, Transformation};
 use super::{Vec2d, Vertex};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -33,14 +33,12 @@ pub struct VideoPlacement {
 #[derive(Debug)]
 pub enum Message {
     Frame { pts: u64, frame: RGBATexture },
-    EndOfStream,
 }
 
 pub enum DrawResult {
     /// Contains the pts of the rendered frame
     Rendered(u64),
     NotRendered,
-    EndOfStream,
 }
 
 #[rustfmt::skip]
@@ -57,7 +55,7 @@ pub struct InputVideo {
     indices: wgpu::Buffer,
     pub base_properties: VideoProperties,
     pub transformed_properties: VideoProperties,
-    pub texture_transformations: Vec<Box<dyn TextureTransformation>>,
+    pub texture_transformations: Vec<Box<dyn Transformation>>,
     previous_frame: Option<Message>,
     single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
     /// When a video is created this is set to `true`. When `draw` is later called on it,
@@ -73,7 +71,7 @@ impl InputVideo {
         single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
         all_textures_bind_group_layout: &wgpu::BindGroupLayout,
         base_properties: VideoProperties,
-        mut texture_transformations: Vec<Box<dyn TextureTransformation>>,
+        mut texture_transformations: Vec<Box<dyn Transformation>>,
     ) -> Self {
         let yuv_textures = YUVTextures::new(
             device,
@@ -116,37 +114,6 @@ impl InputVideo {
         }
     }
 
-    pub fn update_properties(
-        &mut self,
-        device: &wgpu::Device,
-        single_texture_bind_group_layout: Arc<wgpu::BindGroupLayout>,
-        all_textures_bind_group_layout: &wgpu::BindGroupLayout,
-        base_properties: VideoProperties,
-        texture_transformations: Option<Vec<Box<dyn TextureTransformation>>>,
-    ) {
-        let yuv_textures = YUVTextures::new(
-            device,
-            base_properties.input_resolution.x,
-            base_properties.input_resolution.y,
-            wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            Some(&single_texture_bind_group_layout),
-            Some(all_textures_bind_group_layout),
-        );
-        self.yuv_textures = yuv_textures;
-        self.base_properties = base_properties;
-        match texture_transformations {
-            Some(mut texture_transformations) => {
-                self.transformed_properties =
-                    set_video_properties(base_properties, &mut texture_transformations);
-                self.texture_transformations = texture_transformations;
-            }
-            None => {
-                self.transformed_properties =
-                    set_video_properties(base_properties, &mut self.texture_transformations);
-            }
-        };
-    }
-
     #[allow(clippy::too_many_arguments)]
     pub fn upload_data(
         &mut self,
@@ -156,7 +123,7 @@ impl InputVideo {
         data: &[u8],
         pts: u64,
         last_rendered_pts: Option<u64>,
-        registry: &TextureTransformationRegistry,
+        registry: &TransformationRegistry,
     ) {
         self.yuv_textures.upload_data(queue, data);
         let mut frame = RGBATexture::new(
@@ -168,7 +135,7 @@ impl InputVideo {
         converter.convert(device, queue, &self.yuv_textures, &frame);
 
         let mut transformed_properties = self.base_properties;
-        // Runs all texture transformations.
+        // Runs all transformations.
         for transformation in self.texture_transformations.iter() {
             transformed_properties =
                 transformation.transform_video_properties(transformed_properties);
@@ -259,10 +226,6 @@ impl InputVideo {
         }
     }
 
-    pub fn base_properties(&self) -> &VideoProperties {
-        &self.base_properties
-    }
-
     pub fn transformed_properties(&self) -> &VideoProperties {
         &self.transformed_properties
     }
@@ -293,12 +256,8 @@ impl InputVideo {
                 (frame, *pts)
             }
 
-            Some(Message::EndOfStream) => return DrawResult::EndOfStream,
-
             None => match self.previous_frame.as_ref() {
                 Some(Message::Frame { pts, frame }) => (frame, *pts),
-
-                Some(Message::EndOfStream) => return DrawResult::EndOfStream,
 
                 None => return DrawResult::NotRendered,
             },
@@ -330,15 +289,7 @@ impl InputVideo {
         }
     }
 
-    pub fn send_end_of_stream(&mut self) {
-        self.frames.push_back(Message::EndOfStream);
-    }
-
     pub fn is_front_frame_too_old(&self, interval: Option<(u64, u64)>) -> bool {
-        if let Some(Message::EndOfStream) = self.frames.front() {
-            return false;
-        }
-
         if interval.is_none() || self.front_pts().is_none() {
             return false;
         }
@@ -347,10 +298,6 @@ impl InputVideo {
     }
 
     pub fn is_frame_ready(&self, interval: Option<(u64, u64)>) -> bool {
-        if let Some(Message::EndOfStream) = self.frames.front() {
-            return true;
-        }
-
         // if the stream hasn't ended then we have to have a frame in the queue, then either:
         if self.front_pts().is_some() {
             // this is the first frame, which means a frame with any pts is good

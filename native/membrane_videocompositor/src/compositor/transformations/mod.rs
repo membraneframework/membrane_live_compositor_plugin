@@ -1,25 +1,25 @@
-//! Module providing an abstraction over texture transformations, enabling creation of new
-//! texture transformations easily.
+//! Module providing an abstraction over transformations, enabling creation of new
+//! transformations easily.
 
 use std::{any::TypeId, fmt::Debug};
 
 pub mod corners_rounding;
 pub mod cropping;
+pub mod pipeline;
 pub mod registry;
-pub mod texture_transformation_pipeline;
 
 use self::{
-    corners_rounding::CornersRounding, cropping::Cropping, registry::TextureTransformationRegistry,
+    corners_rounding::CornersRounding, cropping::Cropping, registry::TransformationRegistry,
 };
 
 use super::VideoProperties;
 
-/// Trait that each new texture transformation should implement.
+/// Trait that each new transformation should implement.
 /// Remember, that struct fields order in struct implementing this trait
 /// should match the one in shader for data to be mapped correctly.
 /// Keep in mind, that sometimes adding some padding might be required.
 /// For more reference on padding and alignment check: https://www.w3.org/TR/WGSL/#memory-layouts
-pub trait TextureTransformation: Send + Sync + Debug + 'static {
+pub trait Transformation: Send + Sync + Debug + 'static {
     /// Returns struct data sliced passed to shader.
     fn data(&self) -> &[u8];
 
@@ -30,11 +30,11 @@ pub trait TextureTransformation: Send + Sync + Debug + 'static {
     fn update_video_properties(&mut self, properties: VideoProperties);
 
     /// For given input video properties returns output video properties.
-    /// When some texture transformation modify incoming frame properties
+    /// When some transformation modify incoming frame properties
     /// it's necessary to handle those modifications in render loop.
     fn transform_video_properties(&self, properties: VideoProperties) -> VideoProperties;
 
-    /// Returns shader module created from shader associated with texture transformation.
+    /// Returns shader module created from shader associated with transformation.
     fn shader_module(device: &wgpu::Device) -> wgpu::ShaderModule
     where
         Self: Sized;
@@ -65,7 +65,7 @@ pub trait TextureTransformation: Send + Sync + Debug + 'static {
 /// and some transformations can modify video properties (e.g. cropping).
 pub fn set_video_properties(
     base_properties: VideoProperties,
-    transformations: &mut [Box<dyn TextureTransformation>],
+    transformations: &mut [Box<dyn Transformation>],
 ) -> VideoProperties {
     transformations
         .iter_mut()
@@ -75,13 +75,13 @@ pub fn set_video_properties(
         })
 }
 
-/// Create and returns registry with all available TextureTransformationsPipelines.
-/// For each type of texture transformation registry create new pipeline.
+/// Create and returns registry with all available TransformationsPipelines.
+/// For each type of transformation registry create new pipeline.
 pub fn filled_registry(
     device: &wgpu::Device,
     single_texture_bind_group_layout: &wgpu::BindGroupLayout,
-) -> TextureTransformationRegistry {
-    let mut registry = TextureTransformationRegistry::new();
+) -> TransformationRegistry {
+    let mut registry = TransformationRegistry::new();
 
     registry.register::<Cropping>(device, single_texture_bind_group_layout);
     registry.register::<CornersRounding>(device, single_texture_bind_group_layout);

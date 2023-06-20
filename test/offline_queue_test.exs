@@ -4,12 +4,10 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
 
   alias Membrane.{Buffer, Pad, RawVideo, Time}
   alias Membrane.Element.Action
-  alias Membrane.VideoCompositor.CompositorCoreFormat
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
   alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueue
   alias Membrane.VideoCompositor.Queue.State
-  alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.Scene.BaseVideoPlacement
-  alias Membrane.VideoCompositor.Scene.VideoConfig
+  alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
 
   @frame <<0::3_110_400>>
 
@@ -17,6 +15,13 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     placement: %BaseVideoPlacement{
       position: {0, 0},
       size: {1.0, 1.0}
+    }
+  }
+
+  @video_config2 %VideoConfig{
+    placement: %BaseVideoPlacement{
+      position: {960, 540},
+      size: {0.5, 0.0}
     }
   }
 
@@ -60,16 +65,16 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
              OfflineQueue.handle_process(@pad1, send_buffer(Time.seconds(1)), %{}, state)
 
     second_pad_actions = unlocked_pad2_actions()
-    assert {^second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    assert {^second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
   end
 
   test "if compositor is sending EOS once all pads are removed" do
     state = setup_videos()
-    assert {[], state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    assert {[], state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
     eos_message = [end_of_stream: :output]
 
-    assert {^eos_message, _state} = OfflineQueue.handle_pad_removed(@pad2, %{}, state)
+    assert {^eos_message, _state} = OfflineQueue.handle_end_of_stream(@pad2, %{}, state)
   end
 
   test "Check update scene messages handling" do
@@ -78,7 +83,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), %{}, state)
     {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(Time.seconds(1)), %{}, state)
 
-    new_scene = %Scene{videos_configs: %{}}
+    new_scene = %Scene{video_configs: %{@pad2 => @video_config2}}
     {[], state} = OfflineQueue.handle_parent_notification({:update_scene, new_scene}, %{}, state)
 
     assert {_pad1_buffer1_actions, state} =
@@ -87,9 +92,9 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {_pad1_buffer2_actions, state} =
              OfflineQueue.handle_process(@pad1, send_buffer(Time.seconds(1)), %{}, state)
 
-    {second_pad_actions, _state} = OfflineQueue.handle_pad_removed(@pad1, %{}, state)
+    {second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
-    scene_update_action = {:notify_child, {:output, {:update_scene, new_scene}}}
+    scene_update_action = {:event, {:output, %SceneChangeEvent{new_scene: new_scene}}}
     assert ^scene_update_action = Enum.at(second_pad_actions, -2)
   end
 
@@ -102,17 +107,32 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   end
 
   defp setup_videos() do
-    pad1_options = %{video_config: @video_config, timestamp_offset: 0}
-    pad2_options = %{video_config: @video_config, timestamp_offset: @pad2_pts_offset}
+    pad1_options = %{video_config: @video_config, timestamp_offset: 0, vc_input_ref: @pad1}
 
-    assert {[], state} = OfflineQueue.handle_init(%{}, %{target_fps: {1, 1}})
+    pad2_options = %{
+      video_config: @video_config,
+      timestamp_offset: @pad2_pts_offset,
+      vc_input_ref: @pad2
+    }
 
-    assert {[], state} = OfflineQueue.handle_pad_added(@pad1, %{options: pad1_options}, state)
+    assert {[], state} = OfflineQueue.handle_init(%{}, %{output_framerate: {1, 1}})
+
+    assert {[], state} =
+             OfflineQueue.handle_pad_added(
+               @pad1,
+               %{options: pad1_options},
+               state
+             )
 
     assert {[], state} =
              OfflineQueue.handle_stream_format(@pad1, @video_stream_format, %{}, state)
 
-    assert {[], state} = OfflineQueue.handle_pad_added(@pad2, %{options: pad2_options}, state)
+    assert {[], state} =
+             OfflineQueue.handle_pad_added(
+               @pad2,
+               %{options: pad2_options},
+               state
+             )
 
     assert {[], state} =
              OfflineQueue.handle_stream_format(@pad2, @video_stream_format, %{}, state)
@@ -126,11 +146,10 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   defp pad1_actions() do
     stream_format_action =
       {:stream_format,
-       {:output, %CompositorCoreFormat{pads_formats: %{@pad1 => @video_stream_format}}}}
+       {:output, %CompositorCoreFormat{pad_formats: %{@pad1 => @video_stream_format}}}}
 
-    scene_action =
-      {:notify_child,
-       {:output, {:update_scene, %Scene{videos_configs: %{@pad1 => @video_config}}}}}
+    scene = %Scene{video_configs: %{@pad1 => @video_config}}
+    scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}
 
     buffer_action = get_buffer_action(@pad1, 0)
 
@@ -140,11 +159,10 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   defp unlocked_pad2_actions() do
     stream_format_action =
       {:stream_format,
-       {:output, %CompositorCoreFormat{pads_formats: %{@pad2 => @video_stream_format}}}}
+       {:output, %CompositorCoreFormat{pad_formats: %{@pad2 => @video_stream_format}}}}
 
-    scene_action =
-      {:notify_child,
-       {:output, {:update_scene, %Scene{videos_configs: %{@pad2 => @video_config}}}}}
+    scene = %Scene{video_configs: %{@pad2 => @video_config}}
+    scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}
 
     buffer_actions = [
       get_buffer_action(@pad2, Time.seconds(2)),

@@ -21,7 +21,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.Raw do
       options
       | decoder: parser,
         compositor: %Membrane.VideoCompositor{
-          stream_format: options.stream_format
+          output_stream_format: options.output_stream_format
         }
     }
 
