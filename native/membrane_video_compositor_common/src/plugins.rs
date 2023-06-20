@@ -6,8 +6,7 @@ pub mod transformation;
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct PluginRegistryKey<'a>(pub &'a str);
 
-// Question for the reviewers: What should this trait be named? I don't like this name.
-pub trait CustomProcessor: Send + Sync + 'static {
+pub trait PluginArgumentEncoder: Send + Sync + 'static {
     type Arg: Send + 'static;
 
     /// Should return the same thing as `registry_key_dyn`

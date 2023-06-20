@@ -7,7 +7,7 @@ use membrane_video_compositor_common::plugins::layout::UntypedLayout;
 use membrane_video_compositor_common::plugins::transformation::{
     Transformation, UntypedTransformation,
 };
-use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey};
+use membrane_video_compositor_common::plugins::{PluginArgumentEncoder, PluginRegistryKey};
 use membrane_video_compositor_common::WgpuContext;
 
 use self::errors::CompositorError;
@@ -85,7 +85,7 @@ impl MockTransformation {
     const NAME: &str = "mock_transformation";
 }
 
-impl CustomProcessor for MockTransformation {
+impl PluginArgumentEncoder for MockTransformation {
     type Arg = String;
 
     fn registry_key() -> PluginRegistryKey<'static>
@@ -121,7 +121,7 @@ pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> Transformati
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn encode_mock_transformation(
-    arg: <MockTransformation as CustomProcessor>::Arg,
+    arg: <MockTransformation as PluginArgumentEncoder>::Arg,
 ) -> CustomStructElixirPacket {
     unsafe { MockTransformation::encode_arg(arg) }
 }
