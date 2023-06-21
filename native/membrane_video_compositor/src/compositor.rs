@@ -9,7 +9,7 @@ use membrane_video_compositor_common::plugins::transformation::{
 };
 use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey};
 use membrane_video_compositor_common::texture::Texture;
-use membrane_video_compositor_common::WgpuContext;
+use membrane_video_compositor_common::{wgpu, WgpuContext};
 
 use self::errors::CompositorError;
 use self::registry::PluginRegistry;
@@ -80,7 +80,9 @@ impl InnerState {
     }
 }
 
-pub struct MockTransformation {}
+pub struct MockTransformation {
+    ctx: Arc<WgpuContext>,
+}
 
 impl MockTransformation {
     const NAME: &str = "mock_transformation";
@@ -102,15 +104,21 @@ impl CustomProcessor for MockTransformation {
 }
 
 impl Transformation for MockTransformation {
-    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) {
-        println!("This is a mock transformation called with the string \"{arg}\" :^)")
+    fn apply(&self, arg: &Self::Arg, _source: &Texture, _target: &Texture) -> wgpu::CommandBuffer {
+        println!("This is a mock transformation called with the string \"{arg}\" :^)");
+        let encoder = self
+            .ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        encoder.finish()
     }
 
-    fn new(_ctx: Arc<WgpuContext>) -> Self
+    fn new(ctx: Arc<WgpuContext>) -> Self
     where
         Self: Sized,
     {
-        Self {}
+        Self { ctx }
     }
 }
 

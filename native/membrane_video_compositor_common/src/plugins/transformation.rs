@@ -16,10 +16,12 @@ use super::PluginRegistryKey;
 /// initialization might look like this:
 /// ```no_run
 /// # use std::sync::Arc;
-/// # use membrane_video_compositor_common::WgpuContext;
+/// # use membrane_video_compositor_common::{WgpuContext, wgpu, texture::Texture};
 /// use membrane_video_compositor_common::elixir_transfer::{StructElixirPacket, TransformationElixirPacket};
 /// use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey, transformation::Transformation};
-/// # struct CustomTransformation{}
+/// # struct CustomTransformation{
+/// #     ctx: Arc<WgpuContext>
+/// # }
 /// # struct CustomTransformationArg{}
 /// #
 /// # impl CustomProcessor for CustomTransformation {
@@ -37,11 +39,17 @@ use super::PluginRegistryKey;
 /// # }
 /// #
 /// # impl Transformation for CustomTransformation {
-/// #     fn do_stuff(&self, arg: &Self::Arg) {}
+/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> wgpu::CommandBuffer {
+/// #         let encoder = self
+/// #             .ctx
+/// #             .device
+/// #             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+/// #         encoder.finish()
+/// #     }
 /// #     fn new(ctx: Arc<WgpuContext>) -> Self
 /// #     where
 /// #         Self: Sized {
-/// #         Self {}
+/// #         Self { ctx }
 /// #     }
 /// # }
 ///
@@ -52,7 +60,7 @@ use super::PluginRegistryKey;
 /// }
 /// ```
 pub trait Transformation: CustomProcessor {
-    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture);
+    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> wgpu::CommandBuffer;
 
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -61,7 +69,7 @@ pub trait Transformation: CustomProcessor {
 
 pub trait UntypedTransformation: Send + Sync + 'static {
     fn registry_key(&self) -> PluginRegistryKey<'static>;
-    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture);
+    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) -> wgpu::CommandBuffer;
 }
 
 impl<T: Transformation> UntypedTransformation for T {
@@ -73,7 +81,7 @@ impl<T: Transformation> UntypedTransformation for T {
         <Self as CustomProcessor>::registry_key()
     }
 
-    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) {
+    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) -> wgpu::CommandBuffer {
         self.apply(
             arg.downcast_ref().unwrap_or_else(|| panic!(
                 "in {}, expected a successful cast to user-defined Arg type. Something went seriously wrong here.", 
