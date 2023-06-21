@@ -39,12 +39,14 @@ use super::PluginRegistryKey;
 /// # }
 /// #
 /// # impl Transformation for CustomTransformation {
-/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> wgpu::CommandBuffer {
+/// #     type Error = ();
+/// #
+/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> Result<wgpu::CommandBuffer, Self::Error> {
 /// #         let encoder = self
 /// #             .ctx
 /// #             .device
 /// #             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-/// #         encoder.finish()
+/// #         Ok(encoder.finish())
 /// #     }
 /// #     fn new(ctx: Arc<WgpuContext>) -> Self
 /// #     where
@@ -60,7 +62,14 @@ use super::PluginRegistryKey;
 /// }
 /// ```
 pub trait Transformation: CustomProcessor {
-    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> wgpu::CommandBuffer;
+    type Error: rustler::Encoder;
+
+    fn apply(
+        &self,
+        arg: &Self::Arg,
+        source: &Texture,
+        target: &Texture,
+    ) -> Result<wgpu::CommandBuffer, Self::Error>;
 
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -69,7 +78,12 @@ pub trait Transformation: CustomProcessor {
 
 pub trait UntypedTransformation: Send + Sync + 'static {
     fn registry_key(&self) -> PluginRegistryKey<'static>;
-    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) -> wgpu::CommandBuffer;
+    fn apply(
+        &self,
+        arg: &dyn Any,
+        source: &Texture,
+        target: &Texture,
+    ) -> Result<wgpu::CommandBuffer, Box<dyn rustler::Encoder>>;
 }
 
 impl<T: Transformation> UntypedTransformation for T {
@@ -81,7 +95,12 @@ impl<T: Transformation> UntypedTransformation for T {
         <Self as CustomProcessor>::registry_key()
     }
 
-    fn apply(&self, arg: &dyn Any, source: &Texture, target: &Texture) -> wgpu::CommandBuffer {
+    fn apply(
+        &self,
+        arg: &dyn Any,
+        source: &Texture,
+        target: &Texture,
+    ) -> Result<wgpu::CommandBuffer, Box<dyn rustler::Encoder>> {
         self.apply(
             arg.downcast_ref().unwrap_or_else(|| panic!(
                 "in {}, expected a successful cast to user-defined Arg type. Something went seriously wrong here.", 
@@ -89,6 +108,6 @@ impl<T: Transformation> UntypedTransformation for T {
             )),
             source,
             target
-        )
+        ).map_err(|err| Box::new(err) as Box<dyn rustler::Encoder>)
     }
 }

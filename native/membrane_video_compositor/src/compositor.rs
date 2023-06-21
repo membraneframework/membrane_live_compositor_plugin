@@ -104,14 +104,21 @@ impl CustomProcessor for MockTransformation {
 }
 
 impl Transformation for MockTransformation {
-    fn apply(&self, arg: &Self::Arg, _source: &Texture, _target: &Texture) -> wgpu::CommandBuffer {
+    type Error = ();
+
+    fn apply(
+        &self,
+        arg: &Self::Arg,
+        _source: &Texture,
+        _target: &Texture,
+    ) -> Result<wgpu::CommandBuffer, Self::Error> {
         println!("This is a mock transformation called with the string \"{arg}\" :^)");
         let encoder = self
             .ctx
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        encoder.finish()
+        Ok(encoder.finish())
     }
 
     fn new(ctx: Arc<WgpuContext>) -> Self
