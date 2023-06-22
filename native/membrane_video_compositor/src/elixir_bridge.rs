@@ -56,6 +56,14 @@ pub fn register_layout(
     Ok(atoms::ok())
 }
 
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
+    use membrane_video_compositor_common::plugins::transformation::Transformation;
+
+    let ctx = unsafe { ctx.decode() };
+    unsafe { TransformationElixirPacket::encode(compositor::MockTransformation::new(ctx)) }
+}
+
 #[rustfmt::skip]
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
@@ -65,7 +73,7 @@ rustler::init!(
         wgpu_ctx,
         register_transformation,
         register_layout,
-        compositor::mock_transformation,
+        mock_transformation,
     ],
     load = |env, _| {
         rustler::resource!(crate::compositor::State, env);

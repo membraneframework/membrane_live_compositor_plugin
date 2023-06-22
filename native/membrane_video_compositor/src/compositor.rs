@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use membrane_video_compositor_common::elixir_transfer::{
-    StructElixirPacket, TransformationElixirPacket,
-};
 use membrane_video_compositor_common::plugins::layout::UntypedLayout;
 use membrane_video_compositor_common::plugins::transformation::{
     Transformation, UntypedTransformation,
@@ -85,7 +82,7 @@ impl InnerState {
     }
 }
 
-struct MockTransformation {}
+pub struct MockTransformation {}
 
 impl Transformation for MockTransformation {
     type Arg = String;
@@ -104,10 +101,4 @@ impl Transformation for MockTransformation {
     {
         Self {}
     }
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
-    let ctx = unsafe { ctx.decode() };
-    unsafe { TransformationElixirPacket::encode(MockTransformation::new(ctx)) }
 }
