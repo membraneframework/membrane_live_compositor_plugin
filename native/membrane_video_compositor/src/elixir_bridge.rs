@@ -66,7 +66,7 @@ pub fn mock_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationEl
 
 #[rustfmt::skip]
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Wgpu.Native",
+    "Elixir.Membrane.VideoCompositor.Native.Impl",
     [
         test_scene_deserialization,
         init,

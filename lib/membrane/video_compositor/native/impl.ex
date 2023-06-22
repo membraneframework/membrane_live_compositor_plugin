@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Wgpu.Native do
+defmodule Membrane.VideoCompositor.Native.Impl do
   @moduledoc false
   # Module with Rust NIFs - direct Rust communication.
 

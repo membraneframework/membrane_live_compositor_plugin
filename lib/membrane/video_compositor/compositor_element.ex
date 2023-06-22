@@ -8,15 +8,15 @@ defmodule Membrane.VideoCompositor.CompositorElement do
   use Membrane.Filter
 
   alias Membrane.RawVideo
+  alias Membrane.VideoCompositor.Native.Adapter
   alias Membrane.VideoCompositor.Object.Layout
   alias Membrane.VideoCompositor.Transformation
-  alias Membrane.VideoCompositor.WgpuAdapter
 
   defmodule State do
     @moduledoc false
     # The internal state of the compositor
     @type t() :: %__MODULE__{
-            native_state: WgpuAdapter.native_state()
+            native_state: Adapter.native_state()
           }
 
     @enforce_keys [:native_state]
@@ -58,10 +58,10 @@ defmodule Membrane.VideoCompositor.CompositorElement do
 
   @impl true
   def handle_init(_ctx, options) do
-    native_state = WgpuAdapter.init()
+    native_state = Adapter.init()
 
-    :ok = WgpuAdapter.init_and_register_transformations(native_state, options.transformations)
-    :ok = WgpuAdapter.init_and_register_layouts(native_state, options.layouts)
+    :ok = Adapter.init_and_register_transformations(native_state, options.transformations)
+    :ok = Adapter.init_and_register_layouts(native_state, options.layouts)
 
     state = %State{
       native_state: native_state

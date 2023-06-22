@@ -1,14 +1,14 @@
 defmodule Membrane.VideoCompositor.RegisteringTransformationTest do
   use ExUnit.Case
 
-  alias Membrane.VideoCompositor.{Wgpu.Native, WgpuAdapter}
+  alias Membrane.VideoCompositor.Native.{Adapter, Impl}
 
   defmodule MockTransformation do
     @behaviour Membrane.VideoCompositor.Transformation
 
     @impl true
     def initialize(wgpu_ctx) do
-      Native.mock_transformation(wgpu_ctx)
+      Impl.mock_transformation(wgpu_ctx)
     end
 
     @impl true
@@ -18,7 +18,7 @@ defmodule Membrane.VideoCompositor.RegisteringTransformationTest do
   end
 
   test "initializes correctly with a mock transformation" do
-    compositor = WgpuAdapter.init()
-    assert :ok = WgpuAdapter.init_and_register_transformations(compositor, [MockTransformation])
+    compositor = Adapter.init()
+    assert :ok = Adapter.init_and_register_transformations(compositor, [MockTransformation])
   end
 end
