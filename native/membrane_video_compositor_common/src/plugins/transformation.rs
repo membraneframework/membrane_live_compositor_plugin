@@ -2,12 +2,6 @@ use std::{any::Any, sync::Arc};
 
 use crate::WgpuContext;
 
-// Question to the reviewers: should the example below be in the finished documentation? Should it be
-//                            kept until the end of the plugins PR?
-//
-// Question to the reviewers, but for later: There are a couple of syntax sugar possibilities for the initialization described below.
-//                                           We could have a proc macro, a macro_rules macro, or possibly even leave it as-is but
-//                                           generate the boilerplate. Which one should we use?
 // NOTE: Send + Sync is necessary to store these in the compositor's state later.
 //       'static is necessary for sending across elixir
 /// # Examples
