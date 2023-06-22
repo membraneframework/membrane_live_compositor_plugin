@@ -3,7 +3,7 @@ use crate::elixir_bridge::elixir_structs::*;
 use membrane_video_compositor_common::elixir_transfer::{
     LayoutElixirPacket, StructElixirPacket, TransformationElixirPacket,
 };
-use membrane_video_compositor_common::{elixir_transfer, WgpuContext};
+use membrane_video_compositor_common::{elixir_transfer, WgpuCtx};
 use rustler::ResourceArc;
 
 pub mod elixir_structs;
@@ -31,9 +31,9 @@ pub fn init() -> Result<(rustler::Atom, rustler::ResourceArc<compositor::State>)
 #[rustler::nif]
 pub fn wgpu_ctx(
     state: ResourceArc<compositor::State>,
-) -> elixir_transfer::StructElixirPacket<WgpuContext> {
+) -> elixir_transfer::StructElixirPacket<WgpuCtx> {
     let state = state.lock().unwrap();
-    StructElixirPacket::<WgpuContext>::encode_arc(state.wgpu_ctx())
+    StructElixirPacket::<WgpuCtx>::encode_arc(state.wgpu_ctx())
 }
 
 #[rustler::nif]
@@ -57,7 +57,7 @@ pub fn register_layout(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
+pub fn mock_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationElixirPacket {
     use membrane_video_compositor_common::plugins::transformation::Transformation;
 
     let ctx = unsafe { ctx.decode() };

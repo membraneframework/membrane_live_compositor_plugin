@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.WgpuAdapter do
   @moduledoc false
 
+  alias Membrane.VideoCompositor.Object
   alias Membrane.VideoCompositor.Object.Layout
   alias Membrane.VideoCompositor.Transformation
   alias Membrane.VideoCompositor.Wgpu.Native
@@ -8,7 +9,6 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @type error() :: any()
 
   @opaque native_state :: Native.native_state()
-  @opaque wgpu_ctx() :: Native.wgpu_ctx()
 
   @doc """
   Initialize the native part of the compositor
@@ -30,7 +30,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   # It's vital that this struct is used according to the safety sections in the docs for the rust
   # mirror of the struct this function returns
   # (`membrane_video_compositor_common::elixir_transfer::StructElixirPacket::<WgpuContext>`)
-  @spec wgpu_ctx(native_state()) :: wgpu_ctx()
+  @spec wgpu_ctx(native_state()) :: Object.wgpu_ctx()
   defp wgpu_ctx(state) do
     Native.wgpu_ctx(state)
   end

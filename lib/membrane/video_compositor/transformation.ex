@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Transformation do
   Transformations can change frame resolution. Cropping, CornersRounding, ColorFiler,
   RollToBall, etc. can be implemented as transformations.
   """
-  alias Membrane.VideoCompositor.WgpuAdapter
+  alias Membrane.VideoCompositor.Object
 
   @typedoc """
   Specify how Transformations can be defined:
@@ -50,7 +50,7 @@ defmodule Membrane.VideoCompositor.Transformation do
   This function receives the wgpu context from the compositor and needs to create the initialized
   transformation
   """
-  @callback initialize(WgpuAdapter.wgpu_ctx()) :: initialized_transformation()
+  @callback initialize(Object.wgpu_ctx()) :: initialized_transformation()
 
   @doc false
   # This just cases upon the two possibilities of the definition.

@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::WgpuContext;
+use crate::WgpuCtx;
 
 // NOTE: Send + Sync is necessary to store these in the compositor's state later.
 //       'static is necessary for sending across elixir
@@ -9,7 +9,7 @@ pub trait Layout: Send + Sync + 'static {
 
     fn name(&self) -> &'static str;
     fn do_stuff(&self, arg: &Self::Arg);
-    fn new(ctx: Arc<WgpuContext>) -> Self
+    fn new(ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized;
 }

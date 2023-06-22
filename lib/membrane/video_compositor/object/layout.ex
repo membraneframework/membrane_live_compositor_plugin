@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
 
   Basically it's a multi-input, single-output node in processing graph.
   """
-  alias Membrane.VideoCompositor.{Object, Resolution, WgpuAdapter}
+  alias Membrane.VideoCompositor.{Object, Resolution}
 
   @typedoc """
   A layout-internal identifier, which the layout can use to determine
@@ -110,7 +110,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   This function receives the wgpu context from the compositor and needs to create the initialized
   layout
   """
-  @callback initialize(WgpuAdapter.wgpu_ctx()) :: initialized_layout()
+  @callback initialize(Object.wgpu_ctx()) :: initialized_layout()
 
   @doc """
   A callback used for encoding the static layout data into a rust-based representation.

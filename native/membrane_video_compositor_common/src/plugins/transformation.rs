@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::WgpuContext;
+use crate::WgpuCtx;
 
 // NOTE: Send + Sync is necessary to store these in the compositor's state later.
 //       'static is necessary for sending across elixir
@@ -8,7 +8,7 @@ use crate::WgpuContext;
 /// initialization might look like this:
 /// ```no_run
 /// # use std::sync::Arc;
-/// # use membrane_video_compositor_common::WgpuContext;
+/// # use membrane_video_compositor_common::WgpuCtx;
 /// use membrane_video_compositor_common::elixir_transfer::{StructElixirPacket, TransformationElixirPacket};
 /// use membrane_video_compositor_common::plugins::transformation::Transformation;
 /// # struct CustomTransformation{}
@@ -21,7 +21,7 @@ use crate::WgpuContext;
 /// #     }
 /// #
 /// #     fn do_stuff(&self, arg: &Self::Arg) {}
-/// #     fn new(ctx: Arc<WgpuContext>) -> Self
+/// #     fn new(ctx: Arc<WgpuCtx>) -> Self
 /// #     where
 /// #         Self: Sized {
 /// #         Self {}
@@ -29,7 +29,7 @@ use crate::WgpuContext;
 /// # }
 ///
 /// #[rustler::nif]
-/// fn get_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
+/// fn get_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationElixirPacket {
 ///     let ctx = unsafe { ctx.decode() };
 ///     unsafe { TransformationElixirPacket::encode(CustomTransformation::new(ctx)) }
 /// }
@@ -40,7 +40,7 @@ pub trait Transformation: Send + Sync + 'static {
     fn name(&self) -> &'static str;
     fn do_stuff(&self, arg: &Self::Arg);
 
-    fn new(ctx: Arc<WgpuContext>) -> Self
+    fn new(ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized;
 }

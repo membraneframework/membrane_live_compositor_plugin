@@ -5,7 +5,7 @@ use membrane_video_compositor_common::plugins::layout::UntypedLayout;
 use membrane_video_compositor_common::plugins::transformation::{
     Transformation, UntypedTransformation,
 };
-use membrane_video_compositor_common::WgpuContext;
+use membrane_video_compositor_common::WgpuCtx;
 
 use self::errors::CompositorError;
 
@@ -35,7 +35,7 @@ impl Default for State {
 }
 
 pub struct InnerState {
-    wgpu_ctx: Arc<WgpuContext>,
+    wgpu_ctx: Arc<WgpuCtx>,
     transformations: HashMap<&'static str, Arc<dyn UntypedTransformation>>,
     layouts: HashMap<&'static str, Arc<dyn UntypedLayout>>,
 }
@@ -49,7 +49,7 @@ impl InnerState {
         }
     }
 
-    pub fn wgpu_ctx(&self) -> Arc<WgpuContext> {
+    pub fn wgpu_ctx(&self) -> Arc<WgpuCtx> {
         self.wgpu_ctx.clone()
     }
 
@@ -95,7 +95,7 @@ impl Transformation for MockTransformation {
         println!("This is a mock transformation called with the string \"{arg}\" :^)")
     }
 
-    fn new(_ctx: Arc<WgpuContext>) -> Self
+    fn new(_ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized,
     {
