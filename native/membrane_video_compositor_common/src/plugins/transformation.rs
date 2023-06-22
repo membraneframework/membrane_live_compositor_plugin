@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::{plugins::CustomProcessor, texture::Texture, WgpuContext};
+use crate::{plugins::PluginArgumentEncoder, texture::Texture, WgpuContext};
 
 use super::PluginRegistryKey;
 
@@ -18,22 +18,18 @@ use super::PluginRegistryKey;
 /// # use std::sync::Arc;
 /// # use membrane_video_compositor_common::{WgpuContext, wgpu, texture::Texture};
 /// use membrane_video_compositor_common::elixir_transfer::{StructElixirPacket, TransformationElixirPacket};
-/// use membrane_video_compositor_common::plugins::{CustomProcessor, PluginRegistryKey, transformation::Transformation};
+/// use membrane_video_compositor_common::plugins::{PluginArgumentEncoder, PluginRegistryKey, transformation::Transformation};
 /// # struct CustomTransformation{
 /// #     ctx: Arc<WgpuContext>
 /// # }
 /// # struct CustomTransformationArg{}
 /// #
-/// # impl CustomProcessor for CustomTransformation {
+/// # impl PluginArgumentEncoder for CustomTransformation {
 /// #     type Arg = CustomTransformationArg;
 /// #     fn registry_key() -> PluginRegistryKey<'static>
 /// #     where
 /// #         Self: Sized
 /// #     {
-/// #         PluginRegistryKey("custom transformation")
-/// #     }
-/// #
-/// #     fn registry_key_dyn(&self) -> PluginRegistryKey<'static> {
 /// #         PluginRegistryKey("custom transformation")
 /// #     }
 /// # }
@@ -61,7 +57,7 @@ use super::PluginRegistryKey;
 ///     unsafe { TransformationElixirPacket::encode(CustomTransformation::new(ctx)) }
 /// }
 /// ```
-pub trait Transformation: CustomProcessor {
+pub trait Transformation: PluginArgumentEncoder {
     type Error: rustler::Encoder;
 
     fn apply(
@@ -88,11 +84,7 @@ pub trait UntypedTransformation: Send + Sync + 'static {
 
 impl<T: Transformation> UntypedTransformation for T {
     fn registry_key(&self) -> PluginRegistryKey<'static> {
-        assert_eq!(
-            <Self as CustomProcessor>::registry_key(),
-            self.registry_key_dyn()
-        );
-        <Self as CustomProcessor>::registry_key()
+        <Self as PluginArgumentEncoder>::registry_key()
     }
 
     fn apply(
