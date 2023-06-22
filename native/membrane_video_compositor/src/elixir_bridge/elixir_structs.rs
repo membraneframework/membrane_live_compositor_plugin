@@ -161,7 +161,7 @@ impl Texture {
 pub struct Layout {
     pub inputs: HashMap<LayoutInternalName, ObjectName>,
     pub resolution: LayoutOutputResolution,
-    pub implementation: ImplementationPlaceholder,
+    pub params: ImplementationPlaceholder,
 }
 
 impl Layout {
@@ -268,7 +268,7 @@ impl<'a> Scene<'a> {
                 Object::Layout(Layout {
                     inputs,
                     resolution,
-                    implementation,
+                    params: implementation,
                 }) => {
                     let inputs = inputs
                         .iter()
@@ -337,7 +337,7 @@ mod tests {
                     Object::Layout(Layout {
                         inputs,
                         resolution: LayoutOutputResolution::Name(a),
-                        implementation: (42, 42),
+                        params: (42, 42),
                     }),
                 ),
             ],
