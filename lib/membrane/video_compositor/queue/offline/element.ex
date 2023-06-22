@@ -190,17 +190,14 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   end
 
   @spec pop_events(State.t()) :: {Queue.compositor_actions(), State.t()}
-  defp pop_events(
-         initial_state = %State{
-           pads_states: pads_states,
-           next_buffer_pts: buffer_pts
-         }
-       ) do
+  defp pop_events(initial_state = %State{next_buffer_pts: buffer_pts}) do
+    state = drop_eos_pads(initial_state)
+
     frame_indexes =
-      pads_states
+      state.pads_states
       |> Map.to_list()
-      |> Enum.reject(fn {_pad, pad_state = %PadState{timestamp_offset: timestamp_offset}} ->
-        timestamp_offset > buffer_pts or PadState.no_frame_eos?(pad_state)
+      |> Enum.reject(fn {_pad, %PadState{timestamp_offset: timestamp_offset}} ->
+        timestamp_offset > buffer_pts
       end)
       |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
         {pad, Enum.find_index(events_queue, &(PadState.event_type(&1) == :frame))}
@@ -208,11 +205,46 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       |> Enum.into(%{})
 
     {pads_frames, new_state} =
-      initial_state
+      state
       |> State.pop_events(frame_indexes, false)
 
     actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
     {actions, new_state}
+  end
+
+  @spec drop_eos_pads(State.t()) :: State.t()
+  defp drop_eos_pads(
+         state = %State{
+           pads_states: pads_states,
+           output_format: %CompositorCoreFormat{pad_formats: pad_formats}
+         }
+       ) do
+    eos_pads =
+      pads_states
+      |> Enum.filter(fn {_pad, %PadState{events_queue: events_queue}} ->
+        no_frame_eos?(events_queue)
+      end)
+      |> Enum.map(fn {pad, _pad_state} -> pad end)
+
+    %State{
+      state
+      | pads_states: Map.drop(pads_states, eos_pads),
+        output_format: %CompositorCoreFormat{pad_formats: Map.drop(pad_formats, eos_pads)}
+    }
+  end
+
+  defp no_frame_eos?(events_queue) do
+    Enum.reduce_while(
+      events_queue,
+      false,
+      fn event, _is_eos? ->
+        case PadState.event_type(event) do
+          :frame -> {:halt, false}
+          :end_of_stream -> {:halt, true}
+          _other -> {:cont, false}
+        end
+      end
+    )
   end
 end

@@ -53,7 +53,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     )
   end
 
-  @spec put_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, any()}) :: t()
+  @spec put_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, msg :: any()}) :: t()
   def put_event(state, event) do
     case event do
       {:message, msg} ->
@@ -69,10 +69,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
   end
 
   @spec pop_events(t(), %{Pad.ref_t() => non_neg_integer()}, boolean()) ::
-          {pads_frames :: %{Pad.ref_t() => binary()}, t()}
+          {pads_frames :: %{Pad.ref_t() => binary()}, updated_state :: t()}
   def pop_events(state, frame_indexes, keep_frame?) do
-    state = drop_eos_pads(state)
-
     {pads_frames, state} =
       frame_indexes
       |> Enum.reduce(
@@ -156,25 +154,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
       state
       | next_buffer_pts: Kernel.ceil(Time.second() * next_buffer_number * fps_den / fps_num),
         next_buffer_number: next_buffer_number + 1
-    }
-  end
-
-  @spec drop_eos_pads(t()) :: t()
-  def drop_eos_pads(
-        state = %__MODULE__{
-          pads_states: pads_states,
-          output_format: %CompositorCoreFormat{pad_formats: pad_formats}
-        }
-      ) do
-    eos_pads =
-      pads_states
-      |> Enum.filter(fn {_pad, pad_state} -> PadState.no_frame_eos?(pad_state) end)
-      |> Enum.map(fn {pad, _pad_state} -> pad end)
-
-    %__MODULE__{
-      state
-      | pads_states: Map.drop(pads_states, eos_pads),
-        output_format: %CompositorCoreFormat{pad_formats: Map.drop(pad_formats, eos_pads)}
     }
   end
 end

@@ -104,17 +104,19 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   def handle_tick(
         :buffer_scheduler,
         _ctx,
-        initial_state = %State{pads_states: pads_states, next_buffer_pts: buffer_pts}
+        initial_state = %State{next_buffer_pts: buffer_pts}
       ) do
+    state = drop_eos_pads(initial_state)
+
     indexes =
-      pads_states
+      state.pads_states
       |> Enum.map(fn {pad, %PadState{events_queue: events_queue}} ->
         {pad, nearest_frame_index(events_queue, buffer_pts)}
       end)
       |> Enum.reject(fn {_pad, index} -> index == :no_frame end)
       |> Enum.into(%{})
 
-    {pads_frames, new_state} = State.pop_events(initial_state, indexes, true)
+    {pads_frames, new_state} = State.pop_events(state, indexes, true)
 
     actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
@@ -183,6 +185,29 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     |> Map.values()
     |> Enum.any?(fn %PadState{events_queue: events_queue} ->
       Enum.at(events_queue, -1) == :end_of_stream
+    end)
+  end
+
+  @spec drop_eos_pads(State.t()) :: State.t()
+  defp drop_eos_pads(state = %State{pads_states: pads_states, next_buffer_pts: buffer_pts}) do
+    dropped_pads_states =
+      pads_states
+      |> Enum.reject(fn {_pad, %PadState{events_queue: events_queue}} ->
+        eos_before_pts?(events_queue, buffer_pts)
+      end)
+      |> Enum.into(%{})
+
+    %State{state | pads_states: dropped_pads_states}
+  end
+
+  @spec eos_before_pts?(list(PadState.pad_event()), Membrane.Time.non_neg_t()) :: boolean()
+  defp eos_before_pts?(events_queue, buffer_pts) do
+    Enum.reduce_while(events_queue, false, fn event, _eos_before_pts? ->
+      case event do
+        {:frame, pts, _data} when pts > buffer_pts -> {:halt, false}
+        :end_of_stream -> {:halt, true}
+        _else -> {:cont, false}
+      end
     end)
   end
 end
