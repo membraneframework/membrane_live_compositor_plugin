@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Test.DeserializeEasy do
 
   require Membrane.Pad
 
-  alias Membrane.VideoCompositor.Wgpu.Native
+  alias Membrane.VideoCompositor.Native.Impl
 
   alias Membrane.VideoCompositor.Mock.Layouts.{Overlay, Position}
   alias Membrane.VideoCompositor.Mock.Transformations.CornersRounding
@@ -87,6 +87,6 @@ defmodule Membrane.VideoCompositor.Test.DeserializeEasy do
   }
 
   test "deserialize" do
-    assert :ok = Native.test_scene_deserialization(Scene.encode(@scene))
+    assert :ok = Impl.test_scene_deserialization(Scene.encode(@scene))
   end
 end

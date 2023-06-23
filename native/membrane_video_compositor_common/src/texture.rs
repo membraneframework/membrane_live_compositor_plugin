@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::WgpuContext;
+use crate::WgpuCtx;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -9,7 +9,7 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(
-        ctx: Arc<WgpuContext>,
+        ctx: Arc<WgpuCtx>,
         label: Option<&str>,
         size: wgpu::Extent3d,
         format: wgpu::TextureFormat,

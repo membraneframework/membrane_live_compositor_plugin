@@ -6,7 +6,7 @@ pub mod texture;
 
 pub extern crate wgpu;
 
-pub struct WgpuContext {
+pub struct WgpuCtx {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
 }

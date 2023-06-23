@@ -9,7 +9,7 @@ use membrane_video_compositor_common::plugins::transformation::{
 };
 use membrane_video_compositor_common::plugins::{PluginArgumentEncoder, PluginRegistryKey};
 use membrane_video_compositor_common::texture::Texture;
-use membrane_video_compositor_common::WgpuContext;
+use membrane_video_compositor_common::WgpuCtx;
 
 use self::errors::CompositorError;
 use self::registry::PluginRegistry;
@@ -41,7 +41,7 @@ impl Default for State {
 }
 
 pub struct InnerState {
-    wgpu_ctx: Arc<WgpuContext>,
+    wgpu_ctx: Arc<WgpuCtx>,
     plugin_registry: PluginRegistry,
 }
 
@@ -53,7 +53,7 @@ impl InnerState {
         }
     }
 
-    pub fn wgpu_ctx(&self) -> Arc<WgpuContext> {
+    pub fn wgpu_ctx(&self) -> Arc<WgpuCtx> {
         self.wgpu_ctx.clone()
     }
 
@@ -110,7 +110,7 @@ impl Transformation for MockTransformation {
         Ok(())
     }
 
-    fn new(_ctx: Arc<WgpuContext>) -> Self
+    fn new(_ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized,
     {
@@ -119,7 +119,7 @@ impl Transformation for MockTransformation {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn mock_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
+pub fn mock_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationElixirPacket {
     let ctx = unsafe { ctx.decode() };
     unsafe { TransformationElixirPacket::encode(MockTransformation::new(ctx)) }
 }

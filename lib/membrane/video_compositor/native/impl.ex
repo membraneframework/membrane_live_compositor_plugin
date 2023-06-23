@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Wgpu.Native do
+defmodule Membrane.VideoCompositor.Native.Impl do
   @moduledoc false
   # Module with Rust NIFs - direct Rust communication.
 
@@ -6,10 +6,11 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
     otp_app: :membrane_video_compositor_plugin,
     crate: "membrane_video_compositor"
 
+  alias Membrane.VideoCompositor.Object
+
   @type error() :: any()
 
   @opaque native_state() :: reference()
-  @opaque wgpu_ctx() :: non_neg_integer()
 
   @spec test_scene_deserialization(Membrane.VideoCompositor.Scene.RustlerFriendly.t()) ::
           :ok | {:error, error()}
@@ -18,7 +19,7 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
   @spec init() :: {:ok, native_state()} | {:error, error()}
   def init(), do: error()
 
-  @spec wgpu_ctx(native_state()) :: wgpu_ctx()
+  @spec wgpu_ctx(native_state()) :: Object.wgpu_ctx()
   def wgpu_ctx(_state), do: error()
 
   @spec register_transformation(
@@ -33,12 +34,12 @@ defmodule Membrane.VideoCompositor.Wgpu.Native do
         ) :: :ok | {:error, error()}
   def register_layout(_state, _layout), do: error()
 
-  @spec mock_transformation(wgpu_ctx()) ::
+  @spec mock_transformation(Object.wgpu_ctx()) ::
           Membrane.VideoCompositor.Transformation.initialized_transformation()
   def mock_transformation(_wgpu_ctx), do: error()
 
   @spec encode_mock_transformation(String.t()) ::
-          Membrane.VideoCompositor.Transformation.rust_representation()
+          Membrane.VideoCompositor.Transformation.encoded_params()
   def encode_mock_transformation(_arg), do: error()
 
   defp error(), do: :erlang.nif_error(:nif_not_loaded)

@@ -1,9 +1,10 @@
-use crate::compositor;
+use crate::compositor::{self, MockTransformation};
 use crate::elixir_bridge::elixir_structs::*;
 use membrane_video_compositor_common::elixir_transfer::{
-    LayoutElixirPacket, StructElixirPacket, TransformationElixirPacket,
+    CustomStructElixirPacket, LayoutElixirPacket, StructElixirPacket, TransformationElixirPacket,
 };
-use membrane_video_compositor_common::{elixir_transfer, WgpuContext};
+use membrane_video_compositor_common::plugins::PluginArgumentEncoder;
+use membrane_video_compositor_common::{elixir_transfer, WgpuCtx};
 use rustler::ResourceArc;
 
 pub mod elixir_structs;
@@ -31,9 +32,9 @@ pub fn init() -> Result<(rustler::Atom, rustler::ResourceArc<compositor::State>)
 #[rustler::nif]
 pub fn wgpu_ctx(
     state: ResourceArc<compositor::State>,
-) -> elixir_transfer::StructElixirPacket<WgpuContext> {
+) -> elixir_transfer::StructElixirPacket<WgpuCtx> {
     let state = state.lock().unwrap();
-    StructElixirPacket::<WgpuContext>::encode_arc(state.wgpu_ctx())
+    StructElixirPacket::<WgpuCtx>::encode_arc(state.wgpu_ctx())
 }
 
 #[rustler::nif]
@@ -56,17 +57,32 @@ pub fn register_layout(
     Ok(atoms::ok())
 }
 
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn mock_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationElixirPacket {
+    use membrane_video_compositor_common::plugins::transformation::Transformation;
+
+    let ctx = unsafe { ctx.decode() };
+    unsafe { TransformationElixirPacket::encode(MockTransformation::new(ctx)) }
+}
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn encode_mock_transformation(
+    arg: <MockTransformation as PluginArgumentEncoder>::Arg,
+) -> CustomStructElixirPacket {
+    unsafe { MockTransformation::encode_arg(arg) }
+}
+
 #[rustfmt::skip]
 rustler::init!(
-    "Elixir.Membrane.VideoCompositor.Wgpu.Native",
+    "Elixir.Membrane.VideoCompositor.Native.Impl",
     [
         test_scene_deserialization,
         init,
         wgpu_ctx,
         register_transformation,
         register_layout,
-        compositor::mock_transformation,
-        compositor::encode_mock_transformation,
+        encode_mock_transformation,
+        mock_transformation,
     ],
     load = |env, _| {
         rustler::resource!(crate::compositor::State, env);
