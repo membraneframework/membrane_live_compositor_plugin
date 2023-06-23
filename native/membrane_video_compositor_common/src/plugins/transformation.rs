@@ -37,12 +37,8 @@ use super::PluginRegistryKey;
 /// # impl Transformation for CustomTransformation {
 /// #     type Error = ();
 /// #
-/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> Result<wgpu::CommandBuffer, Self::Error> {
-/// #         let encoder = self
-/// #             .ctx
-/// #             .device
-/// #             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-/// #         Ok(encoder.finish())
+/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> Result<(), Self::Error> {
+/// #         Ok(())
 /// #     }
 /// #     fn new(ctx: Arc<WgpuContext>) -> Self
 /// #     where
@@ -60,12 +56,8 @@ use super::PluginRegistryKey;
 pub trait Transformation: PluginArgumentEncoder {
     type Error: rustler::Encoder;
 
-    fn apply(
-        &self,
-        arg: &Self::Arg,
-        source: &Texture,
-        target: &Texture,
-    ) -> Result<wgpu::CommandBuffer, Self::Error>;
+    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture)
+        -> Result<(), Self::Error>;
 
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -79,7 +71,7 @@ pub trait UntypedTransformation: Send + Sync + 'static {
         arg: &dyn Any,
         source: &Texture,
         target: &Texture,
-    ) -> Result<wgpu::CommandBuffer, Box<dyn rustler::Encoder>>;
+    ) -> Result<(), Box<dyn rustler::Encoder>>;
 }
 
 impl<T: Transformation> UntypedTransformation for T {
@@ -92,7 +84,7 @@ impl<T: Transformation> UntypedTransformation for T {
         arg: &dyn Any,
         source: &Texture,
         target: &Texture,
-    ) -> Result<wgpu::CommandBuffer, Box<dyn rustler::Encoder>> {
+    ) -> Result<(), Box<dyn rustler::Encoder>> {
         self.apply(
             arg.downcast_ref().unwrap_or_else(|| panic!(
                 "in {}, expected a successful cast to user-defined Arg type. Something went seriously wrong here.", 
