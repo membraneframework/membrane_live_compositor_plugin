@@ -180,11 +180,11 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   end
 
   @spec all_pads_eos?(State.t()) :: boolean()
-  defp all_pads_eos?(%State{pads_states: pads_states}) do
+  defp all_pads_eos?(%State{pads_states: pads_states, next_buffer_pts: buffer_pts}) do
     pads_states
     |> Map.values()
-    |> Enum.any?(fn %PadState{events_queue: events_queue} ->
-      Enum.at(events_queue, -1) == :end_of_stream
+    |> Enum.all?(fn %PadState{events_queue: events_queue} ->
+      eos_before_pts?(events_queue, buffer_pts)
     end)
   end
 
