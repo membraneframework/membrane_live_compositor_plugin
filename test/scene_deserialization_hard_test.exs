@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.Test.DeserializeHard do
 
   alias Membrane.RawVideo
 
-  alias Membrane.VideoCompositor.Wgpu.Native
+  alias Membrane.VideoCompositor.Native.Impl
 
   alias Membrane.VideoCompositor.Mock.Layouts.{Grid, Merging, Overlay, Position}
   alias Membrane.VideoCompositor.Mock.Transformations.{CornersRounding, Rotate, ToBall}
@@ -92,6 +92,6 @@ defmodule Membrane.VideoCompositor.Test.DeserializeHard do
   }
 
   test "deserialize" do
-    assert :ok = Native.test_scene_deserialization(Scene.encode(@scene))
+    assert :ok = Impl.test_scene_deserialization(Scene.encode(@scene))
   end
 end

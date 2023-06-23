@@ -52,7 +52,7 @@ defmodule Membrane.VideoCompositor.Object.Texture do
 
     @type t :: %__MODULE__{
             input: RFObject.name(),
-            transformations: [Transformation.rust_representation()],
+            transformations: [Transformation.encoded_params()],
             resolution: output_resolution()
           }
   end

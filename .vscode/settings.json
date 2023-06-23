@@ -1,5 +1,4 @@
 {
-    "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
         "__locale": "c",
         "filter.h": "c",

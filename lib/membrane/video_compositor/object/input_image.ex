@@ -40,6 +40,7 @@ defmodule Membrane.VideoCompositor.Object.InputImage do
     defstruct @enforce_keys
   end
 
+  @doc false
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(image) do
     %__MODULE__{

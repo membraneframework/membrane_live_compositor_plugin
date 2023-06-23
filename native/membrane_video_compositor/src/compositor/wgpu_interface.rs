@@ -1,6 +1,6 @@
-use membrane_video_compositor_common::{wgpu, WgpuContext};
+use membrane_video_compositor_common::{wgpu, WgpuCtx};
 
-pub fn create_new_wgpu_context() -> WgpuContext {
+pub fn create_new_wgpu_context() -> WgpuCtx {
     let instance = wgpu::Instance::new(wgpu::Backends::all());
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         compatible_surface: None,
@@ -18,5 +18,5 @@ pub fn create_new_wgpu_context() -> WgpuContext {
     ))
     .unwrap();
 
-    WgpuContext { device, queue }
+    WgpuCtx { device, queue }
 }

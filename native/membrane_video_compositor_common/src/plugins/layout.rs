@@ -1,6 +1,6 @@
 use std::{any::Any, sync::Arc};
 
-use crate::WgpuContext;
+use crate::WgpuCtx;
 
 use super::{PluginArgumentEncoder, PluginRegistryKey};
 
@@ -8,7 +8,7 @@ use super::{PluginArgumentEncoder, PluginRegistryKey};
 //       'static is necessary for sending across elixir
 pub trait Layout: PluginArgumentEncoder {
     fn do_stuff(&self, arg: &Self::Arg);
-    fn new(ctx: Arc<WgpuContext>) -> Self
+    fn new(ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized;
 }

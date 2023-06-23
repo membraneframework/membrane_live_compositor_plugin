@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
 
   Basically it's a multi-input, single-output node in processing graph.
   """
-  alias Membrane.VideoCompositor.{Object, Resolution, WgpuAdapter}
+  alias Membrane.VideoCompositor.{Object, Resolution}
 
   @typedoc """
   A layout-internal identifier, which the layout can use to determine
@@ -42,7 +42,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   @type output_resolution :: Resolution.t() | Object.name()
 
   @typedoc """
-  A module implementing the `Layout` behaviour
+  A module implementing the `Layout` specification
   """
   @type layout_module :: module()
 
@@ -81,7 +81,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
     @type t :: %__MODULE__{
             :inputs => inputs(),
             :resolution => output_resolution(),
-            :params => Layout.rust_representation()
+            :params => Layout.encoded_params()
           }
 
     @enforce_keys [:inputs, :resolution, :params]
@@ -89,13 +89,13 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   end
 
   @typedoc """
-  A rust representation of the layout as defined in a scene graph, passed through elixir
+  A rust representation of the layout parameters as defined in a scene graph, passed through elixir
   in an opaque way. In other words, those are the parameters that will be passed to the
   initialized layout.
 
   Keep in mind the layout needs to be registered before it's used in a scene graph.
   """
-  @opaque rust_representation :: {String.t(), {non_neg_integer(), non_neg_integer()}}
+  @opaque encoded_params :: {String.t(), {non_neg_integer(), non_neg_integer()}}
 
   @typedoc """
   This type is an initialized layout that needs to be transported through elixir to the compositor.
@@ -108,7 +108,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   This function receives the wgpu context from the compositor and needs to create the initialized
   layout
   """
-  @callback initialize(WgpuAdapter.wgpu_ctx()) :: initialized_layout()
+  @callback initialize(Object.wgpu_ctx()) :: initialized_layout()
 
   @doc """
   A callback used for encoding the static layout data into a rust-based representation.
@@ -117,14 +117,14 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   We don't know yet how exactly this system is going to work, so this is just a placeholder
   for now.
   """
-  @callback encode(t()) :: rust_representation()
+  @callback encode(t()) :: encoded_params()
 
   @doc false
   # Encode the layout to a Layout.RustlerFriendly in order to prepare it for
   # the rust conversion.
   @spec encode(t()) :: RustlerFriendly.t()
   def encode(layout = %module{inputs: inputs, resolution: resolution}) do
-    rust_representation = module.encode(layout)
+    params = module.encode(layout)
 
     encoded_resolution = Object.encode_output_resolution(resolution)
 
@@ -137,7 +137,7 @@ defmodule Membrane.VideoCompositor.Object.Layout do
     %RustlerFriendly{
       inputs: encoded_inputs,
       resolution: encoded_resolution,
-      params: rust_representation
+      params: params
     }
   end
 

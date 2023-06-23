@@ -1,22 +1,16 @@
 use std::{any::Any, sync::Arc};
 
-use crate::{plugins::PluginArgumentEncoder, WgpuContext};
+use crate::{plugins::PluginArgumentEncoder, WgpuCtx};
 
 use super::PluginRegistryKey;
 
-// Question to the reviewers: should the example below be in the finished documentation? Should it be
-//                            kept until the end of the plugins PR?
-//
-// Question to the reviewers, but for later: There are a couple of syntax sugar possibilities for the initialization described below.
-//                                           We could have a proc macro, a macro_rules macro, or possibly even leave it as-is but
-//                                           generate the boilerplate. Which one should we use?
 // NOTE: Send + Sync is necessary to store these in the compositor's state later.
 //       'static is necessary for sending across elixir
 /// # Examples
 /// initialization might look like this:
 /// ```no_run
 /// # use std::sync::Arc;
-/// # use membrane_video_compositor_common::WgpuContext;
+/// # use membrane_video_compositor_common::WgpuCtx;
 /// use membrane_video_compositor_common::elixir_transfer::{StructElixirPacket, TransformationElixirPacket};
 /// use membrane_video_compositor_common::plugins::{PluginArgumentEncoder, PluginRegistryKey, transformation::Transformation};
 /// # struct CustomTransformation{}
@@ -34,7 +28,7 @@ use super::PluginRegistryKey;
 /// #
 /// # impl Transformation for CustomTransformation {
 /// #     fn do_stuff(&self, arg: &Self::Arg) {}
-/// #     fn new(ctx: Arc<WgpuContext>) -> Self
+/// #     fn new(ctx: Arc<WgpuCtx>) -> Self
 /// #     where
 /// #         Self: Sized {
 /// #         Self {}
@@ -42,7 +36,7 @@ use super::PluginRegistryKey;
 /// # }
 ///
 /// #[rustler::nif]
-/// fn get_transformation(ctx: StructElixirPacket<WgpuContext>) -> TransformationElixirPacket {
+/// fn get_transformation(ctx: StructElixirPacket<WgpuCtx>) -> TransformationElixirPacket {
 ///     let ctx = unsafe { ctx.decode() };
 ///     unsafe { TransformationElixirPacket::encode(CustomTransformation::new(ctx)) }
 /// }
@@ -50,7 +44,7 @@ use super::PluginRegistryKey;
 pub trait Transformation: PluginArgumentEncoder {
     fn do_stuff(&self, arg: &Self::Arg);
 
-    fn new(ctx: Arc<WgpuContext>) -> Self
+    fn new(ctx: Arc<WgpuCtx>) -> Self
     where
         Self: Sized;
 }

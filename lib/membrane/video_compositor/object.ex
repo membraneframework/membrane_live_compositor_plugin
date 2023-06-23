@@ -34,6 +34,11 @@ defmodule Membrane.VideoCompositor.Object do
   """
   @type object_output_resolution :: Texture.output_resolution() | Layout.output_resolution()
 
+  @typedoc """
+  Rust `WgpuCtx` passed through elixir in an opaque way. Should be received in rust as `StructElixirPacket<WgpuCtx>`
+  """
+  @opaque wgpu_ctx() :: non_neg_integer()
+
   defmodule RustlerFriendly do
     @moduledoc false
     # rustler-friendly versions of all types common to all objects

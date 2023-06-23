@@ -1,21 +1,21 @@
-defmodule Membrane.VideoCompositor.WgpuAdapter do
+defmodule Membrane.VideoCompositor.Native.Adapter do
   @moduledoc false
 
+  alias Membrane.VideoCompositor.Native.Impl
+  alias Membrane.VideoCompositor.Object
   alias Membrane.VideoCompositor.Object.Layout
   alias Membrane.VideoCompositor.Transformation
-  alias Membrane.VideoCompositor.Wgpu.Native
 
   @type error() :: any()
 
-  @opaque native_state :: Native.native_state()
-  @opaque wgpu_ctx() :: Native.wgpu_ctx()
+  @opaque native_state :: Impl.native_state()
 
   @doc """
   Initialize the native part of the compositor
   """
   @spec init() :: native_state()
   def init() do
-    case Native.init() do
+    case Impl.init() do
       {:ok, state} ->
         state
 
@@ -30,9 +30,9 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   # It's vital that this struct is used according to the safety sections in the docs for the rust
   # mirror of the struct this function returns
   # (`membrane_video_compositor_common::elixir_transfer::StructElixirPacket::<WgpuContext>`)
-  @spec wgpu_ctx(native_state()) :: wgpu_ctx()
+  @spec wgpu_ctx(native_state()) :: Object.wgpu_ctx()
   defp wgpu_ctx(state) do
-    Native.wgpu_ctx(state)
+    Impl.wgpu_ctx(state)
   end
 
   @doc """
@@ -49,7 +49,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
       wgpu_ctx = wgpu_ctx(state)
       initialized = transformation_module.initialize(wgpu_ctx)
 
-      case Native.register_transformation(state, initialized) do
+      case Impl.register_transformation(state, initialized) do
         :ok -> :ok
         {:error, reason} -> raise "Error when registering a transformation: #{inspect(reason)}"
       end
@@ -70,7 +70,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
       wgpu_ctx = wgpu_ctx(state)
       initialized = layout_module.initialize(wgpu_ctx)
 
-      case Native.register_layout(state, initialized) do
+      case Impl.register_layout(state, initialized) do
         :ok -> :ok
         {:error, reason} -> raise "Error when registering layout: #{inspect(reason)}"
       end
