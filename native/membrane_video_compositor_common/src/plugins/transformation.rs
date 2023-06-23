@@ -37,7 +37,7 @@ use super::PluginRegistryKey;
 /// # impl Transformation for CustomTransformation {
 /// #     type Error = ();
 /// #
-/// #     fn apply(&mut self, arg: &Self::Arg, source: &Texture, target: &Texture) -> Result<(), Self::Error> {
+/// #     fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture) -> Result<(), Self::Error> {
 /// #         Ok(())
 /// #     }
 /// #     fn new(ctx: Arc<WgpuContext>) -> Self
@@ -56,12 +56,8 @@ use super::PluginRegistryKey;
 pub trait Transformation: PluginArgumentEncoder {
     type Error: rustler::Encoder;
 
-    fn apply(
-        &mut self,
-        arg: &Self::Arg,
-        source: &Texture,
-        target: &Texture,
-    ) -> Result<(), Self::Error>;
+    fn apply(&self, arg: &Self::Arg, source: &Texture, target: &Texture)
+        -> Result<(), Self::Error>;
 
     fn new(ctx: Arc<WgpuContext>) -> Self
     where
@@ -71,7 +67,7 @@ pub trait Transformation: PluginArgumentEncoder {
 pub trait UntypedTransformation: Send + Sync + 'static {
     fn registry_key(&self) -> PluginRegistryKey<'static>;
     fn apply(
-        &mut self,
+        &self,
         arg: &dyn Any,
         source: &Texture,
         target: &Texture,
@@ -84,7 +80,7 @@ impl<T: Transformation> UntypedTransformation for T {
     }
 
     fn apply(
-        &mut self,
+        &self,
         arg: &dyn Any,
         source: &Texture,
         target: &Texture,
