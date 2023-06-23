@@ -170,7 +170,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   end
 
   defp get_tick_ratio(%State{output_framerate: {output_fps_num, output_fps_den}}) do
-    %Ratio{numerator: output_fps_num, denominator: output_fps_den}
+    %Ratio{numerator: output_fps_den * Membrane.Time.second(), denominator: output_fps_num}
   end
 
   defp check_timer_started(state) do
@@ -189,15 +189,25 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   end
 
   @spec drop_eos_pads(State.t()) :: State.t()
-  defp drop_eos_pads(state = %State{pads_states: pads_states, next_buffer_pts: buffer_pts}) do
-    dropped_pads_states =
+  defp drop_eos_pads(
+         state = %State{
+           pads_states: pads_states,
+           output_format: %CompositorCoreFormat{pad_formats: pad_formats},
+           next_buffer_pts: buffer_pts
+         }
+       ) do
+    eos_pads =
       pads_states
-      |> Enum.reject(fn {_pad, %PadState{events_queue: events_queue}} ->
+      |> Enum.filter(fn {_pad, %PadState{events_queue: events_queue}} ->
         eos_before_pts?(events_queue, buffer_pts)
       end)
-      |> Enum.into(%{})
+      |> Enum.map(fn {pad, _pad_state} -> pad end)
 
-    %State{state | pads_states: dropped_pads_states}
+    %State{
+      state
+      | pads_states: Map.drop(pads_states, eos_pads),
+        output_format: %CompositorCoreFormat{pad_formats: Map.drop(pad_formats, eos_pads)}
+    }
   end
 
   @spec eos_before_pts?(list(PadState.pad_event()), Membrane.Time.non_neg_t()) :: boolean()
