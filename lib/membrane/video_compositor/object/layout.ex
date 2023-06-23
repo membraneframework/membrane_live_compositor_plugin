@@ -22,11 +22,11 @@ defmodule Membrane.VideoCompositor.Object.Layout do
   ## Examples
   A simple layout could have an `inputs` map that looks like this:
 
-    %{
-      background: :video1,
-      main_presenter: :video2,
-      side_presenter: :video3,
-    }
+      %{
+        background: :video1,
+        main_presenter: :video2,
+        side_presenter: :video3,
+      }
 
   Keep in mind that this maps __internal names__ => __scene object names__
   """
