@@ -1,5 +1,6 @@
 defmodule Membrane.VideoCompositor.Queue.Live do
   @moduledoc false
+  # Module responsible for frames / events enqueueing accordingly to live composing strategy
 
   use Membrane.Filter
 

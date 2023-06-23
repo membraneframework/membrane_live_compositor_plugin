@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.CompositorCoreFormat do
-  @moduledoc """
-  Describes CoreVC input format.
-  """
+  @moduledoc false
+  # Describes CoreVC input format.
 
   alias Membrane.{Pad, RawVideo}
 

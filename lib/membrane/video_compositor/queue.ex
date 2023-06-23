@@ -1,8 +1,8 @@
 defmodule Membrane.VideoCompositor.Queue do
-  @moduledoc """
-  Defines input pads and compositor core contracts, that each
-  implementation of a queue should meet.
-  """
+  @moduledoc false
+
+  # Defines input pads and compositor core contracts, that each
+  # implementation of a queue should meet.
 
   alias Membrane.{Buffer, Pad}
   alias Membrane.VideoCompositor

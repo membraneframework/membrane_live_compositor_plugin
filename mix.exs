@@ -93,11 +93,10 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      filter_modules:
-        ~r/Membrane\.VideoCompositor($|.BaseVideoPlacement|.Handler($|\.)|.Scene|\.Transformations.*|.VideoConfig)/,
       nest_modules_by_prefix: [
         Membrane.VideoCompositor,
-        Membrane.VideoCompositor.Transformations
+        Membrane.VideoCompositor.Transformations,
+        Membrane.VideoCompositor.QueueingStrategy
       ],
       groups_for_modules: [
         Transformations: [
@@ -105,6 +104,9 @@ defmodule Membrane.VideoCompositor.Mixfile do
         ],
         Handler: [
           ~r/^Membrane\.VideoCompositor\.Handler($|\.)/
+        ],
+        QueueingStrategy: [
+          ~r/^Membrane\.VideoCompositor\.QueueingStrategy($|\.)/
         ]
       ]
     ]

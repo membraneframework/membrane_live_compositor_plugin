@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.Queue.State do
-  @moduledoc """
-  Responsible for keeping tract of queue state.
-  """
+  @moduledoc false
+  # Responsible for keeping tract of queue state.
 
   alias Bunch
   alias Membrane.{Buffer, Pad, RawVideo, Time}

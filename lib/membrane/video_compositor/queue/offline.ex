@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.Queue.Offline do
-  @moduledoc """
-  A bin responsible for queueing frames with offline queueing strategy.
-  """
+  @moduledoc false
+  # A bin responsible for queueing frames with offline queueing strategy.
 
   use Membrane.Bin
   alias Membrane.VideoCompositor

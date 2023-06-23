@@ -1,10 +1,9 @@
 defmodule Membrane.VideoCompositor.Queue.State.PadState do
-  @moduledoc """
-  Responsible for keeping single pad queue state.
+  @moduledoc false
+  # Responsible for keeping single pad queue state.
 
-  We assume that the queue receives pts ordered frames on each pad,
-  therefore events in events_queue should be pts ordered.
-  """
+  # We assume that the queue receives pts ordered frames on each pad,
+  # therefore events in events_queue should be pts ordered.
 
   alias Membrane.VideoCompositor
   alias Membrane.{RawVideo, Time}

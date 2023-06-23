@@ -1,14 +1,9 @@
 defmodule Membrane.VideoCompositor.Queue.Offline.Element do
-  @moduledoc """
-  This module is responsible for offline queueing strategy.
+  @moduledoc false
+  # Module responsible for offline queueing strategy.
 
-  In this strategy frames are sent to the compositor only when all added input pads queues,
-  with timestamp offset lower or equal to composed buffer pts,
-  have at least one frame.
-
-  This element requires all input pads to have equal fps to work properly.
-  A framerate converter should be used for every input pad to synchronize the framerate.
-  """
+  # This element requires all input pads to have equal fps to work properly.
+  # A framerate converter should be used for every input pad to synchronize the framerate.
 
   use Membrane.Filter
 

@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor.Queue.State.HandlerState do
-  @moduledoc """
-  Keep state of VC handler.
-  """
+  @moduledoc false
+  # Keep state of VC handler.
+
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Handler, Scene}
   alias Membrane.VideoCompositor.Handler.InputProperties

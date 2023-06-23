@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.Core do
-  @moduledoc """
-  The element responsible for composing frames.
-  """
+  @moduledoc false
+  # The element responsible for composing frames.
 
   use Membrane.Filter
 
@@ -10,9 +9,8 @@ defmodule Membrane.VideoCompositor.Core do
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
   defmodule State do
-    @moduledoc """
-    The internal state of the compositor
-    """
+    @moduledoc false
+    # The internal state of the compositor
 
     @enforce_keys [:wgpu_state, :output_stream_format]
     defstruct @enforce_keys ++
