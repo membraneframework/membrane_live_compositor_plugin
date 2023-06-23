@@ -101,7 +101,7 @@ impl Transformation for MockTransformation {
     type Error = ();
 
     fn apply(
-        &self,
+        &mut self,
         arg: &Self::Arg,
         _source: &Texture,
         _target: &Texture,
