@@ -18,7 +18,9 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
   defmodule Live do
     @moduledoc """
     Live queueing strategy, suitable for real-time processing, like live streams.
-    Produces frames in stable periods.
+
+    Every `1 / output fps` seconds after start of composition (view `t:latency/0`)
+    compose frames from every input stream with the smallest pts difference to output frame pts.
     """
 
     @enforce_keys [:latency]
@@ -28,11 +30,11 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     Latency specifies when VideoCompositor will start producing frames.
 
     Latency can be set to:
-      - `t:Membrane.Time.non_neg_integer()` - a fixed time, after which VC will start composing frames,
+      - `t:Membrane.Time.non_neg_t/0` - a fixed time, after which VC will start composing frames,
         Setting latency to a higher value allows VideoCompositor to await longer for input frames,
         but results in higher output stream latency and RAM usage.
-      - `:wait_for_start_event` value, which awaits for `t:start_timer_message()` to trigger / schedule composing.
-        Be aware that VC enqueues all received frames, so not sending `t:start_timer_message()` / sending it late, will
+      - `:wait_for_start_event` value, which awaits for `t:start_timer_message/0` to trigger / schedule composing.
+        Be aware that VC enqueues all received frames, so not sending `t:start_timer_message/0` / sending it late, will
         result in high RAM usage.
 
     It doesn't modify output frames pts.
@@ -50,17 +52,21 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
 
     @typedoc """
-    Latency is time period after which, VideoCompositor will start producing frames.
-    It doesn't modify output frames pts.
-    Setting latency to higher value allows VideoCompositor to await longer for input frames,
-    but results in higher output stream latency and RAM usage.
-    User can also trigger composition with Elixir message, by setting `latency` to `:wait_for_start_event`
-    and sending `t:start_timer_message()`.
+    Describe parameters of live queueing strategy.
+
+    For more information, view: `t:latency/0`
     """
     @type t :: %__MODULE__{
             latency: latency()
           }
   end
 
+  @typedoc """
+  Defines possible queueing strategies.
+
+  For specific strategy description, view:
+    - `#{inspect(Live)}`
+    - `#{inspect(Offline)}`
+  """
   @type t :: Offline.t() | Live.t()
 end
