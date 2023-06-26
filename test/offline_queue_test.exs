@@ -67,9 +67,9 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     state = setup_videos()
     assert {[], state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
 
-    eos_message = [end_of_stream: :output]
+    eos_action = [end_of_stream: :output]
 
-    assert {^eos_message, _state} = OfflineQueue.handle_end_of_stream(@pad2, %{}, state)
+    assert {^eos_action, _state} = OfflineQueue.handle_end_of_stream(@pad2, %{}, state)
   end
 
   defp send_buffer(pts) do
@@ -126,9 +126,8 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
           Action.stream_format_t() | [State.notify_compositor_scene() | Action.buffer_t()]
         ]
   defp pad1_actions() do
-    stream_format_action =
-      {:stream_format,
-       {:output, %CompositorCoreFormat{pad_formats: %{@pad1 => @video_stream_format}}}}
+    stream_format = %CompositorCoreFormat{pad_formats: %{@pad1 => @video_stream_format}}
+    stream_format_action = {:stream_format, {:output, stream_format}}
 
     scene = %Scene{video_configs: %{@pad1 => @video_config}}
     scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}

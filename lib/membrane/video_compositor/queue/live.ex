@@ -10,6 +10,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
+  alias Membrane.VideoCompositor.QueueingStrategy.Live
 
   @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
 
@@ -43,14 +44,20 @@ defmodule Membrane.VideoCompositor.Queue.Live do
     demand_mode: :auto
 
   @impl true
-  def handle_init(_ctx, options) do
+  def handle_init(_ctx, %{
+        vc_init_options:
+          vc_init_options = %VideoCompositor{
+            output_stream_format: %RawVideo{framerate: framerate},
+            queuing_strategy: %Live{latency: latency}
+          }
+      }) do
     {[],
      %State{
-       output_framerate: options.vc_init_options.output_stream_format.framerate,
+       output_framerate: framerate,
        custom_strategy_state: %LiveState{
-         latency: options.latency
+         latency: latency
        },
-       handler: HandlerState.new(options.vc_init_options)
+       handler: HandlerState.new(vc_init_options)
      }}
   end
 
