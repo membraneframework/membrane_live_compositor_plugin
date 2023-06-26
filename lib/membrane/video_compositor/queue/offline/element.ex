@@ -15,7 +15,9 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
   def_options vc_init_options: [
-                spec: VideoCompositor.init_options()
+                spec: VideoCompositor.init_options(),
+                description: "Init options of VideoCompositor.
+                Used in `c:Membrane.VideoCompositor.Handler.handle_init/1` callback"
               ]
 
   def_input_pad :input,
