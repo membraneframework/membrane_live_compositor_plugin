@@ -34,6 +34,9 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
   @pad1 {Pad, :input, 1}
   @pad2 {Pad, :input, 2}
 
+  @pad1_frame <<1>>
+  @pad2_frame <<2>>
+
   @pad2_pts_offset Time.seconds(1) + 1
 
   test "if sets up correctly" do
@@ -41,26 +44,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
   end
 
   test "if sends correct scene and stream format actions before buffers" do
-    state = setup_videos()
-
-    pad1_frame = <<1>>
-    pad2_frame = <<2>>
-
-    assert {[], state} =
-             LiveQueue.handle_process(
-               @pad1,
-               %Buffer{payload: pad1_frame, pts: 0, dts: 0},
-               %{},
-               state
-             )
-
-    assert {[], state} =
-             LiveQueue.handle_process(
-               @pad2,
-               %Buffer{payload: pad2_frame, pts: 0, dts: 0},
-               %{},
-               state
-             )
+    state = setup_videos() |> send_both_pads_frames()
 
     stream_format = %CompositorCoreFormat{
       pad_formats: %{@pad1 => @video_stream_format, @pad2 => @video_stream_format}
@@ -71,13 +55,30 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     scene = %Scene{video_configs: %{@pad1 => @video_config, @pad2 => @video_config}}
     scene_action = {:event, {:output, %SceneChangeEvent{new_scene: scene}}}
 
-    buffer = %Buffer{payload: %{@pad1 => pad1_frame, @pad2 => pad2_frame}, pts: 0, dts: 0}
+    buffer = %Buffer{payload: %{@pad1 => @pad1_frame, @pad2 => @pad2_frame}, pts: 0, dts: 0}
     buffer_action = {:buffer, {:output, buffer}}
 
     {actions, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
     assert ^stream_format_action = Enum.at(actions, 0)
     assert ^scene_action = Enum.at(actions, 1)
     assert ^buffer_action = Enum.at(actions, 2)
+  end
+
+  test "if sends stream format and scene only once" do
+    state = setup_videos() |> send_both_pads_frames()
+
+    {_actions, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+    {actions, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+
+    buffer = %Buffer{
+      payload: %{@pad1 => @pad1_frame, @pad2 => @pad2_frame},
+      pts: Membrane.Time.second(),
+      dts: Membrane.Time.second()
+    }
+
+    buffer_action = {:buffer, {:output, buffer}}
+
+    assert [^buffer_action] = actions
   end
 
   test "if sends EOS after receiving EOS from all pads" do
@@ -158,6 +159,26 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
              )
 
     assert {[], state} = LiveQueue.handle_stream_format(@pad2, @video_stream_format, %{}, state)
+
+    state
+  end
+
+  defp send_both_pads_frames(state) do
+    assert {[], state} =
+             LiveQueue.handle_process(
+               @pad1,
+               %Buffer{payload: @pad1_frame, pts: 0, dts: 0},
+               %{},
+               state
+             )
+
+    assert {[], state} =
+             LiveQueue.handle_process(
+               @pad2,
+               %Buffer{payload: @pad2_frame, pts: 0, dts: 0},
+               %{},
+               state
+             )
 
     state
   end
