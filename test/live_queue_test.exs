@@ -67,8 +67,9 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
   test "if sends stream format and scene only once" do
     state = setup_videos() |> send_both_pads_frames()
 
-    {_actions, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
-    {actions, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+    {actions_1, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+    {actions_2, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+    {actions_3, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
 
     buffer = %Buffer{
       payload: %{@pad1 => @pad1_frame, @pad2 => @pad2_frame},
@@ -78,7 +79,11 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
 
     buffer_action = {:buffer, {:output, buffer}}
 
-    assert [^buffer_action] = actions
+    assert Enum.count(actions_1, fn action -> action_type(action) == :stream_format end) == 1
+    assert Enum.count(actions_1, fn action -> action_type(action) == :scene end) == 1
+
+    assert [^buffer_action] = actions_2
+    assert [^buffer_action] = actions_3
   end
 
   test "if sends EOS after receiving EOS from all pads" do
@@ -110,17 +115,10 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
 
     {actions, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
 
-    is_eos_action? = fn action ->
-      case action do
-        {:end_of_stream, _} -> true
-        _other -> false
-      end
-    end
-
-    assert not Enum.any?(actions, is_eos_action?)
+    assert not Enum.any?(actions, fn action -> action_type(action) == :eos end)
 
     {actions, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
-    assert actions |> Enum.at(-1) |> is_eos_action?.()
+    assert actions |> Enum.at(-1) |> then(fn action -> action_type(action) == :eos end)
   end
 
   defp setup_videos() do
@@ -181,5 +179,31 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
              )
 
     state
+  end
+
+  defp action_type(action) do
+    case action do
+      {:buffer, {:output, buffer}} when is_map(buffer) ->
+        :buffer
+
+      {:end_of_stream, :output} ->
+        :eos
+
+      {:event, {:output, %SceneChangeEvent{new_scene: %Scene{}}}} ->
+        :scene
+
+      {:stream_format, {:output, %CompositorCoreFormat{pad_formats: pad_formats}}}
+      when is_map(pad_formats) ->
+        :stream_format
+
+      {:start_timer, _} ->
+        :start_timer
+
+      {:stop_timer, _} ->
+        :stop_timer
+
+      _other ->
+        raise "Unexpected message"
+    end
   end
 end

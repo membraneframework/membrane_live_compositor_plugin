@@ -44,13 +44,13 @@ defmodule Membrane.VideoCompositor do
                 spec: Handler.t(),
                 description: """
                 Module implementing callbacks reacting to VC events.
-                Specify how `#{inspect(Scene)}` should look like.
-                Describe what VC should compose.
+                Specifies how `#{inspect(Scene)}` should look like.
+                Describes what VC should compose.
                 """
               ],
               queuing_strategy: [
                 spec: QueueingStrategy.t(),
-                description: "Specify used frames queueing strategy",
+                description: "Specifies used frames queueing strategy",
                 default: QueueingStrategy.Offline
               ],
               metadata: [

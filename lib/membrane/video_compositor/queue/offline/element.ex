@@ -72,7 +72,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    state = State.put_event(state, {:end_of_stream, vc_input_ref})
+    state = State.register_event(state, {:end_of_stream, vc_input_ref})
 
     check_pads_queues({[], state})
   end
@@ -86,7 +86,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
       ) do
     vc_input_ref = Map.fetch!(inputs_mapping, pad)
 
-    state = State.put_event(state, {{:stream_format, stream_format}, vc_input_ref})
+    state = State.register_event(state, {{:stream_format, stream_format}, vc_input_ref})
 
     {[], state}
   end
@@ -107,7 +107,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline.Element do
 
   @impl true
   def handle_parent_notification(msg, _ctx, state) do
-    state = State.put_event(state, {:message, msg})
+    state = State.register_event(state, {:message, msg})
     {[], state}
   end
 

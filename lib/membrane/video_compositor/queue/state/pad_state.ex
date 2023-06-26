@@ -24,11 +24,11 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
         }
 
   @spec new(VideoCompositor.input_pad_options()) :: t()
-  def new(%{timestamp_offset: timestamp_offset, metadata: metadata}) do
+  def new(pad_options) do
     %__MODULE__{
-      timestamp_offset: timestamp_offset,
+      timestamp_offset: pad_options.timestamp_offset,
       events_queue: [],
-      metadata: metadata
+      metadata: pad_options.metadata
     }
   end
 
@@ -39,20 +39,5 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
       {:frame, _pts, _frame_data} -> :frame
       :end_of_stream -> :end_of_stream
     end
-  end
-
-  @spec no_frame_eos?(t()) :: boolean()
-  def no_frame_eos?(%__MODULE__{events_queue: events_queue}) do
-    Enum.reduce_while(
-      events_queue,
-      false,
-      fn event, _is_eos? ->
-        case event_type(event) do
-          :frame -> {:halt, false}
-          :end_of_stream -> {:halt, true}
-          _other -> {:cont, false}
-        end
-      end
-    )
   end
 end

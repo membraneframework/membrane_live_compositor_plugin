@@ -159,6 +159,9 @@ defmodule Membrane.VideoCompositor.Core do
 
   @spec get_blank_frame(RawVideo.t()) :: binary()
   defp get_blank_frame(%RawVideo{width: width, height: height}) do
+    # In YUV 420 pixel there is one full resolution plane (the luma component) and two
+    # 4x downsampled planes (chroma components). Therefore:
+    # output plane pixel count = width * height * (1 + 1/4 + 1/4) = 3/2 * width * height
     pixels = div(width * height * 3, 2)
     <<0::size(pixels)>>
   end

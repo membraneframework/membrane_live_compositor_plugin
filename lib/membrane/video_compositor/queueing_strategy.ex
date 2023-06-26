@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     Live queueing strategy, suitable for real-time processing, like live streams.
 
     Every `1 / output fps` seconds after start of composition (view `t:latency/0`)
-    compose frames from every input stream with the smallest pts difference to output frame pts.
+    composes frames from every input stream with the smallest pts difference to output frame pts.
     """
 
     @enforce_keys [:latency]
@@ -42,7 +42,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
 
     @typedoc """
-    Specify the message that triggers/schedule the start of VC composing.
+    Specifies the message that triggers/schedule the start of VC composing.
 
     ## Values:
       - After receiving `:start_timer` message, VC will immediately start composing.
@@ -52,7 +52,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
 
     @typedoc """
-    Describe parameters of live queueing strategy.
+    Describes parameters of live queueing strategy.
 
     For more information, view: `t:latency/0`
     """

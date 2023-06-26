@@ -25,7 +25,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.Options do
 
   @typedoc """
   Specification of the handler.
-  Determine what VC should render by implementing callbacks.
+  Determines what VC should render by implementing callbacks.
   """
   @type handler :: Membrane.VideoCompositor.Handler.t()
 

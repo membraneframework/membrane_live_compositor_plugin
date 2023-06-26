@@ -52,8 +52,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
     )
   end
 
-  @spec put_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, msg :: any()}) :: t()
-  def put_event(state, event) do
+  @spec register_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, msg :: any()}) :: t()
+  def register_event(state, event) do
     case event do
       {:message, msg} ->
         Map.update!(state, :user_messages, &(&1 ++ [msg]))

@@ -87,19 +87,19 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @impl true
   def handle_stream_format(pad, stream_format, _ctx, state) do
-    state = State.put_event(state, {{:stream_format, stream_format}, pad})
+    state = State.register_event(state, {{:stream_format, stream_format}, pad})
     {[], state}
   end
 
   @impl true
   def handle_end_of_stream(pad, _ctx, state) do
-    state = State.put_event(state, {:end_of_stream, pad})
+    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
   @impl true
   def handle_process(pad, buffer, _ctx, state) do
-    state = State.put_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
+    state = State.register_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
     {[], state}
   end
 
@@ -149,7 +149,7 @@ defmodule Membrane.VideoCompositor.Queue.Live do
 
   @impl true
   def handle_parent_notification(msg, _ctx, state) do
-    state = State.put_event(state, {:message, msg})
+    state = State.register_event(state, {:message, msg})
     {[], state}
   end
 
