@@ -3,6 +3,10 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
   Defines possible VideoCompositor frames and events queueing strategies.
   """
 
+  alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.Queue.Strategies.Live, as: LiveQueue
+  alias Membrane.VideoCompositor.Queue.Strategies.Offline, as: OfflineQueue
+
   defmodule Offline do
     @moduledoc """
     Offline queueing strategy, suitable for non-real-time processing.
@@ -69,4 +73,16 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     - `#{inspect(Offline)}`
   """
   @type t :: Offline.t() | Live.t()
+
+  @doc false
+  @spec get_queue(VideoCompositor.init_options()) :: OfflineQueue.t()
+  def get_queue(options = %VideoCompositor{}) do
+    case options.queuing_strategy do
+      __MODULE__.Offline ->
+        %OfflineQueue{vc_init_options: options}
+
+      %__MODULE__.Live{latency: latency} ->
+        %LiveQueue{vc_init_options: options, latency: latency}
+    end
+  end
 end

@@ -1,7 +1,7 @@
-defmodule Membrane.VideoCompositor.Queue.Live.State do
+defmodule Membrane.VideoCompositor.Queue.Strategies.Live.State do
   @moduledoc false
 
-  alias Membrane.VideoCompositor.Queue.Live
+  alias Membrane.VideoCompositor.Queue.Strategies.Live
 
   @enforce_keys [:latency]
   defstruct @enforce_keys ++ [timer_started?: false]

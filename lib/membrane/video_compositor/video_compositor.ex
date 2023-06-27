@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.VideoCompositor.Handler
   alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Handler, Queue, QueueingStrategy, Scene}
+  alias Membrane.VideoCompositor.{Handler, QueueingStrategy, Scene}
 
   @init_metadata_doc """
   User-specified init metadata passed to handler callbacks.
@@ -90,7 +90,7 @@ defmodule Membrane.VideoCompositor do
         options = %__MODULE__{output_stream_format: output_stream_format = %RawVideo{}}
       ) do
     spec =
-      child(:queue, Queue.get_queue(options))
+      child(:queue, QueueingStrategy.get_queue(options))
       |> child(:compositor_core, %VCCore{
         output_stream_format: output_stream_format
       })

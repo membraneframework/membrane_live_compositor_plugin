@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Queue.Offline do
+defmodule Membrane.VideoCompositor.Queue.Strategies.Offline do
   @moduledoc false
   # A bin responsible for queueing frames with offline queueing strategy.
 
@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
   alias Membrane.VideoCompositor
   alias Membrane.{FramerateConverter, RawVideo}
   alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
+  alias Membrane.VideoCompositor.Queue.Strategies.Offline.Element, as: OfflineQueueElement
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options()

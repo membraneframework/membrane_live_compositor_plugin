@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Queue.Live do
+defmodule Membrane.VideoCompositor.Queue.Strategies.Live do
   @moduledoc false
   # Module responsible for frames / events enqueueing accordingly to live composing strategy
 
@@ -7,9 +7,9 @@ defmodule Membrane.VideoCompositor.Queue.Live do
   alias Membrane.RawVideo
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue.Live.State, as: LiveState
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
+  alias Membrane.VideoCompositor.Queue.Strategies.Live.State, as: LiveState
   alias Membrane.VideoCompositor.QueueingStrategy.Live
 
   @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event

@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     VideoConfig
   }
 
-  alias Membrane.VideoCompositor.Queue.Live, as: LiveQueue
+  alias Membrane.VideoCompositor.Queue.Strategies.Live, as: LiveQueue
 
   alias Membrane.VideoCompositor.Support.Handler
 

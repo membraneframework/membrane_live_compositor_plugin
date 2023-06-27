@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Queue.Offline.State do
+defmodule Membrane.VideoCompositor.Queue.Strategies.Offline.State do
   @moduledoc false
 
   alias Membrane.Pad

@@ -4,10 +4,11 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   alias Bunch
   alias Membrane.{Buffer, Pad, RawVideo, Time}
-  alias Membrane.Element.Action
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
-  alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
+  alias Membrane.VideoCompositor.Queue.Contracts
+  alias Membrane.VideoCompositor.Queue.Strategies.Live.State, as: LiveStrategyState
+  alias Membrane.VideoCompositor.Queue.Strategies.Offline.State, as: OfflineStrategyState
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
   @enforce_keys [:output_framerate, :custom_strategy_state, :handler]
@@ -23,7 +24,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
   @type pads_states :: %{Pad.ref_t() => PadState.t()}
 
-  @type strategy_state :: OfflineStrategyState.t()
+  @type strategy_state :: OfflineStrategyState.t() | LiveStrategyState.t()
 
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
@@ -93,7 +94,6 @@ defmodule Membrane.VideoCompositor.Queue.State do
 
     state =
       state
-      |> HandlerState.check_callbacks(state)
       |> update_next_buffer_pts()
 
     {pads_frames, state}
@@ -117,7 +117,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
   end
 
   @spec get_actions(t(), t(), %{Pad.ref_t() => binary()}, Membrane.Time.non_neg_t()) ::
-          [Action.stream_format_t() | Action.event_t() | Action.buffer_t()]
+          Contracts.compositor_actions()
   def get_actions(new_state, previous_state, pads_frames, buffer_pts) do
     new_state = new_state |> HandlerState.check_callbacks(previous_state)
 
