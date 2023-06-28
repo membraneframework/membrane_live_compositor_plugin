@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor do
 
   @type input_pad_options :: %{
           :metadata => input_pad_metadata(),
-          :timestamp_offset => Membrane.Time.non_neg_t()
+          :timestamp_offset => Membrane.Time.non_neg()
         }
 
   def_input_pad :input,
@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor do
     availability: :on_request,
     options: [
       timestamp_offset: [
-        spec: Membrane.Time.non_neg_t(),
+        spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],

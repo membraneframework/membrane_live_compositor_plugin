@@ -11,14 +11,14 @@ defmodule Membrane.VideoCompositor.Queue.State.PadState do
   @enforce_keys [:timestamp_offset, :events_queue, :metadata]
   defstruct @enforce_keys
 
-  @type frame_event :: {:frame, pts :: Time.non_neg_t(), frame_data :: binary()}
+  @type frame_event :: {:frame, pts :: Time.non_neg(), frame_data :: binary()}
   @type end_of_stream_event :: :end_of_stream
   @type stream_format_event :: {:stream_format, RawVideo.t()}
 
   @type pad_event :: stream_format_event() | frame_event() | end_of_stream_event()
 
   @type t :: %__MODULE__{
-          timestamp_offset: Time.non_neg_t(),
+          timestamp_offset: Time.non_neg(),
           events_queue: list(pad_event()),
           metadata: VideoCompositor.input_pad_metadata()
         }

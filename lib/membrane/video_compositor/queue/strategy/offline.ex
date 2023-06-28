@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline do
     availability: :on_request,
     options: [
       timestamp_offset: [
-        spec: Membrane.Time.non_neg_t(),
+        spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],

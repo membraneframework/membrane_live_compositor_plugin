@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     Latency specifies when VideoCompositor will start producing frames.
 
     Latency can be set to:
-      - `t:Membrane.Time.non_neg_t/0` - a fixed time, after which VC will start composing frames,
+      - `t:Membrane.Time.non_neg/0` - a fixed time, after which VC will start composing frames,
         Setting latency to a higher value allows VideoCompositor to await longer for input frames,
         but results in higher output stream latency and RAM usage.
       - `:wait_for_start_event` value, which awaits for `t:start_timer_message/0` to trigger / schedule composing.
@@ -43,17 +43,17 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
 
     It doesn't modify output frames pts.
     """
-    @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
+    @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
     @typedoc """
     Specifies the message that triggers/schedule the start of VC composing.
 
     ## Values:
       - After receiving `:start_timer` message, VC will immediately start composing.
-      - After receiving `{:start_timer, delay :: Membrane.Time.non_neg_t()}`, VC will start composing after
+      - After receiving `{:start_timer, delay :: Membrane.Time.non_neg()}`, VC will start composing after
         the time specified by `delay`
     """
-    @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
+    @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg()}
 
     @typedoc """
     Describes parameters of live queueing strategy.

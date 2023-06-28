@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
                 user_messages: []
               ]
 
-  @type pads_states :: %{Pad.ref_t() => PadState.t()}
+  @type pads_states :: %{Pad.ref() => PadState.t()}
 
   @type strategy_state :: OfflineStrategyState.t() | LiveStrategyState.t()
 
@@ -31,19 +31,19 @@ defmodule Membrane.VideoCompositor.Queue.State do
           custom_strategy_state: strategy_state(),
           handler: HandlerState.t(),
           pads_states: pads_states(),
-          next_buffer_pts: Time.non_neg_t(),
+          next_buffer_pts: Time.non_neg(),
           next_buffer_number: non_neg_integer(),
           output_format: CompositorCoreFormat.t(),
           scene: Scene.t(),
           user_messages: list(any())
         }
 
-  @spec register_pad(t(), Pad.ref_t(), VideoCompositor.input_pad_options()) :: t()
+  @spec register_pad(t(), Pad.ref(), VideoCompositor.input_pad_options()) :: t()
   def register_pad(state, pad_ref, pad_options) do
     Bunch.Struct.put_in(state, [:pads_states, pad_ref], PadState.new(pad_options))
   end
 
-  @spec register_buffer(t(), Buffer.t(), Pad.ref_t()) :: t()
+  @spec register_buffer(t(), Buffer.t(), Pad.ref()) :: t()
   def register_buffer(state, buffer, pad) do
     frame_pts = buffer.pts + Bunch.Struct.get_in(state, [:pads_states, pad, :timestamp_offset])
 
@@ -54,7 +54,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     )
   end
 
-  @spec register_event(t(), {PadState.pad_event(), Pad.ref_t()} | {:message, msg :: any()}) :: t()
+  @spec register_event(t(), {PadState.pad_event(), Pad.ref()} | {:message, msg :: any()}) :: t()
   def register_event(state, event) do
     case event do
       {:message, msg} ->
@@ -69,8 +69,8 @@ defmodule Membrane.VideoCompositor.Queue.State do
     end
   end
 
-  @spec pop_events(t(), %{Pad.ref_t() => non_neg_integer()}, boolean()) ::
-          {pads_frames :: %{Pad.ref_t() => binary()}, updated_state :: t()}
+  @spec pop_events(t(), %{Pad.ref() => non_neg_integer()}, boolean()) ::
+          {pads_frames :: %{Pad.ref() => binary()}, updated_state :: t()}
   def pop_events(state, frame_indexes, keep_frame?) do
     {pads_frames, state} =
       frame_indexes
@@ -100,7 +100,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     {pads_frames, state}
   end
 
-  @spec handle_events_before_frame(t(), Pad.ref_t(), [PadState.pad_event()]) :: t()
+  @spec handle_events_before_frame(t(), Pad.ref(), [PadState.pad_event()]) :: t()
   defp handle_events_before_frame(state, pad, events_before_frame) do
     Enum.reduce(
       events_before_frame,
@@ -117,7 +117,7 @@ defmodule Membrane.VideoCompositor.Queue.State do
     )
   end
 
-  @spec get_actions(t(), t(), %{Pad.ref_t() => binary()}, Membrane.Time.non_neg_t()) ::
+  @spec get_actions(t(), t(), %{Pad.ref() => binary()}, Membrane.Time.non_neg()) ::
           Strategy.compositor_actions()
   def get_actions(new_state, previous_state, pads_frames, buffer_pts) do
     new_state = new_state |> HandlerState.check_callbacks(previous_state)

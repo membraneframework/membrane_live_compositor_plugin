@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Scene do
   If input pad isn't specified in `video_configs` it won't be used in composition.
   """
   @type t :: %__MODULE__{
-          video_configs: %{Pad.ref_t() => VideoConfig.t()}
+          video_configs: %{Pad.ref() => VideoConfig.t()}
         }
 
   @spec empty() :: t()

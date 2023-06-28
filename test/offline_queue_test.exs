@@ -123,7 +123,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
   end
 
   @spec pad1_actions() :: [
-          Action.stream_format_t() | [State.notify_compositor_scene() | Action.buffer_t()]
+          Action.stream_format() | [State.notify_compositor_scene() | Action.buffer()]
         ]
   defp pad1_actions() do
     stream_format = %CompositorCoreFormat{pad_formats: %{@pad1 => @video_stream_format}}

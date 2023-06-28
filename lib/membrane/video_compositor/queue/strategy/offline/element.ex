@@ -27,11 +27,11 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
     accepted_format: %RawVideo{pixel_format: :I420},
     options: [
       timestamp_offset: [
-        spec: Time.non_neg_t(),
+        spec: Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative."
       ],
       vc_input_ref: [
-        spec: Pad.ref_t(),
+        spec: Pad.ref(),
         description: "Reference to VC input pad."
       ],
       metadata: [
@@ -55,7 +55,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
 
   @impl true
   def handle_pad_added(pad, context, state = %State{}) do
-    vc_input_ref = Bunch.Struct.get_in(context, [:options, :vc_input_ref])
+    vc_input_ref = get_in(context, [:options, :vc_input_ref])
 
     state =
       state

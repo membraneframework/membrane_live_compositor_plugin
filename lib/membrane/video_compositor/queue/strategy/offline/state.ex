@@ -6,6 +6,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.State do
   defstruct inputs_mapping: %{}
 
   @type t :: %__MODULE__{
-          inputs_mapping: %{(queue_input :: Pad.ref_t()) => vc_input :: Pad.ref_t()}
+          inputs_mapping: %{(queue_input :: Pad.ref()) => vc_input :: Pad.ref()}
         }
 end

@@ -43,7 +43,7 @@ defmodule Membrane.VideoCompositor.WgpuAdapter do
   @doc """
   Sets VC videos properties.
   """
-  @spec set_videos(wgpu_state(), CompositorCoreFormat.t(), Scene.t(), %{Pad.ref_t() => video_id()}) ::
+  @spec set_videos(wgpu_state(), CompositorCoreFormat.t(), Scene.t(), %{Pad.ref() => video_id()}) ::
           :ok
   def set_videos(state, %CompositorCoreFormat{pad_formats: pad_formats}, scene, pads_to_ids) do
     rust_stream_format =

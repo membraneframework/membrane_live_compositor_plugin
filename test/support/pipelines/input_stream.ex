@@ -7,7 +7,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.InputStream do
   """
   @type t() :: %__MODULE__{
           input: String.t() | Source,
-          timestamp_offset: Membrane.Time.non_neg_t(),
+          timestamp_offset: Membrane.Time.non_neg(),
           stream_format: RawVideo.t(),
           metadata: any()
         }

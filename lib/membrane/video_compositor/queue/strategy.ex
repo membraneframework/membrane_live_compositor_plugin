@@ -20,7 +20,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy do
   @typedoc """
   Defines frames buffer send to VC Core by Queue.
   """
-  @type buffer :: %Buffer{payload: %{Pad.ref_t() => frame_data :: binary()}}
+  @type buffer :: %Buffer{payload: %{Pad.ref() => frame_data :: binary()}}
 
   @typedoc """
   Defines buffer action send to VC Core by Queue.

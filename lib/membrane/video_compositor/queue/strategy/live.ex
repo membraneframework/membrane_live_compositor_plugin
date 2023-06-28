@@ -12,9 +12,9 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   alias Membrane.VideoCompositor.Queue.Strategy.Live.State, as: LiveState
   alias Membrane.VideoCompositor.QueueingStrategy.Live
 
-  @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
+  @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
-  @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
+  @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg()}
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options()
@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     demand_mode: :auto,
     options: [
       timestamp_offset: [
-        spec: Membrane.Time.non_neg_t(),
+        spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],
@@ -153,7 +153,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     {[], state}
   end
 
-  @spec nearest_frame_index([PadState.pad_event()], Membrane.Time.non_neg_t()) ::
+  @spec nearest_frame_index([PadState.pad_event()], Membrane.Time.non_neg()) ::
           non_neg_integer() | :no_frame
   defp nearest_frame_index(events_queue, tick_pts) do
     events_queue
@@ -218,7 +218,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     }
   end
 
-  @spec eos_before_pts?(list(PadState.pad_event()), Membrane.Time.non_neg_t()) :: boolean()
+  @spec eos_before_pts?(list(PadState.pad_event()), Membrane.Time.non_neg()) :: boolean()
   defp eos_before_pts?(events_queue, buffer_pts) do
     Enum.reduce_while(events_queue, false, fn event, _eos_before_pts? ->
       case event do
