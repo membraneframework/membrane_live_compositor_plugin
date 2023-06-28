@@ -12,6 +12,11 @@ defmodule Membrane.VideoCompositor.Handler do
   alias Membrane.VideoCompositor.Scene
 
   @typedoc """
+  Module implementing `#{inspect(__MODULE__)}` behaviour.
+  """
+  @type t :: module()
+
+  @typedoc """
   Type of user-managed inner state of the handler.
   """
   @type state :: any()

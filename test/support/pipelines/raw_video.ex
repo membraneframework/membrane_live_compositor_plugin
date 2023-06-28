@@ -4,7 +4,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.Raw do
   """
   use Membrane.Pipeline
 
-  alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
+  alias Membrane.VideoCompositor.Support.Pipeline.{ComposeMultipleInputs, InputStream, Options}
 
   @impl true
   def handle_init(ctx, options) do
@@ -21,14 +21,15 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.Raw do
       options
       | decoder: parser,
         compositor: %Membrane.VideoCompositor{
-          output_stream_format: options.output_stream_format
+          output_stream_format: options.output_stream_format,
+          handler: options.handler
         }
     }
 
-    Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs.handle_init(ctx, options)
+    ComposeMultipleInputs.handle_init(ctx, options)
   end
 
   @impl true
   defdelegate handle_element_end_of_stream(pad, element, context, state),
-    to: Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs
+    to: ComposeMultipleInputs
 end

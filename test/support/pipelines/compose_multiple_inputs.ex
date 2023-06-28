@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
+defmodule Membrane.VideoCompositor.Support.Pipeline.ComposeMultipleInputs do
   @moduledoc """
   Universal pipeline for testing composing of multiple videos, by placing them on corresponding `options.positions`.
   It loads multiple videos from the `options.inputs.input` files/src elements,
@@ -7,16 +7,16 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
   """
 
   use Membrane.Pipeline
-  alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
+  alias Membrane.VideoCompositor.Support.Pipeline.{InputStream, Options}
 
   @impl true
-  def handle_init(_ctx, %Options{} = options) do
+  def handle_init(_ctx, options = %Options{}) do
     source_spec =
       Enum.with_index(options.inputs)
       |> Enum.map(fn {%InputStream{
                         input: input,
-                        video_config: video_config,
-                        timestamp_offset: timestamp_offset
+                        timestamp_offset: timestamp_offset,
+                        metadata: metadata
                       }, i} ->
         source = get_src(input)
         source_name = String.to_atom("source_#{i}")
@@ -28,13 +28,13 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
         input_filter_name = String.to_atom("input_filter_#{i}")
 
         child(source_name, source)
-        |> then(if not is_nil(decoder), do: &child(&1, decoder_name, decoder), else: & &1)
+        |> then(if is_nil(decoder), do: & &1, else: &child(&1, decoder_name, decoder))
         |> then(
-          if not is_nil(input_filter), do: &child(&1, input_filter_name, input_filter), else: & &1
+          if is_nil(input_filter), do: & &1, else: &child(&1, input_filter_name, input_filter)
         )
         |> via_in(:input,
           options: [
-            video_config: video_config,
+            metadata: metadata,
             timestamp_offset: timestamp_offset
           ]
         )
@@ -44,9 +44,7 @@ defmodule Membrane.VideoCompositor.Pipeline.ComposeMultipleInputs do
     spec =
       [
         child(:compositor, options.compositor)
-        |> then(
-          if not is_nil(options.encoder), do: &child(&1, :encoder, options.encoder), else: & &1
-        )
+        |> then(if is_nil(options.encoder), do: & &1, else: &child(&1, :encoder, options.encoder))
         |> child(:sink, get_sink(options.output))
       ] ++ source_spec
 

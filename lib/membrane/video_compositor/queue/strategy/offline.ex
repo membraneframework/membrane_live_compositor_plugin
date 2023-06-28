@@ -1,31 +1,29 @@
-defmodule Membrane.VideoCompositor.Queue.Offline do
-  @moduledoc """
-  A bin responsible for queueing frames with offline queueing strategy.
-  """
+defmodule Membrane.VideoCompositor.Queue.Strategy.Offline do
+  @moduledoc false
+  # A bin responsible for queueing frames with offline queueing strategy.
 
   use Membrane.Bin
+  alias Membrane.VideoCompositor
   alias Membrane.{FramerateConverter, RawVideo}
-  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene}
-  alias Membrane.VideoCompositor.Queue.Offline.Element, as: OfflineQueueElement
-  alias Membrane.VideoCompositor.VideoConfig
+  alias Membrane.VideoCompositor.CompositorCoreFormat
+  alias Membrane.VideoCompositor.Queue.Strategy.Offline.Element, as: OfflineQueueElement
 
-  def_options output_framerate: [
-                spec: RawVideo.framerate_t(),
-                description: "Framerate of the output video of the compositor"
+  def_options vc_init_options: [
+                spec: VideoCompositor.init_options()
               ]
 
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
-      video_config: [
-        spec: VideoConfig.t(),
-        description: "Specify how single input video should be transformed"
-      ],
       timestamp_offset: [
         spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
+      ],
+      metadata: [
+        spec: VideoCompositor.input_pad_metadata(),
+        default: nil
       ]
     ]
 
@@ -34,12 +32,15 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
     availability: :always
 
   @impl true
-  def handle_init(_ctx, %{output_framerate: output_framerate}) do
+  def handle_init(_ctx, %__MODULE__{vc_init_options: options}) do
+    output_framerate = options.output_stream_format.framerate
+
     spec =
-      child(:queue_element, %OfflineQueueElement{output_framerate: output_framerate})
+      child(:queue_element, %OfflineQueueElement{vc_init_options: options})
       |> bin_output()
 
     state = %{output_framerate: output_framerate}
+
     {[spec: spec], state}
   end
 
@@ -53,8 +54,8 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           timestamp_offset: context.options.timestamp_offset,
-          video_config: context.options.video_config,
-          vc_input_ref: Pad.ref(:input, pad_id)
+          vc_input_ref: Pad.ref(:input, pad_id),
+          metadata: context.options.metadata
         ]
       )
       |> get_child(:queue_element)
@@ -67,7 +68,7 @@ defmodule Membrane.VideoCompositor.Queue.Offline do
     do: {[remove_child: {:framerate_converter, pad_id}], state}
 
   @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _context, state) do
-    {[notify_child: {:queue_element, {:update_scene, scene}}], state}
+  def handle_parent_notification(msg, _context, state) do
+    {[notify_child: {:queue_element, msg}], state}
   end
 end

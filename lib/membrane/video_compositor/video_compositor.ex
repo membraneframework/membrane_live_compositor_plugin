@@ -4,21 +4,11 @@ defmodule Membrane.VideoCompositor do
   """
 
   use Membrane.Bin
-  alias Membrane.{Pad, RawVideo, Time}
+
+  alias Membrane.VideoCompositor.Handler
+  alias Membrane.{Pad, RawVideo}
   alias Membrane.VideoCompositor.Core, as: VCCore
-  alias Membrane.VideoCompositor.{Queue, Scene, VideoConfig}
-
-  @typedoc """
-  Defines how VC should be notified with new scene -
-  new composition schema.
-  """
-  @type scene_update_notification :: {:update_scene, Scene.t()}
-
-  @typedoc """
-  Defines implemented VC queuing strategies.
-  Any queuing strategy should follow contracts defined in `#{inspect(Queue)}` module.
-  """
-  @type queuing_strategy :: :offline
+  alias Membrane.VideoCompositor.{Handler, QueueingStrategy, Scene}
 
   @init_metadata_doc """
   User-specified init metadata passed to handler callbacks.
@@ -31,7 +21,8 @@ defmodule Membrane.VideoCompositor do
 
   @type init_options :: %__MODULE__{
           output_stream_format: RawVideo.t(),
-          queuing_strategy: queuing_strategy(),
+          queuing_strategy: QueueingStrategy.t(),
+          handler: Handler.t(),
           metadata: init_metadata()
         }
 
@@ -49,10 +40,18 @@ defmodule Membrane.VideoCompositor do
                 spec: Membrane.RawVideo.t(),
                 description: "Stream format for the output video of the compositor"
               ],
+              handler: [
+                spec: Handler.t(),
+                description: """
+                Module implementing callbacks reacting to VC events.
+                Specifies how `#{inspect(Scene)}` should look like.
+                Describes what VC should compose.
+                """
+              ],
               queuing_strategy: [
-                spec: queuing_strategy(),
-                description: "Specify used frames queueing strategy",
-                default: :offline
+                spec: QueueingStrategy.t(),
+                description: "Specifies used frames queueing strategy",
+                default: QueueingStrategy.Offline
               ],
               metadata: [
                 spec: init_metadata(),
@@ -60,16 +59,17 @@ defmodule Membrane.VideoCompositor do
                 default: nil
               ]
 
+  @type input_pad_options :: %{
+          :metadata => input_pad_metadata(),
+          :timestamp_offset => Membrane.Time.non_neg()
+        }
+
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
     options: [
-      video_config: [
-        spec: VideoConfig.t(),
-        description: "Specify how single input video should be transformed"
-      ],
       timestamp_offset: [
-        spec: Time.non_neg(),
+        spec: Membrane.Time.non_neg(),
         description: "Input stream PTS offset in nanoseconds. Must be non-negative.",
         default: 0
       ],
@@ -90,7 +90,7 @@ defmodule Membrane.VideoCompositor do
         options = %__MODULE__{output_stream_format: output_stream_format = %RawVideo{}}
       ) do
     spec =
-      child(:queue, Queue.get_queue(options))
+      child(:queue, QueueingStrategy.get_queue(options))
       |> child(:compositor_core, %VCCore{
         output_stream_format: output_stream_format
       })
@@ -106,7 +106,7 @@ defmodule Membrane.VideoCompositor do
       |> via_in(Pad.ref(:input, pad_id),
         options: [
           timestamp_offset: context.options.timestamp_offset,
-          video_config: context.options.video_config
+          metadata: context.options.metadata
         ]
       )
       |> get_child(:queue)
@@ -115,7 +115,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
-    {[notify_child: {:queue, {:update_scene, scene}}], state}
+  def handle_parent_notification(msg, _ctx, state) do
+    {[notify_child: {:queue, msg}], state}
   end
 end

@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.H264, as: PipelineH264
-  alias Membrane.VideoCompositor.Support.Utils
+  alias Membrane.VideoCompositor.Support.{Handler, Utils}
 
   @hd_video %RawVideo{
     width: 1280,
@@ -38,20 +38,10 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
     test "1s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
       test_h264_pipeline(@full_hd_video, 1, "short_videos", tmp_dir)
     end
-
-    @tag long_wgpu: true, timeout: 1_000_000
-    test "30s 720p 30fps h264", %{tmp_dir: tmp_dir} do
-      test_h264_pipeline(@hd_video, 30, "long_videos", tmp_dir)
-    end
-
-    @tag long_wgpu: true, timeout: 1_000_000
-    test "60s 1080p 30fps h264", %{tmp_dir: tmp_dir} do
-      test_h264_pipeline(@full_hd_video, 30, "long_videos", tmp_dir)
-    end
   end
 
   defp test_h264_pipeline(video_stream_format, duration, sub_dir_name, tmp_dir) do
-    alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
+    alias Membrane.VideoCompositor.Support.Pipeline.{InputStream, Options}
 
     {input_path, _output_path, _ref_file_name} =
       Utils.prepare_testing_video(
@@ -85,20 +75,21 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
       Enum.map(positions, fn position ->
         %InputStream{
           input: input_path,
-          video_config: %VideoConfig{
+          stream_format: video_stream_format,
+          metadata: %VideoConfig{
             placement: %BaseVideoPlacement{
               position: position,
               size: {video_stream_format.width, video_stream_format.height}
             }
-          },
-          stream_format: video_stream_format
+          }
         }
       end)
 
     options = %Options{
       inputs: inputs,
       output: output_path,
-      output_stream_format: out_stream_format
+      output_stream_format: out_stream_format,
+      handler: Handler
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)

@@ -8,7 +8,7 @@ defmodule Membrane.VideoCompositor.ComposingTest do
   alias Membrane.Testing.Pipeline, as: TestingPipeline
   alias Membrane.VideoCompositor.{BaseVideoPlacement, VideoConfig}
   alias Membrane.VideoCompositor.Support.Pipeline.Raw, as: PipelineRaw
-  alias Membrane.VideoCompositor.Support.Utils
+  alias Membrane.VideoCompositor.Support.{Handler, Utils}
 
   @filter_description "split[b1], pad=iw:ih*2[a1], [a1][b1]overlay=0:h, split[b2], pad=iw*2:ih[a2], [a2][b2]overlay=w:0"
 
@@ -38,10 +38,15 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     end
   end
 
-  @spec test_raw_composing(Membrane.RawVideo.t(), non_neg_integer(), binary(), binary()) ::
+  @spec test_raw_composing(
+          Membrane.RawVideo.t(),
+          seconds :: non_neg_integer(),
+          binary(),
+          binary()
+        ) ::
           nil
   defp test_raw_composing(video_stream_format, duration, tmp_dir, sub_dir_name) do
-    alias Membrane.VideoCompositor.Pipeline.Utils.{InputStream, Options}
+    alias Membrane.VideoCompositor.Support.Pipeline.{InputStream, Options}
 
     {input_path, _output_path, _reference_path} =
       Utils.prepare_testing_video(
@@ -90,14 +95,14 @@ defmodule Membrane.VideoCompositor.ComposingTest do
         positions,
         fn position ->
           %InputStream{
-            video_config: %VideoConfig{
+            stream_format: video_stream_format,
+            input: input_path,
+            metadata: %VideoConfig{
               placement: %BaseVideoPlacement{
                 position: position,
                 size: {video_stream_format.width, video_stream_format.height}
               }
-            },
-            stream_format: video_stream_format,
-            input: input_path
+            }
           }
         end
       )
@@ -105,7 +110,8 @@ defmodule Membrane.VideoCompositor.ComposingTest do
     options = %Options{
       inputs: inputs,
       output: output_path,
-      output_stream_format: out_stream_format
+      output_stream_format: out_stream_format,
+      handler: Handler
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineRaw, custom_args: options)

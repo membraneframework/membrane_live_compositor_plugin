@@ -44,11 +44,11 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_raw_video_format, "~> 0.3.0"},
       {:qex, "~> 0.5.1"},
       {:rustler, "~> 0.26.0"},
+      {:ratio, "~> 2.0"},
       # Testing
       {:membrane_file_plugin, "~> 0.14.0", only: :test},
       {:membrane_h264_ffmpeg_plugin, "~> 0.27.0", only: :test},
       {:membrane_raw_video_parser_plugin, "~> 0.11.1", only: :test},
-      {:membrane_video_compositor_plugin_pipeline, path: "./pipeline", only: :test},
 
       # Development
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
@@ -94,11 +94,10 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      filter_modules:
-        ~r/Membrane\.VideoCompositor($|.BaseVideoPlacement|.Handler($|\.)|.Scene|\.Transformations.*|.VideoConfig)/,
       nest_modules_by_prefix: [
         Membrane.VideoCompositor,
-        Membrane.VideoCompositor.Transformations
+        Membrane.VideoCompositor.Transformations,
+        Membrane.VideoCompositor.QueueingStrategy
       ],
       groups_for_modules: [
         Transformations: [
@@ -106,6 +105,9 @@ defmodule Membrane.VideoCompositor.Mixfile do
         ],
         Handler: [
           ~r/^Membrane\.VideoCompositor\.Handler($|\.)/
+        ],
+        QueueingStrategy: [
+          ~r/^Membrane\.VideoCompositor\.QueueingStrategy($|\.)/
         ]
       ]
     ]

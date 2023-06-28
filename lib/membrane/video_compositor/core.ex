@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.Core do
-  @moduledoc """
-  The element responsible for composing frames.
-  """
+  @moduledoc false
+  # The element responsible for composing frames.
 
   use Membrane.Filter
 
@@ -10,9 +9,8 @@ defmodule Membrane.VideoCompositor.Core do
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
   defmodule State do
-    @moduledoc """
-    The internal state of the compositor
-    """
+    @moduledoc false
+    # The internal state of the compositor
 
     @enforce_keys [:wgpu_state, :output_stream_format]
     defstruct @enforce_keys ++
@@ -97,7 +95,8 @@ defmodule Membrane.VideoCompositor.Core do
           wgpu_state: wgpu_state,
           scene: scene,
           input_stream_format: stream_format,
-          update_videos?: update_videos?
+          update_videos?: update_videos?,
+          output_stream_format: output_stream_format
         }
       ) do
     if update_videos? do
@@ -110,11 +109,14 @@ defmodule Membrane.VideoCompositor.Core do
     end
 
     {:ok, rendered_frame} =
-      payload
-      |> Map.to_list()
-      |> Enum.filter(fn {pad, _frame} -> Map.has_key?(scene.video_configs, pad) end)
-      |> Enum.map(fn {pad, frame} -> {Map.get(pads_to_ids, pad), frame, pts} end)
-      |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
+      if payload == %{} do
+        {:ok, get_blank_frame(output_stream_format)}
+      else
+        payload
+        |> Map.to_list()
+        |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
+        |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
+      end
 
     output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
 
@@ -153,5 +155,14 @@ defmodule Membrane.VideoCompositor.Core do
       {:ok, {_frame, _pts}} ->
         raise "Core should render frame only on last buffer"
     end
+  end
+
+  @spec get_blank_frame(RawVideo.t()) :: binary()
+  defp get_blank_frame(%RawVideo{width: width, height: height}) do
+    # In YUV 420 pixel there is one full resolution plane (the luma component) and two
+    # 4x downsampled planes (chroma components). Therefore:
+    # output plane pixel count = width * height * (1 + 1/4 + 1/4) = 3/2 * width * height
+    pixels = div(width * height * 3, 2)
+    <<0::size(pixels)>>
   end
 end

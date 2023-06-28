@@ -1,7 +1,6 @@
 defmodule Membrane.VideoCompositor.RustStructs.RawVideo do
-  @moduledoc """
-  RawVideo struct describing the video format to use with the rust-based compositor.
-  """
+  @moduledoc false
+  # RawVideo struct describing the video format to use with the rust-based compositor.
 
   @typedoc """
   Pixel format of the video

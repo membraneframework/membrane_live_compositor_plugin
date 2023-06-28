@@ -1,49 +1,64 @@
 defmodule Membrane.VideoCompositor.Queue.State do
-  @moduledoc """
-  Responsible for keeping tract of queue state.
-  """
+  @moduledoc false
+  # Responsible for keeping tract of queue state.
 
   alias Bunch
-  alias Membrane.{Pad, RawVideo, Time}
-  alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue.Offline.State, as: OfflineStrategyState
-  alias Membrane.VideoCompositor.Queue.State.PadState
-  alias Membrane.VideoCompositor.Scene
-  alias Membrane.VideoCompositor.VideoConfig
+  alias Membrane.{Buffer, Pad, RawVideo, Time}
+  alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent}
+  alias Membrane.VideoCompositor.Queue.Strategy
+  alias Membrane.VideoCompositor.Queue.Strategy.Live.State, as: LiveStrategyState
+  alias Membrane.VideoCompositor.Queue.Strategy.Offline.State, as: OfflineStrategyState
+  alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
 
-  @enforce_keys [:output_framerate, :custom_strategy_state]
+  @enforce_keys [:output_framerate, :custom_strategy_state, :handler]
   defstruct @enforce_keys ++
               [
                 pads_states: %{},
                 next_buffer_pts: 0,
+                next_buffer_number: 1,
                 output_format: %CompositorCoreFormat{pad_formats: %{}},
                 scene: Scene.empty(),
-                scene_update_events: [],
-                most_recent_frame_pts: 0
+                user_messages: []
               ]
 
   @type pads_states :: %{Pad.ref() => PadState.t()}
 
-  @type scene_update_event :: {:update_scene, pts :: Time.non_neg(), scene :: Scene.t()}
-
-  @type strategy_state :: OfflineStrategyState.t()
+  @type strategy_state :: OfflineStrategyState.t() | LiveStrategyState.t()
 
   @type t :: %__MODULE__{
           output_framerate: RawVideo.framerate_t(),
+          custom_strategy_state: strategy_state(),
+          handler: HandlerState.t(),
           pads_states: pads_states(),
           next_buffer_pts: Time.non_neg(),
+          next_buffer_number: non_neg_integer(),
           output_format: CompositorCoreFormat.t(),
           scene: Scene.t(),
-          scene_update_events: list(scene_update_event()),
-          most_recent_frame_pts: Time.non_neg(),
-          custom_strategy_state: strategy_state()
+          user_messages: list(any())
         }
 
-  @spec put_event(t(), scene_update_event() | {PadState.pad_event(), Pad.ref()}) :: t()
-  def put_event(state, event) do
+  @spec register_pad(t(), Pad.ref(), VideoCompositor.input_pad_options()) :: t()
+  def register_pad(state, pad_ref, pad_options) do
+    Bunch.Struct.put_in(state, [:pads_states, pad_ref], PadState.new(pad_options))
+  end
+
+  @spec register_buffer(t(), Buffer.t(), Pad.ref()) :: t()
+  def register_buffer(state, buffer, pad) do
+    frame_pts = buffer.pts + Bunch.Struct.get_in(state, [:pads_states, pad, :timestamp_offset])
+
+    Bunch.Struct.update_in(
+      state,
+      [:pads_states, pad, :events_queue],
+      &(&1 ++ [{:frame, frame_pts, buffer.payload}])
+    )
+  end
+
+  @spec register_event(t(), {PadState.pad_event(), Pad.ref()} | {:message, msg :: any()}) :: t()
+  def register_event(state, event) do
     case event do
-      {:update_scene, _pts, _scene} ->
-        Map.update!(state, :scene_update_events, &(&1 ++ [event]))
+      {:message, msg} ->
+        Map.update!(state, :user_messages, &(&1 ++ [msg]))
 
       {pad_event, pad_ref} ->
         Bunch.Struct.update_in(
@@ -54,25 +69,91 @@ defmodule Membrane.VideoCompositor.Queue.State do
     end
   end
 
-  defmodule MockCallbacks do
-    @moduledoc """
-    MockCallback system for updating the scene with pad events.
+  @spec pop_events(t(), %{Pad.ref() => non_neg_integer()}, boolean()) ::
+          {pads_frames :: %{Pad.ref() => binary()}, updated_state :: t()}
+  def pop_events(state, frame_indexes, keep_frame?) do
+    {pads_frames, state} =
+      frame_indexes
+      |> Enum.reduce(
+        {%{}, state},
+        fn {pad, index}, {pads_frames, state} ->
+          {events_before_frame, tail = [{:frame, _pts, frame_data} | events_after_frame]} =
+            state
+            |> Bunch.Struct.get_in([:pads_states, pad, :events_queue])
+            |> Enum.split(index)
 
-    Using separate module and functions for this might currently seem like overkill,
-    but this should be easier to adapt to new compositor scene API and callbacks systems.
-    """
+          updated_events_queue = if keep_frame?, do: tail, else: events_after_frame
 
-    alias Membrane.VideoCompositor.Queue.State
-    alias Membrane.VideoCompositor.VideoConfig
+          state =
+            state
+            |> Bunch.Struct.put_in([:pads_states, pad, :events_queue], updated_events_queue)
+            |> handle_events_before_frame(pad, events_before_frame)
 
-    @spec add_video(State.t(), Pad.ref(), %{:video_config => VideoConfig.t()}) :: State.t()
-    def add_video(state, added_pad, %{video_config: video_config}) do
-      Bunch.Struct.put_in(state, [:scene, :video_configs, added_pad], video_config)
-    end
+          {Map.put(pads_frames, pad, frame_data), state}
+        end
+      )
 
-    @spec remove_video(State.t(), Pad.ref()) :: State.t()
-    def remove_video(state, removed_pad) do
-      Bunch.Struct.delete_in(state, [:scene, :video_configs, removed_pad])
-    end
+    state =
+      state
+      |> update_next_buffer_pts()
+
+    {pads_frames, state}
+  end
+
+  @spec handle_events_before_frame(t(), Pad.ref(), [PadState.pad_event()]) :: t()
+  defp handle_events_before_frame(state, pad, events_before_frame) do
+    Enum.reduce(
+      events_before_frame,
+      state,
+      fn event, state ->
+        case event do
+          {:stream_format, stream_format} ->
+            Bunch.Struct.put_in(state, [:output_format, :pad_formats, pad], stream_format)
+
+          _other ->
+            state
+        end
+      end
+    )
+  end
+
+  @spec get_actions(t(), t(), %{Pad.ref() => binary()}, Membrane.Time.non_neg()) ::
+          Strategy.compositor_actions()
+  def get_actions(new_state, previous_state, pads_frames, buffer_pts) do
+    new_state = new_state |> HandlerState.check_callbacks(previous_state)
+
+    stream_format_action =
+      if new_state.output_format != previous_state.output_format do
+        [stream_format: {:output, new_state.output_format}]
+      else
+        []
+      end
+
+    scene_action =
+      if new_state.scene != previous_state.scene do
+        [event: {:output, %SceneChangeEvent{new_scene: new_state.scene}}]
+      else
+        []
+      end
+
+    buffer_action = [
+      buffer: {:output, %Buffer{payload: pads_frames, pts: buffer_pts, dts: buffer_pts}}
+    ]
+
+    stream_format_action ++ scene_action ++ buffer_action
+  end
+
+  @spec update_next_buffer_pts(t()) :: t()
+  defp update_next_buffer_pts(
+         state = %__MODULE__{
+           output_framerate: {fps_num, fps_den},
+           next_buffer_number: next_buffer_number
+         }
+       ) do
+    %__MODULE__{
+      state
+      | next_buffer_pts: Kernel.ceil(Time.second() * next_buffer_number * fps_den / fps_num),
+        next_buffer_number: next_buffer_number + 1
+    }
   end
 end
