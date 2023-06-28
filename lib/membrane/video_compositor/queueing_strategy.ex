@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     """
 
     @enforce_keys [:latency]
-    defstruct @enforce_keys
+    defstruct @enforce_keys ++ [eos_strategy: :all_inputs_eos]
 
     @typedoc """
     Latency specifies when VideoCompositor will start producing frames.
@@ -56,12 +56,34 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
     @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg_t()}
 
     @typedoc """
+    Specifies possible strategies for VideoCompositor to send `t:Membrane.Element.Action.end_of_stream_t/0`.
+
+    ## Strategies:
+    - In the `:all_inputs_eos` strategy VideoCompositor sends EOS after receiving EOSs from all input pads.
+    - In the `:schedule_eos` strategy VideoCompositor sends EOS after receiving `t:schedule_eos_message/0` and EOSs
+      from all input pads.
+      If all input pads sent EOS and VideoCompositor hasn't received the `t:schedule_eos_message/0` message,
+      VC will produce frames black frames until it receives the `t:schedule_eos_message/0` message.
+      This is useful, when e.g. some peer connects to a VideoCompositor via the live streaming application. His connection
+      can be dropped and restored multiple times. With this strategy, user can control when VC should send EOS.
+    """
+    @type eos_strategy :: :all_inputs_eos | :schedule_eos
+
+    @typedoc """
+    Specifies how message scheduling EOS should look like.
+
+    For more information on scheduling EOS see: `t:eos_strategy/0`.
+    """
+    @type schedule_eos_message :: :schedule_eos
+
+    @typedoc """
     Describes parameters of live queueing strategy.
 
     For more information, view: `t:latency/0`
     """
     @type t :: %__MODULE__{
-            latency: latency()
+            latency: latency(),
+            eos_strategy: eos_strategy()
           }
   end
 
