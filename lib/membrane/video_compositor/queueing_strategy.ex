@@ -4,8 +4,8 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
   """
 
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.Queue.Strategies.Live, as: LiveQueue
-  alias Membrane.VideoCompositor.Queue.Strategies.Offline, as: OfflineQueue
+  alias Membrane.VideoCompositor.Queue.Strategy.Live, as: LiveQueue
+  alias Membrane.VideoCompositor.Queue.Strategy.Offline, as: OfflineQueue
 
   defmodule Offline do
     @moduledoc """

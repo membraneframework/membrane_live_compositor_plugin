@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Queue.Strategies.Offline.Element do
+defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
   @moduledoc false
   # Module responsible for offline queueing strategy.
 
@@ -10,15 +10,15 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Offline.Element do
   alias Membrane.{Pad, RawVideo, Time}
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.CompositorCoreFormat
-  alias Membrane.VideoCompositor.Queue.Contracts
   alias Membrane.VideoCompositor.Queue.State
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
-  alias Membrane.VideoCompositor.Queue.Strategies.Offline.State, as: OfflineState
+  alias Membrane.VideoCompositor.Queue.Strategy
+  alias Membrane.VideoCompositor.Queue.Strategy.Offline.State, as: OfflineState
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options(),
-                description: "Init options of VideoCompositor.
-                Used in `c:Membrane.VideoCompositor.Handler.handle_init/1` callback"
+                description: "Options to initialize of VideoCompositor.
+                Passed in `c:Membrane.VideoCompositor.Handler.handle_init/1` callback invocation"
               ]
 
   def_input_pad :input,
@@ -168,8 +168,8 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Offline.Element do
     )
   end
 
-  @spec check_pads_queues({Contracts.compositor_actions(), State.t()}) ::
-          {Contracts.compositor_actions(), State.t()}
+  @spec check_pads_queues({Strategy.compositor_actions(), State.t()}) ::
+          {Strategy.compositor_actions(), State.t()}
   defp check_pads_queues({actions, state = %State{}}) do
     case queues_state(state) do
       :all_pads_ready ->
@@ -187,7 +187,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Offline.Element do
     end
   end
 
-  @spec pop_events(State.t()) :: {Contracts.compositor_actions(), State.t()}
+  @spec pop_events(State.t()) :: {Strategy.compositor_actions(), State.t()}
   defp pop_events(initial_state = %State{next_buffer_pts: buffer_pts}) do
     state = drop_eos_pads(initial_state)
 

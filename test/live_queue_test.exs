@@ -12,7 +12,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     VideoConfig
   }
 
-  alias Membrane.VideoCompositor.Queue.Strategies.Live, as: LiveQueue
+  alias Membrane.VideoCompositor.Queue.Strategy.Live, as: LiveQueue
 
   alias Membrane.VideoCompositor.Support.Handler
 
@@ -68,22 +68,27 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     state = setup_videos() |> send_both_pads_frames()
 
     {actions_1, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
-    {actions_2, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
+    {actions_2, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
     {actions_3, _state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
 
-    buffer = %Buffer{
-      payload: %{@pad1 => @pad1_frame, @pad2 => @pad2_frame},
-      pts: Membrane.Time.second(),
-      dts: Membrane.Time.second()
-    }
+    get_buffer_action = fn pts ->
+      buffer = %Buffer{
+        payload: %{@pad1 => @pad1_frame, @pad2 => @pad2_frame},
+        pts: pts,
+        dts: pts
+      }
 
-    buffer_action = {:buffer, {:output, buffer}}
+      {:buffer, {:output, buffer}}
+    end
 
     assert Enum.count(actions_1, fn action -> action_type(action) == :stream_format end) == 1
     assert Enum.count(actions_1, fn action -> action_type(action) == :scene end) == 1
 
-    assert [^buffer_action] = actions_2
-    assert [^buffer_action] = actions_3
+    buffer1_action = get_buffer_action.(Membrane.Time.second())
+    buffer2_action = get_buffer_action.(Membrane.Time.seconds(2))
+
+    assert [^buffer1_action] = actions_2
+    assert [^buffer2_action] = actions_3
   end
 
   test "if sends EOS after receiving EOS from all pads" do
@@ -203,7 +208,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
         :stop_timer
 
       _other ->
-        raise "Unexpected message"
+        raise "Unknown action"
     end
   end
 end

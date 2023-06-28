@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Queue.Contracts do
+defmodule Membrane.VideoCompositor.Queue.Strategy do
   @moduledoc false
 
   # Defines input pads and compositor core contracts, that each
