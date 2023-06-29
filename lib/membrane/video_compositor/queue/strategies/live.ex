@@ -51,7 +51,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Live do
             queuing_strategy: %Live{latency: latency, eos_strategy: eos_strategy}
           }
       }) do
-    {[],
+    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}],
      %State{
        output_framerate: framerate,
        custom_strategy_state: %LiveState{
