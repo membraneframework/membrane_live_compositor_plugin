@@ -201,8 +201,8 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
       when is_map(pad_formats) ->
         :stream_format
 
-      {:start_timer, _} ->
-        :start_timer
+      {:start_composing, _} ->
+        :start_composing
 
       {:stop_timer, _} ->
         :stop_timer

@@ -14,7 +14,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
-  @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg()}
+  @type start_timer_message :: :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options()
@@ -140,14 +140,16 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_parent_notification(:start_timer, _ctx, state) do
+  def handle_parent_notification(:start_composing, _ctx, state) do
     check_timer_started(state)
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started?], true)
     {[start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
   @impl true
-  def handle_parent_notification({:start_timer, delay}, _ctx, state) do
+  def handle_parent_notification({:start_composing, delay}, _ctx, state) do
     check_timer_started(state)
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started?], true)
     {[start_timer: {:initializer, delay}], state}
   end
 
