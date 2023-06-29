@@ -114,14 +114,10 @@ defmodule Membrane.VideoCompositor.Core do
       end
 
       {:ok, rendered_frame} =
-        if payload == %{} do
-          {:ok, get_blank_frame(output_stream_format)}
-        else
-          payload
-          |> Map.to_list()
-          |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
-          |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
-        end
+        payload
+        |> Map.to_list()
+        |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
+        |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
 
       output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
 
