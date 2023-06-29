@@ -53,7 +53,8 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
       - After receiving `{:start_composing, delay :: Membrane.Time.non_neg()}`, VC will start composing after
         the time specified by `delay`
     """
-    @type start_timer_message :: :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
+    @type start_timer_message ::
+            :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
 
     @typedoc """
     Specifies possible strategies for VideoCompositor to send `t:Membrane.Element.Action.end_of_stream_t/0`.

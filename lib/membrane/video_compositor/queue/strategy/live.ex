@@ -14,7 +14,8 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
-  @type start_timer_message :: :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
+  @type start_timer_message ::
+          :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options()
@@ -60,6 +61,11 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
        },
        handler: HandlerState.new(vc_init_options)
      }}
+  end
+
+  @impl true
+  def handle_playing(_ctx, state) do
+    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
   end
 
   @impl true
