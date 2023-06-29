@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor.Core do
   use Membrane.Filter
 
   alias Membrane.VideoCompositor.SceneChangeEvent
+  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
   alias Membrane.{Buffer, RawVideo, Time}
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
@@ -99,28 +100,32 @@ defmodule Membrane.VideoCompositor.Core do
           output_stream_format: output_stream_format
         }
       ) do
-    if update_videos? do
-      input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
+    if payload == %{} do
+      {[buffer: {:output, get_blank_frame(output_stream_format)}], state}
+    else
+      if update_videos? do
+        input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
 
-      CompositorCoreFormat.validate(stream_format, input_pads)
-      Scene.validate(scene, input_pads)
+        CompositorCoreFormat.validate(stream_format, input_pads)
+        Scene.validate(scene, input_pads)
 
-      :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
-    end
-
-    {:ok, rendered_frame} =
-      if payload == %{} do
-        {:ok, get_blank_frame(output_stream_format)}
-      else
-        payload
-        |> Map.to_list()
-        |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
-        |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
+        :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
       end
 
-    output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
+      {:ok, rendered_frame} =
+        if payload == %{} do
+          {:ok, get_blank_frame(output_stream_format)}
+        else
+          payload
+          |> Map.to_list()
+          |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
+          |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
+        end
 
-    {[buffer: {:output, output_buffer}], %State{state | update_videos?: false}}
+      output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
+
+      {[buffer: {:output, output_buffer}], %State{state | update_videos?: false}}
+    end
   end
 
   @impl true
@@ -159,10 +164,7 @@ defmodule Membrane.VideoCompositor.Core do
 
   @spec get_blank_frame(RawVideo.t()) :: binary()
   defp get_blank_frame(%RawVideo{width: width, height: height}) do
-    # In YUV 420 pixel there is one full resolution plane (the luma component) and two
-    # 4x downsampled planes (chroma components). Therefore:
-    # output plane pixel count = width * height * (1 + 1/4 + 1/4) = 3/2 * width * height
-    pixels = div(width * height * 3, 2)
-    <<0::size(pixels)>>
+    :binary.copy(<<16>>, height * width) <>
+      :binary.copy(<<128>>, height * width)
   end
 end

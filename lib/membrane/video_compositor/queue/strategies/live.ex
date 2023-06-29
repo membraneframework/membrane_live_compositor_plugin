@@ -11,6 +11,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Live do
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
   alias Membrane.VideoCompositor.Queue.Strategies.Live.State, as: LiveState
   alias Membrane.VideoCompositor.QueueingStrategy.Live
+  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
 
   @type latency :: Membrane.Time.non_neg_t() | :wait_for_start_event
 
@@ -51,7 +52,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Live do
             queuing_strategy: %Live{latency: latency, eos_strategy: eos_strategy}
           }
       }) do
-    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}],
+    {[],
      %State{
        output_framerate: framerate,
        custom_strategy_state: %LiveState{
@@ -60,6 +61,11 @@ defmodule Membrane.VideoCompositor.Queue.Strategies.Live do
        },
        handler: HandlerState.new(vc_init_options)
      }}
+  end
+
+  @impl true
+  def handle_playing(_ctx, state) do
+    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
   end
 
   @impl true
