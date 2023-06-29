@@ -5,7 +5,6 @@ defmodule Membrane.VideoCompositor.Core do
   use Membrane.Filter
 
   alias Membrane.VideoCompositor.SceneChangeEvent
-  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
   alias Membrane.{Buffer, RawVideo, Time}
   alias Membrane.VideoCompositor.{CompositorCoreFormat, Scene, SceneChangeEvent, WgpuAdapter}
 
@@ -101,7 +100,9 @@ defmodule Membrane.VideoCompositor.Core do
         }
       ) do
     if payload == %{} do
-      {[buffer: {:output, get_blank_frame(output_stream_format)}], state}
+      buffer = %Buffer{pts: pts, dts: pts, payload: get_blank_frame(output_stream_format)}
+
+      {[buffer: {:output, buffer}], state}
     else
       if update_videos? do
         input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
@@ -163,7 +164,7 @@ defmodule Membrane.VideoCompositor.Core do
   end
 
   @spec get_blank_frame(RawVideo.t()) :: binary()
-  defp get_blank_frame(%RawVideo{width: width, height: height}) do
+  def get_blank_frame(%RawVideo{width: width, height: height}) do
     :binary.copy(<<16>>, height * width) <>
       :binary.copy(<<128>>, height * width)
   end
