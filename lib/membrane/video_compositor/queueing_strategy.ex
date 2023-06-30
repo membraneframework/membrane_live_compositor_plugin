@@ -57,7 +57,7 @@ defmodule Membrane.VideoCompositor.QueueingStrategy do
             :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
 
     @typedoc """
-    Specifies possible strategies for VideoCompositor to send `t:Membrane.Element.Action.end_of_stream_t/0`.
+    Specifies possible strategies for VideoCompositor to send `t:Membrane.Element.Action.end_of_stream/0`.
 
     ## Strategies:
     - In the `:all_inputs_eos` strategy VideoCompositor sends EOS after receiving EOSs from all input pads.
