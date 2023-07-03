@@ -135,6 +135,11 @@ defmodule Membrane.VideoCompositor.Core do
     {[], %State{state | scene: scene, update_videos?: true}}
   end
 
+  @impl true
+  def handle_event(_pad, _event, _tx, state) do
+    {[], state}
+  end
+
   @spec send_pads_frames(
           State.wgpu_state(),
           [{pad_id :: State.pad_id(), frame :: binary(), pts :: Time.non_neg()}]
