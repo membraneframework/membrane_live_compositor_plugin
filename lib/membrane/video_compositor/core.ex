@@ -14,7 +14,13 @@ defmodule Membrane.VideoCompositor.Core do
 
     @enforce_keys [:wgpu_state, :output_stream_format]
     defstruct @enforce_keys ++
-                [input_stream_format: nil, scene: nil, pads_to_ids: %{}, update_videos?: true]
+                [
+                  input_stream_format: nil,
+                  scene: nil,
+                  pads_to_ids: %{},
+                  update_videos?: true,
+                  frames_counter: 0
+                ]
 
     @type wgpu_state() :: any()
     @type pad_id() :: non_neg_integer()
@@ -26,7 +32,8 @@ defmodule Membrane.VideoCompositor.Core do
             output_stream_format: RawVideo.t(),
             scene: nil | Scene.t(),
             pads_to_ids: pads_to_ids(),
-            update_videos?: boolean()
+            update_videos?: boolean(),
+            frames_counter: non_neg_integer()
           }
   end
 
@@ -47,7 +54,9 @@ defmodule Membrane.VideoCompositor.Core do
 
   @impl true
   def handle_init(_ctx, options) do
-    {:ok, wgpu_state} = WgpuAdapter.init(options.output_stream_format)
+    wgpu_stream_format = %RawVideo{options.output_stream_format | framerate: {1, 1}}
+
+    {:ok, wgpu_state} = WgpuAdapter.init(wgpu_stream_format)
 
     state = %State{
       wgpu_state: wgpu_state,
@@ -96,7 +105,8 @@ defmodule Membrane.VideoCompositor.Core do
           scene: scene,
           input_stream_format: stream_format,
           update_videos?: update_videos?,
-          output_stream_format: output_stream_format
+          output_stream_format: output_stream_format,
+          frames_counter: cnt
         }
       ) do
     if payload == %{} do
@@ -116,12 +126,15 @@ defmodule Membrane.VideoCompositor.Core do
       {:ok, rendered_frame} =
         payload
         |> Map.to_list()
-        |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
+        |> Enum.map(fn {pad, frame} ->
+          {Map.fetch!(pads_to_ids, pad), frame, Membrane.Time.seconds(cnt)}
+        end)
         |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
 
       output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
 
-      {[buffer: {:output, output_buffer}], %State{state | update_videos?: false}}
+      {[buffer: {:output, output_buffer}],
+       %State{state | update_videos?: false, frames_counter: cnt + 1}}
     end
   end
 
