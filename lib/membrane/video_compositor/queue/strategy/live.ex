@@ -222,17 +222,14 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
          custom_strategy_state: live_state
        }) do
     case live_state do
-      %LiveState{started_playing?: false} ->
-        false
-
-      %LiveState{eos_strategy: :all_inputs_eos} ->
-        all_pads_eos?(pads_states, buffer_pts)
-
-      %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: false} ->
-        false
-
       %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: true} ->
         all_pads_eos?(pads_states, buffer_pts)
+
+      %LiveState{eos_strategy: :all_inputs_eos, started_playing?: true} ->
+        all_pads_eos?(pads_states, buffer_pts)
+
+      _other ->
+        false
     end
   end
 
