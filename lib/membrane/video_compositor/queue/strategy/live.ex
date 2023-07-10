@@ -69,16 +69,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_pad_added(pad, context, state) do
-    state =
-      state
-      |> Bunch.Struct.put_in([:pads_states, pad], PadState.new(context.options))
-      |> Bunch.Struct.put_in([:custom_strategy_state, :started_playing?], true)
-
-    {[], state}
-  end
-
-  @impl true
   def handle_start_of_stream(_pad, _ctx, state = %State{}) do
     if state.custom_strategy_state.timer_started? do
       {[], state}
@@ -97,7 +87,12 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @impl true
   def handle_stream_format(pad, stream_format, _ctx, state) do
-    state = State.register_event(state, {{:stream_format, stream_format}, pad})
+    state =
+      state
+      |> Bunch.Struct.put_in([:pads_states, pad], PadState.new(context.options))
+      |> Bunch.Struct.put_in([:custom_strategy_state, :input_playing?], true)
+      |> State.register_event(state, {{:stream_format, stream_format}, pad})
+
     {[], state}
   end
 
@@ -225,7 +220,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
       %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: true} ->
         all_pads_eos?(pads_states, buffer_pts)
 
-      %LiveState{eos_strategy: :all_inputs_eos, started_playing?: true} ->
+      %LiveState{eos_strategy: :all_inputs_eos, input_playing?: true} ->
         all_pads_eos?(pads_states, buffer_pts)
 
       _other ->
