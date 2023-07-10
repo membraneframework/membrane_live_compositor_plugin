@@ -11,6 +11,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
   alias Membrane.VideoCompositor.Queue.Strategy.Live.State, as: LiveState
   alias Membrane.VideoCompositor.QueueingStrategy.Live
+  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
 
   @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
@@ -71,12 +72,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_pad_removed(pad, _ctx, state) do
-    state = State.register_event(state, {:end_of_stream, pad})
-    {[], state}
-  end
-
-  @impl true
   def handle_playing(_ctx, state) do
     {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
   end
@@ -111,6 +106,24 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   @impl true
   def handle_process(pad, buffer, _ctx, state) do
     state = State.register_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
+    {[], state}
+  end
+
+  @impl true
+  def handle_pad_removed(pad, _ctx, state) do
+    state =
+      if non_eos_input_queue?(state, pad) do
+        Bunch.Struct.delete_in(state, [:pads_states, pad])
+      else
+        state
+      end
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_end_of_stream(pad, _ctx, state) do
+    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
@@ -275,5 +288,13 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
         _else -> {:cont, false}
       end
     end)
+  end
+
+  @spec non_eos_input_queue?(State.t(), Membrane.Pad.ref()) :: boolean()
+  defp non_eos_input_queue?(state, pad) do
+    state
+    |> Bunch.Struct.get_in([:pads_states, pad, :events_queue])
+    |> Enum.at(-1)
+    |> PadState.event_type() != :end_of_stream
   end
 end

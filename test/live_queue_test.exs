@@ -94,8 +94,8 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
   test "if sends EOS after receiving EOS from all pads" do
     state = setup_videos()
 
-    assert {[], state} = LiveQueue.handle_pad_removed(@pad1, %{}, state)
-    assert {[], state} = LiveQueue.handle_pad_removed(@pad2, %{}, state)
+    assert {[], state} = LiveQueue.handle_end_of_stream(@pad1, %{}, state)
+    assert {[], state} = LiveQueue.handle_end_of_stream(@pad2, %{}, state)
 
     eos_action = {:end_of_stream, :output}
 
@@ -115,8 +115,8 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
                state
              )
 
-    assert {[], state} = LiveQueue.handle_pad_removed(@pad1, %{}, state)
-    assert {[], state} = LiveQueue.handle_pad_removed(@pad2, %{}, state)
+    assert {[], state} = LiveQueue.handle_end_of_stream(@pad1, %{}, state)
+    assert {[], state} = LiveQueue.handle_end_of_stream(@pad2, %{}, state)
 
     {actions, state} = LiveQueue.handle_tick(:buffer_scheduler, %{}, state)
 
