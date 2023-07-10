@@ -64,22 +64,21 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_playing(_ctx, state) do
-    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
-  end
-
-  @impl true
   def handle_pad_added(pad, context, state) do
-    state =
-      state
-      |> Bunch.Struct.put_in([:pads_states, pad], PadState.new(context.options))
-      |> Bunch.Struct.put_in([:custom_strategy_state, :started_playing?], true)
+    state = Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(context.options))
 
     {[], state}
   end
 
   @impl true
+  def handle_playing(_ctx, state) do
+    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
+  end
+
+  @impl true
   def handle_start_of_stream(_pad, _ctx, state = %State{}) do
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :input_playing?], true)
+
     if state.custom_strategy_state.timer_started? do
       {[], state}
     else
@@ -98,18 +97,31 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   @impl true
   def handle_stream_format(pad, stream_format, _ctx, state) do
     state = State.register_event(state, {{:stream_format, stream_format}, pad})
-    {[], state}
-  end
 
-  @impl true
-  def handle_end_of_stream(pad, _ctx, state) do
-    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
   @impl true
   def handle_process(pad, buffer, _ctx, state) do
     state = State.register_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
+    {[], state}
+  end
+
+  @impl true
+  def handle_pad_removed(pad, _ctx, state) do
+    state =
+      if non_eos_input_queue?(state, pad) do
+        Bunch.Struct.delete_in(state, [:pads_states, pad])
+      else
+        state
+      end
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_end_of_stream(pad, _ctx, state) do
+    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
@@ -222,17 +234,14 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
          custom_strategy_state: live_state
        }) do
     case live_state do
-      %LiveState{started_playing?: false} ->
-        false
-
-      %LiveState{eos_strategy: :all_inputs_eos} ->
-        all_pads_eos?(pads_states, buffer_pts)
-
-      %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: false} ->
-        false
-
       %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: true} ->
         all_pads_eos?(pads_states, buffer_pts)
+
+      %LiveState{eos_strategy: :all_inputs_eos, input_playing?: true} ->
+        all_pads_eos?(pads_states, buffer_pts)
+
+      _other ->
+        false
     end
   end
 
@@ -277,5 +286,13 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
         _else -> {:cont, false}
       end
     end)
+  end
+
+  @spec non_eos_input_queue?(State.t(), Membrane.Pad.ref()) :: boolean()
+  defp non_eos_input_queue?(state, pad) do
+    state
+    |> Bunch.Struct.get_in([:pads_states, pad, :events_queue])
+    |> Enum.at(-1)
+    |> PadState.event_type() != :end_of_stream
   end
 end
