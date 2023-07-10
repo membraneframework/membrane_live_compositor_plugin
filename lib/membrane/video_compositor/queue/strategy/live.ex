@@ -64,6 +64,19 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
+  def handle_pad_added(pad, context, state) do
+    state = Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(context.options))
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_pad_removed(pad, _ctx, state) do
+    state = State.register_event(state, {:end_of_stream, pad})
+    {[], state}
+  end
+
+  @impl true
   def handle_playing(_ctx, state) do
     {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
   end
@@ -89,16 +102,9 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   def handle_stream_format(pad, stream_format, _ctx, state) do
     state =
       state
-      |> Bunch.Struct.put_in([:pads_states, pad], PadState.new(context.options))
       |> Bunch.Struct.put_in([:custom_strategy_state, :input_playing?], true)
-      |> State.register_event(state, {{:stream_format, stream_format}, pad})
+      |> State.register_event({{:stream_format, stream_format}, pad})
 
-    {[], state}
-  end
-
-  @impl true
-  def handle_end_of_stream(pad, _ctx, state) do
-    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
