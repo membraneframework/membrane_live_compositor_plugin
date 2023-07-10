@@ -77,6 +77,8 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @impl true
   def handle_start_of_stream(_pad, _ctx, state = %State{}) do
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :input_playing?], true)
+
     if state.custom_strategy_state.timer_started? do
       {[], state}
     else
@@ -94,10 +96,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @impl true
   def handle_stream_format(pad, stream_format, _ctx, state) do
-    state =
-      state
-      |> Bunch.Struct.put_in([:custom_strategy_state, :input_playing?], true)
-      |> State.register_event({{:stream_format, stream_format}, pad})
+    state = State.register_event(state, {{:stream_format, stream_format}, pad})
 
     {[], state}
   end
