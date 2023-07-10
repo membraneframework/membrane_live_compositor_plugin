@@ -173,7 +173,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @impl true
   def handle_parent_notification(:schedule_eos, _ctx, state) do
-    if Bunch.Access.get_in(state, [:custom_strategy_state, :eos_strategy]) == :all_inputs_eos do
+    if Bunch.Struct.get_in(state, [:custom_strategy_state, :eos_strategy]) == :all_inputs_eos do
       raise """
       The ":schedule_eos" message is only handled if ":schedule_eos" was selected as "eos_strategy".
       See
