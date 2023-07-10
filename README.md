@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_video_compositor_plugin` to you
 ```elixir
 def deps do
   [
-    {:membrane_video_compositor_plugin, "~> 0.4.0"}
+    {:membrane_video_compositor_plugin, "~> 0.5.0"}
   ]
 end
 ```
@@ -25,6 +25,7 @@ Since parts of this package are implemented in Rust, you need to have a Rust ins
 ## Usage
 
 Before jumping into Livebook, check out this [installation guide](https://github.com/membraneframework/guide/tree/master/livebook_examples).
+Note that it's running on the previous version of this plugin.
 
 [![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2Fmembraneframework%2Fguide%2Fblob%2Fmaster%2Flivebook_examples%2Fvideo_compositor%2Fvideo_compositor.livemd)
 
