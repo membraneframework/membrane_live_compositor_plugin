@@ -39,7 +39,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
   defp deps do
     [
       {:unifex, "~> 1.0"},
-      {:membrane_core, "~> 0.12.1"},
+      {:membrane_core, "~> 0.12.5"},
       {:membrane_framerate_converter_plugin, "~> 0.7.0"},
       {:membrane_raw_video_format, "~> 0.3.0"},
       {:qex, "~> 0.5.1"},

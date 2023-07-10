@@ -154,6 +154,9 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
 
     assert {[], state} = LiveQueue.handle_stream_format(@pad1, @video_stream_format, %{}, state)
 
+    assert {[{:start_timer, {:initializer, 100}}], state} =
+             LiveQueue.handle_start_of_stream(@pad1, %{}, state)
+
     assert {[], state} =
              LiveQueue.handle_pad_added(
                @pad2,
@@ -162,6 +165,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
              )
 
     assert {[], state} = LiveQueue.handle_stream_format(@pad2, @video_stream_format, %{}, state)
+    assert {[], state} = LiveQueue.handle_start_of_stream(@pad2, %{}, state)
 
     state
   end
@@ -201,8 +205,8 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
       when is_map(pad_formats) ->
         :stream_format
 
-      {:start_timer, _} ->
-        :start_timer
+      {:start_composing, _} ->
+        :start_composing
 
       {:stop_timer, _} ->
         :stop_timer

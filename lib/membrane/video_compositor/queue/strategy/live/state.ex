@@ -3,11 +3,15 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live.State do
 
   alias Membrane.VideoCompositor.Queue.Strategy.Live
 
-  @enforce_keys [:latency]
-  defstruct @enforce_keys ++ [timer_started?: false]
+  @enforce_keys [:latency, :eos_strategy]
+  defstruct @enforce_keys ++
+              [timer_started?: false, input_playing?: false, eos_scheduled?: false]
 
   @type t :: %__MODULE__{
           latency: Live.latency(),
+          eos_strategy: Membrane.VideoCompositor.QueueingStrategy.Live.eos_strategy(),
+          input_playing?: boolean(),
+          eos_scheduled?: boolean(),
           timer_started?: boolean()
         }
 end

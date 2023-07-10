@@ -14,7 +14,13 @@ defmodule Membrane.VideoCompositor.Core do
 
     @enforce_keys [:wgpu_state, :output_stream_format]
     defstruct @enforce_keys ++
-                [input_stream_format: nil, scene: nil, pads_to_ids: %{}, update_videos?: true]
+                [
+                  input_stream_format: nil,
+                  scene: nil,
+                  pads_to_ids: %{},
+                  update_videos?: true,
+                  frames_counter: 0
+                ]
 
     @type wgpu_state() :: any()
     @type pad_id() :: non_neg_integer()
@@ -26,7 +32,8 @@ defmodule Membrane.VideoCompositor.Core do
             output_stream_format: RawVideo.t(),
             scene: nil | Scene.t(),
             pads_to_ids: pads_to_ids(),
-            update_videos?: boolean()
+            update_videos?: boolean(),
+            frames_counter: non_neg_integer()
           }
   end
 
@@ -47,7 +54,9 @@ defmodule Membrane.VideoCompositor.Core do
 
   @impl true
   def handle_init(_ctx, options) do
-    {:ok, wgpu_state} = WgpuAdapter.init(options.output_stream_format)
+    wgpu_stream_format = %RawVideo{options.output_stream_format | framerate: {1, 1}}
+
+    {:ok, wgpu_state} = WgpuAdapter.init(wgpu_stream_format)
 
     state = %State{
       wgpu_state: wgpu_state,
@@ -96,31 +105,37 @@ defmodule Membrane.VideoCompositor.Core do
           scene: scene,
           input_stream_format: stream_format,
           update_videos?: update_videos?,
-          output_stream_format: output_stream_format
+          output_stream_format: output_stream_format,
+          frames_counter: cnt
         }
       ) do
-    if update_videos? do
-      input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
+    if payload == %{} do
+      buffer = %Buffer{pts: pts, dts: pts, payload: get_blank_frame(output_stream_format)}
 
-      CompositorCoreFormat.validate(stream_format, input_pads)
-      Scene.validate(scene, input_pads)
+      {[buffer: {:output, buffer}], state}
+    else
+      if update_videos? do
+        input_pads = pads_to_ids |> Map.keys() |> MapSet.new()
 
-      :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
-    end
+        CompositorCoreFormat.validate(stream_format, input_pads)
+        Scene.validate(scene, input_pads)
 
-    {:ok, rendered_frame} =
-      if payload == %{} do
-        {:ok, get_blank_frame(output_stream_format)}
-      else
-        payload
-        |> Map.to_list()
-        |> Enum.map(fn {pad, frame} -> {Map.fetch!(pads_to_ids, pad), frame, pts} end)
-        |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
+        :ok = WgpuAdapter.set_videos(wgpu_state, stream_format, scene, pads_to_ids)
       end
 
-    output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
+      {:ok, rendered_frame} =
+        payload
+        |> Map.to_list()
+        |> Enum.map(fn {pad, frame} ->
+          {Map.fetch!(pads_to_ids, pad), frame, Membrane.Time.seconds(cnt)}
+        end)
+        |> then(fn pads_frames -> send_pads_frames(wgpu_state, pads_frames) end)
 
-    {[buffer: {:output, output_buffer}], %State{state | update_videos?: false}}
+      output_buffer = %Buffer{pts: pts, dts: pts, payload: rendered_frame}
+
+      {[buffer: {:output, output_buffer}],
+       %State{state | update_videos?: false, frames_counter: cnt + 1}}
+    end
   end
 
   @impl true
@@ -131,6 +146,11 @@ defmodule Membrane.VideoCompositor.Core do
   @impl true
   def handle_event(_pad, %SceneChangeEvent{new_scene: scene = %Scene{}}, _ctx, state) do
     {[], %State{state | scene: scene, update_videos?: true}}
+  end
+
+  @impl true
+  def handle_event(_pad, _event, _tx, state) do
+    {[], state}
   end
 
   @spec send_pads_frames(
@@ -159,10 +179,7 @@ defmodule Membrane.VideoCompositor.Core do
 
   @spec get_blank_frame(RawVideo.t()) :: binary()
   defp get_blank_frame(%RawVideo{width: width, height: height}) do
-    # In YUV 420 pixel there is one full resolution plane (the luma component) and two
-    # 4x downsampled planes (chroma components). Therefore:
-    # output plane pixel count = width * height * (1 + 1/4 + 1/4) = 3/2 * width * height
-    pixels = div(width * height * 3, 2)
-    <<0::size(pixels)>>
+    :binary.copy(<<16>>, height * width) <>
+      :binary.copy(<<128>>, height * width)
   end
 end

@@ -14,7 +14,8 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
-  @type start_timer_message :: :start_timer | {:start_timer, delay :: Membrane.Time.non_neg()}
+  @type start_timer_message ::
+          :start_composing | {:start_composing, delay :: Membrane.Time.non_neg()}
 
   def_options vc_init_options: [
                 spec: VideoCompositor.init_options()
@@ -48,14 +49,15 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
         vc_init_options:
           vc_init_options = %VideoCompositor{
             output_stream_format: %RawVideo{framerate: framerate},
-            queuing_strategy: %Live{latency: latency}
+            queuing_strategy: %Live{latency: latency, eos_strategy: eos_strategy}
           }
       }) do
     {[],
      %State{
        output_framerate: framerate,
        custom_strategy_state: %LiveState{
-         latency: latency
+         latency: latency,
+         eos_strategy: eos_strategy
        },
        handler: HandlerState.new(vc_init_options)
      }}
@@ -69,7 +71,14 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
+  def handle_playing(_ctx, state) do
+    {[stream_format: {:output, %CompositorCoreFormat{pad_formats: %{}}}], state}
+  end
+
+  @impl true
   def handle_start_of_stream(_pad, _ctx, state = %State{}) do
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :input_playing?], true)
+
     if state.custom_strategy_state.timer_started? do
       {[], state}
     else
@@ -88,18 +97,31 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   @impl true
   def handle_stream_format(pad, stream_format, _ctx, state) do
     state = State.register_event(state, {{:stream_format, stream_format}, pad})
-    {[], state}
-  end
 
-  @impl true
-  def handle_end_of_stream(pad, _ctx, state) do
-    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
   @impl true
   def handle_process(pad, buffer, _ctx, state) do
     state = State.register_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
+    {[], state}
+  end
+
+  @impl true
+  def handle_pad_removed(pad, _ctx, state) do
+    state =
+      if non_eos_input_queue?(state, pad) do
+        Bunch.Struct.delete_in(state, [:pads_states, pad])
+      else
+        state
+      end
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_end_of_stream(pad, _ctx, state) do
+    state = State.register_event(state, {:end_of_stream, pad})
     {[], state}
   end
 
@@ -128,7 +150,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
     actions = State.get_actions(new_state, initial_state, pads_frames, buffer_pts)
 
-    if all_pads_eos?(new_state) do
+    if send_eos?(new_state) do
       {actions ++ [stop_timer: :buffer_scheduler, end_of_stream: :output], new_state}
     else
       {actions, new_state}
@@ -136,15 +158,33 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_parent_notification(:start_timer, _ctx, state) do
+  def handle_parent_notification(:start_composing, _ctx, state) do
     check_timer_started(state)
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started?], true)
     {[start_timer: {:buffer_scheduler, get_tick_ratio(state)}], state}
   end
 
   @impl true
-  def handle_parent_notification({:start_timer, delay}, _ctx, state) do
+  def handle_parent_notification({:start_composing, delay}, _ctx, state) do
     check_timer_started(state)
+    state = Bunch.Struct.put_in(state, [:custom_strategy_state, :timer_started?], true)
     {[start_timer: {:initializer, delay}], state}
+  end
+
+  @impl true
+  def handle_parent_notification(:schedule_eos, _ctx, state) do
+    if Bunch.Access.get_in(state, [:custom_strategy_state, :eos_strategy]) == :all_inputs_eos do
+      raise """
+      The ":schedule_eos" message is only handled if ":schedule_eos" was selected as "eos_strategy".
+      See
+        - Membrane.VideoCompositor.QueueingStrategy.Live.t() and
+        - Membrane.VideoCompositor.QueueingStrategy.Live.eos_strategy()
+      for more information.
+      """
+    else
+      state = Bunch.Struct.put_in(state, [:custom_strategy_state, :eos_scheduled?], true)
+      {[], state}
+    end
   end
 
   @impl true
@@ -187,13 +227,22 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     end
   end
 
-  @spec all_pads_eos?(State.t()) :: boolean()
-  defp all_pads_eos?(%State{pads_states: pads_states, next_buffer_pts: buffer_pts}) do
-    pads_states
-    |> Map.values()
-    |> Enum.all?(fn %PadState{events_queue: events_queue} ->
-      eos_before_pts?(events_queue, buffer_pts)
-    end)
+  @spec send_eos?(State.t()) :: boolean()
+  defp send_eos?(%State{
+         pads_states: pads_states,
+         next_buffer_pts: buffer_pts,
+         custom_strategy_state: live_state
+       }) do
+    case live_state do
+      %LiveState{eos_strategy: :schedule_eos, eos_scheduled?: true} ->
+        all_pads_eos?(pads_states, buffer_pts)
+
+      %LiveState{eos_strategy: :all_inputs_eos, input_playing?: true} ->
+        all_pads_eos?(pads_states, buffer_pts)
+
+      _other ->
+        false
+    end
   end
 
   @spec drop_eos_pads(State.t()) :: State.t()
@@ -218,6 +267,16 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     }
   end
 
+  @spec all_pads_eos?(%{Membrane.Pad.ref() => PadState.t()}, Membrane.Time.non_neg()) ::
+          boolean()
+  defp all_pads_eos?(pads_states, buffer_pts) do
+    pads_states
+    |> Map.values()
+    |> Enum.all?(fn %PadState{events_queue: events_queue} ->
+      eos_before_pts?(events_queue, buffer_pts)
+    end)
+  end
+
   @spec eos_before_pts?(list(PadState.pad_event()), Membrane.Time.non_neg()) :: boolean()
   defp eos_before_pts?(events_queue, buffer_pts) do
     Enum.reduce_while(events_queue, false, fn event, _eos_before_pts? ->
@@ -227,5 +286,13 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
         _else -> {:cont, false}
       end
     end)
+  end
+
+  @spec non_eos_input_queue?(State.t(), Membrane.Pad.ref()) :: boolean()
+  defp non_eos_input_queue?(state, pad) do
+    state
+    |> Bunch.Struct.get_in([:pads_states, pad, :events_queue])
+    |> Enum.at(-1)
+    |> PadState.event_type() != :end_of_stream
   end
 end
