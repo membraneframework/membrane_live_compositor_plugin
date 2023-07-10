@@ -11,7 +11,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   alias Membrane.VideoCompositor.Queue.State.{HandlerState, PadState}
   alias Membrane.VideoCompositor.Queue.Strategy.Live.State, as: LiveState
   alias Membrane.VideoCompositor.QueueingStrategy.Live
-  alias Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder
 
   @type latency :: Membrane.Time.non_neg() | :wait_for_start_event
 
