@@ -47,11 +47,11 @@ impl State {
     pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
 
-        const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 3;
+        const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 5;
         let mut some_adapter = None;
 
         for _ in 0..ADAPTER_REQUEST_RETRIES_COUNT {
-            match instance
+            if let Some(adapter) = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
                     compatible_surface: None,
                     force_fallback_adapter: false,
@@ -59,13 +59,8 @@ impl State {
                 })
                 .await
             {
-                Some(adapter) => {
-                    some_adapter = Some(adapter);
-                    break;
-                }
-                None => {
-                    println!("Failed to request adapter! Trying once again.");
-                }
+                some_adapter = Some(adapter);
+                break;
             }
         }
 
