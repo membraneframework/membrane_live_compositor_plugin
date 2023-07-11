@@ -292,7 +292,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   defp removed_without_start_of_stream?(state, pad) do
     case Bunch.Struct.get_in(state, [:pads_states, pad]) do
       %PadState{events_queue: events_queue} ->
-        Enum.at(events_queue, -1) != :end_of_stream
+        events_queue |> Enum.at(-1) |> PadState.event_type() != :end_of_stream
 
       nil ->
         false
