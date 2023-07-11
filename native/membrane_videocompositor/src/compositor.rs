@@ -47,6 +47,8 @@ impl State {
     pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
 
+        // Some software rendering emulations fail on adapter requests.
+        // Therefore, it's requested multiple times here.
         const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 5;
         let mut some_adapter = None;
 
