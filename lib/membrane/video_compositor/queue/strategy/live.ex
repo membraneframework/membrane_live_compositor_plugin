@@ -110,7 +110,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   @impl true
   def handle_pad_removed(pad, _ctx, state) do
     state =
-      if non_eos_input_queue?(state, pad) do
+      if removed_without_start_of_stream?(state, pad) do
         Bunch.Struct.delete_in(state, [:pads_states, pad])
       else
         state
@@ -288,11 +288,14 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
     end)
   end
 
-  @spec non_eos_input_queue?(State.t(), Membrane.Pad.ref()) :: boolean()
-  defp non_eos_input_queue?(state, pad) do
-    state
-    |> Bunch.Struct.get_in([:pads_states, pad, :events_queue])
-    |> Enum.at(-1)
-    |> PadState.event_type() != :end_of_stream
+  @spec removed_without_start_of_stream?(State.t(), Membrane.Pad.ref()) :: boolean()
+  defp removed_without_start_of_stream?(state, pad) do
+    case Bunch.Struct.get_in(state, [:pads_states, pad]) do
+      %PadState{events_queue: events_queue} ->
+        events_queue |> Enum.at(-1) |> PadState.event_type() != :end_of_stream
+
+      nil ->
+        false
+    end
   end
 end
