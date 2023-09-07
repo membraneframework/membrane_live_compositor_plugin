@@ -46,14 +46,27 @@ pub struct State {
 impl State {
     pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                compatible_surface: None,
-                force_fallback_adapter: false,
-                power_preference: wgpu::PowerPreference::HighPerformance,
-            })
-            .await
-            .unwrap();
+
+        // On some platforms adapter requests fail unexpectedly.
+        // Therefore, it's requested multiple times here.
+        const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 10;
+        let mut some_adapter = None;
+
+        for _ in 0..ADAPTER_REQUEST_RETRIES_COUNT {
+            if let Some(adapter) = instance
+                .request_adapter(&wgpu::RequestAdapterOptions {
+                    compatible_surface: None,
+                    force_fallback_adapter: false,
+                    power_preference: wgpu::PowerPreference::HighPerformance,
+                })
+                .await
+            {
+                some_adapter = Some(adapter);
+                break;
+            }
+        }
+
+        let adapter = some_adapter.unwrap();
 
         let (device, queue) = adapter
             .request_device(
