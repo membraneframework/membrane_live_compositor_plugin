@@ -1,28 +1,26 @@
-defmodule Membrane.VideoCompositor.Mixfile do
+defmodule Membrane.Template.Mixfile do
   use Mix.Project
 
-  @version "0.5.3"
-  @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
+  @version "0.1.0"
+  @github_url "https://github.com/membraneframework/membrane_template_plugin"
 
   def project do
     [
-      app: :membrane_video_compositor_plugin,
+      app: :membrane_template_plugin,
       version: @version,
       elixir: "~> 1.13",
-      compilers: Mix.compilers(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer(),
-      compilers: Mix.compilers(),
+
       # hex
-      description: "Video Compositor Plugin for Membrane Multimedia Framework",
+      description: "Template Plugin for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane Video Compositor plugin",
+      name: "Membrane Template plugin",
       source_url: @github_url,
-      homepage_url: "https://membraneframework.org",
       docs: docs()
     ]
   end
@@ -38,19 +36,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
 
   defp deps do
     [
-      {:unifex, "~> 1.0"},
       {:membrane_core, "~> 0.12.9"},
-      {:membrane_framerate_converter_plugin, "~> 0.7.0"},
-      {:membrane_raw_video_format, "~> 0.3.0"},
-      {:qex, "~> 0.5.1"},
-      {:rustler, "~> 0.26.0"},
-      {:ratio, "~> 2.0"},
-      # Testing
-      {:membrane_file_plugin, "~> 0.14.0", only: :test},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0", only: :test},
-      {:membrane_raw_video_parser_plugin, "~> 0.11.1", only: :test},
-
-      # Development
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
@@ -59,8 +45,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
 
   defp dialyzer() do
     opts = [
-      flags: [:error_handling],
-      plt_add_apps: [:ex_unit]
+      flags: [:error_handling]
     ]
 
     if System.get_env("CI") == "true" do
@@ -78,13 +63,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       links: %{
         "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"
-      },
-      files:
-        ["lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs"] ++
-          Enum.map(
-            ["src", ".cargo/config", "Cargo.toml", "Cargo.lock"],
-            &"native/membrane_videocompositor/#{&1}"
-          )
+      }
     ]
   end
 
@@ -94,22 +73,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [
-        Membrane.VideoCompositor,
-        Membrane.VideoCompositor.Transformations,
-        Membrane.VideoCompositor.QueueingStrategy
-      ],
-      groups_for_modules: [
-        Transformations: [
-          ~r/^Membrane\.VideoCompositor\.Transformations($|\.)/
-        ],
-        Handler: [
-          ~r/^Membrane\.VideoCompositor\.Handler($|\.)/
-        ],
-        QueueingStrategy: [
-          ~r/^Membrane\.VideoCompositor\.QueueingStrategy($|\.)/
-        ]
-      ]
+      nest_modules_by_prefix: [Membrane.Template]
     ]
   end
 end
