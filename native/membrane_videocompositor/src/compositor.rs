@@ -1,6 +1,8 @@
 use std::{
     collections::{BTreeMap, HashMap},
     sync::Arc,
+    thread::sleep,
+    time::Duration,
 };
 
 mod colour_converters;
@@ -253,6 +255,7 @@ impl State {
                 }
                 None => {
                     println!("{} adapter requests failed.", retry + 1);
+                    sleep(Duration::from_millis(1));
                 }
             }
 
