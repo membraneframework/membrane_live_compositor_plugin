@@ -5,7 +5,7 @@ use crate::compositor::scene::Scene;
 use crate::compositor::{self, VideoId};
 use crate::elixir_bridge::elixir_structs::*;
 use crate::errors::CompositorError;
-use rustler::ResourceArc;
+use rustler::{Env, ResourceArc, Term};
 
 use self::elixir_scene::ElixirScene;
 
@@ -196,11 +196,17 @@ fn set_videos(
     Ok(atoms::ok())
 }
 
+fn load(env: Env, _: Term) -> bool {
+    env_logger::init_from_env(
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "warn"),
+    );
+    rustler::resource!(State, env);
+
+    true
+}
+
 rustler::init!(
     "Elixir.Membrane.VideoCompositor.Wgpu.Native",
     [init, process_frame, set_videos],
-    load = |env, _| {
-        rustler::resource!(State, env);
-        true
-    }
+    load = load
 );

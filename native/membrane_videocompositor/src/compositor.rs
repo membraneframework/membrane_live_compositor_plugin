@@ -1,6 +1,8 @@
 use std::{
     collections::{BTreeMap, HashMap},
     sync::Arc,
+    thread::sleep,
+    time::Duration,
 };
 
 mod colour_converters;
@@ -13,6 +15,7 @@ mod videos;
 
 use textures::*;
 use videos::*;
+use wgpu::{Adapter, Backends, Instance};
 
 use crate::{elixir_bridge::RawVideo, errors::CompositorError};
 pub use math::{Vec2d, Vertex};
@@ -46,27 +49,7 @@ pub struct State {
 impl State {
     pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
-
-        // On some platforms adapter requests fail unexpectedly.
-        // Therefore, it's requested multiple times here.
-        const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 10;
-        let mut some_adapter = None;
-
-        for _ in 0..ADAPTER_REQUEST_RETRIES_COUNT {
-            if let Some(adapter) = instance
-                .request_adapter(&wgpu::RequestAdapterOptions {
-                    compatible_surface: None,
-                    force_fallback_adapter: false,
-                    power_preference: wgpu::PowerPreference::HighPerformance,
-                })
-                .await
-            {
-                some_adapter = Some(adapter);
-                break;
-            }
-        }
-
-        let adapter = some_adapter.unwrap();
+        let adapter = Self::request_adapter(&instance).await;
 
         let (device, queue) = adapter
             .request_device(
@@ -250,6 +233,44 @@ impl State {
             last_pts: None,
             texture_transformation_pipelines,
         })
+    }
+
+    pub async fn request_adapter(instance: &Instance) -> Adapter {
+        // On some platforms adapter requests fail unexpectedly.
+        // Therefore, it's requested multiple times here.
+        const ADAPTER_REQUEST_RETRIES_COUNT: u32 = 10;
+
+        for retry in 0..ADAPTER_REQUEST_RETRIES_COUNT {
+            let some_adapter = instance
+                .request_adapter(&wgpu::RequestAdapterOptions {
+                    compatible_surface: None,
+                    force_fallback_adapter: false,
+                    power_preference: wgpu::PowerPreference::HighPerformance,
+                })
+                .await;
+
+            match some_adapter {
+                Some(adapter) => {
+                    return adapter;
+                }
+                None => {
+                    println!("{} adapter requests failed.", retry + 1);
+                    sleep(Duration::from_millis(1));
+                }
+            }
+
+            println!(
+                "Available Vulcan adapters: {:#?}",
+                instance
+                    .enumerate_adapters(Backends::VULKAN)
+                    .collect::<Vec<Adapter>>()
+            );
+        }
+
+        panic!(
+            "Failed to request adapter after {} retries",
+            ADAPTER_REQUEST_RETRIES_COUNT
+        );
     }
 
     pub fn set_videos(
