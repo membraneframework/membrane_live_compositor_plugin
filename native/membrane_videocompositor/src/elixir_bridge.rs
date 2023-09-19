@@ -197,7 +197,9 @@ fn set_videos(
 }
 
 fn load(env: Env, _: Term) -> bool {
-    env_logger::init();
+    env_logger::init_from_env(
+        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "warn"),
+    );
     rustler::resource!(State, env);
 
     true
