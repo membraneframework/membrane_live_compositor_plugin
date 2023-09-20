@@ -249,6 +249,13 @@ impl State {
                 })
                 .await;
 
+            println!(
+                "Available Vulkan adapters: {:#?}",
+                instance
+                    .enumerate_adapters(Backends::VULKAN)
+                    .collect::<Vec<Adapter>>()
+            );
+
             match some_adapter {
                 Some(adapter) => {
                     return adapter;
@@ -258,13 +265,6 @@ impl State {
                     sleep(Duration::from_millis(1));
                 }
             }
-
-            println!(
-                "Available Vulcan adapters: {:#?}",
-                instance
-                    .enumerate_adapters(Backends::VULKAN)
-                    .collect::<Vec<Adapter>>()
-            );
         }
 
         panic!(
