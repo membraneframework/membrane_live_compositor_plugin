@@ -250,9 +250,9 @@ impl State {
                 .await;
 
             println!(
-                "Available Vulkan adapters: {:#?}",
+                "Available adapters: {:#?}",
                 instance
-                    .enumerate_adapters(Backends::VULKAN)
+                    .enumerate_adapters(Backends::all())
                     .collect::<Vec<Adapter>>()
             );
 
