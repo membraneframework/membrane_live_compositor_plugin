@@ -36,7 +36,22 @@ defmodule Membrane.Template.Mixfile do
 
   defp deps do
     [
+      # TODO change this - probably adding binary versions of VC in this project
+      {:video_compositor, git: "https://github.com/membraneframework/video_compositor"},
+      # Membrane
       {:membrane_core, "~> 0.12.9"},
+      ## RTP
+      {:membrane_rtp_plugin, "~> 0.23.0"},
+      {:membrane_rtp_h264_plugin, "~> 0.16.0"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0"},
+      {:membrane_udp_plugin, "~> 0.10.0"},
+      # VC API requests
+      {:req, "~> 0.4.0"},
+      {:jason, "~> 1.4"},
+      # Test
+      {:membrane_file_plugin, "~> 0.15.0"},
+      {:membrane_realtimer_plugin, "~> 0.7.0"},
+      # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
