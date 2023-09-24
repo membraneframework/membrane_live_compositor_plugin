@@ -32,12 +32,13 @@ defmodule Membrane.Template.Mixfile do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_env), do: ["lib"]
+  defp elixirc_paths(_env), do: ["lib", "test"]
 
   defp deps do
     [
       # TODO change this - probably adding binary versions of VC in this project
-      {:video_compositor, git: "https://github.com/membraneframework/video_compositor"},
+      {:video_compositor,
+       git: "https://github.com/membraneframework/video_compositor", compile: false, app: false},
       # Membrane
       {:membrane_core, "~> 0.12.9"},
       ## RTP

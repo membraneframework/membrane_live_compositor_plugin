@@ -25,16 +25,19 @@ defmodule Membrane.VideoCompositor do
           | :placebo
 
   @type ip :: {non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()}
-  @type port :: non_neg_integer()
+  @type port_number :: non_neg_integer()
   @type input_id :: String.t()
   @type output_id :: String.t()
+
+  @send_streams_ip_address {127, 0, 0, 1}
+  @receive_streams_ip_address {127, 0, 0, 2}
 
   # TODO choose server ip
   def_options handler: [
                 spec: Membrane.VideoCompositor.Handler.t(),
                 description:
                   "Module implementing `#{Membrane.VideoCompositor.Handler}` behaviour. 
-                Used for updating [Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)."
+                  Used for updating [Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)."
               ],
               framerate: [
                 spec: Membrane.H264.framerate(),
@@ -101,59 +104,50 @@ defmodule Membrane.VideoCompositor do
         }
       })
 
-    {[spec: spec], %State{input_count: 0}}
-  end
-
-  @send_streams_ip_address {127, 0, 0, 1}
-  @receive_streams_ip_address {127, 0, 0, 2}
-
-  @impl true
-  def handle_pad_added(Pad.ref(:input, pad_id), _ctx, state = %State{input_count: input_count}) do
-    port_number = input_port(input_count)
-
-    case VcReq.register_input_stream(pad_id, port_number) do
-      :ok ->
-        spec =
-          bin_input(Pad.ref(:input, pad_id))
-          |> via_in(Pad.ref(:input, pad_id),
-            options: [payloader: RTP.H264.Payloader]
-          )
-          |> get_child(:rtp_session_bin)
-          |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
-          |> child({:rtp_sender, pad_id}, %UDP.Sink{
-            destination_port_no: port_number,
-            destination_address: @send_streams_ip_address
-          })
-
-        {[spec: spec], %State{state | input_count: input_count + 1}}
-
-      {:error, reason} ->
-        Membrane.Logger.error("Failed to register input stream. Reason: #{reason}")
-        {[], state}
-    end
+    {[spec: spec], %State{inputs: [], outputs: []}}
   end
 
   @impl true
-  def handle_pad_added(Pad.ref(:output, pad_id), _ctx, state = %State{output_count: output_count}) do
-    port_number = output_port(output_count)
+  def handle_pad_added(Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
+    port_number = input_port(length(inputs))
+    input_id = ctx.options.input_id
 
-    case VcReq.register_output_stream(pad_id, port_number, %Resolution{width: 1920, height: 1080}) do
-      :ok ->
-        spec =
-          child({:rtp_input_receiver, pad_id}, %UDP.Source{
-            local_port_no: output_port(output_count),
-            local_address: @receive_streams_ip_address
-          })
-          |> via_in(:rtp_input)
-          |> get_child(:rtp_session_bin)
-          |> bin_output(Pad.ref(:output, pad_id))
+    # TODO better errors in returns
+    :ok = VcReq.register_input_stream(input_id, port_number)
 
-        {[spec: spec], %State{state | output_count: output_count + 1}}
+    spec =
+      bin_input(Pad.ref(:input, pad_id))
+      |> via_in(Pad.ref(:input, pad_id),
+        options: [payloader: RTP.H264.Payloader]
+      )
+      |> get_child(:rtp_session_bin)
+      |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
+      |> child({:rtp_sender, pad_id}, %UDP.Sink{
+        destination_port_no: port_number,
+        destination_address: @send_streams_ip_address
+      })
 
-      {:error, reason} ->
-        Membrane.Logger.error("Failed to register output stream. Reason: #{reason}")
-        {[], state}
-    end
+    {[spec: spec], %State{state | inputs: [input_id | inputs]}}
+  end
+
+  @impl true
+  def handle_pad_added(Pad.ref(:output, pad_id), ctx, state = %State{outputs: outputs}) do
+    port_number = output_port(length(outputs))
+    output_id = ctx.options.output_id
+    resolution = ctx.options.resolution
+
+    :ok = VcReq.register_output_stream(output_id, port_number, resolution)
+
+    spec =
+      child({:rtp_input_receiver, pad_id}, %UDP.Source{
+        local_port_no: port_number,
+        local_address: @receive_streams_ip_address
+      })
+      |> via_in(:rtp_input)
+      |> get_child(:rtp_session_bin)
+      |> bin_output(Pad.ref(:output, pad_id))
+
+    {[spec: spec], %State{state | outputs: [output_id | outputs]}}
   end
 
   @impl true

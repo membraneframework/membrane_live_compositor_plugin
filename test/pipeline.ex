@@ -12,7 +12,10 @@ defmodule Membrane.VideoCompositor.Pipeline do
       |> child(:video_parser, %Membrane.H264.FFmpeg.Parser{framerate: {30, 1}, alignment: :nal})
       |> child({:realtimer, 1}, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 1))
-      |> child(:video_compositor, %Membrane.VideoCompositor{framerate: {30, 1}})
+      |> child(:video_compositor, %Membrane.VideoCompositor{
+        framerate: 30,
+        handler: Membrane.VideoCompositor.SimpleHandler
+      })
 
     {[spec: spec], %{}}
   end

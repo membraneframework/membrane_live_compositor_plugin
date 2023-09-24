@@ -1,8 +1,12 @@
 defmodule Membrane.VideoCompositor.Request do
   @moduledoc false
 
+  alias Membrane.VideoCompositor
+
   @video_compositor_server_ip {127, 0, 0, 1}
   @video_compositor_server_port 8001
+
+  @receive_streams_ip_address {127, 0, 0, 2}
 
   @spec init(non_neg_integer(), Membrane.Time.t(), boolean()) :: :ok | {:error, String.t()}
   def init(framerate, stream_fallback_timeout, init_web_renderer?) do
@@ -45,7 +49,7 @@ defmodule Membrane.VideoCompositor.Request do
     end
   end
 
-  @spec register_input_stream(String.t(), non_neg_integer()) ::
+  @spec register_input_stream(VideoCompositor.input_id(), VideoCompositor.port_number()) ::
           :ok
           | {:error, Req.Response.t() | Exception.t()}
   def register_input_stream(input_id, port_number) do
@@ -68,9 +72,13 @@ defmodule Membrane.VideoCompositor.Request do
     end
   end
 
-  @spec register_output_stream(String.t(), non_neg_integer(), Resolution.t()) ::
+  @spec register_output_stream(
+          VideoCompositor.output_id(),
+          VideoCompositor.port_number(),
+          Resolution.t()
+        ) ::
           :ok | {:error, Req.Response.t() | Exception.t()}
-  defp register_output_stream(output_id, port_number, resolution) do
+  def register_output_stream(output_id, port_number, resolution) do
     vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
 
     req_result =
@@ -93,5 +101,16 @@ defmodule Membrane.VideoCompositor.Request do
       {:ok, resp} -> {:error, resp}
       {:error, exception} -> {:error, exception}
     end
+  end
+
+  @spec ip_to_url(VideoCompositor.ip(), VideoCompositor.port_number()) :: String.t()
+  def ip_to_url(ip, port_number) do
+    ip_str = ip_to_str(ip)
+    "http://#{ip_str}:#{port_number}"
+  end
+
+  @spec ip_to_str(VideoCompositor.ip()) :: String.t()
+  def ip_to_str({ip_0, ip_1, ip_2, ip_3}) do
+    "#{ip_0}.#{ip_1}.#{ip_2}.#{ip_3}"
   end
 end
