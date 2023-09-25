@@ -6,7 +6,9 @@ defmodule Membrane.VideoCompositor.SimpleHandler do
   alias Membrane.VideoCompositor.Scene
 
   @impl true
-  def handle_pads_change(inputs, outputs, state) do
+  def handle_pads_change(ctx, state) do
+    input_pads = Enum.map(ctx.inputs, fn input_ctx -> input_ctx.input_id end)
+
     tailed_layout = %{
       node_id: "layout",
       type: "built-in",
@@ -16,10 +18,13 @@ defmodule Membrane.VideoCompositor.SimpleHandler do
         width: 1920,
         height: 1080
       },
-      input_pads: inputs
+      input_pads: input_pads
     }
 
-    outputs = Enum.map(outputs, fn output_id -> %{output_id: output_id, input_pad: "layout"} end)
+    outputs =
+      Enum.map(ctx.outputs, fn output_ctx ->
+        %{output_id: output_ctx.output_id, input_pad: "layout"}
+      end)
 
     {:update_scene, %Scene{nodes: [tailed_layout], outputs: outputs}, state}
   end

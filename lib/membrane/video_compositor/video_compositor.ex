@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor do
 
   alias Req
   alias Membrane.{Pad, RTP, UDP}
-  alias Membrane.VideoCompositor.{Resolution, State}
+  alias Membrane.VideoCompositor.{Handler, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
 
   @typedoc """
@@ -34,7 +34,7 @@ defmodule Membrane.VideoCompositor do
 
   # TODO choose server ip
   def_options handler: [
-                spec: Membrane.VideoCompositor.Handler.t(),
+                spec: Handler.t(),
                 description:
                   "Module implementing `#{Membrane.VideoCompositor.Handler}` behaviour. 
                   Used for updating [Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)."
@@ -104,20 +104,17 @@ defmodule Membrane.VideoCompositor do
         }
       })
 
-    {[spec: spec], %State{inputs: [], outputs: []}}
+    {[spec: spec], %State{inputs: [], outputs: [], handler_state: %{}, handler: opt.handler}}
   end
 
   @impl true
-  def handle_pad_added(Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
+  def handle_pad_added(pad_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     port_number = input_port(length(inputs))
-    input_id = ctx.options.input_id
-
-    # TODO better errors in returns
-    :ok = VcReq.register_input_stream(input_id, port_number)
+    state = add_input(state, pad_ref, ctx.options.input_id, port_number)
 
     spec =
-      bin_input(Pad.ref(:input, pad_id))
-      |> via_in(Pad.ref(:input, pad_id),
+      bin_input(pad_ref)
+      |> via_in(pad_ref,
         options: [payloader: RTP.H264.Payloader]
       )
       |> get_child(:rtp_session_bin)
@@ -127,7 +124,7 @@ defmodule Membrane.VideoCompositor do
         destination_address: @send_streams_ip_address
       })
 
-    {[spec: spec], %State{state | inputs: [input_id | inputs]}}
+    {[spec: spec], state}
   end
 
   @impl true
@@ -153,6 +150,12 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
     :ok = VcReq.start_composing()
+    {[], state}
+  end
+
+  # TODO handle other parent notifications
+  @impl true
+  def handle_parent_notification(_notification, _ctx, state = %State{}) do
     {[], state}
   end
 
@@ -191,6 +194,26 @@ defmodule Membrane.VideoCompositor do
       0 -> :ok
       _else -> {:error, build_process_helper_result}
     end
+  end
+
+  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), port_number()) :: State.t()
+  defp add_input(state = %State{inputs: inputs}, input_ref, input_id, port_number) do
+    :ok = VcReq.register_input_stream(input_id, port_number)
+
+    input_ctx = %{pad_ref: input_ref, input_id: input_id}
+    state = %State{state | inputs: [input_ctx | inputs]}
+
+    state =
+      case State.call_handle_pads_change(state) do
+        {:update_scene, new_scene, state} ->
+          :ok = VcReq.update_scene(new_scene)
+          state
+
+        state ->
+          state
+      end
+
+    state
   end
 
   @spec input_port(non_neg_integer()) :: non_neg_integer()

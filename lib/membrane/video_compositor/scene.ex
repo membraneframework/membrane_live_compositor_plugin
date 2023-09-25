@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor.Scene do
   @type node_spec :: map()
   @type output_spec :: %{
           output_id: Membrane.VideoCompositor.output_id(),
-          input_pad: node_spec()
+          input_pad: String.t()
         }
 
   @type t :: %__MODULE__{

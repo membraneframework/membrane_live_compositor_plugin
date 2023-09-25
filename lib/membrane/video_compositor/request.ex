@@ -2,6 +2,7 @@ defmodule Membrane.VideoCompositor.Request do
   @moduledoc false
 
   alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.Scene
 
   @video_compositor_server_ip {127, 0, 0, 1}
   @video_compositor_server_port 8001
@@ -24,11 +25,7 @@ defmodule Membrane.VideoCompositor.Request do
         }
       )
 
-    case req_result do
-      {:ok, %Req.Response{status: 200}} -> :ok
-      {:ok, resp} -> {:error, resp}
-      {:error, exception} -> {:error, exception}
-    end
+    handle_req_result(req_result)
   end
 
   @spec start_composing() :: :ok | {:error, String.t()}
@@ -42,11 +39,23 @@ defmodule Membrane.VideoCompositor.Request do
         }
       )
 
-    case req_result do
-      {:ok, %Req.Response{status: 200}} -> :ok
-      {:ok, resp} -> {:error, resp}
-      {:error, exception} -> {:error, exception}
-    end
+    handle_req_result(req_result)
+  end
+
+  @spec update_scene(Scene.t()) :: :ok | {:error, Req.Response.t() | Exception.t()}
+  def update_scene(new_scene) do
+    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
+
+    req_result =
+      Req.post(vc_url,
+        json: %{
+          type: "update_scene",
+          nodes: new_scene.nodes,
+          outputs: new_scene.outputs
+        }
+      )
+
+    handle_req_result(req_result)
   end
 
   @spec register_input_stream(VideoCompositor.input_id(), VideoCompositor.port_number()) ::
@@ -65,11 +74,7 @@ defmodule Membrane.VideoCompositor.Request do
         }
       )
 
-    case req_result do
-      {:ok, %Req.Response{status: 200}} -> :ok
-      {:ok, resp} -> {:error, resp}
-      {:error, exception} -> {:error, exception}
-    end
+    handle_req_result(req_result)
   end
 
   @spec register_output_stream(
@@ -96,6 +101,10 @@ defmodule Membrane.VideoCompositor.Request do
         }
       )
 
+    handle_req_result(req_result)
+  end
+
+  defp handle_req_result(req_result) do
     case req_result do
       {:ok, %Req.Response{status: 200}} -> :ok
       {:ok, resp} -> {:error, resp}
