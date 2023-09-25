@@ -107,10 +107,10 @@ defmodule Membrane.VideoCompositor do
     {[spec: spec], %State{inputs: [], outputs: [], handler_state: %{}, handler: opt.handler}}
   end
 
+  # TODO handle pad removed
   @impl true
   def handle_pad_added(pad_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
-    port_number = input_port(length(inputs))
-    state = add_input(state, pad_ref, ctx.options.input_id, port_number)
+    state = add_input(state, pad_ref, ctx.options)
 
     spec =
       bin_input(pad_ref)
@@ -120,7 +120,7 @@ defmodule Membrane.VideoCompositor do
       |> get_child(:rtp_session_bin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
       |> child({:rtp_sender, pad_id}, %UDP.Sink{
-        destination_port_no: port_number,
+        destination_port_no: get_port(length(inputs)),
         destination_address: @send_streams_ip_address
       })
 
@@ -128,23 +128,23 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_pad_added(Pad.ref(:output, pad_id), ctx, state = %State{outputs: outputs}) do
-    port_number = output_port(length(outputs))
-    output_id = ctx.options.output_id
-    resolution = ctx.options.resolution
-
-    :ok = VcReq.register_output_stream(output_id, port_number, resolution)
+  def handle_pad_added(
+        output_ref = Pad.ref(:output, pad_id),
+        ctx,
+        state = %State{outputs: outputs}
+      ) do
+    state = add_output(state, output_ref, ctx.options)
 
     spec =
       child({:rtp_input_receiver, pad_id}, %UDP.Source{
-        local_port_no: port_number,
+        local_port_no: get_port(length(outputs)),
         local_address: @receive_streams_ip_address
       })
       |> via_in(:rtp_input)
       |> get_child(:rtp_session_bin)
       |> bin_output(Pad.ref(:output, pad_id))
 
-    {[spec: spec], %State{state | outputs: [output_id | outputs]}}
+    {[spec: spec], state}
   end
 
   @impl true
@@ -196,33 +196,43 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), port_number()) :: State.t()
-  defp add_input(state = %State{inputs: inputs}, input_ref, input_id, port_number) do
+  @spec add_input(State.t(), Membrane.Pad.ref(), map()) :: State.t()
+  defp add_input(state = %State{inputs: inputs}, input_ref, pad_options) do
+    port_number = get_port(length(inputs))
+    input_id = pad_options.input_id
     :ok = VcReq.register_input_stream(input_id, port_number)
 
     input_ctx = %{pad_ref: input_ref, input_id: input_id}
     state = %State{state | inputs: [input_ctx | inputs]}
 
-    state =
-      case State.call_handle_pads_change(state) do
-        {:update_scene, new_scene, state} ->
-          :ok = VcReq.update_scene(new_scene)
-          state
-
-        state ->
-          state
-      end
-
-    state
+    handle_pads_change(state)
   end
 
-  @spec input_port(non_neg_integer()) :: non_neg_integer()
-  defp input_port(input_count) do
-    8000 + input_count * 2
+  @spec add_output(State.t(), Membrane.Pad.ref(), map()) :: State.t()
+  defp add_output(state = %State{outputs: outputs}, output_ref, pad_options) do
+    port_number = get_port(length(outputs))
+    output_id = pad_options.output_id
+    :ok = VcReq.register_output_stream(output_id, port_number, pad_options.resolution)
+
+    output_ctx = %{pad_ref: output_ref, output_id: output_id}
+    state = %State{state | outputs: [output_ctx | outputs]}
+
+    handle_pads_change(state)
   end
 
-  @spec output_port(non_neg_integer()) :: non_neg_integer()
-  defp output_port(output_count) do
-    8000 + output_count * 2
+  defp handle_pads_change(state) do
+    case State.call_handle_pads_change(state) do
+      {:update_scene, new_scene, state} ->
+        :ok = VcReq.update_scene(new_scene)
+        state
+
+      state ->
+        state
+    end
+  end
+
+  @spec get_port(non_neg_integer()) :: non_neg_integer()
+  defp get_port(used_stream) do
+    8000 + used_stream * 2
   end
 end
