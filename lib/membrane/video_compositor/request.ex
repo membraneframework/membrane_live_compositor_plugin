@@ -4,17 +4,13 @@ defmodule Membrane.VideoCompositor.Request do
   alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.Scene
 
-  @video_compositor_server_ip {127, 0, 0, 1}
-  @video_compositor_server_port 8001
-
-  @receive_streams_ip_address {127, 0, 0, 2}
+  @local_host {127, 0, 0, 1}
+  @vc_url "http://127.0.0.1:8001"
 
   @spec init(non_neg_integer(), Membrane.Time.t(), boolean()) :: :ok | {:error, String.t()}
   def init(framerate, stream_fallback_timeout, init_web_renderer?) do
-    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
-
     req_result =
-      Req.post(vc_url,
+      Req.post(@vc_url,
         json: %{
           type: "init",
           web_renderer: %{
@@ -30,10 +26,8 @@ defmodule Membrane.VideoCompositor.Request do
 
   @spec start_composing() :: :ok | {:error, String.t()}
   def start_composing() do
-    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
-
     req_result =
-      Req.post(vc_url,
+      Req.post(@vc_url,
         json: %{
           type: "start"
         }
@@ -44,10 +38,8 @@ defmodule Membrane.VideoCompositor.Request do
 
   @spec update_scene(Scene.t()) :: :ok | {:error, Req.Response.t() | Exception.t()}
   def update_scene(new_scene) do
-    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
-
     req_result =
-      Req.post(vc_url,
+      Req.post(@vc_url,
         json: %{
           type: "update_scene",
           nodes: new_scene.nodes,
@@ -62,10 +54,8 @@ defmodule Membrane.VideoCompositor.Request do
           :ok
           | {:error, Req.Response.t() | Exception.t()}
   def register_input_stream(input_id, port_number) do
-    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
-
     req_result =
-      Req.post(vc_url,
+      Req.post(@vc_url,
         json: %{
           type: "register",
           entity_type: "input_stream",
@@ -85,16 +75,14 @@ defmodule Membrane.VideoCompositor.Request do
         ) ::
           :ok | {:error, Req.Response.t() | Exception.t()}
   def register_output_stream(output_id, port_number, resolution, encoder_preset) do
-    vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
-
     req_result =
-      Req.post(vc_url,
+      Req.post(@vc_url,
         json: %{
           type: "register",
           entity_type: "output_stream",
           output_id: output_id,
           port: port_number,
-          ip: ip_to_str(@receive_streams_ip_address),
+          ip: ip_to_str(@local_host),
           resolution: %{
             width: resolution.width,
             height: resolution.height

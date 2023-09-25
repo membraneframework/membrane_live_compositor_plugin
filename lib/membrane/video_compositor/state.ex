@@ -3,13 +3,14 @@ defmodule Membrane.VideoCompositor.State do
 
   alias Membrane.VideoCompositor.{Handler, Scene}
 
-  defstruct [:inputs, :outputs, :handler_state, :handler]
+  defstruct [:inputs, :outputs, :handler_state, :handler, :framerate]
 
   @type t :: %__MODULE__{
           inputs: list(Handler.input_context()),
           outputs: list(Handler.output_context()),
           handler_state: Handler.state(),
-          handler: Handler.t()
+          handler: Handler.t(),
+          framerate: non_neg_integer()
         }
 
   @spec handler_context(t()) :: Handler.Context.t()
