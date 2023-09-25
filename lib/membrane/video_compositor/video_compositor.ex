@@ -196,7 +196,7 @@ defmodule Membrane.VideoCompositor do
   defp handle_pads_change(state) do
     case State.call_handle_pads_change(state) do
       {:update_scene, new_scene, state} ->
-        :ok = VcReq.update_scene(new_scene)
+        update_scene(new_scene)
         state
 
       state ->
@@ -207,5 +207,21 @@ defmodule Membrane.VideoCompositor do
   @spec get_port(non_neg_integer()) :: port_number()
   defp get_port(used_stream) do
     8000 + used_stream * 2
+  end
+
+  @spec update_scene(Scene.t()) :: nil
+  defp update_scene(new_scene) do
+    :ok =
+      case VcReq.update_scene(new_scene) do
+        :ok ->
+          :ok
+
+        {:error, %Req.Response{body: body}} ->
+          Membrane.Logger.info("Failed to update scene. Error: #{body}")
+          :ok
+
+        {:error, _else} ->
+          :error
+      end
   end
 end
