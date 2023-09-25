@@ -9,9 +9,6 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.VideoCompositor.{Handler, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
 
-  @typedoc """
-  Preset for an encoder. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
-  """
   @type encoder_preset ::
           :ultrafast
           | :superfast
@@ -84,12 +81,18 @@ defmodule Membrane.VideoCompositor do
       output_id: [
         spec: output_id(),
         description: "Output identifier."
+      ],
+      encoder_preset: [
+        spec: encoder_preset(),
+        description:
+          "Preset for an encoder. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.",
+        default: :medium
       ]
     ]
 
   @impl true
   def handle_init(_ctx, opt) do
-    :ok = start_video_compositor_server()
+    # :ok = start_video_compositor_server()
 
     :ok = VcReq.init(opt.framerate, opt.stream_fallback_timeout, opt.init_web_renderer?)
 
@@ -159,43 +162,6 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  # TODO fix this, it's so awful. Compilation shouldn't take place in handle_init
-  @spec start_video_compositor_server() :: :ok
-  defp start_video_compositor_server() do
-    :ok = build_process_helper()
-
-    spawn(fn ->
-      System.cmd("cargo", [
-        "run",
-        "--manifest-path",
-        "./deps/video_compositor/Cargo.toml",
-        "-r",
-        "--bin",
-        "video_compositor"
-      ])
-    end)
-
-    :ok
-  end
-
-  @spec build_process_helper() :: :ok | {:error, String.t()}
-  defp build_process_helper() do
-    {build_process_helper_result, build_process_helper_exit_code} =
-      System.cmd("cargo", [
-        "build",
-        "--manifest-path",
-        "./deps/video_compositor/Cargo.toml",
-        "-r",
-        "--bin",
-        "process_helper"
-      ])
-
-    case build_process_helper_exit_code do
-      0 -> :ok
-      _else -> {:error, build_process_helper_result}
-    end
-  end
-
   @spec add_input(State.t(), Membrane.Pad.ref(), map()) :: State.t()
   defp add_input(state = %State{inputs: inputs}, input_ref, pad_options) do
     port_number = get_port(length(inputs))
@@ -210,9 +176,16 @@ defmodule Membrane.VideoCompositor do
 
   @spec add_output(State.t(), Membrane.Pad.ref(), map()) :: State.t()
   defp add_output(state = %State{outputs: outputs}, output_ref, pad_options) do
-    port_number = get_port(length(outputs))
     output_id = pad_options.output_id
-    :ok = VcReq.register_output_stream(output_id, port_number, pad_options.resolution)
+    port_number = get_port(length(outputs))
+
+    :ok =
+      VcReq.register_output_stream(
+        output_id,
+        port_number,
+        pad_options.resolution,
+        pad_options.encoder_preset
+      )
 
     output_ctx = %{pad_ref: output_ref, output_id: output_id}
     state = %State{state | outputs: [output_ctx | outputs]}
@@ -231,7 +204,7 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec get_port(non_neg_integer()) :: non_neg_integer()
+  @spec get_port(non_neg_integer()) :: port_number()
   defp get_port(used_stream) do
     8000 + used_stream * 2
   end

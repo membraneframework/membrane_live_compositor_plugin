@@ -80,10 +80,11 @@ defmodule Membrane.VideoCompositor.Request do
   @spec register_output_stream(
           VideoCompositor.output_id(),
           VideoCompositor.port_number(),
-          Resolution.t()
+          Resolution.t(),
+          VideoCompositor.encoder_preset()
         ) ::
           :ok | {:error, Req.Response.t() | Exception.t()}
-  def register_output_stream(output_id, port_number, resolution) do
+  def register_output_stream(output_id, port_number, resolution, encoder_preset) do
     vc_url = ip_to_url(@video_compositor_server_ip, @video_compositor_server_port)
 
     req_result =
@@ -97,6 +98,9 @@ defmodule Membrane.VideoCompositor.Request do
           resolution: %{
             width: resolution.width,
             height: resolution.height
+          },
+          encoder_settings: %{
+            preset: encoder_preset
           }
         }
       )
