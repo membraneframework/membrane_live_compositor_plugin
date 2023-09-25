@@ -4,13 +4,13 @@ defmodule Membrane.VideoCompositor.Scene do
   defstruct [:nodes, :outputs]
 
   @type node_spec :: map()
-  @type output :: %{
+  @type output_spec :: %{
           output_id: Membrane.VideoCompositor.output_id(),
           input_pad: node_spec()
         }
 
   @type t :: %__MODULE__{
           nodes: list(node_spec()),
-          outputs: list(output())
+          outputs: list(output_spec())
         }
 end

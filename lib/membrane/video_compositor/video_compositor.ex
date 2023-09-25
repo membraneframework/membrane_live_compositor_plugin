@@ -157,11 +157,11 @@ defmodule Membrane.VideoCompositor do
   end
 
   # TODO fix this, it's so awful. Compilation shouldn't take place in handle_init
-  @spec start_video_compositor_server() :: :ok | {:error, String.t()}
+  @spec start_video_compositor_server() :: :ok
   defp start_video_compositor_server() do
     :ok = build_process_helper()
 
-    {run_result, run_exit_code} =
+    spawn(fn ->
       System.cmd("cargo", [
         "run",
         "--manifest-path",
@@ -170,11 +170,9 @@ defmodule Membrane.VideoCompositor do
         "--bin",
         "video_compositor"
       ])
+    end)
 
-    case run_exit_code do
-      0 -> :ok
-      _else -> {:error, run_result}
-    end
+    :ok
   end
 
   @spec build_process_helper() :: :ok | {:error, String.t()}
