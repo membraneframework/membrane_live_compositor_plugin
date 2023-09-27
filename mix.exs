@@ -40,11 +40,15 @@ defmodule Membrane.Template.Mixfile do
       {:video_compositor,
        git: "https://github.com/membraneframework/video_compositor", compile: false, app: false},
       # Membrane
+      ## Core 0.12.9 with increased pad output linking timeout from 5s to 100s
+      # {:membrane_core,
+      #  git: "https://github.com/WojciechBarczynski/membrane_core", override: true},
       {:membrane_core, "~> 0.12.9"},
       ## RTP
-      {:membrane_rtp_plugin, "~> 0.23.0"},
-      {:membrane_rtp_h264_plugin, "~> 0.16.0"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0"},
+      {:membrane_rtp_plugin, "~> 0.23.1"},
+      {:membrane_rtp_h264_plugin, "~> 0.18.0"},
+      {:membrane_h264_plugin, "~> 0.7.3"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
       {:membrane_udp_plugin, "~> 0.10.0"},
       # VC API requests
       {:req, "~> 0.4.0"},

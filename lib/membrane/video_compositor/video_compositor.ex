@@ -125,18 +125,24 @@ defmodule Membrane.VideoCompositor do
   # TODO handle pad removed
   @impl true
   def handle_pad_added(pad_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
-    state = add_input(state, pad_ref, ctx.options)
+    port = get_port(4000, length(inputs))
+    state = add_input(state, pad_ref, ctx.options, port)
 
     spec =
-      bin_input(pad_ref)
-      |> via_in(pad_ref,
+      bin_input(Pad.ref(:input, pad_id))
+      |> child(:filter, %Membrane.Debug.Filter{
+        handle_buffer: &IO.inspect(&1, label: "buffer"),
+        handle_stream_format: &IO.inspect(&1, label: "stream format")
+      })
+      |> via_in(Pad.ref(:input, pad_id),
         options: [payloader: RTP.H264.Payloader]
       )
       |> get_child(:rtp_sender_bin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
       |> child({:rtp_sender, pad_id}, %UDP.Sink{
-        destination_port_no: get_port(4000, length(inputs)),
-        destination_address: @local_host
+        destination_port_no: port,
+        destination_address: @local_host,
+        local_address: @local_host
       })
 
     {[spec: spec], state}
@@ -148,17 +154,16 @@ defmodule Membrane.VideoCompositor do
         ctx,
         state = %State{outputs: outputs}
       ) do
-    state = add_output(state, output_ref, ctx.options)
+    port = get_port(5000, length(outputs))
+    state = add_output(state, output_ref, ctx.options, port)
 
     spec =
       child(Pad.ref(:rtp_udp_receiver, pad_id), %UDP.Source{
-        local_port_no: get_port(5000, length(outputs)),
+        local_port_no: port,
         local_address: @local_host
       })
       |> via_in(Pad.ref(:rtp_input, pad_id))
       |> get_child(:rtp_receiver_bin)
-      |> via_out(Pad.ref(:output, pad_id), options: [depayloader: RTP.H264.Depayloader])
-      |> bin_output(output_ref)
 
     {[spec: spec], state}
   end
@@ -175,11 +180,27 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  @spec add_input(State.t(), Membrane.Pad.ref(), map()) :: State.t()
-  defp add_input(state = %State{inputs: inputs}, input_ref, pad_options) do
-    port_number = get_port(4000, length(inputs))
+  @impl true
+  def handle_child_notification({:new_rtp_stream, ssrc, _pt, _ext}, _child, _ctx, state) do
+    IO.inspect(:received_new_rtp_not)
+
+    spec =
+      get_child(:rtp_receiver_bin)
+      |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
+      |> bin_output(Pad.ref(:output, ssrc))
+
+    {[spec: spec], state}
+  end
+
+  @impl true
+  def handle_child_notification(_msg, _child, _ctx, state) do
+    {[], state}
+  end
+
+  @spec add_input(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port()) :: State.t()
+  defp add_input(state = %State{inputs: inputs}, input_ref, pad_options, port) do
     input_id = pad_options.input_id
-    :ok = VcReq.register_input_stream(input_id, port_number)
+    :ok = VcReq.register_input_stream(input_id, port)
 
     input_ctx = %{pad_ref: input_ref, input_id: input_id}
     state = %State{state | inputs: [input_ctx | inputs]}
@@ -187,15 +208,15 @@ defmodule Membrane.VideoCompositor do
     handle_pads_change(state)
   end
 
-  @spec add_output(State.t(), Membrane.Pad.ref(), map()) :: State.t()
-  defp add_output(state = %State{outputs: outputs}, output_ref, pad_options) do
+  @spec add_output(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port_number()) ::
+          State.t()
+  defp add_output(state = %State{outputs: outputs}, output_ref, pad_options, port) do
     output_id = pad_options.output_id
-    port_number = get_port(5000, length(outputs))
 
     :ok =
       VcReq.register_output_stream(
         output_id,
-        port_number,
+        port,
         pad_options.resolution,
         pad_options.encoder_preset
       )
@@ -218,8 +239,8 @@ defmodule Membrane.VideoCompositor do
   end
 
   @spec get_port(non_neg_integer(), non_neg_integer()) :: port_number()
-  defp get_port(range_start, used_stream) do
-    range_start + used_stream * 2
+  defp get_port(range_start, used_streams) do
+    range_start + used_streams * 2
   end
 
   @spec update_scene(Scene.t()) :: nil
