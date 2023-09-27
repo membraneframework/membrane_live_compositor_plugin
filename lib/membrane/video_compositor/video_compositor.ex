@@ -70,7 +70,7 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    accepted_format: %Membrane.H264{},
+    accepted_format: %Membrane.H264{alignment: :nalu},
     availability: :on_request,
     options: [
       resolution: [
@@ -100,16 +100,8 @@ defmodule Membrane.VideoCompositor do
     end
 
     spec = [
-      child(:rtp_sender_bin, %RTP.SessionBin{
-        fmt_mapping: %{
-          96 => {:H264, 90_000}
-        }
-      }),
-      child(:rtp_receiver_bin, %RTP.SessionBin{
-        fmt_mapping: %{
-          96 => {:H264, 90_000}
-        }
-      })
+      child(:rtp_sender_bin, RTP.SessionBin),
+      child(:rtp_receiver_bin, RTP.SessionBin)
     ]
 
     {[spec: spec],
@@ -130,19 +122,14 @@ defmodule Membrane.VideoCompositor do
 
     spec =
       bin_input(Pad.ref(:input, pad_id))
-      |> child(:filter, %Membrane.Debug.Filter{
-        handle_buffer: &IO.inspect(&1, label: "buffer"),
-        handle_stream_format: &IO.inspect(&1, label: "stream format")
-      })
       |> via_in(Pad.ref(:input, pad_id),
         options: [payloader: RTP.H264.Payloader]
       )
       |> get_child(:rtp_sender_bin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
-      |> child({:rtp_sender, pad_id}, %UDP.Sink{
+      |> child({:upd_sink, pad_id}, %UDP.Sink{
         destination_port_no: port,
-        destination_address: @local_host,
-        local_address: @local_host
+        destination_address: @local_host
       })
 
     {[spec: spec], state}
@@ -158,7 +145,7 @@ defmodule Membrane.VideoCompositor do
     state = add_output(state, output_ref, ctx.options, port)
 
     spec =
-      child(Pad.ref(:rtp_udp_receiver, pad_id), %UDP.Source{
+      child(Pad.ref(:upd_source, pad_id), %UDP.Source{
         local_port_no: port,
         local_address: @local_host
       })
@@ -182,7 +169,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_child_notification({:new_rtp_stream, ssrc, _pt, _ext}, _child, _ctx, state) do
-    IO.inspect(:received_new_rtp_not)
+    IO.inspect(:new_rtp_stream)
 
     spec =
       get_child(:rtp_receiver_bin)

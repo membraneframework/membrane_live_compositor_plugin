@@ -12,7 +12,11 @@ defmodule Membrane.VideoCompositor.Pipeline do
       child(:video_src, %Membrane.File.Source{
         location: "samples/testsrc.h264"
       })
-      |> child(:video_parser, %H264.Parser{generate_best_effort_timestamps: %{framerate: {30, 1}}})
+      |> child(:input_parser, %H264.Parser{
+        output_alignment: :nalu,
+        generate_best_effort_timestamps: %{framerate: {30, 1}}
+      })
+      |> child(:realtimer, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 1), options: [input_id: "input_1"])
       |> child(:video_compositor, %Membrane.VideoCompositor{
         framerate: 30,
@@ -21,9 +25,9 @@ defmodule Membrane.VideoCompositor.Pipeline do
       |> via_out(Pad.ref(:output, 1),
         options: [resolution: %Resolution{width: 1280, height: 720}, output_id: "output_1"]
       )
-      |> child(:sink, %Membrane.File.Sink{
-        location: "output.h264"
-      })
+      |> child(:output_parser, H264.Parser)
+      |> child(:output_decoder, H264.FFmpeg.Decoder)
+      |> child(:sdl_player, Membrane.SDL.Player)
 
     {[spec: spec], %{}}
   end

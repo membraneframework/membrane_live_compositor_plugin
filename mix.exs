@@ -56,6 +56,7 @@ defmodule Membrane.Template.Mixfile do
       # Test
       {:membrane_file_plugin, "~> 0.15.0"},
       {:membrane_realtimer_plugin, "~> 0.7.0"},
+      {:membrane_sdl_plugin, "~> 0.16.0"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

@@ -135,7 +135,7 @@
         {Credo.Check.Warning.BoolOperationOnSameValues, []},
         {Credo.Check.Warning.ExpensiveEmptyEnumCheck, []},
         {Credo.Check.Warning.IExPry, []},
-        {Credo.Check.Warning.IoInspect, []},
+        # {Credo.Check.Warning.IoInspect, []},
         {Credo.Check.Warning.LazyLogging, false},
         {Credo.Check.Warning.MixEnv, []},
         {Credo.Check.Warning.OperationOnSameValues, []},
