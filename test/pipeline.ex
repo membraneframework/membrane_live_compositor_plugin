@@ -3,8 +3,8 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   use Membrane.Pipeline
 
-  alias Membrane.VideoCompositor.Resolution
   alias Membrane.H264
+  alias Membrane.VideoCompositor.Resolution
 
   @impl true
   def handle_init(_ctx, _opt) do
@@ -22,13 +22,21 @@ defmodule Membrane.VideoCompositor.Pipeline do
         framerate: 30,
         handler: Membrane.VideoCompositor.SimpleHandler
       })
-      |> via_out(Pad.ref(:output, 1),
+
+    # output have to be added after init of VideoCompositor
+    spec_2 =
+      get_child(:video_compositor)
+      |> via_out(:output,
         options: [resolution: %Resolution{width: 1280, height: 720}, output_id: "output_1"]
       )
-      |> child(:output_parser, H264.Parser)
       |> child(:output_decoder, H264.FFmpeg.Decoder)
       |> child(:sdl_player, Membrane.SDL.Player)
 
-    {[spec: spec], %{}}
+    {[spec: spec, spec: spec_2], %{}}
+  end
+
+  @impl true
+  def handle_child_notification(_msg, _child, _ctx, state) do
+    {[], state}
   end
 end

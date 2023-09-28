@@ -70,7 +70,7 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    accepted_format: %Membrane.H264{alignment: :nalu},
+    accepted_format: %Membrane.H264{alignment: :au},
     availability: :on_request,
     options: [
       resolution: [
@@ -99,12 +99,7 @@ defmodule Membrane.VideoCompositor do
       :ok = VcReq.start_composing()
     end
 
-    spec = [
-      child(:rtp_sender_bin, RTP.SessionBin),
-      child(:rtp_receiver_bin, RTP.SessionBin)
-    ]
-
-    {[spec: spec],
+    {[],
      %State{
        inputs: [],
        outputs: [],
@@ -114,7 +109,6 @@ defmodule Membrane.VideoCompositor do
      }}
   end
 
-  # TODO handle pad removed
   @impl true
   def handle_pad_added(pad_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     port = get_port(4000, length(inputs))
@@ -125,7 +119,7 @@ defmodule Membrane.VideoCompositor do
       |> via_in(Pad.ref(:input, pad_id),
         options: [payloader: RTP.H264.Payloader]
       )
-      |> get_child(:rtp_sender_bin)
+      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
       |> child({:upd_sink, pad_id}, %UDP.Sink{
         destination_port_no: port,
@@ -150,7 +144,7 @@ defmodule Membrane.VideoCompositor do
         local_address: @local_host
       })
       |> via_in(Pad.ref(:rtp_input, pad_id))
-      |> get_child(:rtp_receiver_bin)
+      |> child({:rtp_receiver, pad_id}, RTP.SessionBin)
 
     {[spec: spec], state}
   end
@@ -168,13 +162,19 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_child_notification({:new_rtp_stream, ssrc, _pt, _ext}, _child, _ctx, state) do
-    IO.inspect(:new_rtp_stream)
-
+  def handle_child_notification(
+        {:new_rtp_stream, ssrc, _pt, _ext},
+        {:rtp_receiver, pad_id},
+        _ctx,
+        state
+      ) do
     spec =
-      get_child(:rtp_receiver_bin)
+      get_child({:rtp_receiver, pad_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
-      |> bin_output(Pad.ref(:output, ssrc))
+      |> child({:output_parser, pad_id}, %Membrane.H264.Parser{
+        generate_best_effort_timestamps: %{framerate: {30, 1}}
+      })
+      |> bin_output(Pad.ref(:output, pad_id))
 
     {[spec: spec], state}
   end
@@ -239,7 +239,7 @@ defmodule Membrane.VideoCompositor do
 
         {:error, %Req.Response{body: body}} ->
           Membrane.Logger.info("Failed to update scene. Error: #{body}")
-          :ok
+          :error
 
         {:error, _else} ->
           :error
