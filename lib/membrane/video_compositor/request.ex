@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor.Request do
   alias Membrane.VideoCompositor.Scene
 
   @local_host {127, 0, 0, 1}
+  # TODO make it customizable
   @vc_url "http://127.0.0.1:8001"
 
   @type req_result :: :ok | {:error, Req.Response.t() | Exception.t()}

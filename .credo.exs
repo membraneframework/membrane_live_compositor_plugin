@@ -87,8 +87,8 @@
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
         #
-        # {Credo.Check.Design.TagTODO, [exit_status: 0]},
-        # {Credo.Check.Design.TagFIXME, []},
+        {Credo.Check.Design.TagTODO, [exit_status: 0]},
+        {Credo.Check.Design.TagFIXME, []},
 
         #
         ## Readability Checks
@@ -135,7 +135,7 @@
         {Credo.Check.Warning.BoolOperationOnSameValues, []},
         {Credo.Check.Warning.ExpensiveEmptyEnumCheck, []},
         {Credo.Check.Warning.IExPry, []},
-        # {Credo.Check.Warning.IoInspect, []},
+        {Credo.Check.Warning.IoInspect, []},
         {Credo.Check.Warning.LazyLogging, false},
         {Credo.Check.Warning.MixEnv, []},
         {Credo.Check.Warning.OperationOnSameValues, []},

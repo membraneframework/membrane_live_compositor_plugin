@@ -28,7 +28,6 @@ defmodule Membrane.VideoCompositor do
 
   @local_host {127, 0, 0, 1}
 
-  # TODO choose server ip
   def_options handler: [
                 spec: Handler.t(),
                 description:
@@ -266,7 +265,7 @@ defmodule Membrane.VideoCompositor do
 
   @spec get_port(non_neg_integer(), non_neg_integer()) :: port_number()
   defp get_port(range_start, used_streams) do
-    range_start + used_streams * 2
+    range_start + 2 * used_streams
   end
 
   @spec update_scene(Scene.t()) :: nil
