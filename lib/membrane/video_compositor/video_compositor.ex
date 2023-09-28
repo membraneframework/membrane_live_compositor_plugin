@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    accepted_format: %Membrane.H264{alignment: :au},
+    accepted_format: %Membrane.H264{},
     availability: :on_request,
     options: [
       resolution: [
@@ -181,9 +181,6 @@ defmodule Membrane.VideoCompositor do
     spec =
       get_child({:rtp_receiver, pad_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
-      |> child({:output_parser, pad_id}, %Membrane.H264.Parser{
-        generate_best_effort_timestamps: %{framerate: {30, 1}}
-      })
       |> bin_output(Pad.ref(:output, pad_id))
 
     {[spec: spec], state}

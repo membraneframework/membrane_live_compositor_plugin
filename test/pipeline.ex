@@ -44,6 +44,9 @@ defmodule Membrane.VideoCompositor.Pipeline do
       |> via_out(:output,
         options: [resolution: %Resolution{width: 1280, height: 720}, output_id: "output_1"]
       )
+      |> child(:output_parser, %H264.Parser{
+        generate_best_effort_timestamps: %{framerate: {30, 1}}
+      })
       |> child(:output_decoder, H264.FFmpeg.Decoder)
       |> child(:sdl_player, Membrane.SDL.Player)
 
