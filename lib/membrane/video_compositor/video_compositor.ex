@@ -150,12 +150,23 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
+  def handle_pad_removed(input_ref = Pad.ref(:input, pad_id), _ctx, state = %State{}) do
+    state = remove_input(state, input_ref)
+    {[remove_child: [{:rtp_sender, pad_id}, {:upd_sink, pad_id}]], state}
+  end
+
+  @impl true
+  def handle_pad_removed(output_ref = Pad.ref(:output, pad_id), _ctx, state = %State{}) do
+    state = remove_output(state, output_ref)
+    {[remove_child: [{:rtp_receiver, pad_id}, {:upd_source, pad_id}]], state}
+  end
+
+  @impl true
   def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
     :ok = VcReq.start_composing()
     {[], state}
   end
 
-  # TODO handle other parent notifications - call callback
   @impl true
   def handle_parent_notification(_notification, _ctx, state = %State{}) do
     {[], state}
@@ -193,6 +204,34 @@ defmodule Membrane.VideoCompositor do
     state = %State{state | inputs: [input_ctx | inputs]}
 
     handle_pads_change(state)
+  end
+
+  @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
+  defp remove_input(state = %State{inputs: inputs}, input_ref) do
+    input_id =
+      inputs
+      |> Enum.find(fn input_ctx -> input_ctx.pad_ref == input_ref end)
+      |> then(fn input_ctx -> input_ctx.input_id end)
+
+    inputs = Enum.reject(inputs, fn input_ctx -> input_ctx.pad_ref == input_ref end)
+    state = %State{state | inputs: inputs} |> handle_pads_change()
+
+    :ok = VcReq.unregister_input_stream(input_id)
+    state
+  end
+
+  @spec remove_output(State.t(), Membrane.Pad.ref()) :: State.t()
+  defp remove_output(state = %State{outputs: outputs}, output_ref) do
+    output_id =
+      outputs
+      |> Enum.find(fn output_ctx -> output_ctx.pad_ref == output_ref end)
+      |> then(fn output_ctx -> output_ctx.output_id end)
+
+    outputs = Enum.reject(outputs, fn output_ctx -> output_ctx.pad_ref == output_ref end)
+    state = %State{state | outputs: outputs} |> handle_pads_change()
+
+    :ok = VcReq.unregister_input_stream(output_id)
+    state
   end
 
   @spec add_output(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port_number()) ::

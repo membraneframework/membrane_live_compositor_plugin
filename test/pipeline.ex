@@ -8,20 +8,35 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
   @impl true
   def handle_init(_ctx, _opt) do
-    spec =
-      child(:video_src, %Membrane.File.Source{
+    spec = [
+      # VideoCompositor
+      child(:video_compositor, %Membrane.VideoCompositor{
+        framerate: 30,
+        handler: Membrane.VideoCompositor.SimpleHandler
+      }),
+      # First input
+      child({:video_src, 1}, %Membrane.File.Source{
         location: "samples/testsrc.h264"
       })
-      |> child(:input_parser, %H264.Parser{
+      |> child({:input_parser, 1}, %H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
-      |> child(:realtimer, Membrane.Realtimer)
+      |> child({:realtimer, 1}, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 1), options: [input_id: "input_1"])
-      |> child(:video_compositor, %Membrane.VideoCompositor{
-        framerate: 30,
-        handler: Membrane.VideoCompositor.SimpleHandler
+      |> get_child(:video_compositor),
+      # Second input
+      child({:video_src, 2}, %Membrane.File.Source{
+        location: "samples/testsrc.h264"
       })
+      |> child({:input_parser, 2}, %H264.Parser{
+        output_alignment: :nalu,
+        generate_best_effort_timestamps: %{framerate: {30, 1}}
+      })
+      |> child({:realtimer, 2}, Membrane.Realtimer)
+      |> via_in(Pad.ref(:input, 2), options: [input_id: "input_2"])
+      |> get_child(:video_compositor)
+    ]
 
     # output have to be added after init of VideoCompositor
     spec_2 =
