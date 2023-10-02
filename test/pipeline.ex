@@ -52,9 +52,4 @@ defmodule Membrane.VideoCompositor.Pipeline do
 
     {[spec: spec, spec: spec_2], %{}}
   end
-
-  @impl true
-  def handle_child_notification(_msg, _child, _ctx, state) do
-    {[], state}
-  end
 end

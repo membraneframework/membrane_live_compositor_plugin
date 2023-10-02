@@ -32,4 +32,9 @@ defmodule Membrane.VideoCompositor.SimpleHandler do
       state
     end
   end
+
+  @impl true
+  def handle_info(_msg, _ctx, state) do
+    state
+  end
 end

@@ -36,4 +36,20 @@ defmodule Membrane.VideoCompositor.State do
         }
     end
   end
+
+  @spec call_handle_info(any(), t()) :: {:update_scene, Scene.t(), t()} | t()
+  def call_handle_info(msg, state) do
+    handler_ctx = handler_context(state)
+
+    case state.handler.handle_info(msg, handler_ctx, state.handler_state) do
+      {:update_scene, new_scene, handler_state} ->
+        {:update_scene, new_scene, %__MODULE__{state | handler_state: handler_state}}
+
+      handler_state ->
+        %__MODULE__{
+          state
+          | handler_state: handler_state
+        }
+    end
+  end
 end

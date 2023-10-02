@@ -35,10 +35,18 @@ defmodule Membrane.VideoCompositor.Handler do
   """
   @type handler_state :: any()
 
+  @typedoc """
+  Return from callback. Scene update is applied when {:update_scene, Scene.t(), handler_state()} is returned.
+  """
+  @type callback_return :: {:update_scene, Scene.t(), handler_state()} | handler_state()
+
   @callback handle_pads_change(
-              ctx :: __MODULE__.Context,
+              ctx :: __MODULE__.Context.t(),
               state :: handler_state()
             ) ::
               {:update_scene, Scene.t(), handler_state()} | handler_state()
-  # TODO handle info / message callback
+
+  # TODO add default impl for this callback
+  @callback handle_info(msg :: any(), ctx :: __MODULE__.Context.t(), state :: handler_state()) ::
+              {:update_scene, Scene.t(), handler_state()} | handler_state()
 end

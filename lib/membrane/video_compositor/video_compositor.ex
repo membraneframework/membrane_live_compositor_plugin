@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor do
 
   alias Req
   alias Membrane.{Pad, RTP, UDP}
-  alias Membrane.VideoCompositor.{Handler, Resolution, State}
+  alias Membrane.VideoCompositor.{Handler, Resolution, Scene, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
 
   @type encoder_preset ::
@@ -59,7 +59,7 @@ defmodule Membrane.VideoCompositor do
               ]
 
   def_input_pad :input,
-    accepted_format: %Membrane.H264{},
+    accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
     availability: :on_request,
     options: [
       input_id: [
@@ -69,7 +69,7 @@ defmodule Membrane.VideoCompositor do
     ]
 
   def_output_pad :output,
-    accepted_format: %Membrane.H264{},
+    accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
     availability: :on_request,
     options: [
       resolution: [
@@ -172,6 +172,18 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
+  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
+    VcReq.update_scene(scene)
+    {[], state}
+  end
+
+  @impl true
+  def handle_parent_notification(msg, _ctx, state = %State{}) do
+    state = handle_msg(msg, state)
+    {[], state}
+  end
+
+  @impl true
   def handle_child_notification(
         {:new_rtp_stream, ssrc, _pt, _ext},
         {:rtp_receiver, pad_id},
@@ -226,7 +238,7 @@ defmodule Membrane.VideoCompositor do
     outputs = Enum.reject(outputs, fn output_ctx -> output_ctx.pad_ref == output_ref end)
     state = %State{state | outputs: outputs} |> handle_pads_change()
 
-    :ok = VcReq.unregister_input_stream(output_id)
+    :ok = VcReq.unregister_output_stream(output_id)
     state
   end
 
@@ -249,8 +261,21 @@ defmodule Membrane.VideoCompositor do
     handle_pads_change(state)
   end
 
+  @spec handle_pads_change(State.t()) :: State.t()
   defp handle_pads_change(state) do
     case State.call_handle_pads_change(state) do
+      {:update_scene, new_scene, state} ->
+        update_scene(new_scene)
+        state
+
+      state ->
+        state
+    end
+  end
+
+  @spec handle_msg(any(), State.t()) :: State.t()
+  defp handle_msg(msg, state) do
+    case State.call_handle_info(msg, state) do
       {:update_scene, new_scene, state} ->
         update_scene(new_scene)
         state
@@ -274,7 +299,7 @@ defmodule Membrane.VideoCompositor do
 
         {:error, %Req.Response{body: body}} ->
           Membrane.Logger.info("Failed to update scene. Error: #{body}")
-          :error
+          :ok
 
         {:error, _else} ->
           :error
