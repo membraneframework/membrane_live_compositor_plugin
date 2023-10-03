@@ -203,6 +203,14 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
+  # @spec start_vc_server() :: nil
+  # defp start_vc_server() do
+  #   path = case :os.type do
+  #     {:unix, :darwin} ->
+  #       "./deps/video_compositor"
+  #   end
+  # end
+
   @spec add_input(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port()) :: State.t()
   defp add_input(state = %State{inputs: inputs}, input_ref, pad_options, port) do
     input_id = pad_options.input_id

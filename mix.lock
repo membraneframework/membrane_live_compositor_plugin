@@ -49,5 +49,5 @@
   "telemetry": {:hex, :telemetry, "1.2.1", "68fdfe8d8f05a8428483a97d7aab2f268aaff24b49e0f599faa091f1d4e7f61c", [:rebar3], [], "hexpm", "dad9ce9d8effc621708f99eac538ef1cbe05d6a874dd741de2e689c47feafed5"},
   "telemetry_metrics": {:hex, :telemetry_metrics, "0.6.1", "315d9163a1d4660aedc3fee73f33f1d355dcc76c5c3ab3d59e76e3edf80eef1f", [:mix], [{:telemetry, "~> 0.4 or ~> 1.0", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm", "7be9e0871c41732c233be71e4be11b96e56177bf15dde64a8ac9ce72ac9834c6"},
   "unifex": {:hex, :unifex, "1.1.0", "26b1bcb6c3b3454e1ea15f85b2e570aaa5b5c609566aa9f5c2e0a8b213379d6b", [:mix], [{:bunch, "~> 1.0", [hex: :bunch, repo: "hexpm", optional: false]}, {:bundlex, "~> 1.0", [hex: :bundlex, repo: "hexpm", optional: false]}, {:shmex, "~> 0.5.0", [hex: :shmex, repo: "hexpm", optional: false]}], "hexpm", "d8f47e9e3240301f5b20eec5792d1d4341e1a3a268d94f7204703b48da4aaa06"},
-  "video_compositor": {:git, "https://github.com/membraneframework/video_compositor", "7c268d1e234e9a2e080eebfd07f7dccfcac52a02", []},
+  "video_compositor": {:git, "https://github.com/membraneframework/video_compositor", "8dbdaa9baf778f7eb30305fe2f73f4993a10ab63", [tag: "v0.1.0-rc.1"]},
 }

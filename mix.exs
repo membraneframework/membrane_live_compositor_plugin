@@ -2,7 +2,7 @@ defmodule Membrane.Template.Mixfile do
   use Mix.Project
 
   @version "0.1.0"
-  @github_url "https://github.com/membraneframework/membrane_template_plugin"
+  @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
     [
@@ -36,13 +36,7 @@ defmodule Membrane.Template.Mixfile do
 
   defp deps do
     [
-      # TODO change this - probably adding binary versions of VC in this project
-      {:video_compositor,
-       git: "https://github.com/membraneframework/video_compositor", compile: false, app: false},
       # Membrane
-      ## Core 0.12.9 with increased pad output linking timeout from 5s to 100s
-      # {:membrane_core,
-      #  git: "https://github.com/WojciechBarczynski/membrane_core", override: true},
       {:membrane_core, "~> 0.12.9"},
       ## RTP
       {:membrane_rtp_plugin, "~> 0.23.1"},
