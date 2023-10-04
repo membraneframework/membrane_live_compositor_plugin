@@ -1,3 +1,6 @@
+# Video Compositor binaries
+video_compositor_app
+
 compile_commands.json
 .gdb_history
 bundlex.sh

@@ -90,7 +90,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    # :ok = start_video_compositor_server()
+    :ok = start_vc_server()
 
     :ok = VcReq.init(opt.framerate, opt.stream_fallback_timeout, opt.init_web_renderer?)
 
@@ -203,13 +203,43 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  # @spec start_vc_server() :: nil
-  # defp start_vc_server() do
-  #   path = case :os.type do
-  #     {:unix, :darwin} ->
-  #       "./deps/video_compositor"
-  #   end
-  # end
+  @spec start_vc_server() :: :ok
+  defp start_vc_server() do
+    architecture = system_architecture() |> Atom.to_string()
+
+    vc_app_path =
+      File.cwd!()
+      |> Path.join("video_compositor_app/#{architecture}/video_compositor/video_compositor")
+
+    spawn(fn -> System.cmd(vc_app_path, []) end)
+
+    :ok
+  end
+
+  @spec system_architecture() :: :darwin_aarch64 | :darwin_x86_64 | :linux_x86_64
+  defp system_architecture() do
+    case :os.type() do
+      {:unix, :darwin} ->
+        system_architecture = :erlang.system_info(:system_architecture) |> to_string()
+
+        cond do
+          Regex.match?(~r/aarch64/, system_architecture) ->
+            :darwin_aarch64
+
+          Regex.match?(~r/x86_64/, system_architecture) ->
+            :darwin_x86_64
+
+          true ->
+            raise "Unsupported system architecture: #{system_architecture}"
+        end
+
+      {:unix, :linux} ->
+        :linux_x86_64
+
+      os_type ->
+        raise "Unsupported os type: #{os_type}"
+    end
+  end
 
   @spec add_input(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port()) :: State.t()
   defp add_input(state = %State{inputs: inputs}, input_ref, pad_options, port) do
