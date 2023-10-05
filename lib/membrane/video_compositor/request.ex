@@ -1,11 +1,11 @@
 defmodule Membrane.VideoCompositor.Request do
   @moduledoc false
 
+  require Membrane.Logger
+
   alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.Scene
 
   @local_host {127, 0, 0, 1}
-  # TODO make it customizable
   @vc_url "http://127.0.0.1:8001"
 
   @type req_result :: :ok | {:error, Req.Response.t() | Exception.t()}
@@ -39,18 +39,11 @@ defmodule Membrane.VideoCompositor.Request do
     handle_req_result(req_result)
   end
 
-  @spec update_scene(Scene.t()) :: req_result()
-  def update_scene(new_scene) do
-    req_result =
-      Req.post(@vc_url,
-        json: %{
-          type: "update_scene",
-          nodes: new_scene.nodes,
-          outputs: new_scene.outputs
-        }
-      )
-
-    handle_req_result(req_result)
+  @spec send_custom_request(map()) :: {:ok, Req.Response.t()} | {:error, any()}
+  def send_custom_request(request_body) do
+    Req.post(@vc_url,
+      json: request_body
+    )
   end
 
   @spec register_input_stream(VideoCompositor.input_id(), VideoCompositor.port_number()) ::

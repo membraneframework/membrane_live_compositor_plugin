@@ -1,55 +1,55 @@
+defmodule Membrane.VideoCompositor.Context do
+  @moduledoc false
+
+  alias Membrane.VideoCompositor.{InputState, OutputState}
+
+  defstruct [:inputs, :outputs]
+
+  @type t :: %__MODULE__{
+          inputs: list(InputState.t()),
+          outputs: list(OutputState.t())
+        }
+end
+
 defmodule Membrane.VideoCompositor.State do
   @moduledoc false
 
-  alias Membrane.VideoCompositor.{Handler, Scene}
+  alias Membrane.VideoCompositor.{Context, InputState, OutputState}
 
-  defstruct [:inputs, :outputs, :handler_state, :handler, :framerate]
+  defstruct [:inputs, :outputs, :framerate]
 
   @type t :: %__MODULE__{
-          inputs: list(Handler.input_context()),
-          outputs: list(Handler.output_context()),
-          handler_state: Handler.state(),
-          handler: Handler.t(),
+          inputs: list(InputState.t()),
+          outputs: list(OutputState.t()),
           framerate: non_neg_integer()
         }
 
-  @spec handler_context(t()) :: Handler.Context.t()
-  def handler_context(vc_state) do
-    %Handler.Context{
-      inputs: vc_state.inputs,
-      outputs: vc_state.outputs
+  def ctx(%__MODULE__{inputs: inputs, outputs: outputs}) do
+    %Context{
+      inputs: inputs,
+      outputs: outputs
     }
   end
+end
 
-  @spec call_handle_pads_change(t()) :: {:update_scene, Scene.t(), t()} | t()
-  def call_handle_pads_change(state) do
-    handler_ctx = handler_context(state)
+defmodule Membrane.VideoCompositor.InputState do
+  @moduledoc false
 
-    case state.handler.handle_pads_change(handler_ctx, state.handler_state) do
-      {:update_scene, new_scene, handler_state} ->
-        {:update_scene, new_scene, %__MODULE__{state | handler_state: handler_state}}
+  defstruct [:input_id, :pad_ref]
 
-      handler_state ->
-        %__MODULE__{
-          state
-          | handler_state: handler_state
+  @type t :: %__MODULE__{
+          input_id: Membrane.VideoCompositor.input_id(),
+          pad_ref: Membrane.Pad.ref()
         }
-    end
-  end
+end
 
-  @spec call_handle_info(any(), t()) :: {:update_scene, Scene.t(), t()} | t()
-  def call_handle_info(msg, state) do
-    handler_ctx = handler_context(state)
+defmodule Membrane.VideoCompositor.OutputState do
+  @moduledoc false
 
-    case state.handler.handle_info(msg, handler_ctx, state.handler_state) do
-      {:update_scene, new_scene, handler_state} ->
-        {:update_scene, new_scene, %__MODULE__{state | handler_state: handler_state}}
+  defstruct [:output_id, :pad_ref]
 
-      handler_state ->
-        %__MODULE__{
-          state
-          | handler_state: handler_state
+  @type t :: %__MODULE__{
+          output_id: Membrane.VideoCompositor.output_id(),
+          pad_ref: Membrane.Pad.ref()
         }
-    end
-  end
 end

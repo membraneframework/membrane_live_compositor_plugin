@@ -4,15 +4,14 @@ defmodule Membrane.VideoCompositor.Pipeline do
   use Membrane.Pipeline
 
   alias Membrane.H264
-  alias Membrane.VideoCompositor.Resolution
+  alias Membrane.VideoCompositor.{Context, Resolution}
 
   @impl true
   def handle_init(_ctx, _opt) do
     spec = [
       # VideoCompositor
       child(:video_compositor, %Membrane.VideoCompositor{
-        framerate: 30,
-        handler: Membrane.VideoCompositor.SimpleHandler
+        framerate: 30
       }),
       # First input
       child({:video_src, 1}, %Membrane.File.Source{
@@ -51,5 +50,72 @@ defmodule Membrane.VideoCompositor.Pipeline do
       |> child(:sdl_player, Membrane.SDL.Player)
 
     {[spec: spec, spec: spec_2], %{}}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:input_registered, _input_ref, _input_id, ctx},
+        :video_compositor,
+        _ctx,
+        state
+      ) do
+    case maybe_update_scene(ctx) do
+      nil ->
+        {[], state}
+
+      scene_request_body ->
+        {[notify_child: {:video_compositor, {:vc_request, scene_request_body}}], state}
+    end
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:output_registered, _output_ref, _output_id, ctx},
+        :video_compositor,
+        _ctx,
+        state
+      ) do
+    case maybe_update_scene(ctx) do
+      nil ->
+        {[], state}
+
+      scene_request_body ->
+        {[notify_child: {:video_compositor, {:vc_request, scene_request_body}}], state}
+    end
+  end
+
+  @impl true
+  def handle_child_notification(notification, :video_compositor, _ctx, state) do
+    IO.inspect(notification)
+    {[], state}
+  end
+
+  @spec maybe_update_scene(Context.t()) :: nil | map()
+  defp maybe_update_scene(%Context{inputs: inputs, outputs: outputs}) do
+    if length(inputs) == 2 and length(outputs) == 1 do
+      %{
+        type: "update_scene",
+        nodes: [
+          %{
+            type: "built-in",
+            node_id: "tiled_layout",
+            transformation: "tiled_layout",
+            resolution: %{
+              width: 1280,
+              height: 720
+            },
+            input_pads: ["input_1", "input_2"]
+          }
+        ],
+        outputs: [
+          %{
+            output_id: "output_1",
+            input_pad: "tiled_layout"
+          }
+        ]
+      }
+    else
+      nil
+    end
   end
 end

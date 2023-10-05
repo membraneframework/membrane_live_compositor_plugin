@@ -6,7 +6,7 @@ defmodule Membrane.VideoCompositor do
 
   alias Req
   alias Membrane.{Pad, RTP, UDP}
-  alias Membrane.VideoCompositor.{Handler, Resolution, Scene, State}
+  alias Membrane.VideoCompositor.{InputState, OutputState, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
 
   @type encoder_preset ::
@@ -28,13 +28,7 @@ defmodule Membrane.VideoCompositor do
 
   @local_host {127, 0, 0, 1}
 
-  def_options handler: [
-                spec: Handler.t(),
-                description:
-                  "Module implementing `#{Membrane.VideoCompositor.Handler}` behaviour. 
-                  Used for updating [Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)."
-              ],
-              framerate: [
+  def_options framerate: [
                 spec: non_neg_integer(),
                 description: "Stream format for the output video of the compositor"
               ],
@@ -102,16 +96,15 @@ defmodule Membrane.VideoCompositor do
      %State{
        inputs: [],
        outputs: [],
-       handler_state: %{},
-       handler: opt.handler,
        framerate: opt.framerate
      }}
   end
 
   @impl true
-  def handle_pad_added(pad_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
+  def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     port = get_port(4000, length(inputs))
-    state = add_input(state, pad_ref, ctx.options, port)
+    input_id = ctx.options.input_id
+    state = add_input(state, input_ref, input_id, port)
 
     spec =
       bin_input(Pad.ref(:input, pad_id))
@@ -125,7 +118,8 @@ defmodule Membrane.VideoCompositor do
         destination_address: @local_host
       })
 
-    {[spec: spec], state}
+    {[notify_parent: {:input_registered, input_ref, input_id, State.ctx(state)}, spec: spec],
+     state}
   end
 
   @impl true
@@ -136,6 +130,7 @@ defmodule Membrane.VideoCompositor do
       ) do
     port = get_port(5000, length(outputs))
     state = add_output(state, output_ref, ctx.options, port)
+    output_id = ctx.options.output_id
 
     spec =
       child(Pad.ref(:upd_source, pad_id), %UDP.Source{
@@ -145,7 +140,8 @@ defmodule Membrane.VideoCompositor do
       |> via_in(Pad.ref(:rtp_input, pad_id))
       |> child({:rtp_receiver, pad_id}, RTP.SessionBin)
 
-    {[spec: spec], state}
+    {[notify_parent: {:output_registered, output_ref, output_id, State.ctx(state)}, spec: spec],
+     state}
   end
 
   @impl true
@@ -167,19 +163,19 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
+  def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
+    case VcReq.send_custom_request(request_body) do
+      {:ok, response} ->
+        {[notify_parent: {:vc_request_response, request_body, response, State.ctx(state)}], state}
+
+      {:error, err} ->
+        Membrane.Logger.error("Request: #{request_body} failed. Error: #{err}.")
+        {[], state}
+    end
+  end
+
+  @impl true
   def handle_parent_notification(_notification, _ctx, state = %State{}) do
-    {[], state}
-  end
-
-  @impl true
-  def handle_parent_notification({:update_scene, scene = %Scene{}}, _ctx, state) do
-    VcReq.update_scene(scene)
-    {[], state}
-  end
-
-  @impl true
-  def handle_parent_notification(msg, _ctx, state = %State{}) do
-    state = handle_msg(msg, state)
     {[], state}
   end
 
@@ -213,6 +209,7 @@ defmodule Membrane.VideoCompositor do
 
     spawn(fn -> System.cmd(vc_app_path, []) end)
 
+    :timer.sleep(1)
     :ok
   end
 
@@ -241,43 +238,39 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec add_input(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port()) :: State.t()
-  defp add_input(state = %State{inputs: inputs}, input_ref, pad_options, port) do
-    input_id = pad_options.input_id
+  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), VideoCompositor.port()) :: State.t()
+  defp add_input(state = %State{inputs: inputs}, input_ref, input_id, port) do
     :ok = VcReq.register_input_stream(input_id, port)
 
-    input_ctx = %{pad_ref: input_ref, input_id: input_id}
-    state = %State{state | inputs: [input_ctx | inputs]}
-
-    handle_pads_change(state)
+    %State{state | inputs: [%InputState{input_id: input_id, pad_ref: input_ref} | inputs]}
   end
 
   @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
   defp remove_input(state = %State{inputs: inputs}, input_ref) do
     input_id =
       inputs
-      |> Enum.find(fn input_ctx -> input_ctx.pad_ref == input_ref end)
-      |> then(fn input_ctx -> input_ctx.input_id end)
-
-    inputs = Enum.reject(inputs, fn input_ctx -> input_ctx.pad_ref == input_ref end)
-    state = %State{state | inputs: inputs} |> handle_pads_change()
+      |> Enum.find(fn %InputState{pad_ref: ref} -> ref == input_ref end)
+      |> then(fn %InputState{input_id: id} -> id end)
 
     :ok = VcReq.unregister_input_stream(input_id)
-    state
+
+    inputs = Enum.reject(inputs, fn %InputState{pad_ref: ref} -> ref == input_ref end)
+
+    %State{state | inputs: inputs}
   end
 
   @spec remove_output(State.t(), Membrane.Pad.ref()) :: State.t()
   defp remove_output(state = %State{outputs: outputs}, output_ref) do
     output_id =
       outputs
-      |> Enum.find(fn output_ctx -> output_ctx.pad_ref == output_ref end)
-      |> then(fn output_ctx -> output_ctx.output_id end)
+      |> Enum.find(fn %OutputState{pad_ref: ref} -> ref == output_ref end)
+      |> then(fn %OutputState{output_id: id} -> id end)
 
-    outputs = Enum.reject(outputs, fn output_ctx -> output_ctx.pad_ref == output_ref end)
-    state = %State{state | outputs: outputs} |> handle_pads_change()
+    outputs = Enum.reject(outputs, fn %OutputState{pad_ref: ref} -> ref == output_ref end)
 
     :ok = VcReq.unregister_output_stream(output_id)
-    state
+
+    %State{state | outputs: outputs}
   end
 
   @spec add_output(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port_number()) ::
@@ -294,53 +287,12 @@ defmodule Membrane.VideoCompositor do
       )
 
     output_ctx = %{pad_ref: output_ref, output_id: output_id}
-    state = %State{state | outputs: [output_ctx | outputs]}
 
-    handle_pads_change(state)
-  end
-
-  @spec handle_pads_change(State.t()) :: State.t()
-  defp handle_pads_change(state) do
-    case State.call_handle_pads_change(state) do
-      {:update_scene, new_scene, state} ->
-        update_scene(new_scene)
-        state
-
-      state ->
-        state
-    end
-  end
-
-  @spec handle_msg(any(), State.t()) :: State.t()
-  defp handle_msg(msg, state) do
-    case State.call_handle_info(msg, state) do
-      {:update_scene, new_scene, state} ->
-        update_scene(new_scene)
-        state
-
-      state ->
-        state
-    end
+    %State{state | outputs: [output_ctx | outputs]}
   end
 
   @spec get_port(non_neg_integer(), non_neg_integer()) :: port_number()
   defp get_port(range_start, used_streams) do
     range_start + 2 * used_streams
-  end
-
-  @spec update_scene(Scene.t()) :: nil
-  defp update_scene(new_scene) do
-    :ok =
-      case VcReq.update_scene(new_scene) do
-        :ok ->
-          :ok
-
-        {:error, %Req.Response{body: body}} ->
-          Membrane.Logger.info("Failed to update scene. Error: #{body}")
-          :ok
-
-        {:error, _else} ->
-          :error
-      end
   end
 end
