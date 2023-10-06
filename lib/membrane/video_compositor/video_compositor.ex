@@ -5,6 +5,7 @@ defmodule Membrane.VideoCompositor do
   require Membrane.Logger
 
   alias Req
+  alias Rambo
   alias Membrane.{Pad, RTP, UDP}
   alias Membrane.VideoCompositor.{InputState, OutputState, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
@@ -207,9 +208,9 @@ defmodule Membrane.VideoCompositor do
       File.cwd!()
       |> Path.join("video_compositor_app/#{architecture}/video_compositor/video_compositor")
 
-    spawn(fn -> System.cmd(vc_app_path, []) end)
+    spawn(fn -> Rambo.run(vc_app_path) end)
 
-    :timer.sleep(1)
+    :timer.sleep(5)
     :ok
   end
 
