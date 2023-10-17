@@ -28,6 +28,7 @@ defmodule Membrane.VideoCompositor do
   @type output_id :: String.t()
 
   @local_host {127, 0, 0, 1}
+  @udp_buffer_size 1024 * 1024
 
   def_options framerate: [
                 spec: non_neg_integer(),
@@ -136,7 +137,8 @@ defmodule Membrane.VideoCompositor do
     spec =
       child(Pad.ref(:upd_source, pad_id), %UDP.Source{
         local_port_no: port,
-        local_address: @local_host
+        local_address: @local_host,
+        recv_buffer_size: @udp_buffer_size
       })
       |> via_in(Pad.ref(:rtp_input, pad_id))
       |> child({:rtp_receiver, pad_id}, RTP.SessionBin)
