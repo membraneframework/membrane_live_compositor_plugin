@@ -1,10 +1,10 @@
-defmodule Membrane.VideoCompositor.LayoutWithShaderExample.Pipeline do
+defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   @moduledoc false
-  
+
   use Membrane.Pipeline
 
   require Membrane.Logger
-  
+
   alias Membrane.H264
   alias Membrane.VideoCompositor.{Context, InputState, Resolution}
   alias Req
@@ -128,7 +128,13 @@ defmodule Membrane.VideoCompositor.LayoutWithShaderExample.Pipeline do
       type: "register",
       entity_type: "shader",
       shader_id: "example_shader",
-      source: File.read!("./examples/layout_with_shader/example_shader.wgsl")
+      source: File.read!("./examples/layout_with_shader/example_shader.wgsl"),
+      constraints: [
+        %{
+          type: "input_count",
+          fixed_count: 1
+        }
+      ]
     }
 
     {:notify_child, {:video_compositor, {:vc_request, request_body}}}
