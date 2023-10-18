@@ -178,7 +178,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_parent_notification(_notification, _ctx, state = %State{}) do
+  def handle_parent_notification(notification, _ctx, state = %State{}) do
     {[], state}
   end
 
@@ -212,7 +212,7 @@ defmodule Membrane.VideoCompositor do
 
     spawn(fn -> Rambo.run(vc_app_path) end)
 
-    :timer.sleep(5)
+    :timer.sleep(1000)
     :ok
   end
 
