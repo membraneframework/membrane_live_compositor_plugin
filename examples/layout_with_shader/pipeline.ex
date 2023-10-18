@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.ExamplePipeline do
+defmodule Membrane.VideoCompositor.LayoutWithShaderExample.Pipeline do
   @moduledoc false
   
   use Membrane.Pipeline
@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.ExamplePipeline do
       |> get_child(:video_compositor),
       get_child(:video_compositor)
       |> via_out(:output,
-        options: [resolution: %Resolution{width: 1280, height: 720}, output_id: "output_1"]
+        options: [resolution: %Resolution{width: 1920, height: 1080}, output_id: "output_1"]
       )
       |> child(:output_parser, %H264.Parser{
         generate_best_effort_timestamps: %{framerate: {30, 1}}
@@ -94,9 +94,10 @@ defmodule Membrane.VideoCompositor.ExamplePipeline do
           type: "built-in",
           node_id: "tiled_layout",
           transformation: "tiled_layout",
+          margin: 10,
           resolution: %{
-            width: 1280,
-            height: 720
+            width: 1920,
+            height: 1080
           },
           input_pads: input_pads
         },
@@ -105,8 +106,8 @@ defmodule Membrane.VideoCompositor.ExamplePipeline do
           node_id: "twisted_layout",
           shader_id: "example_shader",
           resolution: %{
-            width: 1280,
-            height: 720
+            width: 1920,
+            height: 1080
           },
           input_pads: ["tiled_layout"]
         }
@@ -127,7 +128,7 @@ defmodule Membrane.VideoCompositor.ExamplePipeline do
       type: "register",
       entity_type: "shader",
       shader_id: "example_shader",
-      source: File.read!("./test/example_shader.wgsl")
+      source: File.read!("./examples/layout_with_shader/example_shader.wgsl")
     }
 
     {:notify_child, {:video_compositor, {:vc_request, request_body}}}
