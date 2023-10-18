@@ -218,7 +218,22 @@ defmodule Membrane.VideoCompositor do
 
     spawn(fn -> Rambo.run(vc_app_path) end)
 
-    :timer.sleep(1000)
+    started? =
+      0..50
+      |> Enum.reduce_while(false, fn _i, _acc ->
+        sleep_time_ms = 100
+        :timer.sleep(sleep_time_ms)
+
+        case VcReq.send_custom_request(%{}) do
+          {:ok, _} -> {:halt, true}
+          {:error, _} -> {:cont, false}
+        end
+      end)
+
+    unless started? do
+      raise "Failed to startup and connect to VideoCompositor server."
+    end
+
     :ok
   end
 
