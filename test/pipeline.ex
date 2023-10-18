@@ -1,14 +1,18 @@
-defmodule Membrane.VideoCompositor.Pipeline do
+defmodule Membrane.VideoCompositor.ExamplePipeline do
   @moduledoc false
-
+  
   use Membrane.Pipeline
 
+  require Membrane.Logger
+  
   alias Membrane.H264
-  alias Membrane.VideoCompositor.{Context, Resolution, InputState}
+  alias Membrane.VideoCompositor.{Context, InputState, Resolution}
+  alias Req
 
   @impl true
   def handle_init(_ctx, _opt) do
-    spec = child(:video_compositor, %Membrane.VideoCompositor{
+    spec =
+      child(:video_compositor, %Membrane.VideoCompositor{
         framerate: 30
       })
 
@@ -54,8 +58,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
   end
 
   @impl true
-  def handle_child_notification(notification, :video_compositor, _ctx, state) do
-    IO.inspect(notification)
+  def handle_child_notification(_notification, _child, _ctx, state) do
     {[], state}
   end
 
@@ -81,7 +84,7 @@ defmodule Membrane.VideoCompositor.Pipeline do
     {[spec: spec], %{state | videos_count: videos_count + 1}}
   end
 
-  defp update_scene_action(%Context{inputs: inputs, outputs: outputs}) do
+  defp update_scene_action(%Context{inputs: inputs}) do
     input_pads = inputs |> Enum.map(fn %InputState{input_id: input_id} -> input_id end)
 
     request_body = %{

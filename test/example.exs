@@ -1,5 +1,5 @@
-alias Membrane.VideoCompositor.Pipeline
+alias Membrane.VideoCompositor.ExamplePipeline
 
-{:ok, _supervisor, _pid} = Pipeline.start_link(%{})
+{:ok, _supervisor, _pid} = ExamplePipeline.start_link(%{})
 
 :timer.sleep(100_000)

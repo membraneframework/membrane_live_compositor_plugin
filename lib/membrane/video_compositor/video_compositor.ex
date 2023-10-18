@@ -4,11 +4,11 @@ defmodule Membrane.VideoCompositor do
 
   require Membrane.Logger
 
-  alias Req
-  alias Rambo
   alias Membrane.{Pad, RTP, UDP}
   alias Membrane.VideoCompositor.{InputState, OutputState, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
+  alias Rambo
+  alias Req
 
   @type encoder_preset ::
           :ultrafast
@@ -169,6 +169,12 @@ defmodule Membrane.VideoCompositor do
   def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
     case VcReq.send_custom_request(request_body) do
       {:ok, response} ->
+        if response.status != 200 do
+          Membrane.Logger.error(
+            "Request\n#{inspect(request_body)}\nfailed with error:\n#{inspect(response.body)}"
+          )
+        end
+
         {[notify_parent: {:vc_request_response, request_body, response, State.ctx(state)}], state}
 
       {:error, err} ->
@@ -178,7 +184,7 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_parent_notification(notification, _ctx, state = %State{}) do
+  def handle_parent_notification(_notification, _ctx, state = %State{}) do
     {[], state}
   end
 
@@ -241,7 +247,7 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), VideoCompositor.port()) :: State.t()
+  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), port_number()) :: State.t()
   defp add_input(state = %State{inputs: inputs}, input_ref, input_id, port) do
     :ok = VcReq.register_input_stream(input_id, port)
 
@@ -276,7 +282,7 @@ defmodule Membrane.VideoCompositor do
     %State{state | outputs: outputs}
   end
 
-  @spec add_output(State.t(), Membrane.Pad.ref(), map(), VideoCompositor.port_number()) ::
+  @spec add_output(State.t(), Membrane.Pad.ref(), map(), port_number()) ::
           State.t()
   defp add_output(state = %State{outputs: outputs}, output_ref, pad_options, port) do
     output_id = pad_options.output_id

@@ -4,6 +4,7 @@ defmodule Membrane.VideoCompositor.Request do
   require Membrane.Logger
 
   alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.Resolution
 
   @local_host {127, 0, 0, 1}
   @vc_url "http://127.0.0.1:8001"

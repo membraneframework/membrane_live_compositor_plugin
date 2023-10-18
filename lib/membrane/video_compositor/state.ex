@@ -24,6 +24,7 @@ defmodule Membrane.VideoCompositor.State do
           framerate: non_neg_integer()
         }
 
+  @spec ctx(t()) :: Membrane.VideoCompositor.Context.t()
   def ctx(%__MODULE__{inputs: inputs, outputs: outputs}) do
     %Context{
       inputs: inputs,
