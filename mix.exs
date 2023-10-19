@@ -52,7 +52,7 @@ defmodule Membrane.Template.Mixfile do
       {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
       {:membrane_udp_plugin, "~> 0.10.0"},
       # VC server start
-      {:rambo, "~> 0.2"},
+      {:rambo, "~> 0.3"},
       # VC API requests
       {:req, "~> 0.4.0"},
       {:jason, "~> 1.4"},

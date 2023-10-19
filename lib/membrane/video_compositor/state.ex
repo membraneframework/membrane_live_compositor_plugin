@@ -32,12 +32,23 @@ defmodule Membrane.VideoCompositor.State do
       outputs: outputs
     }
   end
+
+  @spec used_ports(t()) :: MapSet.t()
+  def used_ports(%__MODULE__{inputs: inputs, outputs: outputs, vc_port: vc_port}) do
+    input_ports =
+      inputs |> Enum.map(fn input_state -> input_state.port_number end) |> MapSet.new()
+
+    output_ports =
+      outputs |> Enum.map(fn output_state -> output_state.port_number end) |> MapSet.new()
+
+    MapSet.new([vc_port]) |> MapSet.union(input_ports) |> MapSet.union(output_ports)
+  end
 end
 
 defmodule Membrane.VideoCompositor.InputState do
   @moduledoc false
 
-  defstruct [:input_id, :pad_ref]
+  defstruct [:input_id, :pad_ref, :port_number]
 
   @type t :: %__MODULE__{
           input_id: Membrane.VideoCompositor.input_id(),
@@ -48,7 +59,7 @@ end
 defmodule Membrane.VideoCompositor.OutputState do
   @moduledoc false
 
-  defstruct [:output_id, :pad_ref]
+  defstruct [:output_id, :pad_ref, :port_number]
 
   @type t :: %__MODULE__{
           output_id: Membrane.VideoCompositor.output_id(),

@@ -112,9 +112,15 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
-    port = get_port(4000, length(inputs))
     input_id = ctx.options.input_id
-    state = add_input(state, input_ref, input_id, port)
+    input_port = register_input_stream(input_id, state)
+
+    state = %State{
+      state
+      | inputs: [
+          %InputState{input_id: input_id, port_number: input_port, pad_ref: input_ref} | inputs
+        ]
+    }
 
     spec =
       bin_input(Pad.ref(:input, pad_id))
@@ -124,7 +130,7 @@ defmodule Membrane.VideoCompositor do
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
       |> child({:upd_sink, pad_id}, %UDP.Sink{
-        destination_port_no: port,
+        destination_port_no: input_port,
         destination_address: @local_host
       })
 
@@ -138,9 +144,17 @@ defmodule Membrane.VideoCompositor do
         ctx,
         state = %State{outputs: outputs}
       ) do
-    port = get_port(5000, length(outputs))
-    state = add_output(state, output_ref, ctx.options, port)
+    port = register_output_stream(ctx.options, state)
     output_id = ctx.options.output_id
+
+    state = %State{
+      state
+      | outputs: [
+          %OutputState{output_id: output_id, pad_ref: output_ref, port_number: port}
+          | outputs
+        ]
+    }
+    
 
     spec =
       child(Pad.ref(:upd_source, pad_id), %UDP.Source{
@@ -272,11 +286,53 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), port_number()) :: State.t()
-  defp add_input(state = %State{}, input_ref, input_id, input_port) do
-    :ok = VcReq.register_input_stream(input_id, input_port, state.vc_port)
+  @spec register_input_stream(
+          VideoCompositor.input_id(),
+          State.t(),
+          VideoCompositor.port_number()
+        ) ::
+          VideoCompositor.port_number()
+  defp register_input_stream(input_id, state, input_port \\ 4000) do
+    if state |> State.used_ports() |> MapSet.member?(input_port) do
+      register_input_stream(input_id, state, input_port + 2)
+    else
+      case VcReq.register_input_stream(input_id, input_port, state.vc_port) do
+        :ok ->
+          input_port
 
-    %State{state | inputs: [%InputState{input_id: input_id, pad_ref: input_ref} | state.inputs]}
+        {:error, %Req.Response{}} ->
+          register_input_stream(
+            input_id,
+            state,
+            input_port + 2
+          )
+
+        _other ->
+          raise "Register input failed"
+      end
+    end
+  end
+
+  @spec register_output_stream(
+          map(),
+          State.t(),
+          VideoCompositor.port_number()
+        ) :: VideoCompositor.port_number()
+  defp register_output_stream(pad_options, state, output_port \\ 5000) do
+    if state |> State.used_ports() |> MapSet.member?(output_port) do
+      register_output_stream(pad_options, state, output_port + 2)
+    else
+      :ok =
+        VcReq.register_output_stream(
+          pad_options.output_id,
+          output_port,
+          pad_options.resolution,
+          pad_options.encoder_preset,
+          state.vc_port
+        )
+
+      output_port
+    end
   end
 
   @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
@@ -305,29 +361,5 @@ defmodule Membrane.VideoCompositor do
     :ok = VcReq.unregister_output_stream(output_id, state.vc_port)
 
     %State{state | outputs: outputs}
-  end
-
-  @spec add_output(State.t(), Membrane.Pad.ref(), map(), port_number()) ::
-          State.t()
-  defp add_output(state = %State{outputs: outputs}, output_ref, pad_options, port) do
-    output_id = pad_options.output_id
-
-    :ok =
-      VcReq.register_output_stream(
-        output_id,
-        port,
-        pad_options.resolution,
-        pad_options.encoder_preset,
-        state.vc_port
-      )
-
-    output_ctx = %{pad_ref: output_ref, output_id: output_id}
-
-    %State{state | outputs: [output_ctx | outputs]}
-  end
-
-  @spec get_port(non_neg_integer(), non_neg_integer()) :: port_number()
-  defp get_port(range_start, used_streams) do
-    range_start + 2 * used_streams
   end
 end

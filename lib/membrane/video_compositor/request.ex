@@ -93,7 +93,8 @@ defmodule Membrane.VideoCompositor.Request do
     handle_req_result(req_result)
   end
 
-  @spec unregister_output_stream(VideoCompositor.output_id(), VideoCompositor.port_number()) :: req_result()
+  @spec unregister_output_stream(VideoCompositor.output_id(), VideoCompositor.port_number()) ::
+          req_result()
   def unregister_output_stream(output_id, vc_port) do
     vc_url = ip_to_url(@local_host, vc_port)
 
