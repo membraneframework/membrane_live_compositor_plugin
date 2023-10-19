@@ -8,6 +8,7 @@ defmodule Membrane.Template.Mixfile do
     [
       app: :membrane_video_compositor_plugin,
       version: @version,
+      aliases: aliases(),
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -31,7 +32,13 @@ defmodule Membrane.Template.Mixfile do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp aliases() do
+    [
+      compile: ["download_compositor", "compile"]
+    ]
+  end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support", "examples"]
   defp elixirc_paths(_env), do: ["lib", "test", "examples"]
 
   defp deps do

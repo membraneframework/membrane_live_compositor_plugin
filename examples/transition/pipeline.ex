@@ -9,7 +9,6 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
   alias Membrane.VideoCompositor.{Context, InputState, Resolution}
   alias Req
 
-  @input_resolution %Resolution{width: 1280, height: 720}
   @output_resolution %Resolution{width: 1280, height: 720}
 
   @impl true
@@ -58,9 +57,9 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
 
   @impl true
   def handle_child_notification(
-        {:vc_request_response, req, %Req.Response{status: code, body: body}, ctx},
+        {:vc_request_response, _req, %Req.Response{status: code, body: body}, _vc_ctx},
         _child,
-        _ctx,
+        _membrane_ctx,
         state
       ) do
     if code != 200 do
@@ -115,21 +114,20 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
           [input_0, input_1] = input_pads
           fitted_pads = [fitted_node_id(input_0), fitted_node_id(input_1)]
 
-          update_scene_request_body =
-            %{
-              type: "update_scene",
-              nodes: [
-                fit([input_0]),
-                fit([input_1]),
-                transition_node(fitted_pads)
-              ],
-              outputs: [
-                %{
-                  output_id: "output",
-                  input_pad: "layout_transition"
-                }
-              ]
-            }
+          %{
+            type: "update_scene",
+            nodes: [
+              fit([input_0]),
+              fit([input_1]),
+              transition_node(fitted_pads)
+            ],
+            outputs: [
+              %{
+                output_id: "output",
+                input_pad: "layout_transition"
+              }
+            ]
+          }
 
         _other ->
           raise("Unsupported inputs count!")
