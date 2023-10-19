@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Resolution do
-  @moduledoc false
+  @moduledoc """
+  Resolution of input stream.
+  """
 
   defstruct [:width, :height]
 

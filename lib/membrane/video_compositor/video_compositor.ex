@@ -1,5 +1,20 @@
 defmodule Membrane.VideoCompositor do
-  @moduledoc false
+  @moduledoc """
+  Membrane SDK for [VideoCompositor](https://github.com/membraneframework/video_compositor),
+  used for dynamic, real-time video composition.
+
+  This bin sends videos from input pads to VideoCompositor server via RTP and output composed videos received back.
+
+  Inputs and outputs registration is automatic.
+  In any time user can send `t:vc_request\0` to bin, which would be send to VideoCompositor app,
+  to specify [scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene),
+  [register images](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#image), 
+  [shader](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#shader) and
+  any other request supported in VideoCompositor API.
+
+  For more details, check out [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
+  """
+
   use Membrane.Bin
 
   require Membrane.Logger
@@ -26,6 +41,8 @@ defmodule Membrane.VideoCompositor do
   @type port_number :: non_neg_integer()
   @type input_id :: String.t()
   @type output_id :: String.t()
+
+  @type vc_request :: {:vc_request, map()}
 
   @local_host {127, 0, 0, 1}
   @udp_buffer_size 1024 * 1024
@@ -154,7 +171,6 @@ defmodule Membrane.VideoCompositor do
           | outputs
         ]
     }
-    
 
     spec =
       child(Pad.ref(:upd_source, pad_id), %UDP.Source{
@@ -230,7 +246,7 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  @spec start_vc_server(VideoCompositor.port_number()) :: :ok
+  @spec start_vc_server(port_number()) :: :ok
   defp start_vc_server(vc_port) do
     architecture = system_architecture() |> Atom.to_string()
 
@@ -286,12 +302,8 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec register_input_stream(
-          VideoCompositor.input_id(),
-          State.t(),
-          VideoCompositor.port_number()
-        ) ::
-          VideoCompositor.port_number()
+  @spec register_input_stream(input_id(), State.t(), port_number()) ::
+          port_number()
   defp register_input_stream(input_id, state, input_port \\ 4000) do
     if state |> State.used_ports() |> MapSet.member?(input_port) do
       register_input_stream(input_id, state, input_port + 2)
@@ -313,11 +325,7 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec register_output_stream(
-          map(),
-          State.t(),
-          VideoCompositor.port_number()
-        ) :: VideoCompositor.port_number()
+  @spec register_output_stream(map(), State.t(), port_number()) :: port_number()
   defp register_output_stream(pad_options, state, output_port \\ 5000) do
     if state |> State.used_ports() |> MapSet.member?(output_port) do
       register_output_stream(pad_options, state, output_port + 2)
