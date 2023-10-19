@@ -16,12 +16,13 @@ defmodule Membrane.VideoCompositor.State do
 
   alias Membrane.VideoCompositor.{Context, InputState, OutputState}
 
-  defstruct [:inputs, :outputs, :framerate]
+  defstruct [:inputs, :outputs, :framerate, :vc_port]
 
   @type t :: %__MODULE__{
           inputs: list(InputState.t()),
           outputs: list(OutputState.t()),
-          framerate: non_neg_integer()
+          framerate: non_neg_integer(),
+          vc_port: VideoCompositor.port_number()
         }
 
   @spec ctx(t()) :: Membrane.VideoCompositor.Context.t()

@@ -52,6 +52,12 @@ defmodule Membrane.VideoCompositor do
                   "Specifies when VideoCompositor starts composing frames.
                   In `:on_message` strategy, `:start_composing` message have to be send to start composing.",
                 default: :on_init
+              ],
+              vc_server_port_number: [
+                spec: non_neg_integer(),
+                description:
+                  "Port on which VC server should run. Port have to be unused. In case of running multiple VC elements, those values should be unique.",
+                default: 8001
               ]
 
   def_input_pad :input,
@@ -86,19 +92,21 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    :ok = start_vc_server()
+    vc_port = opt.vc_server_port_number
+    :ok = start_vc_server(vc_port)
 
-    :ok = VcReq.init(opt.framerate, opt.stream_fallback_timeout, opt.init_web_renderer?)
+    :ok = VcReq.init(opt.framerate, opt.stream_fallback_timeout, opt.init_web_renderer?, vc_port)
 
     if opt.start_composing_strategy == :on_init do
-      :ok = VcReq.start_composing()
+      :ok = VcReq.start_composing(vc_port)
     end
 
     {[],
      %State{
        inputs: [],
        outputs: [],
-       framerate: opt.framerate
+       framerate: opt.framerate,
+       vc_port: vc_port
      }}
   end
 
@@ -161,13 +169,13 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
-    :ok = VcReq.start_composing()
+    :ok = VcReq.start_composing(state.vc_port)
     {[], state}
   end
 
   @impl true
   def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
-    case VcReq.send_custom_request(request_body) do
+    case VcReq.send_custom_request(request_body, state.vc_port) do
       {:ok, response} ->
         if response.status != 200 do
           Membrane.Logger.error(
@@ -208,15 +216,17 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  @spec start_vc_server() :: :ok
-  defp start_vc_server() do
+  @spec start_vc_server(VideoCompositor.port_number()) :: :ok
+  defp start_vc_server(vc_port) do
     architecture = system_architecture() |> Atom.to_string()
 
     vc_app_path =
       File.cwd!()
       |> Path.join("video_compositor_app/#{architecture}/video_compositor/video_compositor")
 
-    spawn(fn -> Rambo.run(vc_app_path) end)
+    spawn(fn ->
+      Rambo.run(vc_app_path, [], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
+    end)
 
     started? =
       0..50
@@ -224,7 +234,7 @@ defmodule Membrane.VideoCompositor do
         sleep_time_ms = 100
         :timer.sleep(sleep_time_ms)
 
-        case VcReq.send_custom_request(%{}) do
+        case VcReq.send_custom_request(%{}, vc_port) do
           {:ok, _} -> {:halt, true}
           {:error, _} -> {:cont, false}
         end
@@ -263,10 +273,10 @@ defmodule Membrane.VideoCompositor do
   end
 
   @spec add_input(State.t(), Membrane.Pad.ref(), input_id(), port_number()) :: State.t()
-  defp add_input(state = %State{inputs: inputs}, input_ref, input_id, port) do
-    :ok = VcReq.register_input_stream(input_id, port)
+  defp add_input(state = %State{}, input_ref, input_id, input_port) do
+    :ok = VcReq.register_input_stream(input_id, input_port, state.vc_port)
 
-    %State{state | inputs: [%InputState{input_id: input_id, pad_ref: input_ref} | inputs]}
+    %State{state | inputs: [%InputState{input_id: input_id, pad_ref: input_ref} | state.inputs]}
   end
 
   @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
@@ -276,7 +286,7 @@ defmodule Membrane.VideoCompositor do
       |> Enum.find(fn %InputState{pad_ref: ref} -> ref == input_ref end)
       |> then(fn %InputState{input_id: id} -> id end)
 
-    :ok = VcReq.unregister_input_stream(input_id)
+    :ok = VcReq.unregister_input_stream(input_id, state.vc_port)
 
     inputs = Enum.reject(inputs, fn %InputState{pad_ref: ref} -> ref == input_ref end)
 
@@ -292,7 +302,7 @@ defmodule Membrane.VideoCompositor do
 
     outputs = Enum.reject(outputs, fn %OutputState{pad_ref: ref} -> ref == output_ref end)
 
-    :ok = VcReq.unregister_output_stream(output_id)
+    :ok = VcReq.unregister_output_stream(output_id, state.vc_port)
 
     %State{state | outputs: outputs}
   end
@@ -307,7 +317,8 @@ defmodule Membrane.VideoCompositor do
         output_id,
         port,
         pad_options.resolution,
-        pad_options.encoder_preset
+        pad_options.encoder_preset,
+        state.vc_port
       )
 
     output_ctx = %{pad_ref: output_ref, output_id: output_id}

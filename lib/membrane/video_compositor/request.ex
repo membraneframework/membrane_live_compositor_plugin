@@ -7,14 +7,16 @@ defmodule Membrane.VideoCompositor.Request do
   alias Membrane.VideoCompositor.Resolution
 
   @local_host {127, 0, 0, 1}
-  @vc_url "http://127.0.0.1:8001"
 
   @type req_result :: :ok | {:error, Req.Response.t() | Exception.t()}
 
-  @spec init(non_neg_integer(), Membrane.Time.t(), boolean()) :: :ok | {:error, String.t()}
-  def init(framerate, stream_fallback_timeout, init_web_renderer?) do
+  @spec init(non_neg_integer(), Membrane.Time.t(), boolean(), VideoCompositor.port_number()) ::
+          :ok | {:error, String.t()}
+  def init(framerate, stream_fallback_timeout, init_web_renderer?, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "init",
           web_renderer: %{
@@ -28,10 +30,12 @@ defmodule Membrane.VideoCompositor.Request do
     handle_req_result(req_result)
   end
 
-  @spec start_composing() :: :ok | {:error, String.t()}
-  def start_composing() do
+  @spec start_composing(VideoCompositor.port_number()) :: :ok | {:error, String.t()}
+  def start_composing(vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "start"
         }
@@ -40,33 +44,45 @@ defmodule Membrane.VideoCompositor.Request do
     handle_req_result(req_result)
   end
 
-  @spec send_custom_request(map()) :: {:ok, Req.Response.t()} | {:error, any()}
-  def send_custom_request(request_body) do
-    Req.post(@vc_url,
+  @spec send_custom_request(map(), VideoCompositor.port_number()) ::
+          {:ok, Req.Response.t()} | {:error, any()}
+  def send_custom_request(request_body, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
+    Req.post(vc_url,
       json: request_body
     )
   end
 
-  @spec register_input_stream(VideoCompositor.input_id(), VideoCompositor.port_number()) ::
+  @spec register_input_stream(
+          VideoCompositor.input_id(),
+          VideoCompositor.port_number(),
+          VideoCompositor.port_number()
+        ) ::
           req_result()
-  def register_input_stream(input_id, port_number) do
+  def register_input_stream(input_id, input_port_number, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "register",
           entity_type: "input_stream",
           input_id: "#{input_id}",
-          port: port_number
+          port: input_port_number
         }
       )
 
     handle_req_result(req_result)
   end
 
-  @spec unregister_input_stream(VideoCompositor.input_id()) :: req_result()
-  def unregister_input_stream(input_id) do
+  @spec unregister_input_stream(VideoCompositor.input_id(), VideoCompositor.port_number()) ::
+          req_result()
+  def unregister_input_stream(input_id, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "unregister",
           entity_type: "input_stream",
@@ -77,10 +93,12 @@ defmodule Membrane.VideoCompositor.Request do
     handle_req_result(req_result)
   end
 
-  @spec unregister_output_stream(VideoCompositor.output_id()) :: req_result()
-  def unregister_output_stream(output_id) do
+  @spec unregister_output_stream(VideoCompositor.output_id(), VideoCompositor.port_number()) :: req_result()
+  def unregister_output_stream(output_id, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "unregister",
           entity_type: "output_stream",
@@ -95,11 +113,14 @@ defmodule Membrane.VideoCompositor.Request do
           VideoCompositor.output_id(),
           VideoCompositor.port_number(),
           Resolution.t(),
-          VideoCompositor.encoder_preset()
+          VideoCompositor.encoder_preset(),
+          VideoCompositor.port_number()
         ) :: req_result()
-  def register_output_stream(output_id, port_number, resolution, encoder_preset) do
+  def register_output_stream(output_id, port_number, resolution, encoder_preset, vc_port) do
+    vc_url = ip_to_url(@local_host, vc_port)
+
     req_result =
-      Req.post(@vc_url,
+      Req.post(vc_url,
         json: %{
           type: "register",
           entity_type: "output_stream",
