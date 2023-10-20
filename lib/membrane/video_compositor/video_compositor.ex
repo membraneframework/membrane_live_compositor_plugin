@@ -23,7 +23,7 @@ defmodule Membrane.VideoCompositor do
   require Membrane.Logger
 
   alias Membrane.{Pad, RTP, UDP}
-  alias Membrane.VideoCompositor.{InputState, OutputState, Resolution, State}
+  alias Membrane.VideoCompositor.{Context, InputState, OutputState, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
   alias Rambo
   alias Req
@@ -71,7 +71,7 @@ defmodule Membrane.VideoCompositor do
   VideoCompositor request response.
   """
   @type vc_request_response ::
-          {:vc_request_response, request_body :: map(), Reg.Response.t(), Context.t()}
+          {:vc_request_response, request_body :: map(), Req.Response.t(), Context.t()}
 
   @typedoc """
   Message send to parent on input registration.
