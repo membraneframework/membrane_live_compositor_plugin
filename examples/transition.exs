@@ -1,5 +1,7 @@
 alias Membrane.VideoCompositor.Examples.Transition.Pipeline
 
+File.mkdir_p!("samples")
+
 unless File.exists?("samples/testsrc.h264") do
   {_, 0} =
     System.cmd("ffmpeg", [

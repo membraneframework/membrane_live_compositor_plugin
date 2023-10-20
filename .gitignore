@@ -2,7 +2,7 @@
 video_compositor_app
 
 # Video samples
-# samples
+**/*\.h264
 
 compile_commands.json
 .gdb_history
