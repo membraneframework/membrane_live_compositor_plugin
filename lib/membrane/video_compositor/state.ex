@@ -14,6 +14,7 @@ end
 defmodule Membrane.VideoCompositor.State do
   @moduledoc false
 
+  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{Context, InputState, OutputState}
 
   defstruct [:inputs, :outputs, :framerate, :vc_port]

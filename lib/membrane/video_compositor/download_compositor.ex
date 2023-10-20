@@ -1,5 +1,7 @@
 defmodule Mix.Tasks.DownloadCompositor do
-  @moduledoc false
+  @moduledoc """
+  Downloads VideoCompositor binaries.
+  """
 
   use Mix.Task
 
