@@ -28,6 +28,10 @@ defmodule Membrane.VideoCompositor do
   alias Rambo
   alias Req
 
+  @typedoc """
+  Present of VideoCompositor output video encoder.
+  See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
+  """
   @type encoder_preset ::
           :ultrafast
           | :superfast
@@ -40,15 +44,43 @@ defmodule Membrane.VideoCompositor do
           | :veryslow
           | :placebo
 
+  @typedoc false
   @type ip :: {non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()}
+
   @type port_number :: non_neg_integer()
+
+  @typedoc """
+  Input stream id, used in scene after adding input stream.
+  """
   @type input_id :: String.t()
+
+  @typedoc """
+  Output stream id, used in scene after adding output stream.
+  """
   @type output_id :: String.t()
 
-  @type vc_request :: {:vc_request, map()}
-  @type vc_request_response :: {:vc_request_response, map(), Reg.Response.t(), Context.t()}
+  @typedoc """
+  Request that should be send to VideoCompositor. 
+  Elixir types are mapped into JSON types:
+  - map -> object
+  - atom -> string
+  """
+  @type vc_request :: {:vc_request, body :: map()}
 
+  @typedoc """
+  VideoCompositor request response.
+  """
+  @type vc_request_response ::
+          {:vc_request_response, request_body :: map(), Reg.Response.t(), Context.t()}
+
+  @typedoc """
+  Message send to parent on input registration.
+  """
   @type input_registered_message :: {:input_registered, Pad.ref(), input_id(), Context.t()}
+
+  @typedoc """
+  Message send to parent on output registration.
+  """
   @type output_registered_message :: {:input_registered, Pad.ref(), output_id(), Context.t()}
 
   @local_host {127, 0, 0, 1}
