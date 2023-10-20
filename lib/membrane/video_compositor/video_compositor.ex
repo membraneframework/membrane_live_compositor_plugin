@@ -6,11 +6,14 @@ defmodule Membrane.VideoCompositor do
   This bin sends videos from input pads to VideoCompositor server via RTP and output composed videos received back.
 
   Inputs and outputs registration is automatic.
-  In any time user can send `t:vc_request\0` to bin, which would be send to VideoCompositor app,
+  On input and output registration `t:input_registered_message` and `t:output_registered_message` are send to parent.
+
+  In any time user can send `t:vc_request\0` to bin
   to specify [scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene),
   [register images](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#image), 
   [shader](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#shader) and
   any other request supported in VideoCompositor API.
+  Bin sends request response as `t:vc_request_response` to parent.
 
   For more details, check out [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
   """
@@ -43,6 +46,10 @@ defmodule Membrane.VideoCompositor do
   @type output_id :: String.t()
 
   @type vc_request :: {:vc_request, map()}
+  @type vc_request_response :: {:vc_request_response, map(), Reg.Response.t(), Context.t()}
+
+  @type input_registered_message :: {:input_registered, Pad.ref(), input_id(), Context.t()}
+  @type output_registered_message :: {:input_registered, Pad.ref(), output_id(), Context.t()}
 
   @local_host {127, 0, 0, 1}
   @udp_buffer_size 1024 * 1024
@@ -61,13 +68,12 @@ defmodule Membrane.VideoCompositor do
                 spec: Membrane.Time.t(),
                 description:
                   "Timeout that defines when the compositor should switch to fallback on the input stream that stopped sending frames.",
-                default: Membrane.Time.second()
+                default: Membrane.Time.seconds(10)
               ],
               start_composing_strategy: [
                 spec: :on_init | :on_message,
                 description:
-                  "Specifies when VideoCompositor starts composing frames.
-                  In `:on_message` strategy, `:start_composing` message have to be send to start composing.",
+                  "Specifies when VideoCompositor starts composing frames. In `:on_message` strategy, `:start_composing` message have to be send to start composing.",
                 default: :on_init
               ],
               vc_server_port_number: [

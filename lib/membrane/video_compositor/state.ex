@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.Context do
-  @moduledoc false
+  @moduledoc """
+  Context of VideoCompositor.
+  """
 
   alias Membrane.VideoCompositor.{InputState, OutputState}
 
@@ -47,7 +49,9 @@ defmodule Membrane.VideoCompositor.State do
 end
 
 defmodule Membrane.VideoCompositor.InputState do
-  @moduledoc false
+  @moduledoc """
+  State of single input stream.
+  """
 
   defstruct [:input_id, :pad_ref, :port_number]
 
@@ -58,7 +62,9 @@ defmodule Membrane.VideoCompositor.InputState do
 end
 
 defmodule Membrane.VideoCompositor.OutputState do
-  @moduledoc false
+  @moduledoc """
+  State of single output stream.
+  """
 
   defstruct [:output_id, :pad_ref, :port_number]
 
