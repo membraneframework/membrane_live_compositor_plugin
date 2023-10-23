@@ -16,8 +16,12 @@ defmodule Mix.Tasks.DownloadCompositor do
 
     path = File.cwd!() |> Path.join("video_compositor_app/#{vc_architecture}")
 
-    File.mkdir_p!(path)
-    _wget_res = "wget -nc #{url} -O - | tar -xvz -C #{path}" |> String.to_charlist() |> :os.cmd()
+    unless File.exists?(path) do
+      File.mkdir_p!(path)
+
+      _wget_res =
+        "wget -nc #{url} -O - | tar -xvz -C #{path}" |> String.to_charlist() |> :os.cmd()
+    end
   end
 
   @spec system_architecture() :: :darwin_aarch64 | :darwin_x86_64 | :linux_x86_64
