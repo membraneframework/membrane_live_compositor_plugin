@@ -31,10 +31,6 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
       |> via_out(:output,
         options: [resolution: %Resolution{width: 1920, height: 1080}, output_id: "output_1"]
       )
-      |> child(:debug_compositor, %Membrane.Debug.Filter{
-        handle_buffer: fn _buffer -> nil end,
-        handle_stream_format: &IO.inspect(&1, label: "stream format compositor")
-      })
       |> child(:output_parser, H264.Parser)
       |> child(:output_decoder, H264.FFmpeg.Decoder)
       |> child(:sdl_player, Membrane.SDL.Player)
