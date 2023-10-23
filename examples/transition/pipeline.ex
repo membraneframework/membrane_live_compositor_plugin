@@ -33,9 +33,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
       |> via_out(:output,
         options: [resolution: @output_resolution, output_id: "output"]
       )
-      |> child(:output_parser, %H264.Parser{
-        generate_best_effort_timestamps: %{framerate: {30, 1}}
-      })
+      |> child(:output_parser, H264.Parser)
       |> child(:output_decoder, H264.FFmpeg.Decoder)
       |> child(:sdl_player, Membrane.SDL.Player)
     ]

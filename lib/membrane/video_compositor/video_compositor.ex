@@ -205,7 +205,12 @@ defmodule Membrane.VideoCompositor do
     state = %State{
       state
       | outputs: [
-          %OutputState{output_id: output_id, pad_ref: output_ref, port_number: port}
+          %OutputState{
+            output_id: output_id,
+            pad_ref: output_ref,
+            port_number: port,
+            resolution: ctx.options.resolution
+          }
           | outputs
         ]
     }
@@ -269,11 +274,26 @@ defmodule Membrane.VideoCompositor do
         {:new_rtp_stream, ssrc, _pt, _ext},
         {:rtp_receiver, pad_id},
         _ctx,
-        state
+        state = %State{}
       ) do
+    %OutputState{resolution: %Resolution{width: output_width, height: output_height}} =
+      state.outputs
+      |> Enum.find(fn %OutputState{pad_ref: Pad.ref(:output, id)} -> pad_id == id end)
+
+    output_stream_format = %Membrane.H264{
+      framerate: {state.framerate, 1},
+      alignment: :nalu,
+      stream_structure: :annexb,
+      width: output_width,
+      height: output_height
+    }
+
     spec =
       get_child({:rtp_receiver, pad_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
+      |> child({:output_processor, pad_id}, %Membrane.VideoCompositor.OutputProcessor{
+        output_stream_format: output_stream_format
+      })
       |> bin_output(Pad.ref(:output, pad_id))
 
     {[spec: spec], state}

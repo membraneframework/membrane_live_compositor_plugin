@@ -66,10 +66,14 @@ defmodule Membrane.VideoCompositor.OutputState do
   State of single output stream.
   """
 
-  defstruct [:output_id, :pad_ref, :port_number]
+  alias Membrane.VideoCompositor
+
+  defstruct [:output_id, :pad_ref, :port_number, :resolution]
 
   @type t :: %__MODULE__{
           output_id: Membrane.VideoCompositor.output_id(),
-          pad_ref: Membrane.Pad.ref()
+          pad_ref: Membrane.Pad.ref(),
+          port_number: VideoCompositor.port_number(),
+          resolution: VideoCompositor.Resolution.t()
         }
 end
