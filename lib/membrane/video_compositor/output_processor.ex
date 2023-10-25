@@ -10,12 +10,10 @@ defmodule Membrane.VideoCompositor.OutputProcessor do
 
   def_input_pad :input,
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
-    availability: :always,
     flow_control: :auto
 
   def_output_pad :output,
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
-    availability: :always,
     flow_control: :auto
 
   @impl true

@@ -161,7 +161,7 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     input_id = ctx.options.input_id
-    input_port = register_input_stream(input_id, state)
+    {:ok, input_port} = register_input_stream(input_id, state)
 
     state = %State{
       state
@@ -192,7 +192,7 @@ defmodule Membrane.VideoCompositor do
         ctx,
         state = %State{outputs: outputs}
       ) do
-    port = register_output_stream(ctx.options, state)
+    {:ok, port} = register_output_stream(ctx.options, state)
     output_id = ctx.options.output_id
 
     state = %State{
@@ -331,45 +331,55 @@ defmodule Membrane.VideoCompositor do
     :ok
   end
 
-  @spec register_input_stream(input_id(), State.t(), :inet.port_number()) ::
-          :inet.port_number()
-  defp register_input_stream(input_id, state, input_port \\ 4000) do
-    if state |> State.used_ports() |> MapSet.member?(input_port) do
-      register_input_stream(input_id, state, input_port + 2)
-    else
-      case VcReq.register_input_stream(input_id, input_port, state.vc_port) do
-        :ok ->
-          input_port
-
-        {:error, %Req.Response{}} ->
-          register_input_stream(
-            input_id,
-            state,
-            input_port + 2
-          )
-
-        _other ->
-          raise "Register input failed"
-      end
+  @spec register_input_stream(input_id(), State.t()) ::
+          {:ok, :inet.port_number()} | :error
+  defp register_input_stream(input_id, state) do
+    try_register = fn input_port ->
+      VcReq.register_input_stream(input_id, input_port, state.vc_port)
     end
+
+    register_input_or_output(try_register, state)
   end
 
-  @spec register_output_stream(map(), State.t(), :inet.port_number()) :: :inet.port_number()
-  defp register_output_stream(pad_options, state, output_port \\ 5000) do
-    if state |> State.used_ports() |> MapSet.member?(output_port) do
-      register_output_stream(pad_options, state, output_port + 2)
-    else
-      :ok =
-        VcReq.register_output_stream(
-          pad_options.output_id,
-          output_port,
-          pad_options.resolution,
-          pad_options.encoder_preset,
-          state.vc_port
-        )
-
-      output_port
+  @spec register_output_stream(map(), State.t()) ::
+          {:ok, :inet.port_number()} | :error
+  defp register_output_stream(pad_options, state) do
+    try_register = fn output_port ->
+      VcReq.register_output_stream(
+        pad_options.output_id,
+        output_port,
+        pad_options.resolution,
+        pad_options.encoder_preset,
+        state.vc_port
+      )
     end
+
+    register_input_or_output(try_register, state)
+  end
+
+  @spec register_input_or_output((:inet.port_number() -> VcReq.req_result()), State.t()) ::
+          {:ok, :inet.port_number()} | :error
+  defp register_input_or_output(try_register, state) do
+    try_port = fn port ->
+      if state |> State.used_ports() |> MapSet.member?(port) do
+        {:cont, :error}
+      else
+        case try_register.(port) do
+          :ok ->
+            {:halt, {:ok, port}}
+
+          {:error, %Req.Response{}} ->
+            {:cont, :error}
+
+          _other ->
+            raise "Register input failed"
+        end
+      end
+    end
+
+    6000..8000
+    |> Enum.shuffle()
+    |> Enum.reduce_while(:error, fn port, _acc -> try_port.(port) end)
   end
 
   @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
