@@ -319,7 +319,7 @@ defmodule Membrane.VideoCompositor do
           {:ok, _} ->
             {:halt, true}
 
-          {:error, reason} ->
+          {:error, _reason} ->
             {:cont, false}
         end
       end)
