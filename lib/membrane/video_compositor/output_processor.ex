@@ -18,19 +18,19 @@ defmodule Membrane.VideoCompositor.OutputProcessor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    {[], %{first_buffer?: true, output_stream_format: opt.output_stream_format}}
+    {[], %{output_stream_format: opt.output_stream_format}}
   end
 
   @impl true
-  def handle_buffer(_pad, buffer, _ctx, state) do
+  def handle_buffer(_pad, buffer, ctx, state) do
     stream_format_action =
-      if state.first_buffer? do
+      if ctx.pads.output.stream_format == nil do
         [stream_format: {:output, state.output_stream_format}]
       else
         []
       end
 
-    {stream_format_action ++ [buffer: {:output, buffer}], %{state | first_buffer?: false}}
+    {stream_format_action ++ [buffer: {:output, buffer}], state}
   end
 
   @impl true
