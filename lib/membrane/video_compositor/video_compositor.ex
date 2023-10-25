@@ -360,26 +360,28 @@ defmodule Membrane.VideoCompositor do
   @spec register_input_or_output((:inet.port_number() -> VcReq.req_result()), State.t()) ::
           {:ok, :inet.port_number()} | :error
   defp register_input_or_output(try_register, state) do
-    try_port = fn port ->
-      if state |> State.used_ports() |> MapSet.member?(port) do
-        {:cont, :error}
-      else
-        case try_register.(port) do
-          :ok ->
-            {:halt, {:ok, port}}
-
-          {:error, %Req.Response{}} ->
-            {:cont, :error}
-
-          _other ->
-            raise "Register input failed"
-        end
-      end
-    end
-
     6000..8000
     |> Enum.shuffle()
-    |> Enum.reduce_while(:error, fn port, _acc -> try_port.(port) end)
+    |> Enum.reduce_while(:error, fn port, _acc -> try_port(try_register, port, state) end)
+  end
+
+  @spec try_port((:inet.port_number() -> VcReq.req_result()), :inet.port_number(), State.t()) ::
+          {:halt, {:ok, :inet.port_number()}} | {:cont, :error}
+  defp try_port(try_register, port, state) do
+    if state |> State.used_ports() |> MapSet.member?(port) do
+      {:cont, :error}
+    else
+      case try_register.(port) do
+        :ok ->
+          {:halt, {:ok, port}}
+
+        {:error, %Req.Response{}} ->
+          {:cont, :error}
+
+        _other ->
+          raise "Register input failed"
+      end
+    end
   end
 
   @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
