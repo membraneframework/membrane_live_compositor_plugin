@@ -3,7 +3,8 @@ defmodule Membrane.VideoCompositor.Resolution do
   Resolution of input stream.
   """
 
-  defstruct [:width, :height]
+  @enforce_keys [:width, :height]
+  defstruct @enforce_keys
 
   @type t :: %__MODULE__{
           width: non_neg_integer(),

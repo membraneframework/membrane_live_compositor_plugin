@@ -3,7 +3,8 @@ defmodule Membrane.VideoCompositor.InputState do
   State of single input stream.
   """
 
-  defstruct [:input_id, :pad_ref, :port_number]
+  @enforce_keys [:input_id, :pad_ref, :port_number]
+  defstruct @enforce_keys
 
   @type t :: %__MODULE__{
           input_id: Membrane.VideoCompositor.input_id(),

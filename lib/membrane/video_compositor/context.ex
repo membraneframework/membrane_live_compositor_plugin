@@ -5,7 +5,8 @@ defmodule Membrane.VideoCompositor.Context do
 
   alias Membrane.VideoCompositor.{InputState, OutputState}
 
-  defstruct [:inputs, :outputs]
+  @enforce_keys [:inputs, :outputs]
+  defstruct @enforce_keys
 
   @type t :: %__MODULE__{
           inputs: list(InputState.t()),
