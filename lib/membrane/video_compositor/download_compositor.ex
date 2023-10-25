@@ -4,27 +4,35 @@ defmodule Mix.Tasks.DownloadCompositor do
   """
 
   use Mix.Task
+  require Membrane.Logger
 
   @vc_version "v0.1.0-rc.2"
 
   @impl Mix.Task
   def run(_args) do
-    vc_architecture = system_architecture() |> Atom.to_string()
-
     url =
-      "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{vc_architecture}.tar.gz"
+      "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{system_architecture()}.tar.gz"
 
-    path = File.cwd!() |> Path.join("video_compositor_app/#{vc_architecture}")
-
-    unless File.exists?(path) do
-      File.mkdir_p!(path)
+    unless File.exists?(vc_app_directory()) do
+      File.mkdir_p!(vc_app_directory())
 
       _wget_res =
-        "wget -nc #{url} -O - | tar -xvz -C #{path}" |> String.to_charlist() |> :os.cmd()
+        "wget -nc #{url} -O - | tar -xvz -C #{vc_app_directory()}"
+        |> String.to_charlist()
+        |> :os.cmd()
     end
   end
 
-  @spec system_architecture() :: :darwin_aarch64 | :darwin_x86_64 | :linux_x86_64
+  @spec vc_app_path() :: String.t()
+  def vc_app_path() do
+    File.cwd!() |> Path.join("#{vc_app_directory()}/video_compositor/video_compositor")
+  end
+
+  defp vc_app_directory() do
+    "video_compositor_app/#{@vc_version}/#{system_architecture()}"
+  end
+
+  @spec system_architecture() :: String.t()
   defp system_architecture() do
     case :os.type() do
       {:unix, :darwin} ->
@@ -32,17 +40,17 @@ defmodule Mix.Tasks.DownloadCompositor do
 
         cond do
           Regex.match?(~r/aarch64/, system_architecture) ->
-            :darwin_aarch64
+            "darwin_aarch64"
 
           Regex.match?(~r/x86_64/, system_architecture) ->
-            :darwin_x86_64
+            "darwin_x86_64"
 
           true ->
             raise "Unsupported system architecture: #{system_architecture}"
         end
 
       {:unix, :linux} ->
-        :linux_x86_64
+        "linux_x86_64"
 
       os_type ->
         raise "Unsupported os type: #{os_type}"

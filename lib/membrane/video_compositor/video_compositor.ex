@@ -25,11 +25,9 @@ defmodule Membrane.VideoCompositor do
   alias Membrane.{Pad, RTP, UDP}
   alias Membrane.VideoCompositor.{Context, InputState, OutputState, Resolution, State}
   alias Membrane.VideoCompositor.Request, as: VcReq
-  alias Rambo
-  alias Req
 
   @typedoc """
-  Present of VideoCompositor output video encoder.
+  Preset of VideoCompositor output video encoder.
   See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
   """
   @type encoder_preset ::
@@ -43,11 +41,6 @@ defmodule Membrane.VideoCompositor do
           | :slower
           | :veryslow
           | :placebo
-
-  @typedoc false
-  @type ip :: {non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()}
-
-  @type port_number :: non_neg_integer()
 
   @typedoc """
   Input stream id, used in scene after adding input stream.
@@ -178,8 +171,8 @@ defmodule Membrane.VideoCompositor do
     }
 
     spec =
-      bin_input(Pad.ref(:input, pad_id))
-      |> via_in(Pad.ref(:input, pad_id),
+      bin_input(input_ref)
+      |> via_in(input_ref,
         options: [payloader: RTP.H264.Payloader]
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
@@ -216,7 +209,7 @@ defmodule Membrane.VideoCompositor do
     }
 
     spec =
-      child(Pad.ref(:upd_source, pad_id), %UDP.Source{
+      child({:upd_source, pad_id}, %UDP.Source{
         local_port_no: port,
         local_address: @local_host,
         recv_buffer_size: @udp_buffer_size
@@ -304,27 +297,30 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
-  @spec start_vc_server(port_number()) :: :ok
+  @spec start_vc_server(:inet.port_number()) :: :ok
   defp start_vc_server(vc_port) do
-    architecture = system_architecture() |> Atom.to_string()
+    video_compositor_app_path = Mix.Tasks.DownloadCompositor.vc_app_path()
 
-    vc_app_path =
-      File.cwd!()
-      |> Path.join("video_compositor_app/#{architecture}/video_compositor/video_compositor")
+    unless File.exists?(video_compositor_app_path) do
+      raise "Video Compositor binary is not available under search path: #{video_compositor_app_path}."
+    end
 
     spawn(fn ->
-      Rambo.run(vc_app_path, [], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
+      Mix.Tasks.DownloadCompositor.vc_app_path()
+      |> Rambo.run([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
     end)
 
     started? =
-      0..50
+      0..30
       |> Enum.reduce_while(false, fn _i, _acc ->
-        sleep_time_ms = 100
-        :timer.sleep(sleep_time_ms)
+        Process.sleep(100)
 
         case VcReq.send_custom_request(%{}, vc_port) do
-          {:ok, _} -> {:halt, true}
-          {:error, _} -> {:cont, false}
+          {:ok, _} ->
+            {:halt, true}
+
+          {:error, reason} ->
+            {:cont, false}
         end
       end)
 
@@ -335,33 +331,8 @@ defmodule Membrane.VideoCompositor do
     :ok
   end
 
-  @spec system_architecture() :: :darwin_aarch64 | :darwin_x86_64 | :linux_x86_64
-  defp system_architecture() do
-    case :os.type() do
-      {:unix, :darwin} ->
-        system_architecture = :erlang.system_info(:system_architecture) |> to_string()
-
-        cond do
-          Regex.match?(~r/aarch64/, system_architecture) ->
-            :darwin_aarch64
-
-          Regex.match?(~r/x86_64/, system_architecture) ->
-            :darwin_x86_64
-
-          true ->
-            raise "Unsupported system architecture: #{system_architecture}"
-        end
-
-      {:unix, :linux} ->
-        :linux_x86_64
-
-      os_type ->
-        raise "Unsupported os type: #{os_type}"
-    end
-  end
-
-  @spec register_input_stream(input_id(), State.t(), port_number()) ::
-          port_number()
+  @spec register_input_stream(input_id(), State.t(), :inet.port_number()) ::
+          :inet.port_number()
   defp register_input_stream(input_id, state, input_port \\ 4000) do
     if state |> State.used_ports() |> MapSet.member?(input_port) do
       register_input_stream(input_id, state, input_port + 2)
@@ -383,7 +354,7 @@ defmodule Membrane.VideoCompositor do
     end
   end
 
-  @spec register_output_stream(map(), State.t(), port_number()) :: port_number()
+  @spec register_output_stream(map(), State.t(), :inet.port_number()) :: :inet.port_number()
   defp register_output_stream(pad_options, state, output_port \\ 5000) do
     if state |> State.used_ports() |> MapSet.member?(output_port) do
       register_output_stream(pad_options, state, output_port + 2)

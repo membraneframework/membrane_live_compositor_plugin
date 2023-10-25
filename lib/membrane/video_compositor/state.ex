@@ -1,22 +1,6 @@
-defmodule Membrane.VideoCompositor.Context do
-  @moduledoc """
-  Context of VideoCompositor.
-  """
-
-  alias Membrane.VideoCompositor.{InputState, OutputState}
-
-  defstruct [:inputs, :outputs]
-
-  @type t :: %__MODULE__{
-          inputs: list(InputState.t()),
-          outputs: list(OutputState.t())
-        }
-end
-
 defmodule Membrane.VideoCompositor.State do
   @moduledoc false
 
-  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{Context, InputState, OutputState}
 
   defstruct [:inputs, :outputs, :framerate, :vc_port]
@@ -25,7 +9,7 @@ defmodule Membrane.VideoCompositor.State do
           inputs: list(InputState.t()),
           outputs: list(OutputState.t()),
           framerate: non_neg_integer(),
-          vc_port: VideoCompositor.port_number()
+          vc_port: :inet.port_number()
         }
 
   @spec ctx(t()) :: Membrane.VideoCompositor.Context.t()
@@ -46,34 +30,4 @@ defmodule Membrane.VideoCompositor.State do
 
     MapSet.new([vc_port]) |> MapSet.union(input_ports) |> MapSet.union(output_ports)
   end
-end
-
-defmodule Membrane.VideoCompositor.InputState do
-  @moduledoc """
-  State of single input stream.
-  """
-
-  defstruct [:input_id, :pad_ref, :port_number]
-
-  @type t :: %__MODULE__{
-          input_id: Membrane.VideoCompositor.input_id(),
-          pad_ref: Membrane.Pad.ref()
-        }
-end
-
-defmodule Membrane.VideoCompositor.OutputState do
-  @moduledoc """
-  State of single output stream.
-  """
-
-  alias Membrane.VideoCompositor
-
-  defstruct [:output_id, :pad_ref, :port_number, :resolution]
-
-  @type t :: %__MODULE__{
-          output_id: Membrane.VideoCompositor.output_id(),
-          pad_ref: Membrane.Pad.ref(),
-          port_number: VideoCompositor.port_number(),
-          resolution: VideoCompositor.Resolution.t()
-        }
 end

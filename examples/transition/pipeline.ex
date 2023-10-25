@@ -5,9 +5,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
 
   require Membrane.Logger
 
-  alias Membrane.H264
   alias Membrane.VideoCompositor.{Context, InputState, Resolution}
-  alias Req
 
   @output_resolution %Resolution{width: 1280, height: 720}
 
@@ -22,7 +20,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
       child({:video_src, 0}, %Membrane.File.Source{
         location: "samples/testsrc.h264"
       })
-      |> child({:input_parser, 0}, %H264.Parser{
+      |> child({:input_parser, 0}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
@@ -33,8 +31,8 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
       |> via_out(:output,
         options: [resolution: @output_resolution, output_id: "output"]
       )
-      |> child(:output_parser, H264.Parser)
-      |> child(:output_decoder, H264.FFmpeg.Decoder)
+      |> child(:output_parser, Membrane.H264.Parser)
+      |> child(:output_decoder, Membrane.H264.FFmpeg.Decoder)
       |> child(:sdl_player, Membrane.SDL.Player)
     ]
 
@@ -61,7 +59,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
         state
       ) do
     if code != 200 do
-      raise("Request failed. Code: #{code}, body: #{inspect(body)}.")
+      raise "Request failed. Code: #{code}, body: #{inspect(body)}."
     end
 
     {[], state}
@@ -78,7 +76,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
       child({:video_src, videos_count}, %Membrane.File.Source{
         location: "samples/testsrc.h264"
       })
-      |> child({:input_parser, videos_count}, %H264.Parser{
+      |> child({:input_parser, videos_count}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
