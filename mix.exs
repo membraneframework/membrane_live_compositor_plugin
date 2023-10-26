@@ -1,7 +1,7 @@
-defmodule Membrane.Template.Mixfile do
+defmodule Membrane.VideoCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.5.4"
   @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
@@ -16,11 +16,11 @@ defmodule Membrane.Template.Mixfile do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Template Plugin for Membrane Multimedia Framework",
+      description: "VideoCompositor SDK for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane Template plugin",
+      name: "Membrane VideoCompositor Plugin",
       source_url: @github_url,
       docs: docs()
     ]

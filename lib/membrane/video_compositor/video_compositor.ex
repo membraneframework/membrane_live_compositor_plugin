@@ -1,21 +1,70 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
-  Membrane SDK for [VideoCompositor](https://github.com/membraneframework/video_compositor),
-  used for dynamic, real-time video composition.
+  Membrane SDK for the [VideoCompositor](https://github.com/membraneframework/video_compositor),
+  is used for dynamic, real-time video composition.
 
-  This bin sends videos from input pads to VideoCompositor server via RTP and output composed videos received back.
+  Input and output streams are connected via bin input/outputs. 
+  Spawning VideoCompositor and output linking should be done in separate specs:
+  ```
+  # Instead of this:
+  spec = child(:some_h264_input, %SomeH264Source{...})
+    |> via_in(Membrane.Pad.ref(:input, 0), options: [input_id: "input_0"])
+    |> child(:video_compositor, %Membrane.VideoCompositor{framerate: 30})
+    |> via_out(Membrane.Pad.ref(:output, 0), options: 
+      [resolution: %Membrane.VideoCompositor.Resolution{width: 1920, height: 1080}, output_id: "output_0"])
+    |> child(:some_h264_output, %SomeH264Sink{...})
+  ]
 
-  Inputs and outputs registration is automatic.
-  On input and output registration `t:input_registered_message` and `t:output_registered_message` are send to parent.
+  {[spec: spec], state}
+  
+  # Do this:
+  spec = child(:video_compositor, %Membrane.VideoCompositor{framerate: 30})
 
-  In any time user can send `t:vc_request\0` to bin
-  to specify [scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene),
-  [register images](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#image), 
-  [shader](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#shader) and
-  any other request supported in VideoCompositor API.
-  Bin sends request response as `t:vc_request_response` to parent.
+  spec2 = [
+    child(:some_h264_input, %SomeH264Source{...})
+    |> via_in(Membrane.Pad.ref(:input, 0), options: [input_id: "input_0"])
+    |> get_child(:video_compositor),
+    get_child(:video_compositor)
+    |> via_out(Membrane.Pad.ref(:output, 0), options: 
+      [resolution: %Membrane.VideoCompositor.Resolution{width: 1920, height: 1080}, output_id: "output_0"])
+    |> child(:some_h264_output, %SomeH264Sink{...})
+  ]
 
-  For more details, check out [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
+  {[spec: spec, spec: spec2], state}
+  ```
+
+  All composing specification can be send to VideoCompositor via `t:vc_request/0`.
+  To update composing specification ([Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)),
+  register images ([Image](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#image)),
+  shaders ([Shader](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#shader)) etc.
+  send to VideoCompositor message:
+  ```
+  example_request_body = %{
+    type: "update_scene",
+    nodes: [
+      %{
+        type: "built-in",
+        transformation: "tiled_layout"
+        node_id: "layout",
+        resolution: %{width: 1920, height: 1080},
+        input_pads: ["input_0", "input_1", "input_2"]
+      }
+    ],
+    outputs: [%{
+      output_id: "output_0",
+      input_pad: "layout"
+    }]
+  }
+
+  {[notify_child: {:video_compositor_name, {:vc_request, example_request_body}}], state}
+  ```
+  Request response is send back as `t:vc_request_response/0` message.
+
+  Complete API reference can be found in [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
+  
+  Input and output streams are registered and send automatically on pad linking.
+  After input/output linking `t:input_registered_message/0` / `t:output_registered_message/0` are send to parent.
+  Every registered output should be immediately used in new scene after registration.
   """
 
   use Membrane.Bin
