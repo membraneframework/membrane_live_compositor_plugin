@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor do
   ]
 
   {[spec: spec], state}
-  
+
   # Do this:
   spec = child(:video_compositor, %Membrane.VideoCompositor{framerate: 30})
 
@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor do
   Request response is send back as `t:vc_request_response/0` message.
 
   Complete API reference can be found in [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
-  
+
   Input and output streams are registered and send automatically on pad linking.
   After input/output linking `t:input_registered_message/0` / `t:output_registered_message/0` are send to parent.
   Every registered output should be immediately used in new scene after registration.
