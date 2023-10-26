@@ -37,8 +37,14 @@ To run example run:
 
 ### Layout with shader example
 
-Example presents dynamically added video arranged onto tiled layout and "twisted" with simple shader.
+Example presents dynamically added video arranged onto tiled layout and "twisted" with simple shader. Shaders can be used to create custom visual effects.
 
 ### Transition example
 
-Example presents dynamic transition of input videos.
+Example presents dynamic transition of input videos. Transitions are used for smooth, dynamical animations.
+
+### Dynamic outputs example
+
+Example presents dynamic outputs linking.
+Multiple outputs are useful for live-streaming for multiple platforms (e.g. different layout for mobile devices), target resolutions
+or any other case, when user want to process input videos in different ways.

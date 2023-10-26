@@ -1,4 +1,4 @@
-alias Membrane.VideoCompositor.Examples.Transition.Pipeline
+alias Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline
 
 Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
 

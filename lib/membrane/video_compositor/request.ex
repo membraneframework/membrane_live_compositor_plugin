@@ -88,7 +88,7 @@ defmodule Membrane.VideoCompositor.Request do
       json: %{
         type: "unregister",
         entity_type: "output_stream",
-        input_id: output_id
+        output_id: output_id
       }
     )
     |> handle_req_result()

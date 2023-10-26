@@ -123,7 +123,7 @@ defmodule Membrane.VideoCompositor do
   @typedoc """
   Message send to parent on output registration.
   """
-  @type output_registered_message :: {:input_registered, Pad.ref(), output_id(), Context.t()}
+  @type output_registered_message :: {:output_registered, Pad.ref(), output_id(), Context.t()}
 
   @local_host {127, 0, 0, 1}
   @udp_buffer_size 1024 * 1024
@@ -279,7 +279,15 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_pad_removed(output_ref = Pad.ref(:output, pad_id), _ctx, state = %State{}) do
     state = remove_output(state, output_ref)
-    {[remove_child: [{:rtp_receiver, pad_id}, {:upd_source, pad_id}]], state}
+
+    output_children = [
+      {:rtp_receiver, pad_id},
+      {:upd_source, pad_id},
+      {:rtp_receiver, pad_id},
+      {:output_processor, pad_id}
+    ]
+
+    {[remove_child: output_children], state}
   end
 
   @impl true
@@ -359,25 +367,26 @@ defmodule Membrane.VideoCompositor do
       |> Rambo.run([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
     end)
 
-    started? =
-      0..30
-      |> Enum.reduce_while(false, fn _i, _acc ->
-        Process.sleep(100)
-
-        case VcReq.send_custom_request(%{}, vc_port) do
-          {:ok, _} ->
-            {:halt, true}
-
-          {:error, _reason} ->
-            {:cont, false}
-        end
-      end)
-
-    unless started? do
-      raise "Failed to startup and connect to VideoCompositor server."
+    case wait_for_vc_startup(vc_port) do
+      :started -> :ok
+      :not_started -> raise "Failed to startup and connect to VideoCompositor server."
     end
+  end
 
-    :ok
+  @spec wait_for_vc_startup(:inet.port_number()) :: :started | :not_started
+  defp wait_for_vc_startup(vc_port) do
+    0..30
+    |> Enum.reduce_while(:not_started, fn _i, _acc ->
+      Process.sleep(100)
+
+      case VcReq.send_custom_request(%{}, vc_port) do
+        {:ok, _} ->
+          {:halt, :started}
+
+        {:error, _reason} ->
+          {:cont, :not_started}
+      end
+    end)
   end
 
   @spec register_input_stream(input_id(), State.t()) ::
