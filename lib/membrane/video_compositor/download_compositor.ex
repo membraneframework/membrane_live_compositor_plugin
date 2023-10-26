@@ -15,11 +15,14 @@ defmodule Mix.Tasks.DownloadCompositor do
 
     unless File.exists?(vc_app_directory()) do
       File.mkdir_p!(vc_app_directory())
+      Membrane.Logger.info("Downloading VideoCompositor binary")
 
-      _wget_res =
-        "wget -nc #{url} -O - | tar -xvz -C #{vc_app_directory()}"
-        |> String.to_charlist()
-        |> :os.cmd()
+      tmp_path = "tmp"
+      File.mkdir_p!(tmp_path)
+      
+      System.cmd("wget", ["-O", "tmp/video_compositor", url])
+      System.cmd("tar", ["-xvf", "tmp/video_compositor", "-C", vc_app_directory()])
+      System.cmd("rm", ["-rf", "tmp/video_compositor"])
     end
   end
 
