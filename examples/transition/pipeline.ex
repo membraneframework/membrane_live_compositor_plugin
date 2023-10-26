@@ -10,16 +10,14 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
   @output_resolution %Resolution{width: 1280, height: 720}
 
   @impl true
-  def handle_init(_ctx, _opt) do
+  def handle_init(_ctx, %{sample_path: sample_path}) do
     spec =
       child(:video_compositor, %Membrane.VideoCompositor{
         framerate: 30
       })
 
     spec_2 = [
-      child({:video_src, 0}, %Membrane.File.Source{
-        location: "samples/testsrc.h264"
-      })
+      child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
       |> child({:input_parser, 0}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
@@ -38,7 +36,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
 
     Process.send_after(self(), :add_input, 5000)
 
-    {[spec: spec, spec: spec_2], %{videos_count: 1}}
+    {[spec: spec, spec: spec_2], %{videos_count: 1, sample_path: sample_path}}
   end
 
   @impl true
@@ -71,10 +69,14 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
   end
 
   @impl true
-  def handle_info(:add_input, _ctx, state = %{videos_count: videos_count}) do
+  def handle_info(
+        :add_input,
+        _ctx,
+        state = %{videos_count: videos_count, sample_path: sample_path}
+      ) do
     spec =
       child({:video_src, videos_count}, %Membrane.File.Source{
-        location: "samples/testsrc.h264"
+        location: sample_path
       })
       |> child({:input_parser, videos_count}, %Membrane.H264.Parser{
         output_alignment: :nalu,

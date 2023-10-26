@@ -19,10 +19,10 @@ defmodule Mix.Tasks.DownloadCompositor do
 
       tmp_path = "tmp"
       File.mkdir_p!(tmp_path)
-      
+
       System.cmd("wget", ["-O", "tmp/video_compositor", url])
       System.cmd("tar", ["-xvf", "tmp/video_compositor", "-C", vc_app_directory()])
-      System.cmd("rm", ["-rf", "tmp/video_compositor"])
+      File.rm_rf!("tmp/video_compositor")
     end
   end
 

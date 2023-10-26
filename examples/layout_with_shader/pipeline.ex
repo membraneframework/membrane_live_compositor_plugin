@@ -8,16 +8,14 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   alias Membrane.VideoCompositor.{Context, InputState, Resolution}
 
   @impl true
-  def handle_init(_ctx, _opt) do
+  def handle_init(_ctx, %{sample_path: sample_path}) do
     spec =
       child(:video_compositor, %Membrane.VideoCompositor{
         framerate: 30
       })
 
     spec_2 = [
-      child({:video_src, 0}, %Membrane.File.Source{
-        location: "samples/testsrc.h264"
-      })
+      child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
       |> child({:input_parser, 0}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
@@ -34,7 +32,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
       |> child(:sdl_player, Membrane.SDL.Player)
     ]
 
-    {[spec: spec, spec: spec_2], %{videos_count: 1}}
+    {[spec: spec, spec: spec_2], %{videos_count: 1, sample_path: sample_path}}
   end
 
   @impl true
@@ -70,7 +68,11 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   end
 
   @impl true
-  def handle_child_notification(_notification, _child, _ctx, state) do
+  def handle_child_notification(notification, child, _ctx, state) do
+    Membrane.Logger.info(
+      "Received notification: #{inspect(notification)} from child: #{inspect(child)}."
+    )
+
     {[], state}
   end
 
@@ -80,9 +82,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
 
     if state.videos_count < 10 do
       spec =
-        child({:video_src, videos_count}, %Membrane.File.Source{
-          location: "samples/testsrc.h264"
-        })
+        child({:video_src, videos_count}, %Membrane.File.Source{location: state.sample_path})
         |> child({:input_parser, videos_count}, %Membrane.H264.Parser{
           output_alignment: :nalu,
           generate_best_effort_timestamps: %{framerate: {30, 1}}
