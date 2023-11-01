@@ -1,5 +1,5 @@
 # Video Compositor binaries
-video_compositor_app
+priv
 
 # Video samples
 **/*\.h264

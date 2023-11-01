@@ -45,11 +45,10 @@ defmodule Membrane.VideoCompositor.Mixfile do
     [
       # Membrane
       {:membrane_core, "~> 0.12.9"},
+      {:membrane_raw_video_format, "~> 0.3.0"},
       ## RTP
       {:membrane_rtp_plugin, "~> 0.23.1"},
       {:membrane_rtp_h264_plugin, "~> 0.18.0"},
-      {:membrane_h264_plugin, "~> 0.7.3"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
       {:membrane_udp_plugin, "~> 0.10.0"},
       # VC server start
       {:rambo, "~> 0.3"},
@@ -60,6 +59,8 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_file_plugin, "~> 0.15.0"},
       {:membrane_realtimer_plugin, "~> 0.7.0"},
       {:membrane_sdl_plugin, "~> 0.16.0"},
+      {:membrane_h264_plugin, "~> 0.7.3"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

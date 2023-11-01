@@ -32,7 +32,7 @@ defmodule Mix.Tasks.DownloadCompositor do
   end
 
   defp vc_app_directory() do
-    "video_compositor_app/#{@vc_version}/#{system_architecture()}"
+    "priv/#{@vc_version}/#{system_architecture()}"
   end
 
   @spec system_architecture() :: String.t()

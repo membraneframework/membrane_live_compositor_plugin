@@ -5,9 +5,11 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
 
   require Membrane.Logger
 
-  alias Membrane.VideoCompositor.{Context, InputState, Resolution}
+  alias Membrane.VideoCompositor
+  alias Membrane.VideoCompositor.{Context, OutputOptions}
 
-  @output_resolution %Resolution{width: 1280, height: 720}
+  @output_width 1280
+  @output_height 720
 
   @impl true
   def handle_init(_ctx, %{sample_path: sample_path}) do
@@ -16,51 +18,78 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
         framerate: 30
       })
 
-    spec_2 = [
-      child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
-      |> child({:input_parser, 0}, %Membrane.H264.Parser{
-        output_alignment: :nalu,
-        generate_best_effort_timestamps: %{framerate: {30, 1}}
-      })
-      |> child({:realtimer, 0}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:input, 0), options: [input_id: "input_0"])
-      |> get_child(:video_compositor),
-      get_child(:video_compositor)
-      |> via_out(:output,
-        options: [resolution: @output_resolution, output_id: "output"]
-      )
-      |> child(:output_parser, Membrane.H264.Parser)
-      |> child(:output_decoder, Membrane.H264.FFmpeg.Decoder)
-      |> child(:sdl_player, Membrane.SDL.Player)
-    ]
-
+    Process.send_after(self(), :add_input, 1000)
     Process.send_after(self(), :add_input, 5000)
 
-    {[spec: spec, spec: spec_2], %{videos_count: 1, sample_path: sample_path}}
+    {[spec: spec], %{videos_count: 0, sample_path: sample_path}}
+  end
+
+  @impl true
+  def handle_setup(_ctx, state) do
+    output_opt = %OutputOptions{
+      id: "output",
+      width: @output_width,
+      height: @output_height
+    }
+
+    register_output_msg = {:register_output, output_opt}
+    {[notify_child: {:video_compositor, register_output_msg}], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:input_registered, _input_ref, _input_id, ctx},
+        {register, _id, vc_ctx},
+        :video_compositor,
+        _ctx,
+        state
+      )
+      when register == :input_registered or register == :output_registered do
+    actions =
+      case new_scene_request(vc_ctx) do
+        :no_update -> []
+        new_scene_request -> [notify_child: {:video_compositor, {:vc_request, new_scene_request}}]
+      end
+
+    {actions, state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:vc_request_response, req, %Req.Response{status: response_code, body: response_body},
+         _vc_ctx},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
+    if response_code != 200 do
+      raise """
+      Request failed.
+      Request: `#{inspect(req)}.
+      Response code: #{response_code}.
+      Response body: #{inspect(response_body)}.
+      """
+    end
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:new_output_stream, output_id, _vc_ctx},
         :video_compositor,
         _ctx,
         state
       ) do
-    {[update_scene_action(ctx)], state}
-  end
+    spec =
+      get_child(:video_compositor)
+      |> via_out(:output,
+        options: [output_id: output_id]
+      )
+      |> child(:output_parser, Membrane.H264.Parser)
+      |> child(:output_decoder, Membrane.H264.FFmpeg.Decoder)
+      |> child(:sdl_player, Membrane.SDL.Player)
 
-  @impl true
-  def handle_child_notification(
-        {:vc_request_response, _req, %Req.Response{status: code, body: body}, _vc_ctx},
-        _child,
-        _membrane_ctx,
-        state
-      ) do
-    if code != 200 do
-      raise "Request failed. Code: #{code}, body: #{inspect(body)}."
-    end
-
-    {[], state}
+    {[spec: spec], state}
   end
 
   @impl true
@@ -89,79 +118,80 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     {[spec: spec], %{state | videos_count: videos_count + 1}}
   end
 
-  defp update_scene_action(%Context{inputs: inputs}) do
-    input_pads = inputs |> Enum.map(fn %InputState{input_id: input_id} -> input_id end)
+  @spec new_scene_request(Context.t()) :: :no_update | VideoCompositor.request_body()
+  defp new_scene_request(%Context{
+         inputs: [%Context.InputStream{id: input_id}],
+         outputs: [%Context.OutputStream{id: output_id}]
+       }) do
+    {fit_node, fit_node_id} = fit(input_id)
 
-    update_scene_request_body =
-      case length(input_pads) do
-        1 ->
-          %{
-            type: "update_scene",
-            nodes: [
-              fit(input_pads)
-            ],
-            outputs: [
-              %{
-                output_id: "output",
-                input_pad: "fitted_input_0"
-              }
-            ]
-          }
-
-        2 ->
-          [input_0, input_1] = input_pads
-          fitted_pads = [fitted_node_id(input_0), fitted_node_id(input_1)]
-
-          %{
-            type: "update_scene",
-            nodes: [
-              fit([input_0]),
-              fit([input_1]),
-              transition_node(fitted_pads)
-            ],
-            outputs: [
-              %{
-                output_id: "output",
-                input_pad: "layout_transition"
-              }
-            ]
-          }
-
-        _other ->
-          raise("Unsupported inputs count!")
-      end
-
-    {:notify_child, {:video_compositor, {:vc_request, update_scene_request_body}}}
-  end
-
-  defp transition_node(input_pads) do
     %{
-      type: "transition",
-      node_id: "layout_transition",
-      start: start_transition_layouts() |> fixed_position_layout(),
-      end: end_transition_layouts() |> fixed_position_layout(),
-      transition_duration_ms: 1000,
-      interpolation: "linear",
-      input_pads: input_pads
+      type: "update_scene",
+      nodes: [fit_node],
+      outputs: [
+        %{
+          output_id: output_id,
+          input_pad: fit_node_id
+        }
+      ]
     }
   end
 
-  defp fit(input_pads = [input_pad_id]) do
+  defp new_scene_request(%Context{
+         inputs: [
+           %Context.InputStream{id: first_input_id}
+           | [%Context.InputStream{id: second_input_id}]
+         ],
+         outputs: [%Context.OutputStream{id: output_id}]
+       }) do
+    {first_fit_node, first_fit_node_id} = fit(first_input_id)
+    {second_fit_node, second_fit_node_id} = fit(second_input_id)
+    {transition_node, transition_node_id} = transition([first_fit_node_id, second_fit_node_id])
+
     %{
-      type: "built-in",
-      node_id: fitted_node_id(input_pad_id),
-      transformation: "transform_to_resolution",
-      strategy: "fit",
-      resolution: %{
-        width: @output_resolution.width,
-        height: @output_resolution.height
-      },
-      input_pads: input_pads
+      type: "update_scene",
+      nodes: [first_fit_node, second_fit_node, transition_node],
+      outputs: [
+        %{
+          output_id: output_id,
+          input_pad: transition_node_id
+        }
+      ]
     }
   end
 
-  defp fitted_node_id(input_pad_id) do
-    "fitted_#{input_pad_id}"
+  defp new_scene_request(_ctx) do
+    :no_update
+  end
+
+  defp transition(input_pads) do
+    transition_node_id = "layout_transition"
+
+    {%{
+       type: "transition",
+       node_id: transition_node_id,
+       start: start_transition_layouts() |> fixed_position_layout(),
+       end: end_transition_layouts() |> fixed_position_layout(),
+       transition_duration_ms: 1000,
+       interpolation: "linear",
+       input_pads: input_pads
+     }, transition_node_id}
+  end
+
+  defp fit(input_pad_id) do
+    fit_node_id = "fitted_#{input_pad_id}"
+
+    {%{
+       type: "built-in",
+       node_id: fit_node_id,
+       transformation: "transform_to_resolution",
+       strategy: "fit",
+       resolution: %{
+         width: @output_width,
+         height: @output_height
+       },
+       input_pads: [input_pad_id]
+     }, fit_node_id}
   end
 
   defp start_transition_layouts() do
@@ -197,8 +227,8 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
       transformation: "fixed_position_layout",
       texture_layouts: texture_layouts,
       resolution: %{
-        width: @output_resolution.width,
-        height: @output_resolution.height
+        width: @output_width,
+        height: @output_height
       }
     }
   end

@@ -1,78 +1,20 @@
 defmodule Membrane.VideoCompositor do
-  @moduledoc """
-  Membrane SDK for the [VideoCompositor](https://github.com/membraneframework/video_compositor),
-  is used for dynamic, real-time video composition.
-
-  Input and output streams are connected via bin input/outputs. 
-  Spawning VideoCompositor and output linking should be done in separate specs:
-  ```
-  # Instead of this:
-  spec = child(:some_h264_input, %SomeH264Source{...})
-    |> via_in(Membrane.Pad.ref(:input, 0), options: [input_id: "input_0"])
-    |> child(:video_compositor, %Membrane.VideoCompositor{framerate: 30})
-    |> via_out(Membrane.Pad.ref(:output, 0), options: 
-      [resolution: %Membrane.VideoCompositor.Resolution{width: 1920, height: 1080}, output_id: "output_0"])
-    |> child(:some_h264_output, %SomeH264Sink{...})
-  ]
-
-  {[spec: spec], state}
-
-  # Do this:
-  spec = child(:video_compositor, %Membrane.VideoCompositor{framerate: 30})
-
-  spec2 = [
-    child(:some_h264_input, %SomeH264Source{...})
-    |> via_in(Membrane.Pad.ref(:input, 0), options: [input_id: "input_0"])
-    |> get_child(:video_compositor),
-    get_child(:video_compositor)
-    |> via_out(Membrane.Pad.ref(:output, 0), options: 
-      [resolution: %Membrane.VideoCompositor.Resolution{width: 1920, height: 1080}, output_id: "output_0"])
-    |> child(:some_h264_output, %SomeH264Sink{...})
-  ]
-
-  {[spec: spec, spec: spec2], state}
-  ```
-
-  All composing specification can be send to VideoCompositor via `t:vc_request/0`.
-  To update composing specification ([Scene](https://github.com/membraneframework/video_compositor/wiki/Main-concepts#scene)),
-  register images ([Image](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#image)),
-  shaders ([Shader](https://github.com/membraneframework/video_compositor/wiki/Api-%E2%80%90-renderers#shader)) etc.
-  send to VideoCompositor message:
-  ```
-  example_request_body = %{
-    type: "update_scene",
-    nodes: [
-      %{
-        type: "built-in",
-        transformation: "tiled_layout"
-        node_id: "layout",
-        resolution: %{width: 1920, height: 1080},
-        input_pads: ["input_0", "input_1", "input_2"]
-      }
-    ],
-    outputs: [%{
-      output_id: "output_0",
-      input_pad: "layout"
-    }]
-  }
-
-  {[notify_child: {:video_compositor_name, {:vc_request, example_request_body}}], state}
-  ```
-  Request response is send back as `t:vc_request_response/0` message.
-
-  Complete API reference can be found in [VideoCompositor wiki](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
-
-  Input and output streams are registered and send automatically on pad linking.
-  After input/output linking `t:input_registered_message/0` / `t:output_registered_message/0` are send to parent.
-  Every registered output should be immediately used in new scene after registration.
-  """
+  @moduledoc false
 
   use Membrane.Bin
 
   require Membrane.Logger
 
   alias Membrane.{Pad, RTP, UDP}
-  alias Membrane.VideoCompositor.{Context, InputState, OutputState, Resolution, State}
+
+  alias Membrane.VideoCompositor.{
+    Context,
+    OutputOptions,
+    ServerRunner,
+    State,
+    StreamsHandler
+  }
+
   alias Membrane.VideoCompositor.Request, as: VcReq
 
   @typedoc """
@@ -101,60 +43,80 @@ defmodule Membrane.VideoCompositor do
   """
   @type output_id :: String.t()
 
+  @type request_body :: map()
+
   @typedoc """
-  Request that should be send to VideoCompositor. 
+  Request that should be send to VideoCompositor.
   Elixir types are mapped into JSON types:
   - map -> object
   - atom -> string
   """
-  @type vc_request :: {:vc_request, body :: map()}
+  @type vc_request :: {:vc_request, request_body()}
 
   @typedoc """
   VideoCompositor request response.
   """
   @type vc_request_response ::
-          {:vc_request_response, request_body :: map(), Req.Response.t(), Context.t()}
+          {:vc_request_response, request_body(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Message send to parent on input registration.
+  Message send to parent after input registration.
   """
-  @type input_registered_message :: {:input_registered, Pad.ref(), input_id(), Context.t()}
+  @type input_registered_msg :: {:input_registered, input_id(), Context.t()}
 
-  @typedoc """
-  Message send to parent on output registration.
-  """
-  @type output_registered_message :: {:output_registered, Pad.ref(), output_id(), Context.t()}
+  @type register_output_stream_msg :: {:register_output, OutputOptions.t()}
+
+  @type output_registered_msg :: {:output_registered, output_id(), Context.t()}
+
+  @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
+
+  @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
   @local_host {127, 0, 0, 1}
   @udp_buffer_size 1024 * 1024
 
   def_options framerate: [
-                spec: non_neg_integer(),
-                description: "Stream format for the output video of the compositor"
+                spec: Membrane.RawVideo.framerate_t(),
+                description: "Framerate of VideoCompositor outputs."
+              ],
+              port_range: [
+                spec: port_range(),
+                description: """
+                Port range in which input and output streams would try to be registered.
+                If all ports in range will be used, VideoCompositor will crash on input/output registration.
+                """,
+                default: {6000, 10_000}
               ],
               init_web_renderer?: [
                 spec: boolean(),
-                description:
-                  "Enable web renderer support. If false, an attempt to register any transformation that is using a web renderer will fail.",
+                description: """
+                Enables web rendering for VideoCompositor.
+                If set to false, attempts to register and use web renderers will fail.
+                """,
                 default: true
               ],
               stream_fallback_timeout: [
                 spec: Membrane.Time.t(),
-                description:
-                  "Timeout that defines when the compositor should switch to fallback on the input stream that stopped sending frames.",
+                description: """
+                Timeout that defines when the VideoCompositor should switch to fallback on the input stream that stopped sending frames.
+                """,
                 default: Membrane.Time.seconds(10)
               ],
               start_composing_strategy: [
                 spec: :on_init | :on_message,
-                description:
-                  "Specifies when VideoCompositor starts composing frames. In `:on_message` strategy, `:start_composing` message have to be send to start composing.",
+                description: """
+                Specifies when VideoCompositor starts composing frames.
+                In `:on_message` strategy, `:start_composing` message have to be send to start composing.
+                """,
                 default: :on_init
               ],
               vc_server_port_number: [
-                spec: non_neg_integer(),
-                description:
-                  "Port on which VC server should run. Port have to be unused. In case of running multiple VC elements, those values should be unique.",
-                default: 8001
+                spec: :inet.port_number() | :choose_at_random,
+                description: """
+                Port on which VC server should run.
+                The port has to be unused. In case of running multiple VC elements, those values should be unique.
+                """,
+                default: :choose_at_random
               ]
 
   def_input_pad :input,
@@ -162,8 +124,7 @@ defmodule Membrane.VideoCompositor do
     availability: :on_request,
     options: [
       input_id: [
-        spec: input_id(),
-        description: "Input identifier."
+        spec: input_id()
       ]
     ]
 
@@ -171,51 +132,64 @@ defmodule Membrane.VideoCompositor do
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
     availability: :on_request,
     options: [
-      resolution: [
-        spec: Resolution.t(),
-        description: "Resolution of output stream."
-      ],
       output_id: [
-        spec: output_id(),
-        description: "Output identifier."
-      ],
-      encoder_preset: [
-        spec: encoder_preset(),
-        description:
-          "Preset for an encoder. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.",
-        default: :medium
+        spec: output_id()
       ]
     ]
 
   @impl true
   def handle_init(_ctx, opt) do
-    vc_port = opt.vc_server_port_number
-    :ok = start_vc_server(vc_port)
+    {[], opt}
+  end
 
-    :ok = VcReq.init(opt.framerate, opt.stream_fallback_timeout, opt.init_web_renderer?, vc_port)
+  @impl true
+  def handle_setup(_ctx, opt) do
+    vc_port =
+      case opt.vc_server_port_number do
+        :choose_at_random ->
+          {port_lower_bound, port_upper_bound} = opt.port_range
+
+          [port] =
+            port_lower_bound..port_upper_bound
+            |> Enum.take_random(1)
+
+          port
+
+        port when is_integer(port) ->
+          port
+      end
+
+    :ok = ServerRunner.start_vc_server(vc_port)
+
+    {:ok, _resp} =
+      VcReq.init(
+        opt.framerate,
+        opt.stream_fallback_timeout,
+        opt.init_web_renderer?,
+        vc_port
+      )
 
     if opt.start_composing_strategy == :on_init do
-      :ok = VcReq.start_composing(vc_port)
+      {:ok, _resp} = VcReq.start_composing(vc_port)
     end
 
     {[],
      %State{
-       inputs: [],
-       outputs: [],
        framerate: opt.framerate,
-       vc_port: vc_port
+       vc_port: vc_port,
+       port_range: opt.port_range
      }}
   end
 
   @impl true
   def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     input_id = ctx.options.input_id
-    {:ok, input_port} = register_input_stream(input_id, state)
+    {:ok, input_port} = StreamsHandler.register_input_stream(input_id, state)
 
     state = %State{
       state
       | inputs: [
-          %InputState{input_id: input_id, port_number: input_port, pad_ref: input_ref} | inputs
+          %State.Input{id: input_id, port: input_port, pad_ref: input_ref} | inputs
         ]
     }
 
@@ -231,242 +205,195 @@ defmodule Membrane.VideoCompositor do
         destination_address: @local_host
       })
 
-    {[notify_parent: {:input_registered, input_ref, input_id, State.ctx(state)}, spec: spec],
-     state}
+    {[notify_parent: {:input_registered, input_id, Context.new(state)}, spec: spec], state}
   end
 
   @impl true
   def handle_pad_added(
-        output_ref = Pad.ref(:output, pad_id),
+        output_ref = Pad.ref(:output, _pad_id),
         ctx,
         state = %State{outputs: outputs}
       ) do
-    {:ok, port} = register_output_stream(ctx.options, state)
-    output_id = ctx.options.output_id
+    %State.Output{ssrc: ssrc, id: output_id, width: width, height: height} =
+      outputs |> Enum.find(fn %State.Output{id: id} -> id == ctx.options.output_id end)
 
-    state = %State{
-      state
-      | outputs: [
-          %OutputState{
-            output_id: output_id,
-            pad_ref: output_ref,
-            port_number: port,
-            resolution: ctx.options.resolution
-          }
-          | outputs
-        ]
-    }
-
-    spec =
-      child({:upd_source, pad_id}, %UDP.Source{
-        local_port_no: port,
-        local_address: @local_host,
-        recv_buffer_size: @udp_buffer_size
-      })
-      |> via_in(Pad.ref(:rtp_input, pad_id))
-      |> child({:rtp_receiver, pad_id}, RTP.SessionBin)
-
-    {[notify_parent: {:output_registered, output_ref, output_id, State.ctx(state)}, spec: spec],
-     state}
-  end
-
-  @impl true
-  def handle_pad_removed(input_ref = Pad.ref(:input, pad_id), _ctx, state = %State{}) do
-    state = remove_input(state, input_ref)
-    {[remove_child: [{:rtp_sender, pad_id}, {:upd_sink, pad_id}]], state}
-  end
-
-  @impl true
-  def handle_pad_removed(output_ref = Pad.ref(:output, pad_id), _ctx, state = %State{}) do
-    state = remove_output(state, output_ref)
-
-    output_children = [
-      {:rtp_receiver, pad_id},
-      {:upd_source, pad_id},
-      {:rtp_receiver, pad_id},
-      {:output_processor, pad_id}
-    ]
-
-    {[remove_child: output_children], state}
-  end
-
-  @impl true
-  def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
-    :ok = VcReq.start_composing(state.vc_port)
-    {[], state}
-  end
-
-  @impl true
-  def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
-    case VcReq.send_custom_request(request_body, state.vc_port) do
-      {:ok, response} ->
-        if response.status != 200 do
-          Membrane.Logger.error(
-            "Request\n#{inspect(request_body)}\nfailed with error:\n#{inspect(response.body)}"
-          )
-        end
-
-        {[notify_parent: {:vc_request_response, request_body, response, State.ctx(state)}], state}
-
-      {:error, err} ->
-        Membrane.Logger.error("Request: #{request_body} failed. Error: #{err}.")
-        {[], state}
+    if ssrc == :stream_not_received do
+      raise """
+      Attempt to link output pad: #{inspect(output_ref)} to VideoCompositor, that hasn't been properly registered.
+      Linking outputs is only allowed after registering them with `register_output` message.
+      Send `register_output` message first and wait for receiving `output_registered` message.
+      See VideoCompositor docs to learn more: https://hexdocs.pm/membrane_video_compositor_plugin/Membrane.VideoCompositor.html
+      """
     end
-  end
-
-  @impl true
-  def handle_parent_notification(_notification, _ctx, state = %State{}) do
-    {[], state}
-  end
-
-  @impl true
-  def handle_child_notification(
-        {:new_rtp_stream, ssrc, _pt, _ext},
-        {:rtp_receiver, pad_id},
-        _ctx,
-        state = %State{}
-      ) do
-    %OutputState{resolution: %Resolution{width: output_width, height: output_height}} =
-      state.outputs
-      |> Enum.find(fn %OutputState{pad_ref: Pad.ref(:output, id)} -> pad_id == id end)
 
     output_stream_format = %Membrane.H264{
       framerate: {state.framerate, 1},
       alignment: :nalu,
       stream_structure: :annexb,
-      width: output_width,
-      height: output_height
+      width: width,
+      height: height
     }
 
     spec =
-      get_child({:rtp_receiver, pad_id})
+      get_child({:rtp_receiver, output_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
-      |> child({:output_processor, pad_id}, %Membrane.VideoCompositor.OutputProcessor{
+      |> child({:output_processor, output_id}, %Membrane.VideoCompositor.OutputProcessor{
         output_stream_format: output_stream_format
       })
-      |> bin_output(Pad.ref(:output, pad_id))
+      |> bin_output(output_ref)
+
+    update_output_state = fn output_state = %State.Output{id: id} ->
+      if id == output_id do
+        %State.Output{
+          output_state
+          | pad_ref: output_ref
+        }
+      else
+        output_state
+      end
+    end
+
+    outputs = state.outputs |> Enum.map(fn output_state -> update_output_state.(output_state) end)
+
+    state = %State{
+      state
+      | outputs: outputs
+    }
 
     {[spec: spec], state}
   end
 
   @impl true
-  def handle_child_notification(_msg, _child, _ctx, state) do
+  def handle_pad_removed(input_ref = Pad.ref(:input, pad_id), _ctx, state = %State{}) do
+    {:ok, _resp} =
+      state.inputs
+      |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
+      |> then(fn %State.Input{id: id} -> VcReq.unregister_input_stream(id, state.vc_port) end)
+
+    inputs = state.inputs |> Enum.reject(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
+
+    {[remove_child: [{:rtp_sender, pad_id}, {:upd_sink, pad_id}]], %State{state | inputs: inputs}}
+  end
+
+  @impl true
+  def handle_pad_removed(output_ref = Pad.ref(:output, _pad_id), _ctx, state = %State{}) do
+    output_id =
+      state.outputs
+      |> Enum.find(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
+      |> then(fn %State.Output{id: id} -> id end)
+
+    outputs =
+      state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
+
+    {:ok, _resp} = VcReq.unregister_output_stream(output_id, state.vc_port)
+
+    output_children = [
+      {:rtp_receiver, output_id},
+      {:upd_source, output_id},
+      {:rtp_receiver, output_id},
+      {:output_processor, output_id}
+    ]
+
+    {[remove_child: output_children], %State{state | outputs: outputs}}
+  end
+
+  @impl true
+  def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
+    {:ok, _resp} = VcReq.start_composing(state.vc_port)
     {[], state}
   end
 
-  @spec start_vc_server(:inet.port_number()) :: :ok
-  defp start_vc_server(vc_port) do
-    video_compositor_app_path = Mix.Tasks.DownloadCompositor.vc_app_path()
+  @impl true
+  def handle_parent_notification(
+        {:register_output, output_opt = %OutputOptions{id: id, width: width, height: height}},
+        _ctx,
+        state = %State{outputs: outputs}
+      ) do
+    {:ok, port} = StreamsHandler.register_output_stream(output_opt, state)
 
-    unless File.exists?(video_compositor_app_path) do
-      raise "Video Compositor binary is not available under search path: #{video_compositor_app_path}."
+    output_state = %State.Output{
+      id: id,
+      width: width,
+      height: height,
+      port: port
+    }
+
+    state = %State{
+      state
+      | outputs: [output_state | outputs]
+    }
+
+    spec =
+      child({:upd_source, id}, %UDP.Source{
+        local_port_no: port,
+        local_address: @local_host,
+        recv_buffer_size: @udp_buffer_size
+      })
+      |> via_in(Pad.ref(:rtp_input, id))
+      |> child({:rtp_receiver, id}, RTP.SessionBin)
+
+    output_registered_msg = {:output_registered, output_opt.id, Context.new(state)}
+
+    {[spec: spec, notify_parent: output_registered_msg], state}
+  end
+
+  @impl true
+  def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
+    case VcReq.send_request(request_body, state.vc_port) do
+      {res, response} when res == :ok or res == :error_response_code ->
+        response_msg = {:vc_request_response, request_body, response, Context.new(state)}
+        {[notify_parent: response_msg], state}
+
+      {:error, exception} ->
+        Membrane.Logger.error("""
+        VideoCompositor failed to send request: #{request_body}.\nException: #{exception}.
+        """)
+
+        {[], state}
     end
-
-    spawn(fn ->
-      Mix.Tasks.DownloadCompositor.vc_app_path()
-      |> Rambo.run([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
-    end)
-
-    case wait_for_vc_startup(vc_port) do
-      :started -> :ok
-      :not_started -> raise "Failed to startup and connect to VideoCompositor server."
-    end
   end
 
-  @spec wait_for_vc_startup(:inet.port_number()) :: :started | :not_started
-  defp wait_for_vc_startup(vc_port) do
-    0..30
-    |> Enum.reduce_while(:not_started, fn _i, _acc ->
-      Process.sleep(100)
+  @impl true
+  def handle_parent_notification(notification, _ctx, state = %State{}) do
+    Membrane.Logger.warning(
+      "VideoCompositor received unknown notification from parent: #{inspect(notification)}!"
+    )
 
-      case VcReq.send_custom_request(%{}, vc_port) do
-        {:ok, _} ->
-          {:halt, :started}
-
-        {:error, _reason} ->
-          {:cont, :not_started}
-      end
-    end)
+    {[], state}
   end
 
-  @spec register_input_stream(input_id(), State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  defp register_input_stream(input_id, state) do
-    try_register = fn input_port ->
-      VcReq.register_input_stream(input_id, input_port, state.vc_port)
-    end
-
-    register_input_or_output(try_register, state)
-  end
-
-  @spec register_output_stream(map(), State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  defp register_output_stream(pad_options, state) do
-    try_register = fn output_port ->
-      VcReq.register_output_stream(
-        pad_options.output_id,
-        output_port,
-        pad_options.resolution,
-        pad_options.encoder_preset,
-        state.vc_port
-      )
-    end
-
-    register_input_or_output(try_register, state)
-  end
-
-  @spec register_input_or_output((:inet.port_number() -> VcReq.req_result()), State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  defp register_input_or_output(try_register, state) do
-    6000..8000
-    |> Enum.shuffle()
-    |> Enum.reduce_while(:error, fn port, _acc -> try_port(try_register, port, state) end)
-  end
-
-  @spec try_port((:inet.port_number() -> VcReq.req_result()), :inet.port_number(), State.t()) ::
-          {:halt, {:ok, :inet.port_number()}} | {:cont, :error}
-  defp try_port(try_register, port, state) do
-    if state |> State.used_ports() |> MapSet.member?(port) do
-      {:cont, :error}
-    else
-      case try_register.(port) do
-        :ok ->
-          {:halt, {:ok, port}}
-
-        {:error, %Req.Response{}} ->
-          {:cont, :error}
-
-        _other ->
-          raise "Register input failed"
+  @impl true
+  def handle_child_notification(
+        {:new_rtp_stream, ssrc, _payload_type, _extensions},
+        {:rtp_receiver, output_id},
+        _ctx,
+        state = %State{}
+      ) do
+    update_output_state = fn output_state = %State.Output{id: id} ->
+      if id == output_id do
+        %State.Output{
+          output_state
+          | ssrc: ssrc
+        }
+      else
+        output_state
       end
     end
+
+    state =
+      state.outputs
+      |> Enum.map(fn output_state -> update_output_state.(output_state) end)
+      |> then(fn outputs -> %State{state | outputs: outputs} end)
+
+    {[notify_parent: {:new_output_stream, output_id, Context.new(state)}], state}
   end
 
-  @spec remove_input(State.t(), Membrane.Pad.ref()) :: State.t()
-  defp remove_input(state = %State{inputs: inputs}, input_ref) do
-    input_id =
-      inputs
-      |> Enum.find(fn %InputState{pad_ref: ref} -> ref == input_ref end)
-      |> then(fn %InputState{input_id: id} -> id end)
+  @impl true
+  def handle_child_notification(msg, child, _ctx, state) do
+    Membrane.Logger.info(
+      "Unknown msg received from child: #{inspect(msg)}, child: #{inspect(child)}"
+    )
 
-    :ok = VcReq.unregister_input_stream(input_id, state.vc_port)
-
-    inputs = Enum.reject(inputs, fn %InputState{pad_ref: ref} -> ref == input_ref end)
-
-    %State{state | inputs: inputs}
-  end
-
-  @spec remove_output(State.t(), Membrane.Pad.ref()) :: State.t()
-  defp remove_output(state = %State{outputs: outputs}, output_ref) do
-    output_id =
-      outputs
-      |> Enum.find(fn %OutputState{pad_ref: ref} -> ref == output_ref end)
-      |> then(fn %OutputState{output_id: id} -> id end)
-
-    outputs = Enum.reject(outputs, fn %OutputState{pad_ref: ref} -> ref == output_ref end)
-
-    :ok = VcReq.unregister_output_stream(output_id, state.vc_port)
-
-    %State{state | outputs: outputs}
+    {[], state}
   end
 end
