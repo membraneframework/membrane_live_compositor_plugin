@@ -15,7 +15,7 @@ defmodule Membrane.VideoCompositor do
     StreamsHandler
   }
 
-  alias Membrane.VideoCompositor.Request, as: VcReq
+  alias Membrane.VideoCompositor.Request
 
   @typedoc """
   Preset of VideoCompositor output video encoder.
@@ -162,7 +162,7 @@ defmodule Membrane.VideoCompositor do
     :ok = ServerRunner.start_vc_server(vc_port)
 
     {:ok, _resp} =
-      VcReq.init(
+      Request.init(
         opt.framerate,
         opt.stream_fallback_timeout,
         opt.init_web_renderer?,
@@ -170,7 +170,7 @@ defmodule Membrane.VideoCompositor do
       )
 
     if opt.start_composing_strategy == :on_init do
-      {:ok, _resp} = VcReq.start_composing(vc_port)
+      {:ok, _resp} = Request.start_composing(vc_port)
     end
 
     {[],
@@ -268,7 +268,7 @@ defmodule Membrane.VideoCompositor do
     {:ok, _resp} =
       state.inputs
       |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
-      |> then(fn %State.Input{id: id} -> VcReq.unregister_input_stream(id, state.vc_port) end)
+      |> then(fn %State.Input{id: id} -> Request.unregister_input_stream(id, state.vc_port) end)
 
     inputs = state.inputs |> Enum.reject(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
 
@@ -285,7 +285,7 @@ defmodule Membrane.VideoCompositor do
     outputs =
       state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
 
-    {:ok, _resp} = VcReq.unregister_output_stream(output_id, state.vc_port)
+    {:ok, _resp} = Request.unregister_output_stream(output_id, state.vc_port)
 
     output_children = [
       {:rtp_receiver, output_id},
@@ -299,7 +299,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
-    {:ok, _resp} = VcReq.start_composing(state.vc_port)
+    {:ok, _resp} = Request.start_composing(state.vc_port)
     {[], state}
   end
 
@@ -339,7 +339,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
-    case VcReq.send_request(request_body, state.vc_port) do
+    case Request.send_request(request_body, state.vc_port) do
       {res, response} when res == :ok or res == :error_response_code ->
         response_msg = {:vc_request_response, request_body, response, Context.new(state)}
         {[notify_parent: response_msg], state}
