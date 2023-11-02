@@ -1,7 +1,6 @@
 defmodule Mix.Tasks.DownloadCompositor do
-  @moduledoc """
-  Downloads VideoCompositor binaries.
-  """
+  @moduledoc false
+  # Downloads VideoCompositor binaries.
 
   use Mix.Task
   require Membrane.Logger

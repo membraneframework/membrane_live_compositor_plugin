@@ -1,5 +1,72 @@
 defmodule Membrane.VideoCompositor do
-  @moduledoc false
+  @moduledoc """
+  Membrane SDK for [VideoCompositor](https://github.com/membraneframework/video_compositor),
+  that makes advanced, real-time video composition /  easy.
+
+  ## Input streams
+  Inputs are simply linked as Membrane Pads, no additional requests are required.
+  Input registration happens automatically.
+  After registering and linking input stream VideoCompositor will notify parent with `t:input_registered_msg/0`.
+  After receiving this message, input can be used in composition.
+
+  ## Output streams
+  Outputs have to registered before linking.
+  To register output parent sends `t:register_output_msg/0`.
+  After registering output, VideoCompositor will notify parent with `t:output_registered_msg/0`.
+  Using output in composition is only available after registration.
+  Once VideoCompositor starts producing output stream, it will notify parent with `t:new_output_stream_msg/0`.
+  Linking outputs is only available after receiving that message.
+
+  ## Composition specification - `Scene`
+  To specify what VideoCompositor should render parent should send `t:vc_request/0`.
+  `Scene` is a top level specification of what VideoCompositor should render.
+
+  As an example, if two inputs with IDs `"input_0"` and `"input_1"` and
+  single output with ID `"output"` are registered, sending such `update_scene`
+  request would result in receiving inputs merged in layout on output:
+  ```
+  scene_update_request = %{
+    type: "update_scene",
+    nodes: [
+      %{
+        type: "built-in",
+        node_id: "layout",
+        transformation: "tiled_layout",
+        input_pads: ["input_0", "input_1"]
+      }
+    ],
+    outputs: [
+      %{
+        output_id: "output",
+        input_pad: "layout"
+      }
+    ]
+  }
+
+  {[notify_child: {:video_compositor, {:vc_request, scene_update_request}}]}
+  ```
+  VideoCompositor will notify parent with `t:vc_request_response/0`.
+
+  You can use renderers/nodes to process input streams into outputs.
+  VideoCompositor has builtin renders for most common use cases, but you can
+  also register your own shaders, images and websites to tune VideoCompositor for
+  specific business requirements.
+
+  ## Pads unlinking
+  Before unlinking pads make remove them from used scene, otherwise VC will crash on pad unlinking.
+  Inputs/outputs are unregistered automatically on pad unlinking.
+
+  ## API reference
+  You can find more detailed [API reference here](https://github.com/membraneframework/video_compositor/wiki/API-%E2%80%90-general#update-scene).
+  Only `update_scene` and `register_renderer` request are available (`inputs`/`outputs` registration, `start` and `init` is done by SDK).
+
+  ## General concepts
+  [General concepts of scene are explained here](https://github.com/membraneframework/video_compositor/wiki/Main-concepts).
+
+  ## Examples
+  Examples can be found in `examples` directory of Membrane VideoCompositor Plugin.
+  `Scene` API usage examples can be found in [VideoCompositor repo](https://github.com/membraneframework/video_compositor/tree/master/examples).
+  """
 
   use Membrane.Bin
 
@@ -43,13 +110,61 @@ defmodule Membrane.VideoCompositor do
   """
   @type output_id :: String.t()
 
-  @type request_body :: map()
-
   @typedoc """
-  Request that should be send to VideoCompositor.
+  Elixir translated body of VideoCompositor requests.
+
   Elixir types are mapped into JSON types:
   - map -> object
   - atom -> string
+
+  This request body:
+  ```
+  %{
+    type: "update_scene",
+    nodes: [
+      %{
+        type: "built-in",
+        node_id: "layout",
+        transformation: "tiled_layout",
+        input_pads: ["input_0", "input_1"]
+      }
+    ],
+    outputs: [
+      %{
+        output_id: "output",
+        input_pad: "layout"
+      }
+    ]
+  }
+  ```
+  will translate into the following JSON:
+  ```json
+  {
+    "type": "update_scene",
+    "nodes": [
+      {
+        "type": "built-in",
+        "node_id": "layout",
+        "transformation": "tiled_layout",
+        "input_pads": ["input_0", "input_1"]
+      }
+    ],
+    outputs: [
+      {
+        "output_id": "output",
+        "input_pad": "layout"
+      }
+    ]
+  }
+  ```
+  """
+  @type request_body :: map()
+
+  @typedoc """
+  Request send to VideoCompositor.
+
+  User of SDK should only send `update_scene` or `register_renderer` requests.
+  [API reference can be found here](https://github.com/membraneframework/video_compositor/wiki/API-%E2%80%90-general#update-scene).
   """
   @type vc_request :: {:vc_request, request_body()}
 
@@ -60,16 +175,40 @@ defmodule Membrane.VideoCompositor do
           {:vc_request_response, request_body(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Message send to parent after input registration.
+  Notification send to parent after input registration.
+
+  Input can be used in `scene` only after registration.
   """
   @type input_registered_msg :: {:input_registered, input_id(), Context.t()}
 
-  @type register_output_stream_msg :: {:register_output, OutputOptions.t()}
+  @typedoc """
+  Notification send to VideoCompositor to register output stream.
 
+  See "Output streams" section in doc for more information.
+  """
+  @type register_output_msg :: {:register_output, OutputOptions.t()}
+
+  @typedoc """
+  Notification send to parent after output registration.
+
+  Output can be used in `scene` only after registration.
+  """
   @type output_registered_msg :: {:output_registered, output_id(), Context.t()}
 
+  @typedoc """
+  Notification send to parent after VideoCompositor starts producing streams
+  and in ready to link output pad.
+
+  See "Output streams" section in doc for more information.
+  """
   @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
 
+  @typedoc"""
+  Range in which VideoCompositor search available ports.
+
+  This range should be at least a few times wider then expected sum
+  of inputs and outputs.
+  """
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
   @local_host {127, 0, 0, 1}

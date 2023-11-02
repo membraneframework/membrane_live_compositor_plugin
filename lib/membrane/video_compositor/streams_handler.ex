@@ -46,7 +46,7 @@ defmodule Membrane.VideoCompositor.StreamsHandler do
         ) ::
           {:halt, {:ok, :inet.port_number()}} | {:cont, :error}
   defp try_port(try_register, port, used_ports) do
-    # FFmpeg reserves additional ports (two ports for each RTP stream).
+    # FFmpeg reserves additional ports for RTP streams.
     if [port - 1, port, port] |> Enum.any?(fn port -> MapSet.member?(used_ports, port) end) do
       {:cont, :error}
     else

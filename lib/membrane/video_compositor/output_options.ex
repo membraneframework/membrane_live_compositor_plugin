@@ -1,5 +1,7 @@
 defmodule Membrane.VideoCompositor.OutputOptions do
-  @moduledoc false
+  @moduledoc """
+  Options of VideoCompositor output.
+  """
 
   @typedoc """
   After rendering VideoCompositors outputs are encoded.
@@ -21,6 +23,9 @@ defmodule Membrane.VideoCompositor.OutputOptions do
   @enforce_keys [:width, :height, :id]
   defstruct @enforce_keys ++ [encoder_preset: :fast]
 
+  @typedoc """
+  Options of VideoCompositor output.
+  """
   @type t :: %__MODULE__{
           width: Membrane.RawVideo.width_t(),
           height: Membrane.RawVideo.height_t(),

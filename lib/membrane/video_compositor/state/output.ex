@@ -1,7 +1,5 @@
 defmodule Membrane.VideoCompositor.State.Output do
-  @moduledoc """
-  State of single output stream.
-  """
+  @moduledoc false
 
   @enforce_keys [:id, :port, :width, :height]
   defstruct @enforce_keys ++ [pad_ref: :not_linked, ssrc: :stream_not_received]

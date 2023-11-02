@@ -1,7 +1,5 @@
 defmodule Membrane.VideoCompositor.State.Input do
-  @moduledoc """
-  State of single input stream.
-  """
+  @moduledoc false
 
   @enforce_keys [:id, :pad_ref, :port]
   defstruct @enforce_keys

@@ -1,6 +1,6 @@
 defmodule Membrane.VideoCompositor.Context do
   @moduledoc """
-  Context of VideoCompositor.
+  Context of VideoCompositor. Specifies VideoCompositor inputs and outputs.
   """
 
   alias Membrane.VideoCompositor.State
@@ -8,11 +8,15 @@ defmodule Membrane.VideoCompositor.Context do
   @enforce_keys [:inputs, :outputs]
   defstruct @enforce_keys
 
+  @typedoc """
+  Context of VideoCompositor. Specifies VideoCompositor inputs and outputs.
+  """
   @type t :: %__MODULE__{
           inputs: list(__MODULE__.InputStream.t()),
           outputs: list(__MODULE__.OutputStream.t())
         }
 
+  @doc false
   @spec new(State.t()) :: t()
   def new(state) do
     inputs =

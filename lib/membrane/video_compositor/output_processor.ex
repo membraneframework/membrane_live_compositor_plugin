@@ -1,11 +1,11 @@
 defmodule Membrane.VideoCompositor.OutputProcessor do
   @moduledoc false
+  # Forwards buffers and send specified output stream format.
 
   use Membrane.Filter
 
   def_options output_stream_format: [
                 spec: Membrane.H264.t(),
-                description: "VideoCompositor output stream format"
               ]
 
   def_input_pad :input,
