@@ -60,13 +60,19 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
 
   @impl true
   def handle_child_notification(
-        {:vc_request_response, _req, %Req.Response{status: code, body: body}, _vc_ctx},
+        {:vc_request_response, req, %Req.Response{status: response_code, body: response_body},
+         _vc_ctx},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
-    if code != 200 do
-      raise "action failed. Code: #{code}, body: #{inspect(body)}."
+    if response_code != 200 do
+      raise """
+      Request failed.
+      Request: `#{inspect(req)}.
+      Response code: #{response_code}.
+      Response body: #{inspect(response_body)}.
+      """
     end
 
     {[], state}

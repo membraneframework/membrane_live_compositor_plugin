@@ -277,10 +277,9 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_pad_removed(output_ref = Pad.ref(:output, _pad_id), _ctx, state = %State{}) do
-    output_id =
+    %State.Output{id: output_id} =
       state.outputs
       |> Enum.find(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
-      |> then(fn %State.Output{id: id} -> id end)
 
     outputs =
       state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
