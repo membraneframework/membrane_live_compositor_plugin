@@ -54,7 +54,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:rambo, "~> 0.3"},
       # VC API requests
       {:req, "~> 0.4.0"},
-      {:jason, "~> 1.4"},
       # Examples
       {:membrane_file_plugin, "~> 0.15.0"},
       {:membrane_realtimer_plugin, "~> 0.7.0"},
