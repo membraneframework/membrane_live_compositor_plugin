@@ -6,6 +6,7 @@ defmodule Mix.Tasks.DownloadCompositor do
   require Membrane.Logger
 
   @vc_version "v0.1.0-rc.2"
+  @membrane_video_compositor_plugin_path File.cwd!()
 
   @impl Mix.Task
   def run(_args) do
@@ -27,7 +28,8 @@ defmodule Mix.Tasks.DownloadCompositor do
 
   @spec vc_app_path() :: String.t()
   def vc_app_path() do
-    File.cwd!() |> Path.join("#{vc_app_directory()}/video_compositor/video_compositor")
+    @membrane_video_compositor_plugin_path
+    |> Path.join("#{vc_app_directory()}/video_compositor/video_compositor")
   end
 
   defp vc_app_directory() do
