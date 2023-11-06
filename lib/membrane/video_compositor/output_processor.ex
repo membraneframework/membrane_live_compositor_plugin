@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.OutputProcessor do
   use Membrane.Filter
 
   def_options output_stream_format: [
-                spec: Membrane.H264.t(),
+                spec: Membrane.H264.t()
               ]
 
   def_input_pad :input,

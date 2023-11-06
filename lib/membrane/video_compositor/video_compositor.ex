@@ -203,7 +203,7 @@ defmodule Membrane.VideoCompositor do
   """
   @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
 
-  @typedoc"""
+  @typedoc """
   Range in which VideoCompositor search available ports.
 
   This range should be at least a few times wider then expected sum
