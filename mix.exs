@@ -51,7 +51,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:membrane_rtp_h264_plugin, "~> 0.18.0"},
       {:membrane_udp_plugin, "~> 0.10.0"},
       # VC server start
-      {:rambo, "~> 0.3"},
+      {:muontrap, "~> 1.0"},
       # VC API requests
       {:req, "~> 0.4.0"},
       # Examples

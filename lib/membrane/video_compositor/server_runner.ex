@@ -13,12 +13,7 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
     spawn(fn ->
       video_compositor_app_path
-      |> Rambo.run([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
-
-      raise """
-      Running VideoCompositor failed.
-      On apple silicon try running: "mix compile.rambo".
-      """
+      |> MuonTrap.cmd([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
     end)
 
     case wait_for_vc_startup(vc_port) do

@@ -20,12 +20,6 @@ def deps do
 end
 ```
 
-In case of error `sh: [cwd]/_build/dev/lib/rambo/priv/rambo: No such file or directory` run:
-
-```console
-mix compile.rambo
-```
-
 ## Examples
 
 Examples can be found in `examples` directory.
