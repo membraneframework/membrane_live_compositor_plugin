@@ -8,12 +8,17 @@ defmodule Membrane.VideoCompositor.ServerRunner do
     video_compositor_app_path = Mix.Tasks.DownloadCompositor.vc_app_path()
 
     unless File.exists?(video_compositor_app_path) do
-      raise "Video Compositor binary is not available under search path: #{video_compositor_app_path}."
+      raise "Video Compositor binary is not available under search path: \"#{video_compositor_app_path}\"."
     end
 
     spawn(fn ->
       video_compositor_app_path
       |> Rambo.run([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
+
+      raise """
+      Running VideoCompositor failed.
+      On apple silicon try running: "mix compile.rambo".
+      """
     end)
 
     case wait_for_vc_startup(vc_port) do

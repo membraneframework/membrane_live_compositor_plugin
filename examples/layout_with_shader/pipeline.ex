@@ -1,11 +1,11 @@
 defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   @moduledoc false
 
-  alias Membrane.VideoCompositor
   use Membrane.Pipeline
 
   require Membrane.Logger
 
+  alias Membrane.VideoCompositor
   alias Membrane.VideoCompositor.{Context, OutputOptions}
 
   @output_width 1920

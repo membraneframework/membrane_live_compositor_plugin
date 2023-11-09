@@ -17,23 +17,24 @@ defmodule Mix.Tasks.DownloadCompositor do
       File.mkdir_p!(vc_app_directory())
       Membrane.Logger.info("Downloading VideoCompositor binary")
 
-      tmp_path = "tmp"
+      tmp_path = @membrane_video_compositor_plugin_path |> Path.join("tmp")
       File.mkdir_p!(tmp_path)
 
-      System.cmd("wget", ["-O", "tmp/video_compositor", url])
-      System.cmd("tar", ["-xvf", "tmp/video_compositor", "-C", vc_app_directory()])
-      File.rm_rf!("tmp/video_compositor")
+      wget_res_path = Path.join(tmp_path, "video_compositor")
+      System.cmd("wget", ["-O", wget_res_path, url])
+      System.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
+      File.rm_rf!(wget_res_path)
     end
   end
 
   @spec vc_app_path() :: String.t()
   def vc_app_path() do
-    @membrane_video_compositor_plugin_path
-    |> Path.join("#{vc_app_directory()}/video_compositor/video_compositor")
+    Path.join(vc_app_directory(), "video_compositor/video_compositor")
   end
 
   defp vc_app_directory() do
-    "priv/#{@vc_version}/#{system_architecture()}"
+    @membrane_video_compositor_plugin_path
+    |> Path.join("priv/#{@vc_version}/#{system_architecture()}")
   end
 
   @spec system_architecture() :: String.t()
