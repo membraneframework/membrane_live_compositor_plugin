@@ -36,8 +36,8 @@ defmodule Membrane.VideoCompositor.Mixfile do
     Mix.compilers() ++ [:download_compositor]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support", "examples"]
-  defp elixirc_paths(_env), do: ["lib", "test", "examples"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib", "test"]
 
   defp deps do
     [
@@ -52,12 +52,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       {:muontrap, "~> 1.0"},
       # VC API requests
       {:req, "~> 0.4.0"},
-      # Examples
-      {:membrane_file_plugin, "~> 0.15.0"},
-      {:membrane_realtimer_plugin, "~> 0.7.0"},
-      {:membrane_sdl_plugin, "~> 0.16.0"},
-      {:membrane_h264_plugin, "~> 0.7.3"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
