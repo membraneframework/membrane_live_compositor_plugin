@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.DownloadCompositor do
+defmodule Mix.Tasks.Compile.DownloadCompositor do
   @moduledoc false
   # Downloads VideoCompositor binaries.
 
@@ -25,6 +25,8 @@ defmodule Mix.Tasks.DownloadCompositor do
       System.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
       File.rm_rf!(wget_res_path)
     end
+    
+    :ok
   end
 
   @spec vc_app_path() :: String.t()

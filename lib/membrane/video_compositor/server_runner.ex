@@ -5,7 +5,7 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
   @spec start_vc_server(:inet.port_number()) :: :ok | no_return()
   def start_vc_server(vc_port) do
-    video_compositor_app_path = Mix.Tasks.DownloadCompositor.vc_app_path()
+    video_compositor_app_path = Mix.Tasks.Compile.DownloadCompositor.vc_app_path()
 
     unless File.exists?(video_compositor_app_path) do
       raise "Video Compositor binary is not available under search path: \"#{video_compositor_app_path}\"."
