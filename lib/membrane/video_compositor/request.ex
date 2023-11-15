@@ -98,6 +98,8 @@ defmodule Membrane.VideoCompositor.Request do
   @spec send_request(VideoCompositor.request_body(), :inet.port_number()) ::
           request_result()
   def send_request(request_body, vc_port) do
+    {:ok, _} = Application.ensure_all_started(:req)
+
     vc_port
     |> vc_url()
     |> Req.post(json: request_body)

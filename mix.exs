@@ -9,7 +9,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
       app: :membrane_video_compositor_plugin,
       version: @version,
       compilers: compilers(),
-      aliases: aliases(),
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -35,12 +34,6 @@ defmodule Membrane.VideoCompositor.Mixfile do
 
   defp compilers() do
     Mix.compilers() ++ [:download_compositor]
-  end
-
-  defp aliases() do
-    [
-      compile: ["compile.download_compositor", "compile"]
-    ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support", "examples"]

@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       System.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
       File.rm_rf!(wget_res_path)
     end
-    
+
     :ok
   end
 
