@@ -16,7 +16,7 @@ defmodule Membrane.VideoCompositor.Request do
           request_result()
   def init(framerate, stream_fallback_timeout, init_web_renderer?, vc_port) do
     %{
-      type: "init",
+      type: :init,
       web_renderer: %{
         init: init_web_renderer?
       },
@@ -29,7 +29,7 @@ defmodule Membrane.VideoCompositor.Request do
   @spec start_composing(:inet.port_number()) :: request_result()
   def start_composing(vc_port) do
     %{
-      type: "start"
+      type: :start
     }
     |> send_request(vc_port)
   end
@@ -42,8 +42,8 @@ defmodule Membrane.VideoCompositor.Request do
           request_result()
   def register_input_stream(input_id, input_port_number, vc_port) do
     %{
-      type: "register",
-      entity_type: "input_stream",
+      type: :register,
+      entity_type: :input_stream,
       input_id: "#{input_id}",
       port: input_port_number
     }
@@ -54,8 +54,8 @@ defmodule Membrane.VideoCompositor.Request do
           request_result()
   def unregister_input_stream(input_id, vc_port) do
     %{
-      type: "unregister",
-      entity_type: "input_stream",
+      type: :unregister,
+      entity_type: :input_stream,
       input_id: input_id
     }
     |> send_request(vc_port)
@@ -65,8 +65,8 @@ defmodule Membrane.VideoCompositor.Request do
           request_result()
   def unregister_output_stream(output_id, vc_port) do
     %{
-      type: "unregister",
-      entity_type: "output_stream",
+      type: :unregister,
+      entity_type: :output_stream,
       output_id: output_id
     }
     |> send_request(vc_port)
@@ -79,8 +79,8 @@ defmodule Membrane.VideoCompositor.Request do
         ) :: request_result()
   def register_output_stream(output_opt, stream_port, vc_port) do
     %{
-      type: "register",
-      entity_type: "output_stream",
+      type: :register,
+      entity_type: :output_stream,
       output_id: output_opt.id,
       port: stream_port,
       ip: @local_host_url,
