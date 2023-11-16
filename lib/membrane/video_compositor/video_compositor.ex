@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
   Membrane SDK for [VideoCompositor](https://github.com/membraneframework/video_compositor),
-  that makes advanced, real-time video composition /  easy.
+  that makes advanced, real-time video composition easy.
 
   ## Input streams
   Inputs are simply linked as Membrane Pads, no additional requests are required.

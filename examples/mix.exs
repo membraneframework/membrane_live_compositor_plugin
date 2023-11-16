@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.Examples.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      dialyzer: dialyzer(),
+      dialyzer: dialyzer()
     ]
   end
 

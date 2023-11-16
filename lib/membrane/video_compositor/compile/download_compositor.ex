@@ -13,7 +13,9 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
     url =
       "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{system_architecture()}.tar.gz"
 
-    unless File.exists?(vc_app_directory()) do
+    lock_path = vc_app_directory() |> Path.join(".lock")
+
+    unless File.exists?(lock_path) do
       File.mkdir_p!(vc_app_directory())
       Membrane.Logger.info("Downloading VideoCompositor binary")
 
@@ -24,6 +26,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       System.cmd("wget", ["-O", wget_res_path, url])
       System.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
       File.rm_rf!(wget_res_path)
+      File.touch!(lock_path)
     end
 
     :ok

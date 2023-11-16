@@ -22,7 +22,7 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
     input_specs = 0..10 |> Enum.map(fn input_number -> input_spec(input_number, sample_path) end)
 
     0..5
-    |> Enum.map(fn output_number ->
+    |> Enum.each(fn output_number ->
       five_seconds = 5_000
 
       Process.send_after(
@@ -122,7 +122,7 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
           [Membrane.Pipeline.Action.notify_child()]
   defp update_scene_action(input_ids, output_ids) do
     update_scene_request =
-      if length(output_ids) > 0 and length(input_ids) > 0 do
+      if not Enum.empty?(output_ids) and not Enum.empty?(input_ids) > 0 do
         outputs =
           output_ids
           |> Enum.map(fn output_id -> %{output_id: output_id, input_pad: @layout_id} end)

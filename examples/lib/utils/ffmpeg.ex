@@ -1,6 +1,7 @@
 defmodule Membrane.VideoCompositor.Examples.Utils.FFmpeg do
   @moduledoc false
 
+  @spec generate_sample_video() :: nil
   def generate_sample_video() do
     unless File.exists?("samples/testsrc.h264") do
       IO.puts("Creating sample video")

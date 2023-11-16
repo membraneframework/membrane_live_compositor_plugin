@@ -138,7 +138,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
 
   defp update_scene_action(%Context{inputs: inputs, outputs: outputs}) do
     update_scene_request =
-      if length(inputs) == 0 or length(outputs) == 0 do
+      if Enum.empty?(inputs) or Enum.empty?(outputs) do
         empty_scene()
       else
         layout_scene(inputs)
@@ -176,7 +176,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
         },
         %{
           type: :shader,
-          node_id: :twisted_layout,
+          node_id: "twisted_layout",
           shader_id: "example_shader",
           resolution: %{
             width: 1920,

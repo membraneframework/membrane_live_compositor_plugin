@@ -21,7 +21,7 @@ defmodule Membrane.VideoCompositor.OutputOptions do
           | :placebo
 
   @enforce_keys [:width, :height, :id]
-  defstruct @enforce_keys ++ [encoder_preset: :medium]
+  defstruct @enforce_keys ++ [encoder_preset: :fast]
 
   @typedoc """
   Options of VideoCompositor output.
