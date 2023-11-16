@@ -15,8 +15,7 @@ The package can be installed by adding `membrane_video_compositor_plugin` to you
 ```elixir
 def deps do
   [
-    {:membrane_video_compositor_plugin, "~> 0.5.4"},
-    {:membrane_rtp_h264_plugin, "~> 0.18.0"}
+    {:membrane_video_compositor_plugin, "~> 0.5.4"}
   ]
 end
 ```

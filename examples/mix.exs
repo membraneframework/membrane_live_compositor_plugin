@@ -17,7 +17,7 @@ defmodule Membrane.VideoCompositor.Examples.Mixfile do
 
   def application do
     [
-      extra_applications: []
+      extra_applications: [:membrane_rtp_h264_plugin]
     ]
   end
 
@@ -29,7 +29,6 @@ defmodule Membrane.VideoCompositor.Examples.Mixfile do
       # Membrane
       {:membrane_core, "~> 0.12.9"},
       {:membrane_video_compositor_plugin, path: "..", app: false},
-      {:membrane_rtp_h264_plugin, "~> 0.18.0"},
       # VC API requests
       {:req, "~> 0.4.0"},
       # Examples
