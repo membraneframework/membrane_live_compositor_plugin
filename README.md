@@ -20,6 +20,16 @@ def deps do
 end
 ```
 
+and specifying `:membrane_rtp_h264_plugin` as an extra application:
+
+```elixir
+def application do
+  [
+    extra_applications: [:membrane_rtp_h264_plugin]
+  ]
+end
+```
+
 ## Examples
 
 Examples can be found in `examples` directory.
