@@ -128,13 +128,13 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
           |> Enum.map(fn output_id -> %{output_id: output_id, input_pad: @layout_id} end)
 
         %{
-          type: "update_scene",
+          type: :update_scene,
           nodes: [tiled_layout(input_ids)],
           outputs: outputs
         }
       else
         %{
-          type: "update_scene",
+          type: :update_scene,
           nodes: [],
           outputs: []
         }
@@ -147,7 +147,7 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
   defp tiled_layout(input_pads) do
     %{
       type: "built-in",
-      transformation: "tiled_layout",
+      transformation: :tiled_layout,
       node_id: "layout",
       margin: 10,
       resolution: %{

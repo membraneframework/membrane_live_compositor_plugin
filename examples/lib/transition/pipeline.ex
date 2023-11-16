@@ -126,7 +126,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     {fit_node, fit_node_id} = fit(input_id)
 
     %{
-      type: "update_scene",
+      type: :update_scene,
       nodes: [fit_node],
       outputs: [
         %{
@@ -149,7 +149,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     {transition_node, transition_node_id} = transition([first_fit_node_id, second_fit_node_id])
 
     %{
-      type: "update_scene",
+      type: :update_scene,
       nodes: [first_fit_node, second_fit_node, transition_node],
       outputs: [
         %{
@@ -168,12 +168,12 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     transition_node_id = "layout_transition"
 
     {%{
-       type: "transition",
+       type: :transition,
        node_id: transition_node_id,
        start: start_transition_layouts() |> fixed_position_layout(),
        end: end_transition_layouts() |> fixed_position_layout(),
        transition_duration_ms: 1000,
-       interpolation: "linear",
+       interpolation: :linear,
        input_pads: input_pads
      }, transition_node_id}
   end
@@ -184,8 +184,8 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     {%{
        type: "built-in",
        node_id: fit_node_id,
-       transformation: "transform_to_resolution",
-       strategy: "fit",
+       transformation: :transform_to_resolution,
+       strategy: :fit,
        resolution: %{
          width: @output_width,
          height: @output_height
@@ -224,7 +224,7 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
   defp fixed_position_layout(texture_layouts) do
     %{
       type: "built-in",
-      transformation: "fixed_position_layout",
+      transformation: :fixed_position_layout,
       texture_layouts: texture_layouts,
       resolution: %{
         width: @output_width,

@@ -128,7 +128,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   @spec update_scene_action(Context.t()) :: Membrane.Pipeline.Action.notify_child()
   defp update_scene_action(%Context{outputs: []}) do
     request_body = %{
-      type: "update_scene",
+      type: :update_scene,
       nodes: [],
       outputs: []
     }
@@ -150,7 +150,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   @spec empty_scene() :: VideoCompositor.request_body()
   defp empty_scene() do
     %{
-      type: "update_scene",
+      type: :update_scene,
       nodes: [],
       outputs: []
     }
@@ -161,12 +161,12 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
     input_pads = inputs |> Enum.map(fn %Context.InputStream{id: input_id} -> input_id end)
 
     %{
-      type: "update_scene",
+      type: :update_scene,
       nodes: [
         %{
           type: "built-in",
           node_id: "tiled_layout",
-          transformation: "tiled_layout",
+          transformation: :tiled_layout,
           margin: 10,
           resolution: %{
             width: 1920,
@@ -175,8 +175,8 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
           input_pads: input_pads
         },
         %{
-          type: "shader",
-          node_id: "twisted_layout",
+          type: :shader,
+          node_id: :twisted_layout,
           shader_id: "example_shader",
           resolution: %{
             width: 1920,
@@ -196,10 +196,10 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
 
   defp register_shader_request_body() do
     %{
-      type: "register",
-      entity_type: "shader",
+      type: :register,
+      entity_type: :shader,
       shader_id: "example_shader",
-      source: File.read!("./examples/layout_with_shader/example_shader.wgsl"),
+      source: File.read!("./lib/layout_with_shader/example_shader.wgsl"),
       constraints: [
         %{
           type: "input_count",
