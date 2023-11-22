@@ -6,7 +6,6 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
   require Membrane.Logger
 
   @vc_version "v0.1.0-rc.2"
-  @membrane_video_compositor_plugin_path File.cwd!()
 
   @impl Mix.Task
   def run(_args) do
@@ -19,7 +18,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       File.mkdir_p!(vc_app_directory())
       Membrane.Logger.info("Downloading VideoCompositor binary")
 
-      tmp_path = @membrane_video_compositor_plugin_path |> Path.join("tmp")
+      tmp_path = :code.priv_dir(:membrane_video_compositor_plugin) |> Path.join("tmp")
       File.mkdir_p!(tmp_path)
 
       wget_res_path = Path.join(tmp_path, "video_compositor")
@@ -38,8 +37,8 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
   end
 
   defp vc_app_directory() do
-    @membrane_video_compositor_plugin_path
-    |> Path.join("priv/#{@vc_version}/#{system_architecture()}")
+    :code.priv_dir(:membrane_video_compositor_plugin)
+    |> Path.join("#{@vc_version}/#{system_architecture()}")
   end
 
   @spec system_architecture() :: String.t()

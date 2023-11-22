@@ -28,7 +28,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
 
   def application do
     [
-      extra_applications: [:membrane_rtp_h264_plugin]
+      extra_applications: []
     ]
   end
 

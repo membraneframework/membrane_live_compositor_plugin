@@ -245,7 +245,7 @@ defmodule Membrane.VideoCompositor do
                 spec: :on_init | :on_message,
                 description: """
                 Specifies when VideoCompositor starts composing frames.
-                In `:on_message` strategy, `:start_composing` message have to be send to start composing.
+                In `:on_message` strategy, `:start_composing` message has to be send to start composing.
                 """,
                 default: :on_init
               ],
@@ -534,6 +534,8 @@ defmodule Membrane.VideoCompositor do
     {[], state}
   end
 
+  @spec try_starting_on_port(:inet.port_number(), String.t()) ::
+          {:halt, {:ok, :inet.port_number()}} | {:cont, err :: String.t()}
   defp try_starting_on_port(port, err) do
     Membrane.Logger.info("Trying to lunch VideoCompositor on port: #{port}")
 

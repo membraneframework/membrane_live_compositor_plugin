@@ -11,13 +11,16 @@ defmodule Membrane.VideoCompositor.ServerRunner do
       raise "Video Compositor binary is not available under search path: \"#{video_compositor_app_path}\"."
     end
 
-    pid = spawn(fn ->
-      video_compositor_app_path
-      |> MuonTrap.cmd([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
-    end)
+    pid =
+      spawn(fn ->
+        video_compositor_app_path
+        |> MuonTrap.cmd([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
+      end)
 
     case wait_for_vc_startup(vc_port) do
-      :started -> :ok
+      :started ->
+        :ok
+
       :not_started ->
         Process.exit(pid, :normal)
         :error
