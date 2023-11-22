@@ -104,17 +104,11 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
         _ctx,
         state = %{inputs: inputs, outputs: outputs}
       ) do
-    outputs = outputs |> Enum.reject(fn id -> id == output_id end)
-
-    children = [
-      {:output_parser, output_id},
-      {:output_decoder, output_id},
-      {:sdl_player, output_id}
-    ]
+    outputs = List.delete(outputs, output_id)
 
     # Change the scene before removing the output.
     # VideoCompositor forbids removing output used in the current scene.
-    {update_scene_action(inputs, outputs) ++ [remove_children: children],
+    {update_scene_action(inputs, outputs) ++ [remove_children: output_group_id(output_id)],
      %{state | outputs: outputs}}
   end
 
@@ -122,7 +116,7 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
           [Membrane.Pipeline.Action.notify_child()]
   defp update_scene_action(input_ids, output_ids) do
     update_scene_request =
-      if not Enum.empty?(output_ids) and not Enum.empty?(input_ids) > 0 do
+      if not Enum.empty?(output_ids) and not Enum.empty?(input_ids) do
         outputs =
           output_ids
           |> Enum.map(fn output_id -> %{output_id: output_id, input_pad: @layout_id} end)
@@ -148,7 +142,7 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
     %{
       type: "built-in",
       transformation: :tiled_layout,
-      node_id: "layout",
+      node_id: @layout_id,
       margin: 10,
       resolution: %{
         width: 1920,
@@ -170,15 +164,18 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
   end
 
   defp output_spec(output_id) do
-    get_child(:video_compositor)
-    |> via_out(Membrane.Pad.ref(:output, output_id),
-      options: [
-        output_id: output_id
-      ]
-    )
-    |> child({:output_parser, output_id}, Membrane.H264.Parser)
-    |> child({:output_decoder, output_id}, Membrane.H264.FFmpeg.Decoder)
-    |> child({:sdl_player, output_id}, Membrane.SDL.Player)
+    links =
+      get_child(:video_compositor)
+      |> via_out(Membrane.Pad.ref(:output, output_id),
+        options: [
+          output_id: output_id
+        ]
+      )
+      |> child({:output_parser, output_id}, Membrane.H264.Parser)
+      |> child({:output_decoder, output_id}, Membrane.H264.FFmpeg.Decoder)
+      |> child({:sdl_player, output_id}, Membrane.SDL.Player)
+
+    {links, group: output_group_id(output_id)}
   end
 
   defp inputs_outputs_ids(%Context{inputs: inputs, outputs: outputs}) do
@@ -190,5 +187,9 @@ defmodule Membrane.VideoCompositor.Examples.DynamicOutputs.Pipeline do
 
   defp output_id(output_number) do
     "output_#{output_number}"
+  end
+
+  defp output_group_id(output_id) do
+    "output_group_#{output_id}"
   end
 end

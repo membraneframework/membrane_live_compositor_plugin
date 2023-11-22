@@ -3,7 +3,7 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
   alias Membrane.VideoCompositor.Request
 
-  @spec start_vc_server(:inet.port_number()) :: :ok | no_return()
+  @spec start_vc_server(:inet.port_number()) :: :ok | :error
   def start_vc_server(vc_port) do
     video_compositor_app_path = Mix.Tasks.Compile.DownloadCompositor.vc_app_path()
 
@@ -11,14 +11,16 @@ defmodule Membrane.VideoCompositor.ServerRunner do
       raise "Video Compositor binary is not available under search path: \"#{video_compositor_app_path}\"."
     end
 
-    spawn(fn ->
+    pid = spawn(fn ->
       video_compositor_app_path
       |> MuonTrap.cmd([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
     end)
 
     case wait_for_vc_startup(vc_port) do
       :started -> :ok
-      :not_started -> raise "Failed to startup and connect to VideoCompositor server."
+      :not_started ->
+        Process.exit(pid, :normal)
+        :error
     end
   end
 

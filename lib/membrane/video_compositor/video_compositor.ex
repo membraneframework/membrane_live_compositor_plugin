@@ -1,7 +1,7 @@
 defmodule Membrane.VideoCompositor do
   @moduledoc """
   Membrane SDK for [VideoCompositor](https://github.com/membraneframework/video_compositor),
-  that makes advanced, real-time video composition easy.
+  that makes advanced, real-time video composition possible.
 
   ## Input streams
   Inputs are simply linked as Membrane Pads, no additional requests are required.
@@ -283,22 +283,22 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_setup(_ctx, opt) do
-    vc_port =
+    {:ok, vc_port} =
       case opt.vc_server_port_number do
         :choose_at_random ->
           {port_lower_bound, port_upper_bound} = opt.port_range
 
-          [port] =
-            port_lower_bound..port_upper_bound
-            |> Enum.take_random(1)
-
-          port
+          port_lower_bound..port_upper_bound
+          |> Enum.shuffle()
+          |> Enum.reduce_while(
+            {:error, "Failed to start VideoCompositor server on all ports."},
+            fn port, err -> try_starting_on_port(port, err) end
+          )
 
         port when is_integer(port) ->
-          port
+          :ok = ServerRunner.start_vc_server(port)
+          {:ok, port}
       end
-
-    :ok = ServerRunner.start_vc_server(vc_port)
 
     {:ok, _resp} =
       Request.init(
@@ -332,7 +332,7 @@ defmodule Membrane.VideoCompositor do
         ]
     }
 
-    spec =
+    links =
       bin_input(input_ref)
       |> via_in(input_ref,
         options: [payloader: RTP.H264.Payloader]
@@ -344,7 +344,9 @@ defmodule Membrane.VideoCompositor do
         destination_address: @local_host
       })
 
-    {[notify_parent: {:input_registered, input_id, Context.new(state)}, spec: spec], state}
+    spec = {links, group: input_group_id(input_id)}
+
+    {[spec: spec, notify_parent: {:input_registered, input_id, Context.new(state)}], state}
   end
 
   @impl true
@@ -373,13 +375,15 @@ defmodule Membrane.VideoCompositor do
       height: height
     }
 
-    spec =
+    links =
       get_child({:rtp_receiver, output_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
       |> child({:output_processor, output_id}, %Membrane.VideoCompositor.OutputProcessor{
         output_stream_format: output_stream_format
       })
       |> bin_output(output_ref)
+
+    spec = {links, group: output_group_id(output_id)}
 
     update_output_state = fn output_state = %State.Output{id: id} ->
       if id == output_id do
@@ -403,15 +407,15 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_pad_removed(input_ref = Pad.ref(:input, pad_id), _ctx, state = %State{}) do
-    {:ok, _resp} =
-      state.inputs
-      |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
-      |> then(fn %State.Input{id: id} -> Request.unregister_input_stream(id, state.vc_port) end)
+  def handle_pad_removed(input_ref = Pad.ref(:input, _pad_id), _ctx, state = %State{}) do
+    %State.Input{id: input_id} =
+      state.inputs |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
+
+    {:ok, _resp} = Request.unregister_input_stream(input_id, state.vc_port)
 
     inputs = state.inputs |> Enum.reject(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
 
-    {[remove_child: [{:rtp_sender, pad_id}, {:upd_sink, pad_id}]], %State{state | inputs: inputs}}
+    {[remove_children: input_group_id(input_id)], %State{state | inputs: inputs}}
   end
 
   @impl true
@@ -420,19 +424,12 @@ defmodule Membrane.VideoCompositor do
       state.outputs
       |> Enum.find(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
 
+    {:ok, _resp} = Request.unregister_output_stream(output_id, state.vc_port)
+
     outputs =
       state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
 
-    {:ok, _resp} = Request.unregister_output_stream(output_id, state.vc_port)
-
-    output_children = [
-      {:rtp_receiver, output_id},
-      {:upd_source, output_id},
-      {:rtp_receiver, output_id},
-      {:output_processor, output_id}
-    ]
-
-    {[remove_child: output_children], %State{state | outputs: outputs}}
+    {[remove_children: output_group_id(output_id)], %State{state | outputs: outputs}}
   end
 
   @impl true
@@ -461,14 +458,16 @@ defmodule Membrane.VideoCompositor do
       | outputs: [output_state | outputs]
     }
 
-    spec =
-      child({:upd_source, id}, %UDP.Source{
+    links =
+      child({:udp_source, id}, %UDP.Source{
         local_port_no: port,
         local_address: @local_host,
         recv_buffer_size: @udp_buffer_size
       })
       |> via_in(Pad.ref(:rtp_input, id))
       |> child({:rtp_receiver, id}, RTP.SessionBin)
+
+    spec = {links, group: output_group_id(id)}
 
     output_registered_msg = {:output_registered, output_opt.id, Context.new(state)}
 
@@ -483,9 +482,9 @@ defmodule Membrane.VideoCompositor do
         {[notify_parent: response_msg], state}
 
       {:error, exception} ->
-        Membrane.Logger.error("""
-        VideoCompositor failed to send request: #{request_body}.\nException: #{exception}.
-        """)
+        Membrane.Logger.error(
+          "VideoCompositor failed to send request: #{request_body}.\nException: #{exception}."
+        )
 
         {[], state}
     end
@@ -533,5 +532,24 @@ defmodule Membrane.VideoCompositor do
     )
 
     {[], state}
+  end
+
+  defp try_starting_on_port(port, err) do
+    Membrane.Logger.info("Trying to lunch VideoCompositor on port: #{port}")
+
+    case ServerRunner.start_vc_server(port) do
+      :ok -> {:halt, {:ok, port}}
+      :error -> {:cont, err}
+    end
+  end
+
+  @spec input_group_id(input_id()) :: String.t()
+  defp input_group_id(input_id) do
+    "input_group_#{input_id}"
+  end
+
+  @spec output_group_id(output_id()) :: String.t()
+  defp output_group_id(output_id) do
+    "output_group_#{output_id}"
   end
 end
