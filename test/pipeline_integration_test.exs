@@ -93,8 +93,7 @@ defmodule Membrane.VideoCompositor.PipelineIntegrationTest do
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineH264, custom_args: options)
-    assert_pipeline_play(pipeline)
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pipeline, blocking?: true)
+    TestingPipeline.terminate(pipeline)
   end
 end

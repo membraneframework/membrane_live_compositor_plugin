@@ -105,8 +105,8 @@ defmodule Membrane.VideoCompositor do
       bin_input(Pad.ref(:input, pad_id))
       |> via_in(Pad.ref(:input, pad_id),
         options: [
-          timestamp_offset: context.options.timestamp_offset,
-          metadata: context.options.metadata
+          timestamp_offset: context.pad_options.timestamp_offset,
+          metadata: context.pad_options.metadata
         ]
       )
       |> get_child(:queue)

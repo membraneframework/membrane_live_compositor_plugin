@@ -128,9 +128,8 @@ defmodule Membrane.VideoCompositor.TransformationsTest do
     }
 
     pipeline = TestingPipeline.start_link_supervised!(module: PipelineRaw, custom_args: options)
-    assert_pipeline_play(pipeline)
     assert_end_of_stream(pipeline, :sink, :input, 1_000_000)
-    TestingPipeline.terminate(pipeline, blocking?: true)
+    TestingPipeline.terminate(pipeline)
 
     assert Utils.compare_contents_with_error(output_path, @reference_path)
   end

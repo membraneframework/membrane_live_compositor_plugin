@@ -48,7 +48,7 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.ComposeMultipleInputs do
         |> child(:sink, get_sink(options.output))
       ] ++ source_spec
 
-    {[spec: spec, playback: :playing], %{}}
+    {[spec: spec], %{}}
   end
 
   defp get_src(input_path) when is_binary(input_path) do

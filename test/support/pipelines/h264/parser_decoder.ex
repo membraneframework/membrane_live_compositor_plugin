@@ -23,7 +23,9 @@ defmodule Membrane.VideoCompositor.Support.Pipeline.H264.ParserDecoder do
   def handle_init(_ctx, opts) do
     spec =
       bin_input()
-      |> child(:parser, %Membrane.H264.FFmpeg.Parser{framerate: opts.framerate})
+      |> child(:parser, %Membrane.H264.Parser{
+        generate_best_effort_timestamps: %{framerate: opts.framerate}
+      })
       |> child(:decoder, Membrane.H264.FFmpeg.Decoder)
       |> bin_output()
 

@@ -41,23 +41,23 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     state = setup_videos()
 
     actions = pad1_actions()
-    {^actions, _state} = OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
+    {^actions, _state} = OfflineQueue.handle_buffer(@pad1, send_buffer(0), %{}, state)
   end
 
   test "if removed pad doesn't block queue and if stream format, scene and buffer actions are send." do
     state = setup_videos()
-    assert {[], state} = OfflineQueue.handle_process(@pad2, send_buffer(0), {}, state)
+    assert {[], state} = OfflineQueue.handle_buffer(@pad2, send_buffer(0), {}, state)
 
     assert {[], state} =
-             OfflineQueue.handle_process(@pad2, send_buffer(Time.seconds(1)), {}, state)
+             OfflineQueue.handle_buffer(@pad2, send_buffer(Time.seconds(1)), {}, state)
 
     assert {_pad1_buffer1_actions, state} =
-             OfflineQueue.handle_process(@pad1, send_buffer(0), %{}, state)
+             OfflineQueue.handle_buffer(@pad1, send_buffer(0), %{}, state)
 
     pad1_buffer2_action = [get_buffer_action(@pad1, Time.seconds(1))]
 
     assert {^pad1_buffer2_action, state} =
-             OfflineQueue.handle_process(@pad1, send_buffer(Time.seconds(1)), %{}, state)
+             OfflineQueue.handle_buffer(@pad1, send_buffer(Time.seconds(1)), %{}, state)
 
     second_pad_actions = unlocked_pad2_actions()
     assert {^second_pad_actions, _state} = OfflineQueue.handle_end_of_stream(@pad1, %{}, state)
@@ -102,7 +102,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {[], state} =
              OfflineQueue.handle_pad_added(
                @pad1,
-               %{options: pad1_options},
+               %{pad_options: pad1_options},
                state
              )
 
@@ -112,7 +112,7 @@ defmodule Membrane.VideoCompositor.OfflineQueueTest do
     assert {[], state} =
              OfflineQueue.handle_pad_added(
                @pad2,
-               %{options: pad2_options},
+               %{pad_options: pad2_options},
                state
              )
 

@@ -27,7 +27,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   def_input_pad :input,
     accepted_format: %RawVideo{pixel_format: :I420},
     availability: :on_request,
-    demand_mode: :auto,
     options: [
       timestamp_offset: [
         spec: Membrane.Time.non_neg(),
@@ -39,10 +38,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
       ]
     ]
 
-  def_output_pad :output,
-    accepted_format: %CompositorCoreFormat{},
-    availability: :always,
-    demand_mode: :auto
+  def_output_pad :output, accepted_format: CompositorCoreFormat
 
   @impl true
   def handle_init(_ctx, %{
@@ -65,7 +61,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
 
   @impl true
   def handle_pad_added(pad, context, state) do
-    state = Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(context.options))
+    state = Bunch.Struct.put_in(state, [:pads_states, pad], PadState.new(context.pad_options))
 
     {[], state}
   end
@@ -102,7 +98,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Live do
   end
 
   @impl true
-  def handle_process(pad, buffer, _ctx, state) do
+  def handle_buffer(pad, buffer, _ctx, state) do
     state = State.register_event(state, {{:frame, buffer.pts, buffer.payload}, pad})
     {[], state}
   end
