@@ -108,7 +108,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     state = setup_videos()
 
     assert {[], state} =
-             LiveQueue.handle_process(
+             LiveQueue.handle_buffer(
                @pad1,
                %Buffer{payload: <<1>>, pts: Membrane.Time.seconds(2)},
                %{},
@@ -148,7 +148,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     assert {[], state} =
              LiveQueue.handle_pad_added(
                @pad1,
-               %{options: pad1_options},
+               %{pad_options: pad1_options},
                state
              )
 
@@ -160,7 +160,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
     assert {[], state} =
              LiveQueue.handle_pad_added(
                @pad2,
-               %{options: pad2_options},
+               %{pad_options: pad2_options},
                state
              )
 
@@ -172,7 +172,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
 
   defp send_both_pads_frames(state) do
     assert {[], state} =
-             LiveQueue.handle_process(
+             LiveQueue.handle_buffer(
                @pad1,
                %Buffer{payload: @pad1_frame, pts: 0, dts: 0},
                %{},
@@ -180,7 +180,7 @@ defmodule Membrane.VideoCompositor.LiveQueueTest do
              )
 
     assert {[], state} =
-             LiveQueue.handle_process(
+             LiveQueue.handle_buffer(
                @pad2,
                %Buffer{payload: @pad2_frame, pts: 0, dts: 0},
                %{},

@@ -23,7 +23,6 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
 
   def_input_pad :input,
     availability: :on_request,
-    demand_mode: :auto,
     accepted_format: %RawVideo{pixel_format: :I420},
     options: [
       timestamp_offset: [
@@ -39,9 +38,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
       ]
     ]
 
-  def_output_pad :output,
-    demand_mode: :auto,
-    accepted_format: %CompositorCoreFormat{}
+  def_output_pad :output, accepted_format: CompositorCoreFormat
 
   @impl true
   def handle_init(_ctx, options) do
@@ -55,12 +52,12 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
 
   @impl true
   def handle_pad_added(pad, context, state = %State{}) do
-    vc_input_ref = get_in(context, [:options, :vc_input_ref])
+    vc_input_ref = get_in(context, [:pad_options, :vc_input_ref])
 
     state =
       state
       |> Bunch.Struct.put_in([:custom_strategy_state, :inputs_mapping, pad], vc_input_ref)
-      |> State.register_pad(vc_input_ref, context.options)
+      |> State.register_pad(vc_input_ref, context.pad_options)
 
     {[], state}
   end
@@ -93,7 +90,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline.Element do
   end
 
   @impl true
-  def handle_process(
+  def handle_buffer(
         pad,
         buffer,
         _context,

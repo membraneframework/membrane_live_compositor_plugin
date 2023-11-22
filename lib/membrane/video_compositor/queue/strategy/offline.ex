@@ -53,9 +53,9 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline do
       })
       |> via_in(Pad.ref(:input, pad_id),
         options: [
-          timestamp_offset: context.options.timestamp_offset,
+          timestamp_offset: context.pad_options.timestamp_offset,
           vc_input_ref: Pad.ref(:input, pad_id),
-          metadata: context.options.metadata
+          metadata: context.pad_options.metadata
         ]
       )
       |> get_child(:queue_element)
@@ -65,7 +65,7 @@ defmodule Membrane.VideoCompositor.Queue.Strategy.Offline do
 
   @impl true
   def handle_pad_removed(Pad.ref(:input, pad_id), _context, state),
-    do: {[remove_child: {:framerate_converter, pad_id}], state}
+    do: {[remove_children: {:framerate_converter, pad_id}], state}
 
   @impl true
   def handle_parent_notification(msg, _context, state) do

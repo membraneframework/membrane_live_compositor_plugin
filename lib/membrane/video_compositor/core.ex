@@ -42,15 +42,9 @@ defmodule Membrane.VideoCompositor.Core do
                 description: "Struct with video width, height, framerate and pixel format."
               ]
 
-  def_input_pad :input,
-    availability: :always,
-    demand_mode: :auto,
-    accepted_format: %CompositorCoreFormat{}
+  def_input_pad :input, accepted_format: %CompositorCoreFormat{}
 
-  def_output_pad :output,
-    availability: :always,
-    demand_mode: :auto,
-    accepted_format: %RawVideo{pixel_format: :I420}
+  def_output_pad :output, accepted_format: %RawVideo{pixel_format: :I420}
 
   @impl true
   def handle_init(_ctx, options) do
@@ -95,7 +89,7 @@ defmodule Membrane.VideoCompositor.Core do
   end
 
   @impl true
-  def handle_process(
+  def handle_buffer(
         _pad,
         %Buffer{pts: pts, payload: payload},
         _context,
