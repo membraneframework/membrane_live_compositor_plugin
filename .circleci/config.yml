@@ -36,7 +36,7 @@ jobs:
 
   elixir_test_with_software_rendering:
     docker:
-      - image: membraneframeworklabs/docker_membrane:jammy
+      - image: membraneframeworklabs/docker_membrane:latest
         environment:
           XDG_RUNTIME_DIR: /tmp
 
