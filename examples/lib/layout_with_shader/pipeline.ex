@@ -97,7 +97,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
 
   @impl true
   def handle_child_notification(notification, child, _ctx, state) do
-    Membrane.Logger.info(
+    Membrane.Logger.debug(
       "Received notification: #{inspect(notification)} from child: #{inspect(child)}."
     )
 

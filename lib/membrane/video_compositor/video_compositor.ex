@@ -527,7 +527,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_child_notification(msg, child, _ctx, state) do
-    Membrane.Logger.info(
+    Membrane.Logger.debug(
       "Unknown msg received from child: #{inspect(msg)}, child: #{inspect(child)}"
     )
 
@@ -537,7 +537,7 @@ defmodule Membrane.VideoCompositor do
   @spec try_starting_on_port(:inet.port_number(), String.t()) ::
           {:halt, {:ok, :inet.port_number()}} | {:cont, err :: String.t()}
   defp try_starting_on_port(port, err) do
-    Membrane.Logger.info("Trying to lunch VideoCompositor on port: #{port}")
+    Membrane.Logger.debug("Trying to lunch VideoCompositor on port: #{port}")
 
     case ServerRunner.start_vc_server(port) do
       :ok -> {:halt, {:ok, port}}
