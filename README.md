@@ -4,7 +4,7 @@
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_video_compositor_plugin)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/membraneframework/membrane_video_compositor_plugin/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/membraneframework/membrane_video_compositor_plugin/tree/master)
 
-Membrane plugin that accepts multiple video inputs, transforms them according to provided transformations and composes them into video outputs.
+Membrane SDK for VideoCompositor, that takes multiple input streams, transforms them according to provided transformations and composes them into output streams / videos.
 
 It is part of [Membrane Multimedia Framework](https://membrane.stream).
 
@@ -19,6 +19,12 @@ def deps do
   ]
 end
 ```
+
+VideoCompositor requires having locally installed:
+
+- [FFmpeg 6.0](https://ffmpeg.org/download.html) - for streaming inputs / outputs to VideoCompositor
+- [wget](https://www.gnu.org/software/wget/) - for downloading VideoCompositor binary file
+- [tar](https://www.gnu.org/software/tar/) - for decompressing VideoCompositor binary file
 
 ## Examples
 

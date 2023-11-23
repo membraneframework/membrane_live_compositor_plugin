@@ -11,7 +11,7 @@ defmodule Membrane.VideoCompositor.StreamsHandler do
       Request.register_input_stream(input_id, input_port, state.vc_port)
     end
 
-    register_input_or_output(try_register, state)
+    pick_port(try_register, state)
   end
 
   @spec register_output_stream(OutputOptions.t(), Membrane.VideoCompositor.State.t()) ::
@@ -25,12 +25,12 @@ defmodule Membrane.VideoCompositor.StreamsHandler do
       )
     end
 
-    register_input_or_output(try_register, state)
+    pick_port(try_register, state)
   end
 
-  @spec register_input_or_output((:inet.port_number() -> Request.request_result()), State.t()) ::
+  @spec pick_port((:inet.port_number() -> Request.request_result()), State.t()) ::
           {:ok, :inet.port_number()} | :error
-  defp register_input_or_output(try_register, state) do
+  defp pick_port(try_register, state) do
     {port_lower_bound, port_upper_bound} = state.port_range
     used_ports = state |> State.used_ports() |> MapSet.new()
 
