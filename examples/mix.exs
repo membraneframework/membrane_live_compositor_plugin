@@ -27,7 +27,7 @@ defmodule Membrane.VideoCompositor.Examples.Mixfile do
   defp deps do
     [
       # Membrane
-      {:membrane_core, "~> 1.0.0"},
+      {:membrane_core, "~> 1.0"},
       {:membrane_video_compositor_plugin, path: ".."},
       # VC API requests
       {:req, "~> 0.4.0"},

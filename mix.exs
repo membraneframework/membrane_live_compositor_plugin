@@ -42,7 +42,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
   defp deps do
     [
       # Membrane
-      {:membrane_core, "~> 1.0.0"},
+      {:membrane_core, "~> 1.0"},
       {:membrane_raw_video_format, "~> 0.3.0"},
       ## RTP
       {:membrane_rtp_plugin, "~> 0.24.0"},
