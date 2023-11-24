@@ -42,12 +42,12 @@ defmodule Membrane.VideoCompositor.Mixfile do
   defp deps do
     [
       # Membrane
-      {:membrane_core, "~> 0.12.9"},
+      {:membrane_core, "~> 1.0.0"},
       {:membrane_raw_video_format, "~> 0.3.0"},
       ## RTP
-      {:membrane_rtp_plugin, "~> 0.23.1"},
-      {:membrane_rtp_h264_plugin, "~> 0.18.0"},
-      {:membrane_udp_plugin, "~> 0.10.0"},
+      {:membrane_rtp_plugin, "~> 0.24.0"},
+      {:membrane_rtp_h264_plugin, "~> 0.19.0"},
+      {:membrane_udp_plugin, "~> 0.12.0"},
       # VC server start
       {:muontrap, "~> 1.0"},
       # VC API requests
