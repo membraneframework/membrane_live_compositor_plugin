@@ -1,27 +1,50 @@
-# Membrane Template Plugin
+# Membrane Video Compositor Plugin
 
-[![Hex.pm](https://img.shields.io/hexpm/v/membrane_template_plugin.svg)](https://hex.pm/packages/membrane_template_plugin)
-[![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_template_plugin)
-[![CircleCI](https://circleci.com/gh/membraneframework/membrane_template_plugin.svg?style=svg)](https://circleci.com/gh/membraneframework/membrane_template_plugin)
+[![Hex.pm](https://img.shields.io/hexpm/v/membrane_video_compositor_plugin.svg)](https://hex.pm/packages/membrane_video_compositor_plugin)
+[![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_video_compositor_plugin)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/membraneframework/membrane_video_compositor_plugin/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/membraneframework/membrane_video_compositor_plugin/tree/master)
 
-This repository contains a template for new plugins.
+Membrane SDK for VideoCompositor, that takes multiple input streams, transforms them according to provided transformations and composes them into output streams / videos.
 
-Check out different branches for other flavours of template.
-
-It is part of [Membrane Multimedia Framework](https://membraneframework.org).
+It is part of [Membrane Multimedia Framework](https://membrane.stream).
 
 ## Installation
 
-The package can be installed by adding `membrane_template_plugin` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `membrane_video_compositor_plugin` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:membrane_template_plugin, "~> 0.1.0"}
+    {:membrane_video_compositor_plugin, "~> 0.5.4"}
   ]
 end
 ```
 
-## Usage
+VideoCompositor requires having locally installed:
 
-TODO
+- [FFmpeg 6.0](https://ffmpeg.org/download.html) - for streaming inputs / outputs to VideoCompositor
+- [wget](https://www.gnu.org/software/wget/) - for downloading VideoCompositor binary file
+- [tar](https://www.gnu.org/software/tar/) - for decompressing VideoCompositor binary file
+
+## Examples
+
+Examples can be found in `examples` directory.
+
+To run example run:
+
+1. `mix deps.get`
+2. `mix run examples/[example_name].exs`
+
+### Layout with shader example
+
+Example presents dynamically added video arranged onto tiled layout and "twisted" with simple shader. Shaders can be used to create custom visual effects.
+
+### Transition example
+
+Example presents dynamic transition of input videos. Transitions are used for smooth, dynamical animations.
+
+### Dynamic outputs example
+
+Example presents dynamic outputs linking.
+Multiple outputs are useful for live-streaming for multiple platforms (e.g. different layout for mobile devices), target resolutions
+or any other case, when user want to process input videos in different ways.

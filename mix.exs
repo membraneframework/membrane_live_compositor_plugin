@@ -1,13 +1,14 @@
-defmodule Membrane.Template.Mixfile do
+defmodule Membrane.VideoCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.1.0"
-  @github_url "https://github.com/membraneframework/membrane_template_plugin"
+  @version "0.5.4"
+  @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
 
   def project do
     [
-      app: :membrane_template_plugin,
+      app: :membrane_video_compositor_plugin,
       version: @version,
+      compilers: compilers(),
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -15,11 +16,11 @@ defmodule Membrane.Template.Mixfile do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Template Plugin for Membrane Multimedia Framework",
+      description: "VideoCompositor SDK for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane Template plugin",
+      name: "Membrane VideoCompositor Plugin",
       source_url: @github_url,
       docs: docs()
     ]
@@ -31,12 +32,27 @@ defmodule Membrane.Template.Mixfile do
     ]
   end
 
+  defp compilers() do
+    Mix.compilers() ++ [:download_compositor]
+  end
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_env), do: ["lib"]
+  defp elixirc_paths(_env), do: ["lib", "test"]
 
   defp deps do
     [
+      # Membrane
       {:membrane_core, "~> 0.12.9"},
+      {:membrane_raw_video_format, "~> 0.3.0"},
+      ## RTP
+      {:membrane_rtp_plugin, "~> 0.23.1"},
+      {:membrane_rtp_h264_plugin, "~> 0.18.0"},
+      {:membrane_udp_plugin, "~> 0.10.0"},
+      # VC server start
+      {:muontrap, "~> 1.0"},
+      # VC API requests
+      {:req, "~> 0.4.0"},
+      # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
@@ -45,7 +61,8 @@ defmodule Membrane.Template.Mixfile do
 
   defp dialyzer() do
     opts = [
-      flags: [:error_handling]
+      flags: [:error_handling],
+      plt_add_apps: [:mix]
     ]
 
     if System.get_env("CI") == "true" do
@@ -62,7 +79,7 @@ defmodule Membrane.Template.Mixfile do
       licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => @github_url,
-        "Membrane Framework Homepage" => "https://membraneframework.org"
+        "Membrane Framework Homepage" => "https://membrane.stream"
       }
     ]
   end
@@ -73,7 +90,7 @@ defmodule Membrane.Template.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.Template]
+      nest_modules_by_prefix: [Membrane.VideoCompositor]
     ]
   end
 end
