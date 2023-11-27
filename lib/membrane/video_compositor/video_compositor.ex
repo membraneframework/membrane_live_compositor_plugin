@@ -322,7 +322,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
-    input_id = ctx.options.input_id
+    input_id = ctx.pad_options.input_id
     {:ok, input_port} = StreamsHandler.register_input_stream(input_id, state)
 
     state = %State{
@@ -356,7 +356,7 @@ defmodule Membrane.VideoCompositor do
         state = %State{outputs: outputs}
       ) do
     %State.Output{ssrc: ssrc, id: output_id, width: width, height: height} =
-      outputs |> Enum.find(fn %State.Output{id: id} -> id == ctx.options.output_id end)
+      outputs |> Enum.find(fn %State.Output{id: id} -> id == ctx.pad_options.output_id end)
 
     if ssrc == :stream_not_received do
       raise """

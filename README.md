@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_video_compositor_plugin` to you
 ```elixir
 def deps do
   [
-    {:membrane_video_compositor_plugin, "~> 0.5.4"}
+    {:membrane_video_compositor_plugin, "~> 0.6.0"}
   ]
 end
 ```
@@ -32,19 +32,20 @@ Examples can be found in `examples` directory.
 
 To run example run:
 
-1. `mix deps.get`
-2. `mix run examples/[example_name].exs`
+1. `cd examples`
+2. `mix deps.get`
+3. `mix run [example_name].exs`
 
 ### Layout with shader example
 
-Example presents dynamically added video arranged onto tiled layout and "twisted" with simple shader. Shaders can be used to create custom visual effects.
+The example presents dynamically added video arranged onto a tiled layout and "twisted" with the simple shader. Shaders can be used to create custom visual effects.
 
 ### Transition example
 
-Example presents dynamic transition of input videos. Transitions are used for smooth, dynamical animations.
+The example presents dynamic transition of input videos. Transitions are used for smooth, dynamical animations.
 
 ### Dynamic outputs example
 
-Example presents dynamic outputs linking.
+The example presents dynamic outputs linking.
 Multiple outputs are useful for live-streaming for multiple platforms (e.g. different layout for mobile devices), target resolutions
-or any other case, when user want to process input videos in different ways.
+or any other case, when user want to process input videos differently.

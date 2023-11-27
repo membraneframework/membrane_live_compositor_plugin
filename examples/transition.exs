@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
+defmodule TransitionPipeline do
   @moduledoc false
 
   use Membrane.Pipeline
@@ -233,3 +233,10 @@ defmodule Membrane.VideoCompositor.Examples.Transition.Pipeline do
     }
   end
 end
+
+Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
+
+{:ok, _supervisor, _pid} =
+  Membrane.Pipeline.start_link(TransitionPipeline, %{sample_path: "samples/testsrc.h264"})
+
+Process.sleep(:infinity)

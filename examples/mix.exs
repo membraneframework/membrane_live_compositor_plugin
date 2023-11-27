@@ -27,16 +27,16 @@ defmodule Membrane.VideoCompositor.Examples.Mixfile do
   defp deps do
     [
       # Membrane
-      {:membrane_core, "~> 0.12.9"},
+      {:membrane_core, "~> 1.0"},
       {:membrane_video_compositor_plugin, path: ".."},
       # VC API requests
       {:req, "~> 0.4.0"},
       # Examples
-      {:membrane_file_plugin, "~> 0.15.0"},
-      {:membrane_realtimer_plugin, "~> 0.7.0"},
-      {:membrane_sdl_plugin, "~> 0.16.0"},
-      {:membrane_h264_plugin, "~> 0.7.3"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.29.0"},
+      {:membrane_file_plugin, "~> 0.16.0"},
+      {:membrane_realtimer_plugin, "~> 0.9.0"},
+      {:membrane_sdl_plugin, "~> 0.18.0"},
+      {:membrane_h264_plugin, "~> 0.9.0"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.31.0"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

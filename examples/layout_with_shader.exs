@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
+defmodule LayoutWithShaderPipeline do
   @moduledoc false
 
   use Membrane.Pipeline
@@ -11,6 +11,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
   @output_width 1920
   @output_height 1080
   @output_id "output"
+  @shader_path "./example_shader.wgsl"
 
   @impl true
   def handle_init(_ctx, %{sample_path: sample_path}) do
@@ -199,7 +200,7 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
       type: :register,
       entity_type: :shader,
       shader_id: "example_shader",
-      source: File.read!("./lib/layout_with_shader/example_shader.wgsl"),
+      source: File.read!(@shader_path),
       constraints: [
         %{
           type: "input_count",
@@ -209,3 +210,10 @@ defmodule Membrane.VideoCompositor.Examples.LayoutWithShader.Pipeline do
     }
   end
 end
+
+Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
+
+{:ok, _supervisor, _pid} =
+  Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{sample_path: "samples/testsrc.h264"})
+
+Process.sleep(:infinity)
