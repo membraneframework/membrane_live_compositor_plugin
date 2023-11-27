@@ -11,7 +11,7 @@ defmodule LayoutWithShaderPipeline do
   @output_width 1920
   @output_height 1080
   @output_id "output"
-  @shader_path "./lib/example_shader.wgsl"
+  @shader_path "./example_shader.wgsl"
 
   @impl true
   def handle_init(_ctx, %{sample_path: sample_path}) do
