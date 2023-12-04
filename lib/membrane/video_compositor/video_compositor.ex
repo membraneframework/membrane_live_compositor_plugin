@@ -175,7 +175,8 @@ defmodule Membrane.VideoCompositor do
           {:vc_request_response, request_body(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification send to parent after input registration.
+  Notification send to parent after VideoCompositor receives
+  first frame from input stream (registered on input pad link).
 
   Input can be used in `scene` only after registration.
   """
@@ -212,7 +213,7 @@ defmodule Membrane.VideoCompositor do
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
   @local_host {127, 0, 0, 1}
-  @udp_buffer_size 1024 * 1024
+  @input_received_msg :input_stream_received
 
   def_options framerate: [
                 spec: Membrane.RawVideo.framerate_t(),
@@ -346,7 +347,14 @@ defmodule Membrane.VideoCompositor do
 
     spec = {links, group: input_group_id(input_id)}
 
-    {[spec: spec, notify_parent: {:input_registered, input_id, Context.new(state)}], state}
+    vc_pid = self()
+
+    spawn(fn ->
+      {:ok, _response} = Request.wait_for_frame_on_input(input_id, state.vc_port)
+      send(vc_pid, {:input_stream_received, input_id})
+    end)
+
+    {[spec: spec], state}
   end
 
   @impl true
@@ -461,8 +469,7 @@ defmodule Membrane.VideoCompositor do
     links =
       child({:udp_source, id}, %UDP.Source{
         local_port_no: port,
-        local_address: @local_host,
-        recv_buffer_size: @udp_buffer_size
+        local_address: @local_host
       })
       |> via_in(Pad.ref(:rtp_input, id))
       |> child({:rtp_receiver, id}, RTP.SessionBin)
@@ -530,6 +537,18 @@ defmodule Membrane.VideoCompositor do
     Membrane.Logger.debug(
       "Unknown msg received from child: #{inspect(msg)}, child: #{inspect(child)}"
     )
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_info({@input_received_msg, input_id}, _ctx, state) do
+    {[notify_parent: {:input_registered, input_id, Context.new(state)}], state}
+  end
+
+  @impl true
+  def handle_info(msg, _ctx, state) do
+    Membrane.Logger.debug("Unknown msg received: #{inspect(msg)}")
 
     {[], state}
   end
