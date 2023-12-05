@@ -175,29 +175,29 @@ defmodule Membrane.VideoCompositor do
           {:vc_request_response, request_body(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification send to parent after VideoCompositor receives
-  first frame from input stream (registered on input pad link).
+  Notification sent to parent after VideoCompositor receives
+  the first frame from the input stream (registered on input pad link).
 
   Input can be used in `scene` only after registration.
   """
   @type input_registered_msg :: {:input_registered, input_id(), Context.t()}
 
   @typedoc """
-  Notification send to VideoCompositor to register output stream.
+  Notification sent to VideoCompositor to register output stream.
 
-  See "Output streams" section in doc for more information.
+  See "Output streams" section in the documentation for more information.
   """
   @type register_output_msg :: {:register_output, OutputOptions.t()}
 
   @typedoc """
-  Notification send to parent after output registration.
+  Notification sent to parent after output registration.
 
   Output can be used in `scene` only after registration.
   """
   @type output_registered_msg :: {:output_registered, output_id(), Context.t()}
 
   @typedoc """
-  Notification send to parent after VideoCompositor starts producing streams
+  Notification sent to parent after VideoCompositor starts producing streams
   and in ready to link output pad.
 
   See "Output streams" section in doc for more information.
@@ -246,7 +246,7 @@ defmodule Membrane.VideoCompositor do
                 spec: :on_init | :on_message,
                 description: """
                 Specifies when VideoCompositor starts composing frames.
-                In `:on_message` strategy, `:start_composing` message has to be send to start composing.
+                In `:on_message` strategy, `:start_composing` message has to be sent to start composing.
                 """,
                 default: :on_init
               ],
