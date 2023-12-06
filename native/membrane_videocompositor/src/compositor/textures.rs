@@ -38,6 +38,7 @@ impl Texture {
             usage,
             mip_level_count: 1,
             sample_count: 1,
+            view_formats: &[],
         };
 
         let texture = device.create_texture(&desc);
@@ -46,10 +47,10 @@ impl Texture {
             label: Some("y texture view"),
             dimension: Some(wgpu::TextureViewDimension::D2),
             format: Some(format),
-            mip_level_count: std::num::NonZeroU32::new(1),
+            mip_level_count: Some(1),
             base_array_layer: 0,
             base_mip_level: 0,
-            array_layer_count: std::num::NonZeroU32::new(1),
+            array_layer_count: Some(1),
             aspect: wgpu::TextureAspect::All,
         });
 
@@ -91,10 +92,8 @@ impl Texture {
             data,
             wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(
-                    self.desc.size.width * self.bytes_per_pixel,
-                ),
-                rows_per_image: std::num::NonZeroU32::new(self.desc.size.height),
+                bytes_per_row: Some(self.desc.size.width * self.bytes_per_pixel),
+                rows_per_image: Some(self.desc.size.height),
             },
             self.desc.size,
         );
@@ -280,12 +279,8 @@ impl OutputTextures {
                 wgpu::ImageCopyBuffer {
                     buffer: &self.buffers[plane as usize],
                     layout: wgpu::ImageDataLayout {
-                        bytes_per_row: std::num::NonZeroU32::new(Self::padded(
-                            self.yuv_textures[plane].desc.size.width,
-                        )),
-                        rows_per_image: std::num::NonZeroU32::new(
-                            self.yuv_textures[plane].desc.size.height,
-                        ),
+                        bytes_per_row: Some(Self::padded(self.yuv_textures[plane].desc.size.width)),
+                        rows_per_image: Some(self.yuv_textures[plane].desc.size.height),
                         offset: 0,
                     },
                 },
