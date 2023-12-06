@@ -50,6 +50,19 @@ defmodule Membrane.VideoCompositor.Request do
     |> send_request(vc_port)
   end
 
+  @spec wait_for_frame_on_input(
+          VideoCompositor.input_id(),
+          :inet.port_number()
+        ) :: request_result()
+  def wait_for_frame_on_input(input_id, vc_port) do
+    %{
+      type: :query,
+      query: :wait_for_next_frame,
+      input_id: input_id
+    }
+    |> send_request(vc_port)
+  end
+
   @spec unregister_input_stream(VideoCompositor.input_id(), :inet.port_number()) ::
           request_result()
   def unregister_input_stream(input_id, vc_port) do
