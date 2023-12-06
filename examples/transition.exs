@@ -182,10 +182,8 @@ defmodule TransitionPipeline do
     fit_node_id = "fitted_#{input_pad_id}"
 
     {%{
-       type: "built-in",
+       type: "builtin:fit_to_resolution",
        node_id: fit_node_id,
-       transformation: :transform_to_resolution,
-       strategy: :fit,
        resolution: %{
          width: @output_width,
          height: @output_height
@@ -223,8 +221,7 @@ defmodule TransitionPipeline do
 
   defp fixed_position_layout(texture_layouts) do
     %{
-      type: "built-in",
-      transformation: :fixed_position_layout,
+      type: "builtin:fixed_position_layout",
       texture_layouts: texture_layouts,
       resolution: %{
         width: @output_width,

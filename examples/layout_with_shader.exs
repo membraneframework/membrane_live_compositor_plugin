@@ -165,9 +165,8 @@ defmodule LayoutWithShaderPipeline do
       type: :update_scene,
       nodes: [
         %{
-          type: "built-in",
+          type: "builtin:tiled_layout",
           node_id: "tiled_layout",
-          transformation: :tiled_layout,
           margin: 10,
           resolution: %{
             width: 1920,
