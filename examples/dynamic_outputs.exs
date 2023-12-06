@@ -140,8 +140,7 @@ defmodule DynamicOutputsPipeline do
   @spec tiled_layout(list(String.t())) :: map()
   defp tiled_layout(input_pads) do
     %{
-      type: "built-in",
-      transformation: :tiled_layout,
+      type: "builtin:tiled_layout",
       node_id: @layout_id,
       margin: 10,
       resolution: %{
