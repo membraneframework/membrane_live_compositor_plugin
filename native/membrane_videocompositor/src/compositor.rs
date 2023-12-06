@@ -48,7 +48,10 @@ pub struct State {
 
 impl State {
     pub async fn new(output_stream_format: &RawVideo) -> Result<State, CompositorError> {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::all(),
+            ..Default::default()
+        });
         let adapter = Self::request_adapter(&instance).await;
 
         let (device, queue) = adapter
@@ -391,7 +394,7 @@ impl State {
                     view: &self.output_textures.rgba_texture.texture.view,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                     resolve_target: None,
                 })],
@@ -399,10 +402,12 @@ impl State {
                     view: &self.output_textures.depth_texture.view,
                     depth_ops: Some(wgpu::Operations {
                         load: wgpu::LoadOp::Clear(1.0),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     }),
                     stencil_ops: None,
                 }),
+                occlusion_query_set: None,
+                timestamp_writes: None,
             });
 
             render_pass.set_pipeline(&self.pipeline);

@@ -34,9 +34,9 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let g = y - 0.34414 * (u - 128.0 / 255.0) - 0.71414 * (v - 128.0 / 255.0);
     let b = y + 1.77200 * (u - 128.0 / 255.0);
 
-    let r = clamp(r, 0.0, 1.0);
-    let g = clamp(g, 0.0, 1.0);
-    let b = clamp(b, 0.0, 1.0);
+    let r2 = clamp(r, 0.0, 1.0);
+    let g2 = clamp(g, 0.0, 1.0);
+    let b2 = clamp(b, 0.0, 1.0);
 
-    return vec4(r, g, b, 1.0);
+    return vec4(r2, g2, b2, 1.0);
 }
