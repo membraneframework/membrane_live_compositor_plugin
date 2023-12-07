@@ -117,24 +117,30 @@ defmodule DynamicOutputsPipeline do
   defp update_scene_action(input_ids, output_ids) do
     update_scene_request =
       if not Enum.empty?(output_ids) and not Enum.empty?(input_ids) do
-        outputs =
-          output_ids
-          |> Enum.map(fn output_id -> %{output_id: output_id, input_pad: @layout_id} end)
+        scene = scene(input_ids)
 
         %{
           type: :update_scene,
-          nodes: [tiled_layout(input_ids)],
-          outputs: outputs
+          outputs:
+            output_ids |> Enum.map(fn output_id -> %{output_id: output_id, root: scene} end)
         }
       else
         %{
           type: :update_scene,
-          nodes: [],
           outputs: []
         }
       end
 
     [notify_child: {:video_compositor, {:vc_request, update_scene_request}}]
+  end
+
+  defp scene(input_ids) do
+    %{
+      type: :tiles,
+      padding: 10,
+      children:
+        input_ids |> Enum.map(fn input_id -> %{type: :input_stream, input_id: input_id} end)
+    }
   end
 
   @spec tiled_layout(list(String.t())) :: map()

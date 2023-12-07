@@ -326,11 +326,14 @@ defmodule Membrane.VideoCompositor do
     input_id = ctx.pad_options.input_id
     {:ok, input_port} = StreamsHandler.register_input_stream(input_id, state)
 
+    # Don't optimize this with [%State.Input{...} | inputs]
+    # Adding this at the beginning is O(1) instead of O(N),
+    # but this way this list is always ordered by insert order.
+    # Since this list should be small, preserving order with O(N) is better
+    # (order is preserved in returned VC context, state is more consistent etc.)
     state = %State{
       state
-      | inputs: [
-          %State.Input{id: input_id, port: input_port, pad_ref: input_ref} | inputs
-        ]
+      | inputs: inputs ++ [%State.Input{id: input_id, port: input_port, pad_ref: input_ref}]
     }
 
     links =

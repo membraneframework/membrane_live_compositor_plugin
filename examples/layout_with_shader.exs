@@ -11,6 +11,7 @@ defmodule LayoutWithShaderPipeline do
   @output_width 1920
   @output_height 1080
   @output_id "output"
+  @shader_id "example_shader"
   @shader_path "./example_shader.wgsl"
 
   @impl true
@@ -142,7 +143,7 @@ defmodule LayoutWithShaderPipeline do
       if Enum.empty?(inputs) or Enum.empty?(outputs) do
         empty_scene()
       else
-        layout_scene(inputs)
+        update_scene(inputs)
       end
 
     {:notify_child, {:video_compositor, {:vc_request, update_scene_request}}}
@@ -157,38 +158,39 @@ defmodule LayoutWithShaderPipeline do
     }
   end
 
-  @spec layout_scene(list(Context.InputStream.t())) :: VideoCompositor.request_body()
-  defp layout_scene(inputs) do
-    input_pads = inputs |> Enum.map(fn %Context.InputStream{id: input_id} -> input_id end)
+  @spec update_scene(list(Context.InputStream.t())) :: VideoCompositor.request_body()
+  defp update_scene(inputs) do
+    input_ids = inputs |> Enum.map(fn %Context.InputStream{id: input_id} -> input_id end)
 
     %{
       type: :update_scene,
-      nodes: [
-        %{
-          type: "builtin:tiled_layout",
-          node_id: "tiled_layout",
-          margin: 10,
-          resolution: %{
-            width: 1920,
-            height: 1080
-          },
-          input_pads: input_pads
-        },
-        %{
-          type: :shader,
-          node_id: "twisted_layout",
-          shader_id: "example_shader",
-          resolution: %{
-            width: 1920,
-            height: 1080
-          },
-          input_pads: ["tiled_layout"]
-        }
-      ],
       outputs: [
         %{
           output_id: @output_id,
-          input_pad: "twisted_layout"
+          root: scene(input_ids)
+        }
+      ]
+    }
+  end
+
+  @spec scene(list(VideoCompositor.input_id())) :: map()
+  defp scene(input_ids) do
+    %{
+      type: :shader,
+      shader_id: @shader_id,
+      resolution: %{
+        width: @output_width,
+        height: @output_height
+      },
+      children: [
+        %{
+          type: :tiles,
+          width: @output_width,
+          height: @output_height,
+          background_color_rgba: "#000088FF",
+          margin: 10,
+          children:
+            input_ids |> Enum.map(fn input_id -> %{type: :input_stream, input_id: input_id} end)
         }
       ]
     }
@@ -198,14 +200,8 @@ defmodule LayoutWithShaderPipeline do
     %{
       type: :register,
       entity_type: :shader,
-      shader_id: "example_shader",
-      source: File.read!(@shader_path),
-      constraints: [
-        %{
-          type: "input_count",
-          fixed_count: 1
-        }
-      ]
+      shader_id: @shader_id,
+      source: File.read!(@shader_path)
     }
   end
 end
