@@ -10,6 +10,8 @@ defmodule TransitionPipeline do
 
   @output_width 1280
   @output_height 720
+  @output_id "output"
+  @rescaler_id "rescaler"
 
   @impl true
   def handle_init(_ctx, %{sample_path: sample_path}) do
@@ -18,16 +20,16 @@ defmodule TransitionPipeline do
         framerate: 30
       })
 
-    Process.send_after(self(), :add_input, 1000)
-    Process.send_after(self(), :add_input, 5000)
+    Process.send_after(self(), {:add_input, 0}, 1000)
+    Process.send_after(self(), {:add_input, 1}, 5000)
 
-    {[spec: spec], %{videos_count: 0, sample_path: sample_path}}
+    {[spec: spec], %{sample_path: sample_path}}
   end
 
   @impl true
   def handle_setup(_ctx, state) do
     output_opt = %OutputOptions{
-      id: "output",
+      id: @output_id,
       width: @output_width,
       height: @output_height
     }
@@ -99,23 +101,23 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_info(
-        :add_input,
+        {:add_input, input_num},
         _ctx,
-        state = %{videos_count: videos_count, sample_path: sample_path}
+        state = %{sample_path: sample_path}
       ) do
     spec =
-      child({:video_src, videos_count}, %Membrane.File.Source{
+      child({:video_src, input_num}, %Membrane.File.Source{
         location: sample_path
       })
-      |> child({:input_parser, videos_count}, %Membrane.H264.Parser{
+      |> child({:input_parser, input_num}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
-      |> child({:realtimer, videos_count}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:input, videos_count), options: [input_id: "input_#{videos_count}"])
+      |> child({:realtimer, input_num}, Membrane.Realtimer)
+      |> via_in(Pad.ref(:input, input_num), options: [input_id: input_id(input_num)])
       |> get_child(:video_compositor)
 
-    {[spec: spec], %{state | videos_count: videos_count + 1}}
+    {[spec: spec], state}
   end
 
   @spec new_scene_request(Context.t()) :: :no_update | VideoCompositor.request_body()
@@ -123,15 +125,12 @@ defmodule TransitionPipeline do
          inputs: [%Context.InputStream{id: input_id}],
          outputs: [%Context.OutputStream{id: output_id}]
        }) do
-    {fit_node, fit_node_id} = fit(input_id)
-
     %{
       type: :update_scene,
-      nodes: [fit_node],
       outputs: [
         %{
           output_id: output_id,
-          input_pad: fit_node_id
+          root: single_input_scene(input_id)
         }
       ]
     }
@@ -144,90 +143,79 @@ defmodule TransitionPipeline do
          ],
          outputs: [%Context.OutputStream{id: output_id}]
        }) do
-    {first_fit_node, first_fit_node_id} = fit(first_input_id)
-    {second_fit_node, second_fit_node_id} = fit(second_input_id)
-    {transition_node, transition_node_id} = transition([first_fit_node_id, second_fit_node_id])
-
     %{
       type: :update_scene,
-      nodes: [first_fit_node, second_fit_node, transition_node],
       outputs: [
         %{
           output_id: output_id,
-          input_pad: transition_node_id
+          root: double_inputs_scene(first_input_id, second_input_id)
         }
       ]
     }
   end
 
-  defp new_scene_request(_ctx) do
+  defp new_scene_request(_) do
     :no_update
   end
 
-  defp transition(input_pads) do
-    transition_node_id = "layout_transition"
-
-    {%{
-       type: :transition,
-       node_id: transition_node_id,
-       start: start_transition_layouts() |> fixed_position_layout(),
-       end: end_transition_layouts() |> fixed_position_layout(),
-       transition_duration_ms: 1000,
-       interpolation: :linear,
-       input_pads: input_pads
-     }, transition_node_id}
-  end
-
-  defp fit(input_pad_id) do
-    fit_node_id = "fitted_#{input_pad_id}"
-
-    {%{
-       type: "builtin:fit_to_resolution",
-       node_id: fit_node_id,
-       resolution: %{
-         width: @output_width,
-         height: @output_height
-       },
-       input_pads: [input_pad_id]
-     }, fit_node_id}
-  end
-
-  defp start_transition_layouts() do
-    [
-      %{
-        left: "0px",
-        top: "0px"
-      },
-      %{
-        left: "0px",
-        top: "0px"
-      }
-    ]
-  end
-
-  defp end_transition_layouts do
-    [
-      %{
-        left: "0%",
-        top: "0%"
-      },
-      %{
-        right: "50px",
-        top: "50px",
-        scale: 0.25
-      }
-    ]
-  end
-
-  defp fixed_position_layout(texture_layouts) do
+  defp single_input_scene(input_id) do
     %{
-      type: "builtin:fixed_position_layout",
-      texture_layouts: texture_layouts,
-      resolution: %{
-        width: @output_width,
-        height: @output_height
-      }
+      type: :view,
+      children: [
+        %{
+          type: :rescaler,
+          mode: :fit,
+          id: @rescaler_id,
+          top: 0,
+          right: 0,
+          width: @output_width,
+          height: @output_height,
+          transition: %{
+            duration_ms: 1000
+          },
+          child: %{
+            type: :input_stream,
+            input_id: input_id
+          }
+        }
+      ]
     }
+  end
+
+  defp double_inputs_scene(first_input_id, second_input_id) do
+    %{
+      type: :view,
+      children: [
+        %{
+          type: :rescaler,
+          mode: :fit,
+          child: %{
+            type: :input_stream,
+            input_id: second_input_id
+          }
+        },
+        %{
+          type: :rescaler,
+          mode: :fit,
+          id: @rescaler_id,
+          top: 10,
+          right: 10,
+          width: div(@output_width, 3),
+          height: div(@output_height, 3),
+          transition: %{
+            duration_ms: 1000
+          },
+          child: %{
+            type: :input_stream,
+            input_id: first_input_id
+          }
+        }
+      ]
+    }
+  end
+
+  defp input_id(input_num) do
+    "input_#{input_num}"
   end
 end
 
