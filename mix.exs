@@ -33,7 +33,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
   end
 
   defp compilers() do
-    Mix.compilers() ++ [:download_compositor]
+    Mix.compilers() ++ [:prepare_compositor]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
