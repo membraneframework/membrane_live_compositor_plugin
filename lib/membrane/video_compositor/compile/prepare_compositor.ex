@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Compile.PrepareCompositor do
         url =
           "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{system_architecture()}.tar.gz"
 
-        lock_path = path |> Path.join(".lock")
+        lock_path = path |> Path.join("vc.lock")
         download_dir_path = download_dir_path()
 
         unless File.exists?(lock_path) do
@@ -49,8 +49,8 @@ defmodule Mix.Tasks.Compile.PrepareCompositor do
     end
   end
 
-  @spec app_path() :: String.t()
-  def app_path() do
+  @spec binary_app_path() :: String.t()
+  def binary_app_path() do
     Path.join(download_dir_path(), "video_compositor/video_compositor")
   end
 

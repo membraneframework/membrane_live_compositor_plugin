@@ -50,9 +50,9 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
   @spec server_path() :: {:binary, String.t()} | {:project, String.t()}
   def server_path() do
-    case System.get_env("VC_PATH") do
+    case System.get_env("VIDEO_COMPOSITOR_PATH") do
       nil ->
-        {:binary, Mix.Tasks.Compile.PrepareCompositor.app_path()}
+        {:binary, Mix.Tasks.Compile.PrepareCompositor.binary_app_path()}
 
       env ->
         if File.dir?(env) do
