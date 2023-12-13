@@ -11,14 +11,15 @@ defmodule Mix.Tasks.Compile.PrepareCompositor do
   @impl Mix.Task
   def run(_args) do
     case ServerRunner.server_path() do
-      {:binary, path} ->
-        url =
-          "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{system_architecture()}.tar.gz"
-
-        lock_path = path |> Path.join("vc.lock")
-        download_dir_path = download_dir_path()
+      {:binary, _path} ->
+        lock_path = download_dir_path() |> Path.join("vc.lock")
 
         unless File.exists?(lock_path) do
+          download_dir_path = download_dir_path()
+
+          url =
+            "https://github.com/membraneframework/video_compositor/releases/download/#{@vc_version}/video_compositor_#{system_architecture()}.tar.gz"
+
           File.mkdir_p!(download_dir_path())
           Membrane.Logger.info("Downloading VideoCompositor binary")
 
@@ -26,8 +27,8 @@ defmodule Mix.Tasks.Compile.PrepareCompositor do
           File.mkdir_p!(tmp_path)
 
           wget_res_path = Path.join(tmp_path, "video_compositor")
-          System.cmd("wget", ["-O", wget_res_path, url])
-          System.cmd("tar", ["-xvf", wget_res_path, "-C", download_dir_path])
+          MuonTrap.cmd("wget", ["-O", wget_res_path, url])
+          MuonTrap.cmd("tar", ["-xvf", wget_res_path, "-C", download_dir_path])
           File.rm_rf!(wget_res_path)
           File.touch!(lock_path)
         end
@@ -36,7 +37,7 @@ defmodule Mix.Tasks.Compile.PrepareCompositor do
 
       {:project, path} ->
         "cargo"
-        |> System.cmd([
+        |> MuonTrap.cmd([
           "build",
           "-r",
           "--manifest-path",
