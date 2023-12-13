@@ -4,9 +4,9 @@
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_video_compositor_plugin)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/membraneframework/membrane_video_compositor_plugin/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/membraneframework/membrane_video_compositor_plugin/tree/master)
 
-Membrane plugin that accepts multiple video inputs, transforms them according to provided transformations and composes them into a single output video.
+Membrane SDK for VideoCompositor, that takes multiple input streams, transforms them according to provided transformations and composes them into output streams / videos.
 
-It is part of [Membrane Multimedia Framework](https://membraneframework.org).
+It is part of [Membrane Multimedia Framework](https://membrane.stream).
 
 ## Installation
 
@@ -15,24 +15,37 @@ The package can be installed by adding `membrane_video_compositor_plugin` to you
 ```elixir
 def deps do
   [
-    {:membrane_video_compositor_plugin, "~> 0.7.0"}
+    {:membrane_video_compositor_plugin, "~> 0.8.0"}
   ]
 end
 ```
 
-Since parts of this package are implemented in Rust, you need to have a Rust installation to compile this package. You can get one [here](https://rustup.rs/)
+VideoCompositor requires having locally installed:
 
-## Usage
+- [FFmpeg 6.0](https://ffmpeg.org/download.html) - for streaming inputs / outputs to VideoCompositor
+- [wget](https://www.gnu.org/software/wget/) - for downloading VideoCompositor binary file
+- [tar](https://www.gnu.org/software/tar/) - for decompressing VideoCompositor binary file
 
-Before jumping into Livebook, check out this [installation guide](https://github.com/membraneframework/guide/tree/master/livebook_examples).
-Note that it's running on the previous version of this plugin.
+## Examples
 
-[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2Fmembraneframework%2Fguide%2Fblob%2Fmaster%2Flivebook_examples%2Fvideo_compositor%2Fvideo_compositor.livemd)
+Examples can be found in `examples` directory.
 
-## Copyright and License
+To run example run:
 
-Copyright 2022, [Software Mansion](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_video_compositor_plugin)
+1. `cd examples`
+2. `mix deps.get`
+3. `mix run lib/[example_name].exs`
 
-[![Software Mansion](https://logo.swmansion.com/logo?color=white&variant=desktop&width=200&tag=membrane-github)](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_video_compositor_plugin)
+### Layout with shader example
 
-Licensed under the [Apache License, Version 2.0](LICENSE)
+The example presents dynamically added video arranged onto a tiled layout and "twisted" with the simple shader. Shaders can be used to create custom visual effects.
+
+### Transition example
+
+The example presents dynamic transition of input videos. Transitions are used for smooth, dynamical animations.
+
+### Dynamic outputs example
+
+The example presents dynamic outputs linking.
+Multiple outputs are useful for live-streaming for multiple platforms (e.g. different layout for mobile devices), target resolutions
+or any other case, when user want to process input videos differently.
