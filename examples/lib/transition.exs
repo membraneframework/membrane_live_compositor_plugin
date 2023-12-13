@@ -223,7 +223,7 @@ end
 
 Examples.Utils.FFmpeg.generate_sample_video()
 
-vc_server_config = Utils.VcServer.vc_server_config(30)
+vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(TransitionPipeline, %{
