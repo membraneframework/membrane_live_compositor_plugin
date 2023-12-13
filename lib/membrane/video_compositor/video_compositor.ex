@@ -250,13 +250,22 @@ defmodule Membrane.VideoCompositor do
                 """,
                 default: :on_init
               ],
-              vc_server_port_number: [
-                spec: :inet.port_number() | :choose_at_random,
+              vc_server_config: [
+                spec:
+                  :start_on_random_port
+                  | {:start_on_port, :inet.port_number()}
+                  | {:already_started, :inet.port_number()},
                 description: """
-                Port on which VC server should run.
-                The port has to be unused. In case of running multiple VC elements, those values should be unique.
+                Defines how VideoCompositor bin should start-up VideoCompositor server.
+
+                There are three available options:
+                - :start_on_random_port - VC server is automatically started on port randomly chosen from port_range
+                - :start_on_port - VC server is automatically started on specified port
+                - :already_started - VideoCompositor bin assumes, that VC server is already started, initialized and should be
+                available at specified port. Useful for sharing VC server between multiple pipelines or running custom version
+                of VC server.
                 """,
-                default: :choose_at_random
+                default: :start_on_random_port
               ]
 
   def_input_pad :input,
@@ -285,29 +294,44 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_setup(_ctx, opt) do
     {:ok, vc_port} =
-      case opt.vc_server_port_number do
-        :choose_at_random ->
+      case opt.vc_server_config do
+        :start_on_random_port ->
           {port_lower_bound, port_upper_bound} = opt.port_range
 
-          port_lower_bound..port_upper_bound
-          |> Enum.shuffle()
-          |> Enum.reduce_while(
-            {:error, "Failed to start VideoCompositor server on all ports."},
-            fn port, err -> try_starting_on_port(port, err) end
-          )
+          {:ok, vc_port} =
+            port_lower_bound..port_upper_bound
+            |> Enum.shuffle()
+            |> Enum.reduce_while(
+              {:error, "Failed to start VideoCompositor server on all ports."},
+              fn port, err -> try_starting_on_port(port, err) end
+            )
 
-        port when is_integer(port) ->
-          :ok = ServerRunner.start_vc_server(port)
-          {:ok, port}
+          {:ok, _resp} =
+            Request.init(
+              opt.framerate,
+              opt.stream_fallback_timeout,
+              opt.init_web_renderer?,
+              vc_port
+            )
+
+          {:ok, vc_port}
+
+        {:start_on_port, vc_port} ->
+          :ok = ServerRunner.start_vc_server(vc_port)
+
+          {:ok, _resp} =
+            Request.init(
+              opt.framerate,
+              opt.stream_fallback_timeout,
+              opt.init_web_renderer?,
+              vc_port
+            )
+
+          {:ok, vc_port}
+
+        {:already_started, vc_port} ->
+          {:ok, vc_port}
       end
-
-    {:ok, _resp} =
-      Request.init(
-        opt.framerate,
-        opt.stream_fallback_timeout,
-        opt.init_web_renderer?,
-        vc_port
-      )
 
     if opt.start_composing_strategy == :on_init do
       {:ok, _resp} = Request.start_composing(vc_port)

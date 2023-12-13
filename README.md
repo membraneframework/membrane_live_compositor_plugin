@@ -34,7 +34,7 @@ To run example run:
 
 1. `cd examples`
 2. `mix deps.get`
-3. `mix run [example_name].exs`
+3. `mix run lib/[example_name].exs`
 
 ### Layout with shader example
 

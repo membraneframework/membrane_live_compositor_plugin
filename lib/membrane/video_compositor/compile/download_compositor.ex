@@ -22,8 +22,8 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       File.mkdir_p!(tmp_path)
 
       wget_res_path = Path.join(tmp_path, "video_compositor")
-      System.cmd("wget", ["-O", wget_res_path, url])
-      System.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
+      MuonTrap.cmd("wget", ["-O", wget_res_path, url])
+      MuonTrap.cmd("tar", ["-xvf", wget_res_path, "-C", vc_app_directory()])
       File.rm_rf!(wget_res_path)
       File.touch!(lock_path)
     end

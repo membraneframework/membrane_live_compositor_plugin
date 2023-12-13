@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Utils.FFmpeg do
+defmodule Utils.FFmpeg do
   @moduledoc false
 
   @spec generate_sample_video() :: nil
