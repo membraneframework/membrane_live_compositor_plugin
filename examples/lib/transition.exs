@@ -10,14 +10,16 @@ defmodule TransitionPipeline do
 
   @output_width 1280
   @output_height 720
+  @framerate 30
   @output_id "output"
   @rescaler_id "rescaler"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path}) do
+  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
     spec =
       child(:video_compositor, %Membrane.VideoCompositor{
-        framerate: 30
+        framerate: @framerate,
+        vc_server_config: vc_server_config
       })
 
     Process.send_after(self(), {:add_input, 0}, 1000)
@@ -154,7 +156,7 @@ defmodule TransitionPipeline do
     }
   end
 
-  defp new_scene_request(_) do
+  defp new_scene_request(_vc_ctx) do
     :no_update
   end
 
@@ -219,9 +221,14 @@ defmodule TransitionPipeline do
   end
 end
 
-Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
+Examples.Utils.FFmpeg.generate_sample_video()
+
+vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
-  Membrane.Pipeline.start_link(TransitionPipeline, %{sample_path: "samples/testsrc.h264"})
+  Membrane.Pipeline.start_link(TransitionPipeline, %{
+    sample_path: "samples/testsrc.h264",
+    vc_server_config: vc_server_config
+  })
 
 Process.sleep(:infinity)

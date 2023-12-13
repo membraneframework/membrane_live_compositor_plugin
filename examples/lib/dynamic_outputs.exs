@@ -10,13 +10,15 @@ defmodule DynamicOutputsPipeline do
 
   @output_width 1920
   @output_height 1080
+  @framerate 30
   @layout_id "layout"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path}) do
+  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
     spec =
       child(:video_compositor, %Membrane.VideoCompositor{
-        framerate: 30
+        framerate: @framerate,
+        vc_server_config: vc_server_config
       })
 
     input_specs = 0..10 |> Enum.map(fn input_number -> input_spec(input_number, sample_path) end)
@@ -199,9 +201,14 @@ defmodule DynamicOutputsPipeline do
   end
 end
 
-Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
+Utils.FFmpeg.generate_sample_video()
+
+vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
-  Membrane.Pipeline.start_link(DynamicOutputsPipeline, %{sample_path: "samples/testsrc.h264"})
+  Membrane.Pipeline.start_link(DynamicOutputsPipeline, %{
+    sample_path: "samples/testsrc.h264",
+    vc_server_config: vc_server_config
+  })
 
 Process.sleep(:infinity)

@@ -12,10 +12,10 @@ defmodule LayoutWithShaderPipeline do
   @output_height 1080
   @output_id "output"
   @shader_id "example_shader"
-  @shader_path "./example_shader.wgsl"
+  @shader_path "./lib/example_shader.wgsl"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path}) do
+  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
     spec =
       child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
       |> child({:input_parser, 0}, %Membrane.H264.Parser{
@@ -25,7 +25,8 @@ defmodule LayoutWithShaderPipeline do
       |> child({:realtimer, 0}, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 0), options: [input_id: "input_0"])
       |> child(:video_compositor, %Membrane.VideoCompositor{
-        framerate: 30
+        framerate: 30,
+        vc_server_config: vc_server_config
       })
 
     {[spec: spec], %{videos_count: 1, sample_path: sample_path}}
@@ -206,9 +207,14 @@ defmodule LayoutWithShaderPipeline do
   end
 end
 
-Membrane.VideoCompositor.Examples.Utils.FFmpeg.generate_sample_video()
+Utils.FFmpeg.generate_sample_video()
+
+vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
-  Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{sample_path: "samples/testsrc.h264"})
+  Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{
+    sample_path: "samples/testsrc.h264",
+    vc_server_config: vc_server_config
+  })
 
 Process.sleep(:infinity)
