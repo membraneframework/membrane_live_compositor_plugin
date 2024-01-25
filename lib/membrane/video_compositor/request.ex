@@ -12,20 +12,6 @@ defmodule Membrane.VideoCompositor.Request do
           | {:error_response_code, Req.Response.t()}
           | {:error, Exception.t()}
 
-  @spec init(non_neg_integer(), Membrane.Time.t(), boolean(), :inet.port_number()) ::
-          request_result()
-  def init(framerate, stream_fallback_timeout, init_web_renderer?, vc_port) do
-    %{
-      type: :init,
-      web_renderer: %{
-        init: init_web_renderer?
-      },
-      framerate: framerate,
-      stream_fallback_timeout: Membrane.Time.as_milliseconds(stream_fallback_timeout, :round)
-    }
-    |> send_request(vc_port)
-  end
-
   @spec start_composing(:inet.port_number()) :: request_result()
   def start_composing(vc_port) do
     %{
@@ -45,7 +31,10 @@ defmodule Membrane.VideoCompositor.Request do
       type: :register,
       entity_type: :input_stream,
       input_id: "#{input_id}",
-      port: input_port_number
+      port: input_port_number,
+      video: %{
+        codec: :h264
+      }
     }
     |> send_request(vc_port)
   end
@@ -101,9 +90,7 @@ defmodule Membrane.VideoCompositor.Request do
         width: output_opt.width,
         height: output_opt.height
       },
-      encoder_settings: %{
-        preset: output_opt.encoder_preset
-      }
+      encoder_preset: output_opt.encoder_preset
     }
     |> send_request(vc_port)
   end

@@ -27,7 +27,11 @@ defmodule Utils.VcServer do
         Path.join(vc_directory_path, "Cargo.toml"),
         "--bin",
         "video_compositor"
-      ])
+      ],
+         env: %{
+          "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
+        }
+      )
 
     vc_port = 8001
 
@@ -42,14 +46,14 @@ defmodule Utils.VcServer do
           "--bin",
           "video_compositor"
         ],
-        env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"}
+        env: %{
+          "LIVE_COMPOSITOR_API_PORT" => "#{vc_port}",
+          "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
+        }
       )
     end)
 
     Process.sleep(3000)
-
-    {:ok, _} =
-      Membrane.VideoCompositor.Request.init(framerate, Membrane.Time.seconds(1), false, vc_port)
 
     {:already_started, vc_port}
   end

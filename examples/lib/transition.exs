@@ -221,7 +221,7 @@ defmodule TransitionPipeline do
   end
 end
 
-Examples.Utils.FFmpeg.generate_sample_video()
+Utils.FFmpeg.generate_sample_video()
 
 vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
 
