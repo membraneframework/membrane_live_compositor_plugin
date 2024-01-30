@@ -145,20 +145,6 @@ defmodule DynamicOutputsPipeline do
     }
   end
 
-  @spec tiled_layout(list(String.t())) :: map()
-  defp tiled_layout(input_pads) do
-    %{
-      type: "builtin:tiled_layout",
-      node_id: @layout_id,
-      margin: 10,
-      resolution: %{
-        width: 1920,
-        height: 1080
-      },
-      input_pads: input_pads
-    }
-  end
-
   defp input_spec(input_number, sample_path) do
     child({:video_src, input_number}, %Membrane.File.Source{location: sample_path})
     |> child({:input_parser, input_number}, %Membrane.H264.Parser{

@@ -3,8 +3,8 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
   alias Membrane.VideoCompositor.Request
 
-  @spec start_vc_server(:inet.port_number()) :: :ok | :error
-  def start_vc_server(vc_port) do
+  @spec start_vc_server(:inet.port_number(), map()) :: :ok | :error
+  def start_vc_server(vc_port, env) do
     video_compositor_app_path = Mix.Tasks.Compile.DownloadCompositor.vc_app_path()
 
     unless File.exists?(video_compositor_app_path) do
@@ -14,7 +14,13 @@ defmodule Membrane.VideoCompositor.ServerRunner do
     pid =
       spawn(fn ->
         video_compositor_app_path
-        |> MuonTrap.cmd([], env: %{"MEMBRANE_VIDEO_COMPOSITOR_API_PORT" => "#{vc_port}"})
+        |> MuonTrap.cmd([],
+          env:
+            Map.merge(
+              %{"LIVE_COMPOSITOR_API_PORT" => "#{vc_port}"},
+              env
+            )
+        )
       end)
 
     case wait_for_vc_startup(vc_port) do
@@ -29,12 +35,12 @@ defmodule Membrane.VideoCompositor.ServerRunner do
 
   @spec wait_for_vc_startup(:inet.port_number()) :: :started | :not_started
   defp wait_for_vc_startup(vc_port) do
-    0..30
+    0..300
     |> Enum.reduce_while(:not_started, fn _i, _acc ->
       Process.sleep(100)
 
-      case Request.send_request(%{}, vc_port) do
-        {:error_response_code, _} ->
+      case Request.get_status(vc_port) do
+        {:ok, _} ->
           {:halt, :started}
 
         {:error, _reason} ->
