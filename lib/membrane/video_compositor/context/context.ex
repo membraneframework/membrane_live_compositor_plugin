@@ -1,15 +1,15 @@
-defmodule Membrane.VideoCompositor.Context do
+defmodule Membrane.LiveCompositor.Context do
   @moduledoc """
-  Context of VideoCompositor. Specifies VideoCompositor inputs and outputs.
+  Context of LiveCompositor. Specifies LiveCompositor inputs and outputs.
   """
 
-  alias Membrane.VideoCompositor.State
+  alias Membrane.LiveCompositor.State
 
   @enforce_keys [:inputs, :outputs]
   defstruct @enforce_keys
 
   @typedoc """
-  Context of VideoCompositor. Specifies VideoCompositor inputs and outputs.
+  Context of LiveCompositor. Specifies LiveCompositor inputs and outputs.
   """
   @type t :: %__MODULE__{
           inputs: list(__MODULE__.InputStream.t()),

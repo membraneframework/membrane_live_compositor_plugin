@@ -1,27 +1,27 @@
-defmodule Membrane.VideoCompositor.StreamsHandler do
+defmodule Membrane.LiveCompositor.StreamsHandler do
   @moduledoc false
 
-  alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{OutputOptions, Request, State}
+  alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.{OutputOptions, Request, State}
 
-  @spec register_input_stream(VideoCompositor.input_id(), State.t()) ::
+  @spec register_input_stream(LiveCompositor.input_id(), State.t()) ::
           {:ok, :inet.port_number()} | :error
   def register_input_stream(input_id, state) do
     try_register = fn input_port ->
-      Request.register_input_stream(input_id, input_port, state.vc_port)
+      Request.register_input_stream(input_id, input_port, state.lc_port)
     end
 
     pick_port(try_register, state)
   end
 
-  @spec register_output_stream(OutputOptions.t(), Membrane.VideoCompositor.State.t()) ::
+  @spec register_output_stream(OutputOptions.t(), Membrane.LiveCompositor.State.t()) ::
           {:ok, :inet.port_number()} | :error
   def register_output_stream(output_opt, state) do
     try_register = fn output_port ->
       Request.register_output_stream(
         output_opt,
         output_port,
-        state.vc_port
+        state.lc_port
       )
     end
 

@@ -5,8 +5,8 @@ defmodule LayoutWithShaderPipeline do
 
   require Membrane.Logger
 
-  alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{Context, OutputOptions}
+  alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.{Context, OutputOptions}
 
   @output_width 1920
   @output_height 1080
@@ -15,7 +15,7 @@ defmodule LayoutWithShaderPipeline do
   @shader_path "./lib/example_shader.wgsl"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
     spec =
       child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
       |> child({:input_parser, 0}, %Membrane.H264.Parser{
@@ -24,9 +24,9 @@ defmodule LayoutWithShaderPipeline do
       })
       |> child({:realtimer, 0}, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 0), options: [input_id: "input_0"])
-      |> child(:video_compositor, %Membrane.VideoCompositor{
+      |> child(:video_compositor, %Membrane.LiveCompositor{
         framerate: 30,
-        vc_server_config: vc_server_config
+        lc_server_config: lc_server_config
       })
 
     {[spec: spec], %{videos_count: 1, sample_path: sample_path}}
@@ -42,7 +42,7 @@ defmodule LayoutWithShaderPipeline do
 
     {[
        start_timer: {:add_videos_timer, Membrane.Time.seconds(3)},
-       notify_child: {:video_compositor, {:vc_request, register_shader_request_body()}},
+       notify_child: {:video_compositor, {:lc_request, register_shader_request_body()}},
        notify_child: {:video_compositor, {:register_output, output_opt}}
      ], state}
   end
@@ -60,7 +60,7 @@ defmodule LayoutWithShaderPipeline do
 
   @impl true
   def handle_child_notification(
-        {:new_output_stream, output_id, _vc_ctx},
+        {:new_output_stream, output_id, _lc_ctx},
         :video_compositor,
         _membrane_ctx,
         state
@@ -80,8 +80,8 @@ defmodule LayoutWithShaderPipeline do
 
   @impl true
   def handle_child_notification(
-        {:vc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _vc_ctx},
+        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
+         _lc_ctx},
         _child,
         _membrane_ctx,
         state
@@ -136,7 +136,7 @@ defmodule LayoutWithShaderPipeline do
       outputs: []
     }
 
-    {:notify_child, {:video_compositor, {:vc_request, request_body}}}
+    {:notify_child, {:video_compositor, {:lc_request, request_body}}}
   end
 
   defp update_scene_action(%Context{inputs: inputs, outputs: outputs}) do
@@ -147,10 +147,10 @@ defmodule LayoutWithShaderPipeline do
         update_scene(inputs)
       end
 
-    {:notify_child, {:video_compositor, {:vc_request, update_scene_request}}}
+    {:notify_child, {:video_compositor, {:lc_request, update_scene_request}}}
   end
 
-  @spec empty_scene() :: VideoCompositor.request_body()
+  @spec empty_scene() :: LiveCompositor.request_body()
   defp empty_scene() do
     %{
       type: :update_scene,
@@ -159,7 +159,7 @@ defmodule LayoutWithShaderPipeline do
     }
   end
 
-  @spec update_scene(list(Context.InputStream.t())) :: VideoCompositor.request_body()
+  @spec update_scene(list(Context.InputStream.t())) :: LiveCompositor.request_body()
   defp update_scene(inputs) do
     input_ids = inputs |> Enum.map(fn %Context.InputStream{id: input_id} -> input_id end)
 
@@ -174,7 +174,7 @@ defmodule LayoutWithShaderPipeline do
     }
   end
 
-  @spec scene(list(VideoCompositor.input_id())) :: map()
+  @spec scene(list(LiveCompositor.input_id())) :: map()
   defp scene(input_ids) do
     %{
       type: :shader,
@@ -209,12 +209,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
+lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{
     sample_path: "samples/testsrc.h264",
-    vc_server_config: vc_server_config
+    lc_server_config: lc_server_config
   })
 
 Process.sleep(:infinity)

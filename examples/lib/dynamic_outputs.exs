@@ -5,8 +5,8 @@ defmodule DynamicOutputsPipeline do
 
   require Membrane.Logger
 
-  alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{Context, OutputOptions}
+  alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.{Context, OutputOptions}
 
   @output_width 1920
   @output_height 1080
@@ -14,11 +14,11 @@ defmodule DynamicOutputsPipeline do
   @layout_id "layout"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
     spec =
-      child(:video_compositor, %Membrane.VideoCompositor{
+      child(:video_compositor, %Membrane.LiveCompositor{
         framerate: @framerate,
-        vc_server_config: vc_server_config
+        lc_server_config: lc_server_config
       })
 
     input_specs = 0..10 |> Enum.map(fn input_number -> input_spec(input_number, sample_path) end)
@@ -39,19 +39,19 @@ defmodule DynamicOutputsPipeline do
 
   @impl true
   def handle_child_notification(
-        {register, _id, vc_ctx},
+        {register, _id, lc_ctx},
         :video_compositor,
         _ctx,
         state
       )
       when register == :input_registered or register == :output_registered do
-    {inputs, outputs} = inputs_outputs_ids(vc_ctx)
+    {inputs, outputs} = inputs_outputs_ids(lc_ctx)
     {update_scene_action(inputs, outputs), %{state | inputs: inputs, outputs: outputs}}
   end
 
   @impl true
   def handle_child_notification(
-        {:new_output_stream, output_id, _vc_ctx},
+        {:new_output_stream, output_id, _lc_ctx},
         :video_compositor,
         _membrane_ctx,
         state
@@ -62,8 +62,8 @@ defmodule DynamicOutputsPipeline do
 
   @impl true
   def handle_child_notification(
-        {:vc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _vc_ctx},
+        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
+         _lc_ctx},
         :video_compositor,
         _membrane_ctx,
         state
@@ -109,12 +109,12 @@ defmodule DynamicOutputsPipeline do
     outputs = List.delete(outputs, output_id)
 
     # Change the scene before removing the output.
-    # VideoCompositor forbids removing output used in the current scene.
+    # LiveCompositor forbids removing output used in the current scene.
     {update_scene_action(inputs, outputs) ++ [remove_children: output_group_id(output_id)],
      %{state | outputs: outputs}}
   end
 
-  @spec update_scene_action(list(VideoCompositor.input_id()), list(VideoCompositor.output_id())) ::
+  @spec update_scene_action(list(LiveCompositor.input_id()), list(LiveCompositor.output_id())) ::
           [Membrane.Pipeline.Action.notify_child()]
   defp update_scene_action(input_ids, output_ids) do
     update_scene_request =
@@ -133,7 +133,7 @@ defmodule DynamicOutputsPipeline do
         }
       end
 
-    [notify_child: {:video_compositor, {:vc_request, update_scene_request}}]
+    [notify_child: {:video_compositor, {:lc_request, update_scene_request}}]
   end
 
   defp scene(input_ids) do
@@ -189,12 +189,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
+lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(DynamicOutputsPipeline, %{
     sample_path: "samples/testsrc.h264",
-    vc_server_config: vc_server_config
+    lc_server_config: lc_server_config
   })
 
 Process.sleep(:infinity)

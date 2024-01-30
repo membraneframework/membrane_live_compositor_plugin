@@ -1,24 +1,24 @@
-defmodule Membrane.VideoCompositor do
+defmodule Membrane.LiveCompositor do
   @moduledoc """
   Membrane SDK for [LiveCompositor](https://github.com/membraneframework/video_compositor).
 
   ## Input streams
   Inputs are simply linked as Membrane Pads, no additional requests are required.
   Input registration happens automatically.
-  After registering and linking an input stream the VideoCompositor will notify the parent with `t:input_registered_msg/0`.
+  After registering and linking an input stream the LiveCompositor will notify the parent with `t:input_registered_msg/0`.
   After receiving this message, input can be used in the scene defintion.
 
   ## Output streams
   Outputs have to be registered before linking.
   To register an output the parent sends `t:register_output_msg/0`.
-  After registering output, the VideoCompositor will notify the parent with `t:output_registered_msg/0`.
+  After registering output, the LiveCompositor will notify the parent with `t:output_registered_msg/0`.
   Scene for a specific output can only be defined after registration.
-  Once VideoCompositor starts producing output stream, it will notify parent with `t:new_output_stream_msg/0`.
+  Once LiveCompositor starts producing output stream, it will notify parent with `t:new_output_stream_msg/0`.
   Linking outputs is only available after receiving that message.
 
   ## Composition specification - `Scene`
-  To specify what VideoCompositor should render parent should send `t:vc_request/0`.
-  `Scene` is a top level specification of what VideoCompositor should render.
+  To specify what LiveCompositor should render parent should send `t:lc_request/0`.
+  `Scene` is a top level specification of what LiveCompositor should render.
 
   As an example, if two inputs with IDs `"input_0"` and `"input_1"` and
   single output with ID `"output"` are registered, sending such `update_scene`
@@ -40,13 +40,13 @@ defmodule Membrane.VideoCompositor do
     ]
   }
 
-  {[notify_child: {:video_compositor, {:vc_request, scene_update_request}}]}
+  {[notify_child: {:video_compositor, {:lc_request, scene_update_request}}]}
   ```
-  VideoCompositor will notify parent with `t:vc_request_response/0`.
+  LiveCompositor will notify parent with `t:lc_request_response/0`.
 
   You can use renderers/nodes to process input streams into outputs.
-  VideoCompositor has builtin renders for most common use cases, but you can
-  also register your own shaders, images and websites to tune VideoCompositor for
+  LiveCompositor has builtin renders for most common use cases, but you can
+  also register your own shaders, images and websites to tune LiveCompositor for
   specific business requirements.
 
   ## Pads unlinking
@@ -61,7 +61,7 @@ defmodule Membrane.VideoCompositor do
   General concepts of scene are explained [here](https://compositor.live/docs/concept/component).
 
   ## Examples
-  Examples can be found in `examples` directory of Membrane VideoCompositor Plugin.
+  Examples can be found in `examples` directory of Membrane LiveCompositor Plugin.
   `Scene` API usage examples can be found in the [LiveCompositor repo](https://github.com/membraneframework/video_compositor/tree/master/examples).
   """
 
@@ -71,7 +71,7 @@ defmodule Membrane.VideoCompositor do
 
   alias Membrane.{Pad, RTP, UDP}
 
-  alias Membrane.VideoCompositor.{
+  alias Membrane.LiveCompositor.{
     Context,
     OutputOptions,
     ServerRunner,
@@ -79,10 +79,10 @@ defmodule Membrane.VideoCompositor do
     StreamsHandler
   }
 
-  alias Membrane.VideoCompositor.Request
+  alias Membrane.LiveCompositor.Request
 
   @typedoc """
-  Preset of VideoCompositor output video encoder.
+  Preset of LiveCompositor output video encoder.
   See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
   """
   @type encoder_preset ::
@@ -108,7 +108,7 @@ defmodule Membrane.VideoCompositor do
   @type output_id :: String.t()
 
   @typedoc """
-  Elixir translated body of VideoCompositor requests.
+  Elixir translated body of LiveCompositor requests.
 
   Elixir types are mapped into JSON types:
   - map -> object
@@ -154,21 +154,21 @@ defmodule Membrane.VideoCompositor do
   @type request_body :: map()
 
   @typedoc """
-  Request send to VideoCompositor.
+  Request send to LiveCompositor.
 
   User of SDK should only send `update_scene` or `register_renderer` requests.
   [API reference can be found here](https://compositor.live/docs/category/api-reference).
   """
-  @type vc_request :: {:vc_request, request_body()}
+  @type lc_request :: {:lc_request, request_body()}
 
   @typedoc """
-  VideoCompositor request response.
+  LiveCompositor request response.
   """
-  @type vc_request_response ::
-          {:vc_request_response, request_body(), Req.Response.t(), Context.t()}
+  @type lc_request_response ::
+          {:lc_request_response, request_body(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification sent to parent after VideoCompositor receives
+  Notification sent to parent after LiveCompositor receives
   the first frame from the input stream (registered on input pad link).
 
   Input can be used in `scene` only after registration.
@@ -176,7 +176,7 @@ defmodule Membrane.VideoCompositor do
   @type input_registered_msg :: {:input_registered, input_id(), Context.t()}
 
   @typedoc """
-  Notification sent to VideoCompositor to register output stream.
+  Notification sent to LiveCompositor to register output stream.
 
   See "Output streams" section in the documentation for more information.
   """
@@ -190,7 +190,7 @@ defmodule Membrane.VideoCompositor do
   @type output_registered_msg :: {:output_registered, output_id(), Context.t()}
 
   @typedoc """
-  Notification sent to parent after VideoCompositor starts producing streams
+  Notification sent to parent after LiveCompositor starts producing streams
   and in ready to link output pad.
 
   See "Output streams" section in doc for more information.
@@ -198,7 +198,7 @@ defmodule Membrane.VideoCompositor do
   @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
 
   @typedoc """
-  Range in which VideoCompositor search available ports.
+  Range in which LiveCompositor search available ports.
 
   This range should be at least a few times wider then expected sum
   of inputs and outputs.
@@ -210,20 +210,20 @@ defmodule Membrane.VideoCompositor do
 
   def_options framerate: [
                 spec: Membrane.RawVideo.framerate_t(),
-                description: "Framerate of VideoCompositor outputs."
+                description: "Framerate of LiveCompositor outputs."
               ],
               port_range: [
                 spec: port_range(),
                 description: """
                 Port range in which input and output streams would try to be registered.
-                If all ports in range will be used, VideoCompositor will crash on input/output registration.
+                If all ports in range will be used, LiveCompositor will crash on input/output registration.
                 """,
                 default: {6000, 10_000}
               ],
               init_web_renderer?: [
                 spec: boolean(),
                 description: """
-                Enables web rendering for VideoCompositor.
+                Enables web rendering for LiveCompositor.
                 If set to false, attempts to register and use web renderers will fail.
                 """,
                 default: true
@@ -231,31 +231,31 @@ defmodule Membrane.VideoCompositor do
               stream_fallback_timeout: [
                 spec: Membrane.Time.t(),
                 description: """
-                Timeout that defines when the VideoCompositor should switch to fallback on the input stream that stopped sending frames.
+                Timeout that defines when the LiveCompositor should switch to fallback on the input stream that stopped sending frames.
                 """,
                 default: Membrane.Time.seconds(2)
               ],
               start_composing_strategy: [
                 spec: :on_init | :on_message,
                 description: """
-                Specifies when VideoCompositor starts composing frames.
+                Specifies when LiveCompositor starts composing frames.
                 In `:on_message` strategy, `:start_composing` message has to be sent to start composing.
                 """,
                 default: :on_init
               ],
-              vc_server_config: [
+              lc_server_config: [
                 spec:
                   :start_on_random_port
                   | {:start_on_port, :inet.port_number()}
                   | {:already_started, :inet.port_number()},
                 description: """
-                Defines how the VideoCompositor bin should start-up a LiveCompositor server.
+                Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
                 There are three available options:
                 - :start_on_random_port - LC server is automatically started on port randomly chosen
                 from port_range.
                 - :start_on_port - LC server is automatically started on specified port.
-                - :already_started - VideoCompositor bin assumes, that LC server is already started, initialized and should be
+                - :already_started - LiveCompositor bin assumes, that LC server is already started, initialized and should be
                 available at specified port. Useful for sharing LC server between multiple pipelines or running custom version
                 of LC server.
                 """,
@@ -294,12 +294,12 @@ defmodule Membrane.VideoCompositor do
         to_string(Membrane.Time.as_milliseconds(opt.stream_fallback_timeout, :round))
     }
 
-    {:ok, vc_port} =
-      case opt.vc_server_config do
+    {:ok, lc_port} =
+      case opt.lc_server_config do
         :start_on_random_port ->
           {port_lower_bound, port_upper_bound} = opt.port_range
 
-          {:ok, vc_port} =
+          {:ok, lc_port} =
             port_lower_bound..port_upper_bound
             |> Enum.shuffle()
             |> Enum.reduce_while(
@@ -307,24 +307,24 @@ defmodule Membrane.VideoCompositor do
               fn port, err -> try_starting_on_port(port, err, env) end
             )
 
-          {:ok, vc_port}
+          {:ok, lc_port}
 
-        {:start_on_port, vc_port} ->
-          :ok = ServerRunner.start_vc_server(vc_port, env)
-          {:ok, vc_port}
+        {:start_on_port, lc_port} ->
+          :ok = ServerRunner.start_lc_server(lc_port, env)
+          {:ok, lc_port}
 
-        {:already_started, vc_port} ->
-          {:ok, vc_port}
+        {:already_started, lc_port} ->
+          {:ok, lc_port}
       end
 
     if opt.start_composing_strategy == :on_init do
-      {:ok, _resp} = Request.start_composing(vc_port)
+      {:ok, _resp} = Request.start_composing(lc_port)
     end
 
     {[],
      %State{
        framerate: opt.framerate,
-       vc_port: vc_port,
+       lc_port: lc_port,
        port_range: opt.port_range
      }}
   end
@@ -358,11 +358,11 @@ defmodule Membrane.VideoCompositor do
 
     spec = {links, group: input_group_id(input_id)}
 
-    vc_pid = self()
+    lc_pid = self()
 
     spawn(fn ->
-      {:ok, _response} = Request.wait_for_frame_on_input(input_id, state.vc_port)
-      send(vc_pid, {:input_stream_received, input_id})
+      {:ok, _response} = Request.wait_for_frame_on_input(input_id, state.lc_port)
+      send(lc_pid, {:input_stream_received, input_id})
     end)
 
     {[spec: spec], state}
@@ -379,10 +379,10 @@ defmodule Membrane.VideoCompositor do
 
     if ssrc == :stream_not_received do
       raise """
-      Attempt to link output pad: #{inspect(output_ref)} to VideoCompositor, that hasn't been properly registered.
+      Attempt to link output pad: #{inspect(output_ref)} to LiveCompositor, that hasn't been properly registered.
       Linking outputs is only allowed after registering them with `register_output` message.
       Send `register_output` message first and wait for receiving `output_registered` message.
-      See VideoCompositor docs to learn more: https://hexdocs.pm/membrane_video_compositor_plugin/Membrane.VideoCompositor.html
+      See LiveCompositor docs to learn more: https://hexdocs.pm/membrane_video_compositor_plugin/Membrane.LiveCompositor.html
       """
     end
 
@@ -397,7 +397,7 @@ defmodule Membrane.VideoCompositor do
     links =
       get_child({:rtp_receiver, output_id})
       |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
-      |> child({:output_processor, output_id}, %Membrane.VideoCompositor.OutputProcessor{
+      |> child({:output_processor, output_id}, %Membrane.LiveCompositor.OutputProcessor{
         output_stream_format: output_stream_format
       })
       |> bin_output(output_ref)
@@ -430,7 +430,7 @@ defmodule Membrane.VideoCompositor do
     %State.Input{id: input_id} =
       state.inputs |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
 
-    {:ok, _resp} = Request.unregister_input_stream(input_id, state.vc_port)
+    {:ok, _resp} = Request.unregister_input_stream(input_id, state.lc_port)
 
     inputs = state.inputs |> Enum.reject(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
 
@@ -443,7 +443,7 @@ defmodule Membrane.VideoCompositor do
       state.outputs
       |> Enum.find(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
 
-    {:ok, _resp} = Request.unregister_output_stream(output_id, state.vc_port)
+    {:ok, _resp} = Request.unregister_output_stream(output_id, state.lc_port)
 
     outputs =
       state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
@@ -453,7 +453,7 @@ defmodule Membrane.VideoCompositor do
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
-    {:ok, _resp} = Request.start_composing(state.vc_port)
+    {:ok, _resp} = Request.start_composing(state.lc_port)
     {[], state}
   end
 
@@ -493,15 +493,15 @@ defmodule Membrane.VideoCompositor do
   end
 
   @impl true
-  def handle_parent_notification({:vc_request, request_body}, _ctx, state = %State{}) do
-    case Request.send_request(request_body, state.vc_port) do
+  def handle_parent_notification({:lc_request, request_body}, _ctx, state = %State{}) do
+    case Request.send_request(request_body, state.lc_port) do
       {res, response} when res == :ok or res == :error_response_code ->
-        response_msg = {:vc_request_response, request_body, response, Context.new(state)}
+        response_msg = {:lc_request_response, request_body, response, Context.new(state)}
         {[notify_parent: response_msg], state}
 
       {:error, exception} ->
         Membrane.Logger.error(
-          "VideoCompositor failed to send a request: #{request_body}.\nException: #{exception}."
+          "LiveCompositor failed to send a request: #{request_body}.\nException: #{exception}."
         )
 
         {[], state}
@@ -511,7 +511,7 @@ defmodule Membrane.VideoCompositor do
   @impl true
   def handle_parent_notification(notification, _ctx, state = %State{}) do
     Membrane.Logger.warning(
-      "VideoCompositor received unknown notification from the parent: #{inspect(notification)}!"
+      "LiveCompositor received unknown notification from the parent: #{inspect(notification)}!"
     )
 
     {[], state}
@@ -569,7 +569,7 @@ defmodule Membrane.VideoCompositor do
   defp try_starting_on_port(port, err, env) do
     Membrane.Logger.debug("Trying to launch LiveCompositor on port: #{port}")
 
-    case ServerRunner.start_vc_server(port, env) do
+    case ServerRunner.start_lc_server(port, env) do
       :ok -> {:halt, {:ok, port}}
       :error -> {:cont, err}
     end

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Mixfile do
+defmodule Membrane.LiveCompositor.Mixfile do
   use Mix.Project
 
   @version "0.8.0"
@@ -16,11 +16,11 @@ defmodule Membrane.VideoCompositor.Mixfile do
       dialyzer: dialyzer(),
 
       # hex
-      description: "VideoCompositor SDK for Membrane Multimedia Framework",
+      description: "LiveCompositor SDK for Membrane Multimedia Framework",
       package: package(),
 
       # docs
-      name: "Membrane VideoCompositor Plugin",
+      name: "Membrane LiveCompositor Plugin",
       source_url: @github_url,
       docs: docs()
     ]
@@ -90,7 +90,7 @@ defmodule Membrane.VideoCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.VideoCompositor]
+      nest_modules_by_prefix: [Membrane.LiveCompositor]
     ]
   end
 end

@@ -5,8 +5,8 @@ defmodule TransitionPipeline do
 
   require Membrane.Logger
 
-  alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{Context, OutputOptions}
+  alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.{Context, OutputOptions}
 
   @output_width 1280
   @output_height 720
@@ -15,11 +15,11 @@ defmodule TransitionPipeline do
   @rescaler_id "rescaler"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, vc_server_config: vc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
     spec =
-      child(:video_compositor, %Membrane.VideoCompositor{
+      child(:video_compositor, %Membrane.LiveCompositor{
         framerate: @framerate,
-        vc_server_config: vc_server_config
+        lc_server_config: lc_server_config
       })
 
     Process.send_after(self(), {:add_input, 0}, 1000)
@@ -42,16 +42,16 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {register, _id, vc_ctx},
+        {register, _id, lc_ctx},
         :video_compositor,
         _ctx,
         state
       )
       when register == :input_registered or register == :output_registered do
     actions =
-      case new_scene_request(vc_ctx) do
+      case new_scene_request(lc_ctx) do
         :no_update -> []
-        new_scene_request -> [notify_child: {:video_compositor, {:vc_request, new_scene_request}}]
+        new_scene_request -> [notify_child: {:video_compositor, {:lc_request, new_scene_request}}]
       end
 
     {actions, state}
@@ -59,8 +59,8 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {:vc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _vc_ctx},
+        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
+         _lc_ctx},
         :video_compositor,
         _membrane_ctx,
         state
@@ -79,7 +79,7 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {:new_output_stream, output_id, _vc_ctx},
+        {:new_output_stream, output_id, _lc_ctx},
         :video_compositor,
         _ctx,
         state
@@ -122,7 +122,7 @@ defmodule TransitionPipeline do
     {[spec: spec], state}
   end
 
-  @spec new_scene_request(Context.t()) :: :no_update | VideoCompositor.request_body()
+  @spec new_scene_request(Context.t()) :: :no_update | LiveCompositor.request_body()
   defp new_scene_request(%Context{
          inputs: [%Context.InputStream{id: input_id}],
          outputs: [%Context.OutputStream{id: output_id}]
@@ -156,7 +156,7 @@ defmodule TransitionPipeline do
     }
   end
 
-  defp new_scene_request(_vc_ctx) do
+  defp new_scene_request(_lc_ctx) do
     :no_update
   end
 
@@ -223,12 +223,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-vc_server_config = Utils.VcServer.vc_server_config(%{framerate: 30})
+lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(TransitionPipeline, %{
     sample_path: "samples/testsrc.h264",
-    vc_server_config: vc_server_config
+    lc_server_config: lc_server_config
   })
 
 Process.sleep(:infinity)
