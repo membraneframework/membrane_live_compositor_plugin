@@ -39,8 +39,8 @@ defmodule Membrane.VideoCompositor.ServerRunner do
     |> Enum.reduce_while(:not_started, fn _i, _acc ->
       Process.sleep(100)
 
-      case Request.send_request(%{}, vc_port) do
-        {:error_response_code, _} ->
+      case Request.get_status(vc_port) do
+        {:ok, _} ->
           {:halt, :started}
 
         {:error, _reason} ->

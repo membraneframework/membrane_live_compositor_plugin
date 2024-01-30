@@ -101,8 +101,17 @@ defmodule Membrane.VideoCompositor.Request do
     {:ok, _} = Application.ensure_all_started(:req)
 
     vc_port
-    |> vc_url()
+    |> vc_api_url()
     |> Req.post(json: request_body)
+    |> handle_request_result()
+  end
+
+  @spec get_status(:inet.port_number()) :: request_result()
+  def get_status(vc_port) do
+    {:ok, _} = Application.ensure_all_started(:req)
+
+    "#{vc_url(vc_port)}/status"
+    |> Req.get()
     |> handle_request_result()
   end
 
@@ -118,5 +127,9 @@ defmodule Membrane.VideoCompositor.Request do
 
   defp vc_url(vc_server_port) do
     "http://#{@local_host_url}:#{vc_server_port}"
+  end
+
+  defp vc_api_url(vc_server_port) do
+    "#{vc_url(vc_server_port)}/--/api"
   end
 end

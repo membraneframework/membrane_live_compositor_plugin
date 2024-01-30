@@ -157,7 +157,7 @@ defmodule Membrane.VideoCompositor do
   Request send to VideoCompositor.
 
   User of SDK should only send `update_scene` or `register_renderer` requests.
-  [API reference can be found here](https://github.com/membraneframework/video_compositor/wiki/API-%E2%80%90-general#update-scene).
+  [API reference can be found here](https://compositor.live/docs/category/api-reference).
   """
   @type vc_request :: {:vc_request, request_body()}
 
