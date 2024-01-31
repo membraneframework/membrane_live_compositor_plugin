@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.OutputProcessor do
+defmodule Membrane.LiveCompositor.OutputProcessor do
   @moduledoc false
   # Forwards buffers and send specified output stream format.
 

@@ -1,4 +1,4 @@
-defmodule Membrane.VideoCompositor.Examples.Mixfile do
+defmodule Membrane.LiveCompositor.Examples.Mixfile do
   use Mix.Project
 
   @version "0.7.0"

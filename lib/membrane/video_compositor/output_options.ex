@@ -1,10 +1,10 @@
-defmodule Membrane.VideoCompositor.OutputOptions do
+defmodule Membrane.LiveCompositor.OutputOptions do
   @moduledoc """
-  Options of VideoCompositor output.
+  Options of LiveCompositor output.
   """
 
   @typedoc """
-  After rendering VideoCompositors outputs are encoded.
+  After rendering LiveCompositors outputs are encoded.
   Changing encoder preset can substantially impact output quality as well as CPU usage.
   See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
   """
@@ -24,12 +24,12 @@ defmodule Membrane.VideoCompositor.OutputOptions do
   defstruct @enforce_keys ++ [encoder_preset: :fast]
 
   @typedoc """
-  Options of VideoCompositor output.
+  Options of LiveCompositor output.
   """
   @type t :: %__MODULE__{
           width: Membrane.RawVideo.width_t(),
           height: Membrane.RawVideo.height_t(),
-          id: Membrane.VideoCompositor.output_id(),
+          id: Membrane.LiveCompositor.output_id(),
           encoder_preset: encoder_preset()
         }
 end
