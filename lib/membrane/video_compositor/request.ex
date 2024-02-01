@@ -22,16 +22,20 @@ defmodule Membrane.LiveCompositor.Request do
 
   @spec register_input_stream(
           LiveCompositor.input_id(),
-          :inet.port_number(),
+          :inet.port_number() | LiveCompositor.port_range(),
           :inet.port_number()
         ) ::
           request_result()
-  def register_input_stream(input_id, input_port_number, lc_port) do
+  def register_input_stream(input_id, port, lc_port) do
     %{
       type: :register,
-      entity_type: :input_stream,
+      entity_type: :rtp_input_stream,
       input_id: "#{input_id}",
-      port: input_port_number,
+      port:
+        case port do
+          {start, endd} -> "#{start}:#{endd}"
+          exact_port -> exact_port
+        end,
       video: %{
         codec: :h264
       }
@@ -76,15 +80,14 @@ defmodule Membrane.LiveCompositor.Request do
 
   @spec register_output_stream(
           OutputOptions.t(),
-          :inet.port_number(),
           :inet.port_number()
         ) :: request_result()
-  def register_output_stream(output_opt, stream_port, lc_port) do
+  def register_output_stream(output_opt, lc_port) do
     %{
       type: :register,
       entity_type: :output_stream,
       output_id: output_opt.id,
-      port: stream_port,
+      port: output_opt.port,
       ip: @local_host_url,
       resolution: %{
         width: output_opt.width,

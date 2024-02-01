@@ -20,7 +20,7 @@ defmodule Membrane.LiveCompositor.OutputOptions do
           | :veryslow
           | :placebo
 
-  @enforce_keys [:width, :height, :id]
+  @enforce_keys [:width, :height, :id, :port]
   defstruct @enforce_keys ++ [encoder_preset: :fast]
 
   @typedoc """
@@ -30,6 +30,7 @@ defmodule Membrane.LiveCompositor.OutputOptions do
           width: Membrane.RawVideo.width_t(),
           height: Membrane.RawVideo.height_t(),
           id: Membrane.LiveCompositor.output_id(),
+          port: :inet.port_number(),
           encoder_preset: encoder_preset()
         }
 end

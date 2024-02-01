@@ -12,13 +12,14 @@ defmodule DynamicOutputsPipeline do
   @output_height 1080
   @framerate 30
   @layout_id "layout"
+  @first_output_port 8002
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, server_setup: server_setup}) do
     spec =
       child(:video_compositor, %Membrane.LiveCompositor{
         framerate: @framerate,
-        lc_server_config: lc_server_config
+        server_setup: server_setup
       })
 
     input_specs = 0..10 |> Enum.map(fn input_number -> input_spec(input_number, sample_path) end)
@@ -29,7 +30,7 @@ defmodule DynamicOutputsPipeline do
 
       Process.send_after(
         self(),
-        {:register_output, output_id(output_number)},
+        {:register_output, output_id(output_number), @first_output_port + output_number},
         output_number * five_seconds
       )
     end)
@@ -90,11 +91,12 @@ defmodule DynamicOutputsPipeline do
   end
 
   @impl true
-  def handle_info({:register_output, output_id}, _ctx, state) do
+  def handle_info({:register_output, output_id, port}, _ctx, state) do
     output_opt = %OutputOptions{
       width: @output_width,
       height: @output_height,
-      id: output_id
+      id: output_id,
+      port: port
     }
 
     {[notify_child: {:video_compositor, {:register_output, output_opt}}], state}
@@ -189,12 +191,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
+server_setup = Utils.LcServer.server_setup(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(DynamicOutputsPipeline, %{
     sample_path: "samples/testsrc.h264",
-    lc_server_config: lc_server_config
+    server_setup: server_setup
   })
 
 Process.sleep(:infinity)

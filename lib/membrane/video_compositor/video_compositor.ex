@@ -198,10 +198,7 @@ defmodule Membrane.LiveCompositor do
   @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
 
   @typedoc """
-  Range in which LiveCompositor search available ports.
-
-  This range should be at least a few times wider then expected sum
-  of inputs and outputs.
+  Range of ports.
   """
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
@@ -212,21 +209,12 @@ defmodule Membrane.LiveCompositor do
                 spec: Membrane.RawVideo.framerate_t(),
                 description: "Framerate of LiveCompositor outputs."
               ],
-              port_range: [
-                spec: port_range(),
+              api_port: [
+                spec: :inet.port_number() | port_range(),
                 description: """
-                Port range in which input and output streams would try to be registered.
-                If all ports in range will be used, LiveCompositor will crash on input/output registration.
+                Port number or port range where API of a LiveCompositor will be hosted.
                 """,
-                default: {6000, 10_000}
-              ],
-              init_web_renderer?: [
-                spec: boolean(),
-                description: """
-                Enables web rendering for LiveCompositor.
-                If set to false, attempts to register and use web renderers will fail.
-                """,
-                default: true
+                default: 8081
               ],
               stream_fallback_timeout: [
                 spec: Membrane.Time.t(),
@@ -243,23 +231,17 @@ defmodule Membrane.LiveCompositor do
                 """,
                 default: :on_init
               ],
-              lc_server_config: [
-                spec:
-                  :start_on_random_port
-                  | {:start_on_port, :inet.port_number()}
-                  | {:already_started, :inet.port_number()},
+              server_setup: [
+                spec: :start_locally | :already_started,
                 description: """
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
-                There are three available options:
-                - :start_on_random_port - LC server is automatically started on port randomly chosen
-                from port_range.
-                - :start_on_port - LC server is automatically started on specified port.
-                - :already_started - LiveCompositor bin assumes, that LC server is already started, initialized and should be
-                available at specified port. Useful for sharing LC server between multiple pipelines or running custom version
-                of LC server.
+                Available options:
+                - :start_locally - LC server is automatically started.
+                - :already_started - LiveCompositor bin assumes, that LC server is already started and is available on a specified port.
+                When this option is selected, the `api_port` option need to specify an exact port number (not a range).
                 """,
-                default: :start_on_random_port
+                default: :start_locally
               ]
 
   def_input_pad :input,
@@ -268,6 +250,16 @@ defmodule Membrane.LiveCompositor do
     options: [
       input_id: [
         spec: input_id()
+      ],
+      port: [
+        spec: :inet.port_number() | port_range(),
+        description: """
+        Port number or port range.
+
+        Internally LiveCompositor server communicates with this pipeline locally over RTP.
+        This value defines which UDP ports will be used to send an input stream.
+        """,
+        default: {10_000, 60_000}
       ]
     ]
 
@@ -288,33 +280,25 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_setup(_ctx, opt) do
     env = %{
-      LIVE_COMPOSITOR_WEB_RENDERER_ENABLE: to_string(opt.init_web_renderer?),
-      LIVE_COMPOSITOR_OUTPUT_FRAMERATE: to_string(opt.framerate),
-      LIVE_COMPOSITOR_STREAM_FALLBACK_TIMEOUT_MS:
+      "LIVE_COMPOSITOR_OUTPUT_FRAMERATE" => to_string(opt.framerate),
+      "LIVE_COMPOSITOR_STREAM_FALLBACK_TIMEOUT_MS" =>
         to_string(Membrane.Time.as_milliseconds(opt.stream_fallback_timeout, :round))
     }
 
     {:ok, lc_port} =
-      case opt.lc_server_config do
-        :start_on_random_port ->
-          {port_lower_bound, port_upper_bound} = opt.port_range
-
-          {:ok, lc_port} =
-            port_lower_bound..port_upper_bound
-            |> Enum.shuffle()
-            |> Enum.reduce_while(
-              {:error, "Failed to start a LiveCompositor server on any of the ports."},
-              fn port, err -> try_starting_on_port(port, err, env) end
-            )
-
+      case opt.server_setup do
+        :start_locally ->
+          {:ok, lc_port} = ServerRunner.start_server(opt.api_port, env)
           {:ok, lc_port}
 
-        {:start_on_port, lc_port} ->
-          :ok = ServerRunner.start_lc_server(lc_port, env)
-          {:ok, lc_port}
+        :already_started ->
+          case opt.api_port do
+            {_start, _end} ->
+              raise "Exact api_port is required when server_setup is set to :already_started"
 
-        {:already_started, lc_port} ->
-          {:ok, lc_port}
+            exact ->
+              {:ok, exact}
+          end
       end
 
     if opt.start_composing_strategy == :on_init do
@@ -324,15 +308,16 @@ defmodule Membrane.LiveCompositor do
     {[],
      %State{
        framerate: opt.framerate,
-       lc_port: lc_port,
-       port_range: opt.port_range
+       lc_port: lc_port
      }}
   end
 
   @impl true
   def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
     input_id = ctx.pad_options.input_id
-    {:ok, input_port} = StreamsHandler.register_input_stream(input_id, state)
+
+    {:ok, input_port} =
+      StreamsHandler.register_input_stream(input_id, ctx.pad_options.port, state)
 
     # Don't optimize this with [%State.Input{...} | inputs]
     # Adding this at the beginning is O(1) instead of O(N),
@@ -459,17 +444,17 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_parent_notification(
-        {:register_output, output_opt = %OutputOptions{id: id, width: width, height: height}},
+        {:register_output, opt = %OutputOptions{}},
         _ctx,
         state = %State{outputs: outputs}
       ) do
-    {:ok, port} = StreamsHandler.register_output_stream(output_opt, state)
+    :ok = StreamsHandler.register_output_stream(opt, state)
 
     output_state = %State.Output{
-      id: id,
-      width: width,
-      height: height,
-      port: port
+      id: opt.id,
+      width: opt.width,
+      height: opt.height,
+      port: opt.port
     }
 
     state = %State{
@@ -478,16 +463,16 @@ defmodule Membrane.LiveCompositor do
     }
 
     links =
-      child({:udp_source, id}, %UDP.Source{
-        local_port_no: port,
+      child({:udp_source, opt.id}, %UDP.Source{
+        local_port_no: opt.port,
         local_address: @local_host
       })
-      |> via_in(Pad.ref(:rtp_input, id))
-      |> child({:rtp_receiver, id}, RTP.SessionBin)
+      |> via_in(Pad.ref(:rtp_input, opt.id))
+      |> child({:rtp_receiver, opt.id}, RTP.SessionBin)
 
-    spec = {links, group: output_group_id(id)}
+    spec = {links, group: output_group_id(opt.id)}
 
-    output_registered_msg = {:output_registered, output_opt.id, Context.new(state)}
+    output_registered_msg = {:output_registered, opt.id, Context.new(state)}
 
     {[spec: spec, notify_parent: output_registered_msg], state}
   end
@@ -562,17 +547,6 @@ defmodule Membrane.LiveCompositor do
     Membrane.Logger.debug("Unknown msg received: #{inspect(msg)}")
 
     {[], state}
-  end
-
-  @spec try_starting_on_port(:inet.port_number(), String.t(), map()) ::
-          {:halt, {:ok, :inet.port_number()}} | {:cont, err :: String.t()}
-  defp try_starting_on_port(port, err, env) do
-    Membrane.Logger.debug("Trying to launch LiveCompositor on port: #{port}")
-
-    case ServerRunner.start_lc_server(port, env) do
-      :ok -> {:halt, {:ok, port}}
-      :error -> {:cont, err}
-    end
   end
 
   @spec input_group_id(input_id()) :: String.t()

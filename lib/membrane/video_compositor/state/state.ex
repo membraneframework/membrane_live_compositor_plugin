@@ -1,17 +1,14 @@
 defmodule Membrane.LiveCompositor.State do
   @moduledoc false
 
-  alias Membrane.LiveCompositor
-
-  @enforce_keys [:framerate, :lc_port, :port_range]
+  @enforce_keys [:framerate, :lc_port]
   defstruct @enforce_keys ++ [inputs: [], outputs: []]
 
   @type t :: %__MODULE__{
           inputs: list(__MODULE__.Input.t()),
           outputs: list(__MODULE__.Output.t()),
           framerate: non_neg_integer(),
-          lc_port: :inet.port_number(),
-          port_range: LiveCompositor.port_range()
+          lc_port: :inet.port_number()
         }
 
   @spec used_ports(t()) :: list(:inet.port_number())
