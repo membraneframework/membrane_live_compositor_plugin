@@ -15,11 +15,12 @@ defmodule TransitionPipeline do
   @rescaler_id "rescaler"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, server_setup: server_setup}) do
     spec =
       child(:video_compositor, %Membrane.LiveCompositor{
+        api_port: 8081,
         framerate: @framerate,
-        lc_server_config: lc_server_config
+        server_setup: server_setup
       })
 
     Process.send_after(self(), {:add_input, 0}, 1000)
@@ -33,7 +34,8 @@ defmodule TransitionPipeline do
     output_opt = %OutputOptions{
       id: @output_id,
       width: @output_width,
-      height: @output_height
+      height: @output_height,
+      port: 8002
     }
 
     register_output_msg = {:register_output, output_opt}
@@ -223,12 +225,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
+server_setup = Utils.LcServer.server_setup(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(TransitionPipeline, %{
     sample_path: "samples/testsrc.h264",
-    lc_server_config: lc_server_config
+    server_setup: server_setup
   })
 
 Process.sleep(:infinity)

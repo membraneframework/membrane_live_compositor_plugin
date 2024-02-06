@@ -1,10 +1,41 @@
 defmodule Membrane.LiveCompositor.ServerRunner do
   @moduledoc false
 
+  require Membrane.Logger
+
+  alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.Request
 
-  @spec start_lc_server(:inet.port_number(), map()) :: :ok | :error
-  def start_lc_server(lc_port, env) do
+  @spec start_server(:inet.port_number() | LiveCompositor.port_range(), map()) ::
+          {:ok, :inet.port_number()} | {:error, err :: String.t()}
+  def start_server(port_or_port_range, env) do
+    {port_lower_bound, port_upper_bound} =
+      case port_or_port_range do
+        {start, endd} -> {start, endd}
+        exact -> {exact, exact + 1}
+      end
+
+    port_lower_bound..port_upper_bound
+    |> Enum.shuffle()
+    |> Enum.reduce_while(
+      {:error, "Failed to start a LiveCompositor server on any of the ports."},
+      fn port, err -> try_starting_on_port(port, err, env) end
+    )
+  end
+
+  @spec try_starting_on_port(:inet.port_number(), String.t(), map()) ::
+          {:halt, {:ok, :inet.port_number()}} | {:cont, err :: String.t()}
+  defp try_starting_on_port(port, err, env) do
+    Membrane.Logger.debug("Trying to launch LiveCompositor on port: #{port}")
+
+    case start_on_port(port, env) do
+      :ok -> {:halt, {:ok, port}}
+      :error -> {:cont, err}
+    end
+  end
+
+  @spec start_on_port(:inet.port_number(), map()) :: :ok | :error
+  defp start_on_port(lc_port, env) do
     video_compositor_app_path = Mix.Tasks.Compile.DownloadCompositor.lc_app_path()
 
     unless File.exists?(video_compositor_app_path) do
@@ -17,7 +48,10 @@ defmodule Membrane.LiveCompositor.ServerRunner do
         |> MuonTrap.cmd([],
           env:
             Map.merge(
-              %{"LIVE_COMPOSITOR_API_PORT" => "#{lc_port}"},
+              %{
+                "LIVE_COMPOSITOR_API_PORT" => "#{lc_port}",
+                "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
+              },
               env
             )
         )

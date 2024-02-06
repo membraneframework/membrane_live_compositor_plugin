@@ -15,7 +15,7 @@ defmodule LayoutWithShaderPipeline do
   @shader_path "./lib/example_shader.wgsl"
 
   @impl true
-  def handle_init(_ctx, %{sample_path: sample_path, lc_server_config: lc_server_config}) do
+  def handle_init(_ctx, %{sample_path: sample_path, server_setup: server_setup}) do
     spec =
       child({:video_src, 0}, %Membrane.File.Source{location: sample_path})
       |> child({:input_parser, 0}, %Membrane.H264.Parser{
@@ -26,7 +26,7 @@ defmodule LayoutWithShaderPipeline do
       |> via_in(Pad.ref(:input, 0), options: [input_id: "input_0"])
       |> child(:video_compositor, %Membrane.LiveCompositor{
         framerate: 30,
-        lc_server_config: lc_server_config
+        server_setup: server_setup
       })
 
     {[spec: spec], %{videos_count: 1, sample_path: sample_path}}
@@ -37,7 +37,8 @@ defmodule LayoutWithShaderPipeline do
     output_opt = %OutputOptions{
       width: @output_width,
       height: @output_height,
-      id: @output_id
+      id: @output_id,
+      port: 8002
     }
 
     {[
@@ -185,10 +186,14 @@ defmodule LayoutWithShaderPipeline do
       },
       children: [
         %{
+          id: "tile_0",
           type: :tiles,
           width: @output_width,
           height: @output_height,
           background_color_rgba: "#000088FF",
+          transition: %{
+            duration_ms: 300
+          },
           margin: 10,
           children:
             input_ids |> Enum.map(fn input_id -> %{type: :input_stream, input_id: input_id} end)
@@ -209,12 +214,12 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-lc_server_config = Utils.LcServer.lc_server_config(%{framerate: 30})
+server_setup = Utils.LcServer.server_setup(%{framerate: 30})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{
     sample_path: "samples/testsrc.h264",
-    lc_server_config: lc_server_config
+    server_setup: server_setup
   })
 
 Process.sleep(:infinity)
