@@ -27,15 +27,17 @@ defmodule Membrane.LiveCompositor.Request do
         ) ::
           request_result()
   def register_input_stream(input_id, port, lc_port) do
+    port =
+      case port do
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
+      end
+
     %{
       type: :register,
       entity_type: :rtp_input_stream,
       input_id: "#{input_id}",
-      port:
-        case port do
-          {start, endd} -> "#{start}:#{endd}"
-          exact_port -> exact_port
-        end,
+      port: port,
       video: %{
         codec: :h264
       }
