@@ -10,7 +10,6 @@ defmodule TransitionPipeline do
 
   @output_width 1280
   @output_height 720
-  @framerate 30
   @output_id "output"
   @rescaler_id "rescaler"
 
@@ -18,8 +17,7 @@ defmodule TransitionPipeline do
   def handle_init(_ctx, %{sample_path: sample_path, server_setup: server_setup}) do
     spec =
       child(:video_compositor, %Membrane.LiveCompositor{
-        api_port: 8081,
-        framerate: @framerate,
+        framerate: {30, 1},
         server_setup: server_setup
       })
 
@@ -33,9 +31,11 @@ defmodule TransitionPipeline do
   def handle_setup(_ctx, state) do
     output_opt = %OutputOptions{
       id: @output_id,
-      width: @output_width,
-      height: @output_height,
-      port: 8002
+      video: %OutputOptions.Video{
+          width: @output_width,
+          height: @output_height,
+          initial: %{type: :view}
+      }
     }
 
     register_output_msg = {:register_output, output_opt}
@@ -44,19 +44,32 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {register, _id, lc_ctx},
+        {:input_registered, _id, lc_ctx},
         :video_compositor,
         _ctx,
         state
-      )
-      when register == :input_registered or register == :output_registered do
+      ) do
     actions =
-      case new_scene_request(lc_ctx) do
-        :no_update -> []
-        new_scene_request -> [notify_child: {:video_compositor, {:lc_request, new_scene_request}}]
-      end
+      lc_ctx.outputs
+      |> Enum.map(fn output ->
+        {:notify_child,
+         {:video_compositor, {:lc_request, new_scene_request(lc_ctx.inputs, output.id)}}}
+      end)
 
     {actions, state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:output_registered, output_id, lc_ctx},
+        :video_compositor,
+        _ctx,
+        state
+      ) do
+    {[
+       notify_child:
+         {:video_compositor, {:lc_request, new_scene_request(lc_ctx.inputs, output_id)}}
+     ], state}
   end
 
   @impl true
@@ -124,42 +137,35 @@ defmodule TransitionPipeline do
     {[spec: spec], state}
   end
 
-  @spec new_scene_request(Context.t()) :: :no_update | LiveCompositor.request_body()
-  defp new_scene_request(%Context{
-         inputs: [%Context.InputStream{id: input_id}],
-         outputs: [%Context.OutputStream{id: output_id}]
-       }) do
+  @spec new_scene_request(list(Context.InputStream.t()), LiveCompositor.output_id()) ::
+          :no_update | LiveCompositor.request_body()
+  defp new_scene_request([%Context.InputStream{id: input_id}], output_id) do
     %{
-      type: :update_scene,
-      outputs: [
-        %{
-          output_id: output_id,
-          root: single_input_scene(input_id)
-        }
-      ]
+      type: :update_output,
+      output_id: output_id,
+      video: single_input_scene(input_id)
     }
   end
 
-  defp new_scene_request(%Context{
-         inputs: [
-           %Context.InputStream{id: first_input_id}
-           | [%Context.InputStream{id: second_input_id}]
+  defp new_scene_request(
+         [
+           %Context.InputStream{id: first_input_id} | [%Context.InputStream{id: second_input_id}]
          ],
-         outputs: [%Context.OutputStream{id: output_id}]
-       }) do
+         output_id
+       ) do
     %{
-      type: :update_scene,
-      outputs: [
-        %{
-          output_id: output_id,
-          root: double_inputs_scene(first_input_id, second_input_id)
-        }
-      ]
+      type: :update_output,
+      output_id: output_id,
+      video: double_inputs_scene(first_input_id, second_input_id)
     }
   end
 
-  defp new_scene_request(_lc_ctx) do
-    :no_update
+  defp new_scene_request(_lc_ctx, output_id) do
+    %{
+      type: :update_output,
+      output_id: output_id,
+      video: %{type: :view, children: []}
+    }
   end
 
   defp single_input_scene(input_id) do
@@ -225,7 +231,7 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-server_setup = Utils.LcServer.server_setup(%{framerate: 30})
+server_setup = Utils.LcServer.server_setup({30, 1})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(TransitionPipeline, %{

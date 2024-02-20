@@ -2,13 +2,14 @@ defmodule Membrane.LiveCompositor.State do
   @moduledoc false
 
   @enforce_keys [:framerate, :lc_port]
-  defstruct @enforce_keys ++ [inputs: [], outputs: []]
+  defstruct @enforce_keys ++ [inputs: [], outputs: [], server_pid: nil]
 
   @type t :: %__MODULE__{
           inputs: list(__MODULE__.Input.t()),
           outputs: list(__MODULE__.Output.t()),
           framerate: non_neg_integer(),
-          lc_port: :inet.port_number()
+          lc_port: :inet.port_number(),
+          server_pid: pid() | nil
         }
 
   @spec used_ports(t()) :: list(:inet.port_number())

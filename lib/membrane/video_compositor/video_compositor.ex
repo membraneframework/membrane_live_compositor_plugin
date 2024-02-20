@@ -21,23 +21,19 @@ defmodule Membrane.LiveCompositor do
   `Scene` is a top level specification of what LiveCompositor should render.
 
   As an example, if two inputs with IDs `"input_0"` and `"input_1"` and
-  single output with ID `"output"` are registered, sending such `update_scene`
+  single output with ID `"output_0"` are registered, sending such `update_output`
   request would result in receiving inputs merged in layout on output:
   ```
   scene_update_request =  %{
-    type: "update_scene",
-    outputs: [
-      %{
-        output_id: "output"
-        root: %{
-          type: :tiles
-          children: [
-            { type: "input_stream", input_id: "input_0" },
-            { type: "input_stream", input_id: "input_1" }
-          ]
-        }
-      }
-    ]
+    type: "update_output",
+    output_id: "output_0"
+    video: %{
+      type: :tiles
+      children: [
+        { type: "input_stream", input_id: "input_0" },
+        { type: "input_stream", input_id: "input_1" }
+      ]
+    }
   }
 
   {[notify_child: {:video_compositor, {:lc_request, scene_update_request}}]}
@@ -55,7 +51,7 @@ defmodule Membrane.LiveCompositor do
 
   ## API reference
   You can find more detailed [API reference here](https://compositor.live/docs/api/routes).
-  Only `update_scene` and `register_renderer` request are available (`inputs`/`outputs` registration, `start` is done by SDK).
+  Only `update_output` and `register_renderer` request are available (`inputs`/`outputs` registration, `start` is done by SDK).
 
   ## General concepts
   General concepts of scene are explained [here](https://compositor.live/docs/concept/component).
@@ -69,7 +65,7 @@ defmodule Membrane.LiveCompositor do
 
   require Membrane.Logger
 
-  alias Membrane.{Pad, RTP, UDP}
+  alias Membrane.{Pad, RTP, TCP}
 
   alias Membrane.LiveCompositor.{
     Context,
@@ -118,36 +114,28 @@ defmodule Membrane.LiveCompositor do
   ```
   %{
     type: "update_scene",
-    outputs: [
-      %{
-        output_id: "output"
-        root: %{
-          type: :tiles
-          children: [
-            { type: "input_stream", input_id: "input_0" },
-            { type: "input_stream", input_id: "input_1" }
-          ]
-        }
-      }
-    ]
+    output_id: "output_0"
+    video: %{
+      type: :tiles
+      children: [
+        { type: "input_stream", input_id: "input_0" },
+        { type: "input_stream", input_id: "input_1" }
+      ]
+    }
   }
   ```
   will translate into the following JSON:
   ```json
   {
     "type": "update_scene",
-    "outputs": [
-      {
-        "output_id": "output",
-        "root": {
-          "type": "tiles",
-          "children": [
-            { "type": "input_stream", "input_id": "input_0" },
-            { "type": "input_stream", "input_id": "input_1" }
-          ]
-        }
-      }
-    ]
+    "output_id": "output",
+    "video": {
+      "type": "tiles",
+      "children": [
+        { "type": "input_stream", "input_id": "input_0" },
+        { "type": "input_stream", "input_id": "input_1" }
+      ]
+    }
   }
   ```
   """
@@ -156,7 +144,7 @@ defmodule Membrane.LiveCompositor do
   @typedoc """
   Request send to LiveCompositor.
 
-  User of SDK should only send `update_scene` or `register_renderer` requests.
+  User of SDK should only send `update_output` or `register_renderer` requests.
   [API reference can be found here](https://compositor.live/docs/category/api-reference).
   """
   @type lc_request :: {:lc_request, request_body()}
@@ -223,16 +211,23 @@ defmodule Membrane.LiveCompositor do
                 """,
                 default: Membrane.Time.seconds(2)
               ],
-              start_composing_strategy: [
-                spec: :on_init | :on_message,
+              composing_strategy: [
+                spec: :real_time_auto_init | :real_time | :ahead_of_time,
                 description: """
-                Specifies when LiveCompositor starts composing frames.
-                In `:on_message` strategy, `:start_composing` message has to be sent to start composing.
+                Specifies LiveCompositor mode for composing frames:
+                - `:real_time` - Frames are produced in a rate dictaed by real time clock. Parrent
+                process has to sent `:start_composing` message to start.
+                - `:real_time_auto_init` - The same as `:real_time`, but pipeline starts
+                automatically and sending `:start_composing` message is not necessary.
+                - `:ahead_of_time` - Output streams will be produced faster than in the real time
+                if inputs streams are ready. When using this option make sure to register output
+                stream before starting, otherwise compositor will run in a busy loop processing
+                data far into the future.
                 """,
-                default: :on_init
+                default: :real_time_auto_init
               ],
               server_setup: [
-                spec: :start_locally | :already_started,
+                spec: :already_started | :start_locally | {:start_locally, path :: String.t()},
                 description: """
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
@@ -251,13 +246,33 @@ defmodule Membrane.LiveCompositor do
       input_id: [
         spec: input_id()
       ],
+      required: [
+        spec: boolean(),
+        default: false,
+        description: """
+        If stream is marked required the LiveCompositor will delay processing new frames until
+        frames are available.
+        In particular, if there is at least one required input stream and the encoder is not able
+        to produce frames on time, the output stream will also be delayed. This delay will happen
+        regardless of whether required input stream was on time or not.
+        """
+      ],
+      offset: [
+        spec: Membrane.Time.t() | nil,
+        default: nil,
+        description: """
+        Optonal offset used for stream synchronization. This value represents how PTS values of the
+        stream are shifted relative to the start request. If not defined streams are synchronized
+        based on the delivery times of initial frames.
+        """
+      ],
       port: [
         spec: :inet.port_number() | port_range(),
         description: """
         Port number or port range.
 
         Internally LiveCompositor server communicates with this pipeline locally over RTP.
-        This value defines which UDP ports will be used to send an input stream.
+        This value defines which TCP ports will be used.
         """,
         default: {10_000, 60_000}
       ]
@@ -279,36 +294,18 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_setup(_ctx, opt) do
-    env = %{
-      "LIVE_COMPOSITOR_OUTPUT_FRAMERATE" => to_string(opt.framerate),
-      "LIVE_COMPOSITOR_STREAM_FALLBACK_TIMEOUT_MS" =>
-        to_string(Membrane.Time.as_milliseconds(opt.stream_fallback_timeout, :round))
-    }
+    {:ok, lc_port, server_pid} =
+      ServerRunner.ensure_server_started(opt)
 
-    {:ok, lc_port} =
-      case opt.server_setup do
-        :start_locally ->
-          {:ok, lc_port} = ServerRunner.start_server(opt.api_port, env)
-          {:ok, lc_port}
-
-        :already_started ->
-          case opt.api_port do
-            {_start, _end} ->
-              raise "Exact api_port is required when server_setup is set to :already_started"
-
-            exact ->
-              {:ok, exact}
-          end
-      end
-
-    if opt.start_composing_strategy == :on_init do
+    if opt.composing_strategy == :real_time_auto_init do
       {:ok, _resp} = Request.start_composing(lc_port)
     end
 
     {[],
      %State{
        framerate: opt.framerate,
-       lc_port: lc_port
+       lc_port: lc_port,
+       server_pid: server_pid
      }}
   end
 
@@ -317,7 +314,7 @@ defmodule Membrane.LiveCompositor do
     input_id = ctx.pad_options.input_id
 
     {:ok, input_port} =
-      StreamsHandler.register_input_stream(input_id, ctx.pad_options.port, state)
+      StreamsHandler.register_input_stream(ctx.pad_options, state)
 
     # Don't optimize this with [%State.Input{...} | inputs]
     # Adding this at the beginning is O(1) instead of O(N),
@@ -336,9 +333,9 @@ defmodule Membrane.LiveCompositor do
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
-      |> child({:upd_sink, pad_id}, %UDP.Sink{
-        destination_port_no: input_port,
-        destination_address: @local_host
+      |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
+      |> child({:tcp_sink, pad_id}, %TCP.Sink{
+        connection_side: {:client, @local_host, input_port}
       })
 
     spec = {links, group: input_group_id(input_id)}
@@ -372,7 +369,7 @@ defmodule Membrane.LiveCompositor do
     end
 
     output_stream_format = %Membrane.H264{
-      framerate: {state.framerate, 1},
+      framerate: state.framerate,
       alignment: :nalu,
       stream_structure: :annexb,
       width: width,
@@ -448,13 +445,13 @@ defmodule Membrane.LiveCompositor do
         _ctx,
         state = %State{outputs: outputs}
       ) do
-    :ok = StreamsHandler.register_output_stream(opt, state)
+    {:ok, port} = StreamsHandler.register_output_stream(opt, state)
 
     output_state = %State.Output{
       id: opt.id,
-      width: opt.width,
-      height: opt.height,
-      port: opt.port
+      width: opt.video.width,
+      height: opt.video.height,
+      port: port
     }
 
     state = %State{
@@ -463,10 +460,10 @@ defmodule Membrane.LiveCompositor do
     }
 
     links =
-      child({:udp_source, opt.id}, %UDP.Source{
-        local_port_no: opt.port,
-        local_address: @local_host
+      child({:tcp_source, opt.id}, %TCP.Source{
+        connection_side: {:client, @local_host, port}
       })
+      |> child({:tcp_decapsulator, opt.id}, RTP.TCP.Decapsulator)
       |> via_in(Pad.ref(:rtp_input, opt.id))
       |> child({:rtp_receiver, opt.id}, RTP.SessionBin)
 
@@ -547,6 +544,15 @@ defmodule Membrane.LiveCompositor do
     Membrane.Logger.debug("Unknown msg received: #{inspect(msg)}")
 
     {[], state}
+  end
+
+  @impl true
+  def handle_terminate_request(_ctx, state) do
+    if state.server_pid do
+      Process.exit(state.server_pid, :kill)
+    end
+
+    {[terminate: :normal], state}
   end
 
   @spec input_group_id(input_id()) :: String.t()
