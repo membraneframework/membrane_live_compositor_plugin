@@ -1,6 +1,7 @@
 defmodule LayoutWithShaderPipeline do
   @moduledoc false
 
+  alias Membrane.Core.FilterAggregator.Context
   use Membrane.Pipeline
 
   require Membrane.Logger
@@ -25,7 +26,7 @@ defmodule LayoutWithShaderPipeline do
       |> child({:realtimer, 0}, Membrane.Realtimer)
       |> via_in(Pad.ref(:input, 0), options: [input_id: "input_0"])
       |> child(:video_compositor, %Membrane.LiveCompositor{
-        framerate: 30,
+        framerate: {30, 1},
         server_setup: server_setup
       })
 
@@ -35,10 +36,12 @@ defmodule LayoutWithShaderPipeline do
   @impl true
   def handle_setup(_ctx, state) do
     output_opt = %OutputOptions{
-      width: @output_width,
-      height: @output_height,
       id: @output_id,
-      port: 8002
+      video: %OutputOptions.Video{
+        width: @output_width,
+        height: @output_height,
+        initial: scene([])
+      }
     }
 
     {[
@@ -50,13 +53,13 @@ defmodule LayoutWithShaderPipeline do
 
   @impl true
   def handle_child_notification(
-        {register, _input_id, compositor_ctx},
+        {register, _id, lc_ctx},
         :video_compositor,
         _ctx,
         state
       )
       when register == :input_registered or register == :output_registered do
-    {[update_scene_action(compositor_ctx)], state}
+    {[update_scene_action(lc_ctx.inputs)], state}
   end
 
   @impl true
@@ -129,50 +132,18 @@ defmodule LayoutWithShaderPipeline do
     end
   end
 
-  @spec update_scene_action(Context.t()) :: Membrane.Pipeline.Action.notify_child()
-  defp update_scene_action(%Context{outputs: []}) do
-    request_body = %{
-      type: :update_scene,
-      nodes: [],
-      outputs: []
-    }
-
-    {:notify_child, {:video_compositor, {:lc_request, request_body}}}
-  end
-
-  defp update_scene_action(%Context{inputs: inputs, outputs: outputs}) do
-    update_scene_request =
-      if Enum.empty?(inputs) or Enum.empty?(outputs) do
-        empty_scene()
-      else
-        update_scene(inputs)
-      end
-
-    {:notify_child, {:video_compositor, {:lc_request, update_scene_request}}}
-  end
-
-  @spec empty_scene() :: LiveCompositor.request_body()
-  defp empty_scene() do
-    %{
-      type: :update_scene,
-      nodes: [],
-      outputs: []
-    }
-  end
-
-  @spec update_scene(list(Context.InputStream.t())) :: LiveCompositor.request_body()
-  defp update_scene(inputs) do
+  @spec update_scene_action(list(Context.InputStream.t())) ::
+          Membrane.Pipeline.Action.notify_child()
+  defp update_scene_action(inputs) do
     input_ids = inputs |> Enum.map(fn %Context.InputStream{id: input_id} -> input_id end)
 
-    %{
-      type: :update_scene,
-      outputs: [
-        %{
-          output_id: @output_id,
-          root: scene(input_ids)
-        }
-      ]
+    update_scene_request = %{
+      type: :update_output,
+      output_id: @output_id,
+      video: scene(input_ids)
     }
+
+    {:notify_child, {:video_compositor, {:lc_request, update_scene_request}}}
   end
 
   @spec scene(list(LiveCompositor.input_id())) :: map()
@@ -214,7 +185,7 @@ end
 
 Utils.FFmpeg.generate_sample_video()
 
-server_setup = Utils.LcServer.server_setup(%{framerate: 30})
+server_setup = Utils.LcServer.server_setup({30, 1})
 
 {:ok, _supervisor, _pid} =
   Membrane.Pipeline.start_link(LayoutWithShaderPipeline, %{

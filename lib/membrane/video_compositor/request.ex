@@ -21,14 +21,13 @@ defmodule Membrane.LiveCompositor.Request do
   end
 
   @spec register_input_stream(
-          LiveCompositor.input_id(),
-          :inet.port_number() | LiveCompositor.port_range(),
+          map(),
           :inet.port_number()
         ) ::
           request_result()
-  def register_input_stream(input_id, port, lc_port) do
+  def register_input_stream(opts, lc_port) do
     port =
-      case port do
+      case opts.port do
         {start, endd} -> "#{start}:#{endd}"
         exact_port -> exact_port
       end
@@ -36,11 +35,18 @@ defmodule Membrane.LiveCompositor.Request do
     %{
       type: :register,
       entity_type: :rtp_input_stream,
-      input_id: "#{input_id}",
+      input_id: "#{opts.input_id}",
+      transport_protocol: :tcp_server,
       port: port,
       video: %{
         codec: :h264
-      }
+      },
+      required: true,
+      offset_ms:
+        case opts.offset do
+          nil -> nil
+          offset -> Membrane.Time.as_milliseconds(offset, :round)
+        end
     }
     |> send_request(lc_port)
   end
@@ -85,17 +91,27 @@ defmodule Membrane.LiveCompositor.Request do
           :inet.port_number()
         ) :: request_result()
   def register_output_stream(output_opt, lc_port) do
+    port =
+      case output_opt.port do
+        nil -> "10000:60000"
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
+      end
+
     %{
       type: :register,
       entity_type: :output_stream,
       output_id: output_opt.id,
-      port: output_opt.port,
-      ip: @local_host_url,
-      resolution: %{
-        width: output_opt.width,
-        height: output_opt.height
-      },
-      encoder_preset: output_opt.encoder_preset
+      transport_protocol: :tcp_server,
+      port: port,
+      video: %{
+        resolution: %{
+          width: output_opt.video.width,
+          height: output_opt.video.height
+        },
+        encoder_preset: output_opt.video.encoder_preset,
+        initial: output_opt.video.initial
+      }
     }
     |> send_request(lc_port)
   end

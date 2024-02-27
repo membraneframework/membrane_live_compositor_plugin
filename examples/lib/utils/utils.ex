@@ -9,11 +9,11 @@ defmodule Utils.LcServer do
   Returns server_setup
   """
   @spec server_setup(Membrane.RawVideo.framerate_t()) ::
-          :start_on_random_port | {:already_started, :inet.port_number()}
-  def server_setup(%{framerate: framerate}) do
+          {:start_locally, String.t()} | :already_started
+  def server_setup(framerate) do
     case System.get_env("LIVE_COMPOSITOR_PATH") do
       nil ->
-        :start
+        :start_locally
 
       lc_location ->
         start_lc_server(lc_location, framerate)
@@ -22,25 +22,16 @@ defmodule Utils.LcServer do
 
   defp start_lc_server(lc_location, framerate) do
     true = File.exists?(lc_location)
-    case File.dir?(lc_location) do
-      true -> start_lc_server_with_cargo(lc_location, framerate)
-      false -> start_lc_server_executable(lc_location, framerate)
-    end
-    Process.sleep(3000)
-    :already_started
-  end
 
-  defp start_lc_server_executable(lc_executable, framerate) do
-    spawn(fn ->
-      lc_executable
-      |> MuonTrap.cmd(
-        [],
-        env: %{
-          "LIVE_COMPOSITOR_API_PORT" => "#{@lc_port}",
-          "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
-        }
-      )
-    end)
+    case File.dir?(lc_location) do
+      true ->
+        start_lc_server_with_cargo(lc_location, framerate)
+        Process.sleep(3000)
+        :already_started
+
+      false ->
+        {:start_locally, lc_location}
+    end
   end
 
   defp start_lc_server_with_cargo(lc_directory_path, framerate) do
@@ -49,32 +40,40 @@ defmodule Utils.LcServer do
       |> MuonTrap.cmd([
         "build",
         "-r",
+        "--no-default-features",
         "--manifest-path",
         Path.join(lc_directory_path, "Cargo.toml"),
         "--bin",
         "video_compositor"
-      ],
-         env: %{
-          "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
-        }
-      )
+      ])
 
-    spawn(fn ->
-      "cargo"
-      |> MuonTrap.cmd(
-        [
-          "run",
-          "-r",
-          "--manifest-path",
-          Path.join(lc_directory_path, "Cargo.toml"),
-          "--bin",
-          "video_compositor"
-        ],
-        env: %{
-          "LIVE_COMPOSITOR_API_PORT" => "#{@lc_port}",
-          "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
-        }
-      )
-    end)
+    {frames, per_second} = framerate
+    framerate_str = "#{frames}/#{per_second}"
+
+    children = [
+      {MuonTrap.Daemon,
+       [
+         "cargo",
+         [
+           "run",
+           "-r",
+           "--no-default-features",
+           "--manifest-path",
+           Path.join(lc_directory_path, "Cargo.toml"),
+           "--bin",
+           "video_compositor"
+         ],
+         [
+           env: %{
+             "LIVE_COMPOSITOR_API_PORT" => "#{@lc_port}",
+             "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false",
+             "LIVE_COMPOSITOR_OUTPUT_FRAMERATE" => framerate_str
+           }
+         ]
+       ]}
+    ]
+
+    opts = [strategy: :one_for_one, name: Utils.LcServer]
+    Supervisor.start_link(children, opts)
   end
 end
