@@ -13,7 +13,7 @@ defmodule Utils.LcServer do
   def server_setup(framerate) do
     case System.get_env("LIVE_COMPOSITOR_PATH") do
       nil ->
-        :start
+        :start_locally
 
       lc_location ->
         start_lc_server(lc_location, framerate)
