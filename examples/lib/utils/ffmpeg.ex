@@ -19,5 +19,25 @@ defmodule Utils.FFmpeg do
           "samples/testsrc.h264"
         ])
     end
+
+    unless File.exists?("samples/test.ogg") do
+      sample_url = "https://getsamplefiles.com/download/opus/sample-1.opus"
+      IO.puts("Downloading audio sample from #{sample_url}")
+      File.mkdir_p!("samples")
+
+      {_, 0} =
+        System.cmd("curl", ["-L", sample_url, "-o", "samples/test.ogg"])
+    end
+
+    unless File.exists?("samples/test.mp4") do
+      sample_url =
+        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+
+      IO.puts("Downloading MP4 sample from #{sample_url}")
+      File.mkdir_p!("samples")
+
+      {_, 0} =
+        System.cmd("curl", ["-L", sample_url, "-o", "samples/test.mp4"])
+    end
   end
 end

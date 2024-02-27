@@ -20,55 +20,55 @@ defmodule TransitionPipeline do
         framerate: {30, 1},
         server_setup: server_setup
       })
-
-    Process.send_after(self(), {:add_input, 0}, 1000)
-    Process.send_after(self(), {:add_input, 1}, 5000)
+      |> via_out(Pad.ref(:video_output, @output_id),
+        options: [
+          encoder_preset: :ultrafast,
+          width: @output_width,
+          height: @output_height,
+          initial: %{type: :view}
+        ]
+      )
+      |> child(:output_parser, Membrane.H264.Parser)
+      |> child(:output_decoder, Membrane.H264.FFmpeg.Decoder)
+      |> child(:sdl_player, Membrane.SDL.Player)
 
     {[spec: spec], %{sample_path: sample_path}}
   end
 
   @impl true
   def handle_setup(_ctx, state) do
-    output_opt = %OutputOptions{
-      id: @output_id,
-      video: %OutputOptions.Video{
-        width: @output_width,
-        height: @output_height,
-        initial: %{type: :view}
-      }
-    }
+    Process.send_after(self(), {:add_input, "input_0"}, 1000)
+    Process.send_after(self(), {:add_input, "input_1"}, 5000)
 
-    register_output_msg = {:register_output, output_opt}
-    {[notify_child: {:video_compositor, register_output_msg}], state}
+    {[], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:input_registered, _id, lc_ctx},
+        {:input_registered, Pad.ref(_pad_type, input_id), lc_ctx},
         :video_compositor,
         _ctx,
         state
       ) do
-    actions =
-      lc_ctx.outputs
-      |> Enum.map(fn output ->
-        {:notify_child,
-         {:video_compositor, {:lc_request, new_scene_request(lc_ctx.inputs, output.id)}}}
-      end)
+    request =
+      case input_id do
+        "input_0" ->
+          %{
+            type: :update_output,
+            output_id: @output_id,
+            video: single_input_scene("input_0")
+          }
 
-    {actions, state}
-  end
+        "input_1" ->
+          %{
+            type: :update_output,
+            output_id: @output_id,
+            video: double_inputs_scene("input_0", "input_1")
+          }
+      end
 
-  @impl true
-  def handle_child_notification(
-        {:output_registered, output_id, lc_ctx},
-        :video_compositor,
-        _ctx,
-        state
-      ) do
     {[
-       notify_child:
-         {:video_compositor, {:lc_request, new_scene_request(lc_ctx.inputs, output_id)}}
+       {:notify_child, {:video_compositor, {:lc_request, request}}}
      ], state}
   end
 
@@ -93,79 +93,29 @@ defmodule TransitionPipeline do
   end
 
   @impl true
-  def handle_child_notification(
-        {:new_output_stream, output_id, _lc_ctx},
-        :video_compositor,
-        _ctx,
-        state
-      ) do
-    spec =
-      get_child(:video_compositor)
-      |> via_out(:output,
-        options: [output_id: output_id]
-      )
-      |> child(:output_parser, Membrane.H264.Parser)
-      |> child(:output_decoder, Membrane.H264.FFmpeg.Decoder)
-      |> child(:sdl_player, Membrane.SDL.Player)
-
-    {[spec: spec], state}
-  end
-
-  @impl true
   def handle_child_notification(_notification, _child, _ctx, state) do
     {[], state}
   end
 
   @impl true
   def handle_info(
-        {:add_input, input_num},
+        {:add_input, input_id},
         _ctx,
         state = %{sample_path: sample_path}
       ) do
     spec =
-      child({:video_src, input_num}, %Membrane.File.Source{
+      child({:video_src, input_id}, %Membrane.File.Source{
         location: sample_path
       })
-      |> child({:input_parser, input_num}, %Membrane.H264.Parser{
+      |> child({:input_parser, input_id}, %Membrane.H264.Parser{
         output_alignment: :nalu,
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
-      |> child({:realtimer, input_num}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:input, input_num), options: [input_id: input_id(input_num)])
+      |> child({:realtimer, input_id}, Membrane.Realtimer)
+      |> via_in(Pad.ref(:video_input, input_id), options: [])
       |> get_child(:video_compositor)
 
     {[spec: spec], state}
-  end
-
-  @spec new_scene_request(list(Context.InputStream.t()), LiveCompositor.output_id()) ::
-          :no_update | LiveCompositor.request_body()
-  defp new_scene_request([%Context.InputStream{id: input_id}], output_id) do
-    %{
-      type: :update_output,
-      output_id: output_id,
-      video: single_input_scene(input_id)
-    }
-  end
-
-  defp new_scene_request(
-         [
-           %Context.InputStream{id: first_input_id} | [%Context.InputStream{id: second_input_id}]
-         ],
-         output_id
-       ) do
-    %{
-      type: :update_output,
-      output_id: output_id,
-      video: double_inputs_scene(first_input_id, second_input_id)
-    }
-  end
-
-  defp new_scene_request(_lc_ctx, output_id) do
-    %{
-      type: :update_output,
-      output_id: output_id,
-      video: %{type: :view, children: []}
-    }
   end
 
   defp single_input_scene(input_id) do
@@ -222,10 +172,6 @@ defmodule TransitionPipeline do
         }
       ]
     }
-  end
-
-  defp input_id(input_num) do
-    "input_#{input_num}"
   end
 end
 

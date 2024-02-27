@@ -65,11 +65,10 @@ defmodule Membrane.LiveCompositor do
 
   require Membrane.Logger
 
-  alias Membrane.{Pad, RTP, TCP}
+  alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
   alias Membrane.LiveCompositor.{
     Context,
-    OutputOptions,
     ServerRunner,
     State,
     StreamsHandler
@@ -78,10 +77,10 @@ defmodule Membrane.LiveCompositor do
   alias Membrane.LiveCompositor.Request
 
   @typedoc """
-  Preset of LiveCompositor output video encoder.
+  Preset of LiveCompositor video encoder.
   See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
   """
-  @type encoder_preset ::
+  @type video_encoder_preset ::
           :ultrafast
           | :superfast
           | :veryfast
@@ -92,6 +91,11 @@ defmodule Membrane.LiveCompositor do
           | :slower
           | :veryslow
           | :placebo
+
+  @typedoc """
+  Preset of LiveCompositor audio encoder.
+  """
+  @type audio_encoder_preset :: :quality | :voip | :lowest_latency
 
   @typedoc """
   Input stream id, used in scene after adding input stream.
@@ -106,15 +110,11 @@ defmodule Membrane.LiveCompositor do
   @typedoc """
   Elixir translated body of LiveCompositor requests.
 
-  Elixir types are mapped into JSON types:
-  - map -> object
-  - atom -> string
-
   This request body:
   ```
   %{
-    type: "update_scene",
-    output_id: "output_0"
+    type: "update_output",
+    output_id: "output_0",
     video: %{
       type: :tiles
       children: [
@@ -127,7 +127,7 @@ defmodule Membrane.LiveCompositor do
   will translate into the following JSON:
   ```json
   {
-    "type": "update_scene",
+    "type": "update_output",
     "output_id": "output",
     "video": {
       "type": "tiles",
@@ -138,22 +138,16 @@ defmodule Membrane.LiveCompositor do
     }
   }
   ```
-  """
-  @type request_body :: map()
-
-  @typedoc """
-  Request send to LiveCompositor.
-
   User of SDK should only send `update_output` or `register_renderer` requests.
   [API reference can be found here](https://compositor.live/docs/category/api-reference).
   """
-  @type lc_request :: {:lc_request, request_body()}
+  @type lc_request :: {:lc_request, map()}
 
   @typedoc """
   LiveCompositor request response.
   """
   @type lc_request_response ::
-          {:lc_request_response, request_body(), Req.Response.t(), Context.t()}
+          {:lc_request_response, map(), Req.Response.t(), Context.t()}
 
   @typedoc """
   Notification sent to parent after LiveCompositor receives
@@ -161,21 +155,7 @@ defmodule Membrane.LiveCompositor do
 
   Input can be used in `scene` only after registration.
   """
-  @type input_registered_msg :: {:input_registered, input_id(), Context.t()}
-
-  @typedoc """
-  Notification sent to LiveCompositor to register output stream.
-
-  See "Output streams" section in the documentation for more information.
-  """
-  @type register_output_msg :: {:register_output, OutputOptions.t()}
-
-  @typedoc """
-  Notification sent to parent after output registration.
-
-  Output can be used in `scene` only after registration.
-  """
-  @type output_registered_msg :: {:output_registered, output_id(), Context.t()}
+  @type input_registered_msg :: {:input_registered, Pad.ref(), Context.t()}
 
   @typedoc """
   Notification sent to parent after LiveCompositor starts producing streams
@@ -190,12 +170,21 @@ defmodule Membrane.LiveCompositor do
   """
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
+  @typedoc """
+  Supported output sample rates
+  """
+  @type output_sample_rate :: 8_000 | 12_000 | 16_000 | 24_000 | 48_000
+
   @local_host {127, 0, 0, 1}
-  @input_received_msg :input_stream_received
 
   def_options framerate: [
                 spec: Membrane.RawVideo.framerate_t(),
                 description: "Framerate of LiveCompositor outputs."
+              ],
+              output_sample_rate: [
+                spec: output_sample_rate(),
+                default: 48_000,
+                description: "Sample rate of audio on LiveCompositor outputs."
               ],
               api_port: [
                 spec: :inet.port_number() | port_range(),
@@ -237,15 +226,20 @@ defmodule Membrane.LiveCompositor do
                 When this option is selected, the `api_port` option need to specify an exact port number (not a range).
                 """,
                 default: :start_locally
+              ],
+              init_requests: [
+                spec: list(any()),
+                description: """
+                Request that will send on startup to the LC server. It's main use case is to
+                register renderers that will be needed in scene.
+                """,
+                default: []
               ]
 
-  def_input_pad :input,
+  def_input_pad :video_input,
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
     availability: :on_request,
     options: [
-      input_id: [
-        spec: input_id()
-      ],
       required: [
         spec: boolean(),
         default: false,
@@ -278,12 +272,102 @@ defmodule Membrane.LiveCompositor do
       ]
     ]
 
-  def_output_pad :output,
+  def_input_pad :audio_input,
+    accepted_format:
+      any_of(
+        %Opus{self_delimiting?: false},
+        %RemoteStream{type: :packetized, content_format: Opus},
+        %RemoteStream{type: :packetized, content_format: nil}
+      ),
+    availability: :on_request,
+    options: [
+      required: [
+        spec: boolean(),
+        default: false,
+        description: """
+        If stream is marked required the LiveCompositor will delay processing new frames until
+        frames are available.
+        In particular, if there is at least one required input stream and the encoder is not able
+        to produce frames on time, the output stream will also be delayed. This delay will happen
+        regardless of whether required input stream was on time or not.
+        """
+      ],
+      offset: [
+        spec: Membrane.Time.t() | nil,
+        default: nil,
+        description: """
+        Optonal offset used for stream synchronization. This value represents how PTS values of the
+        stream are shifted relative to the start request. If not defined streams are synchronized
+        based on the delivery times of initial frames.
+        """
+      ],
+      port: [
+        spec: :inet.port_number() | port_range(),
+        description: """
+        Port number or port range.
+
+        Internally LiveCompositor server communicates with this pipeline locally over RTP.
+        This value defines which TCP ports will be used.
+        """,
+        default: {10_000, 60_000}
+      ],
+      channels: [
+        spec: :stereo | :mono
+      ]
+    ]
+
+  def_output_pad :video_output,
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
     availability: :on_request,
     options: [
-      output_id: [
-        spec: output_id()
+      port: [
+        spec: :inet.port_number() | port_range(),
+        description: """
+        Port number or port range.
+
+        Internally LiveCompositor server communicates with this pipeline locally over RTP.
+        This value defines which TCP ports will be used.
+        """,
+        default: {10_000, 60_000}
+      ],
+      width: [
+        spec: non_neg_integer()
+      ],
+      height: [
+        spec: non_neg_integer()
+      ],
+      encoder_preset: [
+        spec: video_encoder_preset(),
+        default: :fast
+      ],
+      initial: [
+        spec: any()
+      ]
+    ]
+
+  def_output_pad :audio_output,
+    accepted_format: %RemoteStream{type: :packetized, content_format: Opus},
+    availability: :on_request,
+    options: [
+      port: [
+        spec: :inet.port_number() | port_range(),
+        description: """
+        Port number or port range.
+
+        Internally LiveCompositor server communicates with this pipeline locally over RTP.
+        This value defines which TCP ports will be used.
+        """,
+        default: {10_000, 60_000}
+      ],
+      channels: [
+        spec: :stereo | :mono
+      ],
+      encoder_preset: [
+        spec: audio_encoder_preset(),
+        default: :voip
+      ],
+      initial: [
+        spec: any()
       ]
     ]
 
@@ -301,184 +385,157 @@ defmodule Membrane.LiveCompositor do
       {:ok, _resp} = Request.start_composing(lc_port)
     end
 
+    opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
+
     {[],
      %State{
-       framerate: opt.framerate,
+       output_framerate: opt.framerate,
+       output_sample_rate: opt.output_sample_rate,
        lc_port: lc_port,
-       server_pid: server_pid
+       server_pid: server_pid,
+       context: %Context{}
      }}
   end
 
   @impl true
-  def handle_pad_added(input_ref = Pad.ref(:input, pad_id), ctx, state = %State{inputs: inputs}) do
-    input_id = ctx.pad_options.input_id
+  def handle_pad_added(input_ref = Pad.ref(:video_input, pad_id), ctx, state) do
+    state = %State{state | context: Context.add_stream(input_ref, state.context)}
 
-    {:ok, input_port} =
-      StreamsHandler.register_input_stream(ctx.pad_options, state)
+    {:ok, port} =
+      StreamsHandler.register_video_input_stream(pad_id, ctx.pad_options, state)
 
-    # Don't optimize this with [%State.Input{...} | inputs]
-    # Adding this at the beginning is O(1) instead of O(N),
-    # but this way this list is always ordered by insert order.
-    # Since this list should be small, preserving order with O(N) is better
-    # (order is preserved in returned VC context, state is more consistent etc.)
-    state = %State{
-      state
-      | inputs: inputs ++ [%State.Input{id: input_id, port: input_port, pad_ref: input_ref}]
-    }
+    {state, ssrc} = State.next_ssrc(state)
 
     links =
       bin_input(input_ref)
-      |> via_in(input_ref,
+      |> via_in(Pad.ref(:input, ssrc),
         options: [payloader: RTP.H264.Payloader]
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
-      |> via_out(Pad.ref(:rtp_output, pad_id), options: [encoding: :H264])
+      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 96])
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
-      |> child({:tcp_sink, pad_id}, %TCP.Sink{
-        connection_side: {:client, @local_host, input_port}
+      |> child({:tcp_sink, input_ref}, %TCP.Sink{
+        connection_side: {:client, @local_host, port}
       })
 
-    spec = {links, group: input_group_id(input_id)}
-
-    lc_pid = self()
-
-    spawn(fn ->
-      {:ok, _response} = Request.wait_for_frame_on_input(input_id, state.lc_port)
-      send(lc_pid, {:input_stream_received, input_id})
-    end)
+    spec = {links, group: input_group_id(pad_id)}
 
     {[spec: spec], state}
   end
 
   @impl true
-  def handle_pad_added(
-        output_ref = Pad.ref(:output, _pad_id),
-        ctx,
-        state = %State{outputs: outputs}
-      ) do
-    %State.Output{ssrc: ssrc, id: output_id, width: width, height: height} =
-      outputs |> Enum.find(fn %State.Output{id: id} -> id == ctx.pad_options.output_id end)
+  def handle_pad_added(input_ref = Pad.ref(:audio_input, pad_id), ctx, state) do
+    state = %State{state | context: Context.add_stream(input_ref, state.context)}
 
-    if ssrc == :stream_not_received do
-      raise """
-      Attempt to link output pad: #{inspect(output_ref)} to LiveCompositor, that hasn't been properly registered.
-      Linking outputs is only allowed after registering them with `register_output` message.
-      Send `register_output` message first and wait for receiving `output_registered` message.
-      See LiveCompositor docs to learn more: https://hexdocs.pm/membrane_video_compositor_plugin/Membrane.LiveCompositor.html
-      """
-    end
+    {:ok, port} =
+      StreamsHandler.register_audio_input_stream(pad_id, ctx.pad_options, state)
+
+    {state, ssrc} = State.next_ssrc(state)
+
+    links =
+      bin_input(input_ref)
+      |> via_in(Pad.ref(:input, ssrc),
+        options: [payloader: RTP.Opus.Payloader]
+      )
+      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
+      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 97, clock_rate: 48_000])
+      |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
+      |> child({:tcp_sink, input_ref}, %TCP.Sink{
+        connection_side: {:client, @local_host, port}
+      })
+
+    spec = {links, group: input_group_id(pad_id)}
+
+    {[spec: spec], state}
+  end
+
+  @impl true
+  def handle_pad_added(output_ref = Pad.ref(:video_output, pad_id), ctx, state) do
+    state = %State{state | context: Context.add_stream(output_ref, state.context)}
+    {:ok, port} = StreamsHandler.register_video_output_stream(pad_id, ctx.pad_options, state)
 
     output_stream_format = %Membrane.H264{
-      framerate: state.framerate,
+      framerate: state.output_framerate,
       alignment: :nalu,
       stream_structure: :annexb,
-      width: width,
-      height: height
+      width: ctx.pad_options.width,
+      height: ctx.pad_options.height
     }
 
     links =
-      get_child({:rtp_receiver, output_id})
-      |> via_out(Pad.ref(:output, ssrc), options: [depayloader: RTP.H264.Depayloader])
-      |> child({:output_processor, output_id}, %Membrane.LiveCompositor.OutputProcessor{
-        output_stream_format: output_stream_format
-      })
-      |> bin_output(output_ref)
+      [
+        child({:tcp_source, output_ref}, %TCP.Source{
+          connection_side: {:client, @local_host, port}
+        })
+        |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
+        |> via_in(Pad.ref(:rtp_input, pad_id))
+        |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
+        child({:output_processor, pad_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
+          output_stream_format: output_stream_format
+        })
+        |> bin_output(Pad.ref(:video_output, pad_id))
+      ]
 
-    spec = {links, group: output_group_id(output_id)}
-
-    update_output_state = fn output_state = %State.Output{id: id} ->
-      if id == output_id do
-        %State.Output{
-          output_state
-          | pad_ref: output_ref
-        }
-      else
-        output_state
-      end
-    end
-
-    outputs = state.outputs |> Enum.map(fn output_state -> update_output_state.(output_state) end)
-
-    state = %State{
-      state
-      | outputs: outputs
-    }
+    spec = {links, group: output_group_id(pad_id)}
 
     {[spec: spec], state}
   end
 
   @impl true
-  def handle_pad_removed(input_ref = Pad.ref(:input, _pad_id), _ctx, state = %State{}) do
-    %State.Input{id: input_id} =
-      state.inputs |> Enum.find(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
+  def handle_pad_added(output_ref = Pad.ref(:audio_output, pad_id), ctx, state) do
+    state = %State{state | context: Context.add_stream(output_ref, state.context)}
+    {:ok, port} = StreamsHandler.register_audio_output_stream(pad_id, ctx.pad_options, state)
 
-    {:ok, _resp} = Request.unregister_input_stream(input_id, state.lc_port)
+    links = [
+      child({:tcp_source, output_ref}, %TCP.Source{
+        connection_side: {:client, @local_host, port}
+      })
+      |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
+      |> via_in(Pad.ref(:rtp_input, pad_id))
+      |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
+      child({:output_processor, pad_id}, Membrane.LiveCompositor.AudioOutputProcessor)
+      |> bin_output(Pad.ref(:audio_output, pad_id))
+    ]
 
-    inputs = state.inputs |> Enum.reject(fn %State.Input{pad_ref: ref} -> ref == input_ref end)
+    spec = {links, group: output_group_id(pad_id)}
 
-    {[remove_children: input_group_id(input_id)], %State{state | inputs: inputs}}
+    {[spec: spec], state}
   end
 
   @impl true
-  def handle_pad_removed(output_ref = Pad.ref(:output, _pad_id), _ctx, state = %State{}) do
-    %State.Output{id: output_id} =
-      state.outputs
-      |> Enum.find(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
-
-    {:ok, _resp} = Request.unregister_output_stream(output_id, state.lc_port)
-
-    outputs =
-      state.outputs |> Enum.reject(fn %State.Output{pad_ref: ref} -> ref == output_ref end)
-
-    {[remove_children: output_group_id(output_id)], %State{state | outputs: outputs}}
+  def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
+      when input_type == :audio_input or
+             input_type == :video_input do
+    {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+    state = %State{state | context: Context.remove_input(pad_id, state.context)}
+    {[remove_children: input_group_id(pad_id)], state}
   end
 
   @impl true
-  def handle_parent_notification(:start_composing, _ctx, state = %State{}) do
+  def handle_pad_removed(Pad.ref(:video_output, pad_id), _ctx, state) do
+    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    state = %State{state | context: Context.remove_output(pad_id, state.context)}
+    {[remove_children: output_group_id(pad_id)], state}
+  end
+
+  @impl true
+  def handle_pad_removed(Pad.ref(:audio_output, pad_id), _ctx, state) do
+    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    state = %State{state | context: Context.remove_output(pad_id, state.context)}
+    {[remove_children: output_group_id(pad_id)], state}
+  end
+
+  @impl true
+  def handle_parent_notification(:start_composing, _ctx, state) do
     {:ok, _resp} = Request.start_composing(state.lc_port)
     {[], state}
   end
 
   @impl true
-  def handle_parent_notification(
-        {:register_output, opt = %OutputOptions{}},
-        _ctx,
-        state = %State{outputs: outputs}
-      ) do
-    {:ok, port} = StreamsHandler.register_output_stream(opt, state)
-
-    output_state = %State.Output{
-      id: opt.id,
-      width: opt.video.width,
-      height: opt.video.height,
-      port: port
-    }
-
-    state = %State{
-      state
-      | outputs: [output_state | outputs]
-    }
-
-    links =
-      child({:tcp_source, opt.id}, %TCP.Source{
-        connection_side: {:client, @local_host, port}
-      })
-      |> child({:tcp_decapsulator, opt.id}, RTP.TCP.Decapsulator)
-      |> via_in(Pad.ref(:rtp_input, opt.id))
-      |> child({:rtp_receiver, opt.id}, RTP.SessionBin)
-
-    spec = {links, group: output_group_id(opt.id)}
-
-    output_registered_msg = {:output_registered, opt.id, Context.new(state)}
-
-    {[spec: spec, notify_parent: output_registered_msg], state}
-  end
-
-  @impl true
-  def handle_parent_notification({:lc_request, request_body}, _ctx, state = %State{}) do
+  def handle_parent_notification({:lc_request, request_body}, _ctx, state) do
     case Request.send_request(request_body, state.lc_port) do
       {res, response} when res == :ok or res == :error_response_code ->
-        response_msg = {:lc_request_response, request_body, response, Context.new(state)}
+        response_msg = {:lc_request_response, request_body, response, state.context}
         {[notify_parent: response_msg], state}
 
       {:error, exception} ->
@@ -491,7 +548,7 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_parent_notification(notification, _ctx, state = %State{}) do
+  def handle_parent_notification(notification, _ctx, state) do
     Membrane.Logger.warning(
       "LiveCompositor received unknown notification from the parent: #{inspect(notification)}!"
     )
@@ -502,27 +559,57 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_child_notification(
         {:new_rtp_stream, ssrc, _payload_type, _extensions},
-        {:rtp_receiver, output_id},
+        {:rtp_receiver, ref = Pad.ref(:video_output, pad_id)},
         _ctx,
         state = %State{}
       ) do
-    update_output_state = fn output_state = %State.Output{id: id} ->
-      if id == output_id do
-        %State.Output{
-          output_state
-          | ssrc: ssrc
-        }
-      else
-        output_state
-      end
-    end
+    links =
+      get_child({:rtp_receiver, ref})
+      |> via_out(Pad.ref(:output, ssrc),
+        options: [depayloader: RTP.H264.Depayloader, clock_rate: 90_000]
+      )
+      |> get_child({:output_processor, pad_id})
 
-    state =
-      state.outputs
-      |> Enum.map(fn output_state -> update_output_state.(output_state) end)
-      |> then(fn outputs -> %State{state | outputs: outputs} end)
+    actions = [spec: {links, group: output_group_id(pad_id)}]
 
-    {[notify_parent: {:new_output_stream, output_id, Context.new(state)}], state}
+    {actions, state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:new_rtp_stream, ssrc, _payload_type, _extensions},
+        {:rtp_receiver, ref = Pad.ref(:audio_output, pad_id)},
+        _ctx,
+        state = %State{}
+      ) do
+    links =
+      get_child({:rtp_receiver, ref})
+      |> via_out(Pad.ref(:output, ssrc),
+        options: [depayloader: RTP.Opus.Depayloader, clock_rate: 48_000]
+      )
+      |> get_child({:output_processor, pad_id})
+
+    {[spec: {links, group: output_group_id(pad_id)}], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:connection_info, _ip, _port},
+        {:tcp_sink, pad_ref},
+        _ctx,
+        state = %State{}
+      ) do
+    {[notify_parent: {:input_registered, pad_ref, state.context}], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:connection_info, _ip, _port},
+        {:tcp_source, pad_ref},
+        _ctx,
+        state = %State{}
+      ) do
+    {[notify_parent: {:output_registered, pad_ref, state.context}], state}
   end
 
   @impl true
@@ -532,11 +619,6 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
-  end
-
-  @impl true
-  def handle_info({@input_received_msg, input_id}, _ctx, state) do
-    {[notify_parent: {:input_registered, input_id, Context.new(state)}], state}
   end
 
   @impl true

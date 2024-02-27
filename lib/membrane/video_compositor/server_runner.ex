@@ -9,8 +9,8 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   @spec ensure_server_started(LiveCompositor.t()) ::
           {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
   def ensure_server_started(opt) do
-    {frames, per_second} = opt.framerate
-    framerate_str = "#{frames}/#{per_second}"
+    {framerate_num, framerate_den} = opt.framerate
+    framerate_str = "#{framerate_num}/#{framerate_den}"
 
     env = %{
       "LIVE_COMPOSITOR_AHEAD_OF_TIME_PROCESSING_ENABLE" =>
