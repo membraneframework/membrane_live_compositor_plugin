@@ -32,9 +32,9 @@ defmodule TransitionPipeline do
     output_opt = %OutputOptions{
       id: @output_id,
       video: %OutputOptions.Video{
-          width: @output_width,
-          height: @output_height,
-          initial: %{type: :view}
+        width: @output_width,
+        height: @output_height,
+        initial: %{type: :view}
       }
     }
 

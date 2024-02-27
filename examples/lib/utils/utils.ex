@@ -37,19 +37,19 @@ defmodule Utils.LcServer do
   defp start_lc_server_with_cargo(lc_directory_path, framerate) do
     {_, 0} =
       "cargo"
-      |> MuonTrap.cmd(
-        [
-          "build",
-          "-r",
-          "--manifest-path",
-          Path.join(lc_directory_path, "Cargo.toml"),
-          "--bin",
-          "video_compositor"
-        ]
-      )
+      |> MuonTrap.cmd([
+        "build",
+        "-r",
+        "--no-default-features",
+        "--manifest-path",
+        Path.join(lc_directory_path, "Cargo.toml"),
+        "--bin",
+        "video_compositor"
+      ])
 
     {frames, per_second} = framerate
     framerate_str = "#{frames}/#{per_second}"
+
     children = [
       {MuonTrap.Daemon,
        [
@@ -57,18 +57,19 @@ defmodule Utils.LcServer do
          [
            "run",
            "-r",
+           "--no-default-features",
            "--manifest-path",
            Path.join(lc_directory_path, "Cargo.toml"),
            "--bin",
            "video_compositor"
+         ],
+         [
+           env: %{
+             "LIVE_COMPOSITOR_API_PORT" => "#{@lc_port}",
+             "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false",
+             "LIVE_COMPOSITOR_OUTPUT_FRAMERATE" => framerate_str
+           }
          ]
-       ],
-       [
-         env: %{
-           "LIVE_COMPOSITOR_API_PORT" => "#{@lc_port}",
-           "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false",
-           "LIVE_COMPOSITOR_OUTPUT_FRAMERATE" => framerate_str,
-         }
        ]}
     ]
 

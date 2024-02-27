@@ -106,7 +106,7 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {:output_registered, _id, lc_ctx},
+        {:output_registered, _id, _lc_ctx},
         :video_compositor,
         _ctx,
         state
