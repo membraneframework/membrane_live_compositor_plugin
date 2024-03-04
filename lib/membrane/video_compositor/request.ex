@@ -4,7 +4,6 @@ defmodule Membrane.LiveCompositor.Request do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.OutputOptions
 
   @local_host_url "127.0.0.1"
   @type request_result ::
@@ -16,37 +15,6 @@ defmodule Membrane.LiveCompositor.Request do
   def start_composing(lc_port) do
     %{
       type: :start
-    }
-    |> send_request(lc_port)
-  end
-
-  @spec register_input_stream(
-          map(),
-          :inet.port_number()
-        ) ::
-          request_result()
-  def register_input_stream(opts, lc_port) do
-    port =
-      case opts.port do
-        {start, endd} -> "#{start}:#{endd}"
-        exact_port -> exact_port
-      end
-
-    %{
-      type: :register,
-      entity_type: :rtp_input_stream,
-      input_id: "#{opts.input_id}",
-      transport_protocol: :tcp_server,
-      port: port,
-      video: %{
-        codec: :h264
-      },
-      required: true,
-      offset_ms:
-        case opts.offset do
-          nil -> nil
-          offset -> Membrane.Time.as_milliseconds(offset, :round)
-        end
     }
     |> send_request(lc_port)
   end
@@ -86,37 +54,7 @@ defmodule Membrane.LiveCompositor.Request do
     |> send_request(lc_port)
   end
 
-  @spec register_output_stream(
-          OutputOptions.t(),
-          :inet.port_number()
-        ) :: request_result()
-  def register_output_stream(output_opt, lc_port) do
-    port =
-      case output_opt.port do
-        nil -> "10000:60000"
-        {start, endd} -> "#{start}:#{endd}"
-        exact_port -> exact_port
-      end
-
-    %{
-      type: :register,
-      entity_type: :output_stream,
-      output_id: output_opt.id,
-      transport_protocol: :tcp_server,
-      port: port,
-      video: %{
-        resolution: %{
-          width: output_opt.video.width,
-          height: output_opt.video.height
-        },
-        encoder_preset: output_opt.video.encoder_preset,
-        initial: output_opt.video.initial
-      }
-    }
-    |> send_request(lc_port)
-  end
-
-  @spec send_request(LiveCompositor.request_body(), :inet.port_number()) ::
+  @spec send_request(map(), :inet.port_number()) ::
           request_result()
   def send_request(request_body, lc_port) do
     {:ok, _} = Application.ensure_all_started(:req)

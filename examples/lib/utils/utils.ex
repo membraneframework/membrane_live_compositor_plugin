@@ -47,8 +47,8 @@ defmodule Utils.LcServer do
         "video_compositor"
       ])
 
-    {frames, per_second} = framerate
-    framerate_str = "#{frames}/#{per_second}"
+    {framerate_num, framerate_den} = framerate
+    framerate_str = "#{framerate_num}/#{framerate_den}"
 
     children = [
       {MuonTrap.Daemon,

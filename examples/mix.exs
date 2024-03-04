@@ -39,6 +39,11 @@ defmodule Membrane.LiveCompositor.Examples.Mixfile do
       {:membrane_h264_ffmpeg_plugin, "~> 0.31.0"},
       {:membrane_hackney_plugin, "~> 0.11.0"},
       {:membrane_mp4_plugin, "~> 0.32.0"},
+      {:membrane_portaudio_plugin, "~> 0.18.3"},
+      {:membrane_ogg_plugin, "~> 0.3.0"},
+      {:membrane_ffmpeg_swresample_plugin, "~> 0.19.2"},
+      {:membrane_aac_plugin, "~> 0.18.1"},
+      {:membrane_aac_fdk_plugin, "~> 0.18.5"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

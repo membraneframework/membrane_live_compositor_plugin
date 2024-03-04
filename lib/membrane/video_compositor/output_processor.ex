@@ -1,4 +1,4 @@
-defmodule Membrane.LiveCompositor.OutputProcessor do
+defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @moduledoc false
   # Forwards buffers and send specified output stream format.
 
@@ -10,6 +10,7 @@ defmodule Membrane.LiveCompositor.OutputProcessor do
 
   def_input_pad :input,
     accepted_format: %Membrane.H264{alignment: :nalu, stream_structure: :annexb},
+    availability: :on_request,
     flow_control: :auto
 
   def_output_pad :output,
@@ -22,19 +23,43 @@ defmodule Membrane.LiveCompositor.OutputProcessor do
   end
 
   @impl true
-  def handle_buffer(_pad, buffer, ctx, state) do
-    stream_format_action =
-      if ctx.pads.output.stream_format == nil do
-        [stream_format: {:output, state.output_stream_format}]
-      else
-        []
-      end
-
-    {stream_format_action ++ [buffer: {:output, buffer}], state}
+  def handle_buffer(_pad, buffer, _ctx, state) do
+    {[buffer: {:output, buffer}], state}
   end
 
   @impl true
   def handle_stream_format(_pad, _stream_format, _ctx, state) do
-    {[], state}
+    {[stream_format: {:output, state.output_stream_format}], state}
+  end
+end
+
+defmodule Membrane.LiveCompositor.AudioOutputProcessor do
+  @moduledoc false
+
+  use Membrane.Filter
+  alias Membrane.{Opus, RemoteStream}
+
+  def_input_pad :input,
+    accepted_format: %RemoteStream{type: :packetized, content_format: Opus},
+    availability: :on_request,
+    flow_control: :auto
+
+  def_output_pad :output,
+    accepted_format: %RemoteStream{type: :packetized, content_format: Opus},
+    flow_control: :auto
+
+  @impl true
+  def handle_init(_ctx, _opt) do
+    {[], %{}}
+  end
+
+  @impl true
+  def handle_buffer(_pad, buffer, _ctx, state) do
+    {[buffer: {:output, buffer}], state}
+  end
+
+  @impl true
+  def handle_stream_format(_pad, stream_format, _ctx, state) do
+    {[stream_format: {:output, stream_format}], state}
   end
 end

@@ -6,63 +6,82 @@ defmodule OfflineProcessing do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.Hackney
-  alias Membrane.LiveCompositor.OutputOptions
 
-  @output_id "output_1"
+  @video_output_id "video_output_1"
+  @audio_output_id "audio_output_1"
   @shader_id "shader_1"
   @output_width 1280
   @output_height 720
-  @video_url "http://raw.githubusercontent.com/membraneframework/static/gh-pages/samples/big-buck-bunny/bun33s_720x480.h264"
   @shader_path "./lib/example_shader.wgsl"
-  @output_file "offline_processing_output.mp4"
+  @output_file "samples/offline_processing_output.mp4"
 
   @impl true
-  def handle_init(_ctx, %{server_setup: server_setup}) do
-    spec =
-      child(:media_source, %Hackney.Source{
-        location: @video_url,
-        hackney_opts: [follow_redirect: true],
-        max_retries: 3
-      })
-      |> child({:input_parser, 0}, %Membrane.H264.Parser{
-        output_alignment: :nalu,
-        generate_best_effort_timestamps: %{framerate: {30, 1}}
-      })
-      |> via_in(Pad.ref(:input, 0),
-        options: [input_id: "input_0", offset: Membrane.Time.seconds(5), required: true]
-      )
-      |> child(:video_compositor, %LiveCompositor{
+  def handle_init(_ctx, %{server_setup: server_setup, sample_path: sample_path}) do
+    spec = [
+      child(:file_source, %Membrane.File.Source{location: sample_path})
+      |> child(:mp4_demuxer, Membrane.MP4.Demuxer.ISOM),
+      child(:video_compositor, %LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup,
-        composing_strategy: :ahead_of_time
+        composing_strategy: :ahead_of_time,
+        init_requests: [
+          register_shader_request_body()
+        ]
       })
+      |> via_out(Pad.ref(:video_output, @video_output_id),
+        options: [
+          encoder_preset: :ultrafast,
+          width: @output_width,
+          height: @output_height,
+          initial:
+            scene([
+              %{type: :input_stream, input_id: "video_input_0", id: "child_0"}
+            ])
+        ]
+      )
+      |> child(:output_parser, %Membrane.H264.Parser{
+        generate_best_effort_timestamps: %{framerate: {30, 1}},
+        output_stream_structure: :avc1
+      })
+      |> child(:muxer, Membrane.MP4.Muxer.ISOM)
+      |> child(:sink, %Membrane.File.Sink{location: @output_file}),
+      get_child(:video_compositor)
+      |> via_out(Pad.ref(:audio_output, @audio_output_id),
+        options: [
+          channels: :stereo,
+          initial: %{
+            inputs: [
+              %{input_id: "audio_input_0", volume: 0.2}
+            ]
+          }
+        ]
+      )
+      |> child(:opus_output_parser, Membrane.Opus.Parser)
+      |> get_child(:muxer)
+    ]
 
-    {[spec: spec], %{}}
+    {[spec: spec], %{registered_compositor_streams: 0}}
   end
 
   @impl true
   def handle_setup(_ctx, state) do
-    output_opt = %OutputOptions{
-      id: @output_id,
-      video: %OutputOptions.Video{
-        encoder_preset: :ultrafast,
-        width: @output_width,
-        height: @output_height,
-        initial:
-          scene([
-            %{type: :input_stream, input_id: "input_0", id: "child_0"}
-          ])
-      }
-    }
-
     schedule_unregister_output = {
       :lc_request,
       %{
         type: :unregister,
         entity_type: :output_stream,
-        output_id: @output_id,
-        schedule_time_ms: 30_000
+        output_id: @video_output_id,
+        schedule_time_ms: 60_000
+      }
+    }
+
+    schedule_unregister_audio_output = {
+      :lc_request,
+      %{
+        type: :unregister,
+        entity_type: :output_stream,
+        output_id: @audio_output_id,
+        schedule_time_ms: 60_000
       }
     }
 
@@ -70,11 +89,11 @@ defmodule OfflineProcessing do
       :lc_request,
       %{
         type: :update_output,
-        output_id: @output_id,
+        output_id: @video_output_id,
         video:
           scene([
-            %{type: :input_stream, input_id: "input_0", id: "child_0"},
-            %{type: :input_stream, input_id: "input_0", id: "child_2"}
+            %{type: :input_stream, input_id: "video_input_0", id: "child_0"},
+            %{type: :input_stream, input_id: "video_input_0", id: "child_2"}
           ]),
         schedule_time_ms: 10_000
       }
@@ -84,57 +103,124 @@ defmodule OfflineProcessing do
       :lc_request,
       %{
         type: :update_output,
-        output_id: @output_id,
+        output_id: @video_output_id,
         video:
           scene([
-            %{type: :input_stream, input_id: "input_0", id: "child_0"},
-            %{type: :input_stream, input_id: "input_0", id: "child_1"},
-            %{type: :input_stream, input_id: "input_0", id: "child_2"}
+            %{type: :input_stream, input_id: "video_input_0", id: "child_0"},
+            %{type: :input_stream, input_id: "video_input_0", id: "child_1"},
+            %{type: :input_stream, input_id: "video_input_0", id: "child_2"}
           ]),
         schedule_time_ms: 20_000
       }
     }
 
+    schedule_audio_update = {
+      :lc_request,
+      %{
+        type: :update_output,
+        output_id: @audio_output_id,
+        audio: %{
+          inputs: [
+            %{input_id: "audio_input_0"}
+          ]
+        },
+        schedule_time_ms: 30_000
+      }
+    }
+
     {[
-       notify_child: {:video_compositor, {:lc_request, register_shader_request_body()}},
-       notify_child: {:video_compositor, {:register_output, output_opt}},
        notify_child: {:video_compositor, schedule_unregister_output},
+       notify_child: {:video_compositor, schedule_unregister_audio_output},
        notify_child: {:video_compositor, schedule_scene_update_1},
-       notify_child: {:video_compositor, schedule_scene_update_2}
+       notify_child: {:video_compositor, schedule_scene_update_2},
+       notify_child: {:video_compositor, schedule_audio_update}
      ], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:output_registered, _id, _lc_ctx},
-        :video_compositor,
-        _ctx,
+        {:new_tracks, tracks},
+        :mp4_demuxer,
+        _membrane_ctx,
         state
       ) do
-    {[{:notify_child, {:video_compositor, :start_composing}}], state}
+    spec =
+      tracks
+      |> Enum.map(fn {track_id, stream_format} ->
+        case stream_format do
+          %Membrane.H264{} ->
+            get_child(:mp4_demuxer)
+            |> via_out(Pad.ref(:output, track_id))
+            |> child(:mp4_input_parser, %Membrane.H264.Parser{
+              output_alignment: :nalu,
+              output_stream_structure: :annexb,
+              generate_best_effort_timestamps: %{framerate: {30, 1}}
+            })
+            |> via_in(Pad.ref(:video_input, "video_input_0"),
+              options: [
+                offset: Membrane.Time.seconds(5),
+                required: true
+              ]
+            )
+            |> get_child(:video_compositor)
+
+          %Membrane.AAC{sample_rate: sample_rate, channels: channels} ->
+            get_child(:mp4_demuxer)
+            |> via_out(Pad.ref(:output, track_id))
+            |> child(:aac_parser, Membrane.AAC.Parser)
+            |> child(:aac_decoder, Membrane.AAC.FDK.Decoder)
+            |> child(:converter, %Membrane.FFmpeg.SWResample.Converter{
+              input_stream_format: %Membrane.RawAudio{
+                channels: channels,
+                sample_format: :s16le,
+                sample_rate: sample_rate
+              },
+              output_stream_format: %Membrane.RawAudio{
+                channels: 2,
+                sample_format: :s16le,
+                sample_rate: 48_000
+              }
+            })
+            |> child(:audio_encoder, %Membrane.Opus.Encoder{
+              application: :audio,
+              input_stream_format: %Membrane.RawAudio{
+                channels: 2,
+                sample_format: :s16le,
+                sample_rate: 48_000
+              }
+            })
+            |> child(:audio_parser, %Membrane.Opus.Parser{
+              generate_best_effort_timestamps?: true
+            })
+            |> via_in(Pad.ref(:audio_input, "audio_input_0"),
+              options: [
+                offset: Membrane.Time.seconds(5),
+                required: true,
+              ]
+            )
+            |> get_child(:video_compositor)
+        end
+      end)
+
+    {[spec: spec], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:new_output_stream, output_id, _lc_ctx},
+        {msg_type, Pad.ref(pad_type, pad_id), ctx},
         :video_compositor,
         _membrane_ctx,
         state
-      ) do
-    spec = [
-      get_child(:video_compositor)
-      |> via_out(:output,
-        options: [output_id: output_id]
       )
-      |> child(:output_parser, %Membrane.H264.Parser{
-        generate_best_effort_timestamps: %{framerate: {30, 1}},
-        output_stream_structure: :avc1
-      })
-      |> child(:muxer, Membrane.MP4.Muxer.ISOM)
-      |> child(:sink, %Membrane.File.Sink{location: @output_file})
-    ]
+      when msg_type == :output_registered or msg_type == :input_registered do
+    state = %{state | registered_compositor_streams: state.registered_compositor_streams + 1}
 
-    {[spec: spec], state}
+    if state.registered_compositor_streams == 4 do
+      # send start when all inputs are connected
+      {[notify_child: {:video_compositor, :start_composing}], state}
+    else
+      {[], state}
+    end
   end
 
   @impl true
@@ -172,7 +258,7 @@ defmodule OfflineProcessing do
   end
 
   @impl true
-  def handle_element_end_of_stream(_, _, _context, state) do
+  def handle_element_end_of_stream(_element, _pad_ref, _context, state) do
     {[], state}
   end
 
@@ -212,11 +298,13 @@ defmodule OfflineProcessing do
   end
 end
 
+Utils.FFmpeg.generate_sample_video()
 server_setup = Utils.LcServer.server_setup({30, 1})
 
 {:ok, supervisor, _pid} =
   Membrane.Pipeline.start_link(OfflineProcessing, %{
-    server_setup: server_setup
+    server_setup: server_setup,
+    sample_path: "samples/test.mp4"
   })
 
 require Membrane.Logger
