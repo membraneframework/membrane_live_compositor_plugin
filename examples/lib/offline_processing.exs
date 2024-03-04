@@ -196,7 +196,6 @@ defmodule OfflineProcessing do
               options: [
                 offset: Membrane.Time.seconds(5),
                 required: true,
-                channels: :stereo
               ]
             )
             |> get_child(:video_compositor)

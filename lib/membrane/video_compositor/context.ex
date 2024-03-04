@@ -20,6 +20,7 @@ defmodule Membrane.LiveCompositor.Context do
           audio_outputs: list(LiveCompositor.output_id())
         }
 
+  @doc false
   @spec add_stream(Pad.ref(), t()) :: t()
   def add_stream(Pad.ref(pad_type, id), ctx = %__MODULE__{}) do
     if !String.valid?(id) do
@@ -54,6 +55,7 @@ defmodule Membrane.LiveCompositor.Context do
     end
   end
 
+  @doc false
   @spec remove_input(LiveCompositor.input_id(), t()) :: t()
   def remove_input(input_id, ctx = %__MODULE__{audio_inputs: audio, video_inputs: video}) do
     audio = audio |> Enum.reject(fn id -> input_id == id end)
@@ -61,6 +63,7 @@ defmodule Membrane.LiveCompositor.Context do
     %__MODULE__{ctx | audio_inputs: audio, video_inputs: video}
   end
 
+  @doc false
   @spec remove_output(LiveCompositor.output_id(), t()) :: t()
   def remove_output(output_id, ctx = %__MODULE__{audio_outputs: audio, video_outputs: video}) do
     audio = audio |> Enum.reject(fn id -> output_id == id end)

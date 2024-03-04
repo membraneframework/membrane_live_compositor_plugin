@@ -55,10 +55,7 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
         transport_protocol: :tcp_server,
         port: port,
         audio: %{
-          codec: :opus,
-          # TODO: remove
-          sample_rate: 48_000,
-          channels: input_pad_opts.channels
+          codec: :opus
         },
         required: input_pad_opts.required,
         offset_ms:

@@ -3,32 +3,35 @@ defmodule Membrane.LiveCompositor do
   Membrane SDK for [LiveCompositor](https://github.com/membraneframework/video_compositor).
 
   ## Input streams
-  Inputs are simply linked as Membrane Pads, no additional requests are required.
-  Input registration happens automatically.
-  After registering and linking an input stream the LiveCompositor will notify the parent with `t:input_registered_msg/0`.
-  After receiving this message, input can be used in the scene defintion.
+
+  Each input pad has a format `Pad.ref(:video_input, input_id)` or `Pad.ref(:audio_input, input_id)`,
+  where `input_id` is a string. `input_id` needs to be unique for all input pads, in particular
+  you can't have audio and video input pads with the same id. After registering and linking an input
+  stream the LiveCompositor will notify the parent with `t:input_registered_msg/0`.
 
   ## Output streams
-  Outputs have to be registered before linking.
-  To register an output the parent sends `t:register_output_msg/0`.
-  After registering output, the LiveCompositor will notify the parent with `t:output_registered_msg/0`.
-  Scene for a specific output can only be defined after registration.
-  Once LiveCompositor starts producing output stream, it will notify parent with `t:new_output_stream_msg/0`.
-  Linking outputs is only available after receiving that message.
 
-  ## Composition specification - `Scene`
-  To specify what LiveCompositor should render parent should send `t:lc_request/0`.
-  `Scene` is a top level specification of what LiveCompositor should render.
+  Each output pad has a format `Pad.ref(:video_output, output_id)` or `Pad.ref(:audio_output, output_id)`,
+  where `output_id` is a string. `output_id` needs to be unique for all output pads, in particular
+  you can't have audio and video output pads with the same id. After registering and linking an
+  output stream the LiveCompositor will notify the parent with `t:output_registered_msg/0`.
 
-  As an example, if two inputs with IDs `"input_0"` and `"input_1"` and
-  single output with ID `"output_0"` are registered, sending such `update_output`
-  request would result in receiving inputs merged in layout on output:
+  ## Composition specification - `video`
+
+  To specify what LiveCompositor should render you can:
+  - Define `initial` option on `:video_output` pad.
+  - Send `{:lc_request, request}` from parent where `request` is of type`t:lc_request/0`.
+
+  For example, if have two input pads `Pad.ref(:video_input, "input_0")` and
+  `Pad.ref(:video_input, "input_1")` and a single output pad `Pad.ref(:video_output, "output_0")`,
+  sending such `update_output` request would result in receiving inputs merged in layout on output:
+
   ```
   scene_update_request =  %{
     type: "update_output",
     output_id: "output_0"
     video: %{
-      type: :tiles
+      type: :tiles,
       children: [
         { type: "input_stream", input_id: "input_0" },
         { type: "input_stream", input_id: "input_1" }
@@ -38,27 +41,41 @@ defmodule Membrane.LiveCompositor do
 
   {[notify_child: {:video_compositor, {:lc_request, scene_update_request}}]}
   ```
+
   LiveCompositor will notify parent with `t:lc_request_response/0`.
 
-  You can use renderers/nodes to process input streams into outputs.
-  LiveCompositor has builtin renders for most common use cases, but you can
-  also register your own shaders, images and websites to tune LiveCompositor for
-  specific business requirements.
+  ## Composition specification - `audio`
 
-  ## Pads unlinking
-  Before unlinking pads make sure to remove them from the scene, otherwise VC will crash on pad unlinking.
-  Inputs/outputs are unregistered automatically on pad unlinking.
+  To specify what LiveCompositor should render you can:
+  - Define `initial` option on `:audio_output` pad.
+  - Send `{:lc_request, request}` from parent where `request` is of type`t:lc_request/0`.
+
+  For example, if have two input pads `Pad.ref(:audio_input, "input_0")` and
+  `Pad.ref(:audio_input, "input_1")` and a single output pad `Pad.ref(:audio_output, "output_0")`,
+  sending such `update_output` request would produce audio mixed from those 2 inputs where `input_0`
+  volume is lowered.
+
+  ```
+  audio_update_request =  %{
+    inputs: [
+      { input_id: "input_0", volume: 0.5 },
+      { input_id: "input_1" }
+    ]
+  }
+
+  {[notify_child: {:video_compositor, {:lc_request, audio_update_request}}]}
+  ```
+
+  LiveCompositor will notify parent with `t:lc_request_response/0`.
 
   ## API reference
-  You can find more detailed [API reference here](https://compositor.live/docs/api/routes).
-  Only `update_output` and `register_renderer` request are available (`inputs`/`outputs` registration, `start` is done by SDK).
+  You can find more detailed API reference [here](https://compositor.live/docs/api/routes).
 
   ## General concepts
   General concepts of scene are explained [here](https://compositor.live/docs/concept/component).
 
   ## Examples
   Examples can be found in `examples` directory of Membrane LiveCompositor Plugin.
-  `Scene` API usage examples can be found in the [LiveCompositor repo](https://github.com/membraneframework/video_compositor/tree/master/examples).
   """
 
   use Membrane.Bin
@@ -77,8 +94,8 @@ defmodule Membrane.LiveCompositor do
   alias Membrane.LiveCompositor.Request
 
   @typedoc """
-  Preset of LiveCompositor video encoder.
-  See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset) to learn more.
+  Video encoder preset. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset)
+  to learn more.
   """
   @type video_encoder_preset ::
           :ultrafast
@@ -93,42 +110,49 @@ defmodule Membrane.LiveCompositor do
           | :placebo
 
   @typedoc """
-  Preset of LiveCompositor audio encoder.
+  Audio encoder preset.
   """
   @type audio_encoder_preset :: :quality | :voip | :lowest_latency
 
   @typedoc """
-  Input stream id, used in scene after adding input stream.
+  Input stream id, uniquely identifies an input pad.
   """
   @type input_id :: String.t()
 
   @typedoc """
-  Output stream id, used in scene after adding output stream.
+  Output stream id, uniquely identifies an output pad.
   """
   @type output_id :: String.t()
 
   @typedoc """
-  Elixir translated body of LiveCompositor requests.
+  Raw request that will be translated to JSON format and
+  sent directlly to the LiveCompositor server.
 
-  This request body:
+  For example, sending this message to the LiveCompositor bin
   ```
-  %{
-    type: "update_output",
-    output_id: "output_0",
-    video: %{
-      type: :tiles
-      children: [
-        { type: "input_stream", input_id: "input_0" },
-        { type: "input_stream", input_id: "input_1" }
-      ]
+  {
+    :lc_request
+    %{
+      type: "update_output",
+      output_id: "output_0",
+      video: %{
+        type: :tiles
+        children: [
+          { type: "input_stream", input_id: "input_0" },
+          { type: "input_stream", input_id: "input_1" }
+        ]
+      }
     }
   }
   ```
-  will translate into the following JSON:
-  ```json
+  will result in bellow HTTP request to be sent to the LiveCompositor server
+  ```http
+  POST http://localhost:8081/--/api
+  Content-Type: application/json
+
   {
     "type": "update_output",
-    "output_id": "output",
+    "output_id": "output_0",
     "video": {
       "type": "tiles",
       "children": [
@@ -138,32 +162,35 @@ defmodule Membrane.LiveCompositor do
     }
   }
   ```
-  User of SDK should only send `update_output` or `register_renderer` requests.
-  [API reference can be found here](https://compositor.live/docs/category/api-reference).
+
+  User of this plugin should only use:
+  - `update_output` to configure output scene or audio mixer configurations.
+  - `register` to register renderers (reigstering inputs and outputs is already handled by the bin).
+  - `unregister` to unregister renderers, inputs or outputs. Note that bin is already handling
+  unregistering inputs andoutputs when pads are unlinkned, but if you want to schedule that event
+  to a specific timestamp (with `schedule_time_ms` field) you need to send it manulally.
+
+  API reference can be found [here](https://compositor.live/docs/category/api-reference).
   """
-  @type lc_request :: {:lc_request, map()}
+  @type lc_request() :: map()
 
   @typedoc """
-  LiveCompositor request response.
+  LiveCompositor request response. This message will be sent to the parrent process in response
+  to the `{:lc_request, request}` where request is of type `t:lc_request/0`.
   """
-  @type lc_request_response ::
-          {:lc_request_response, map(), Req.Response.t(), Context.t()}
+  @type lc_request_response :: {:lc_request_response, lc_request(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification sent to parent after LiveCompositor receives
-  the first frame from the input stream (registered on input pad link).
-
-  Input can be used in `scene` only after registration.
+  Notification sent to the parent after input is sucesfully registered and TCP connection between
+  pipeline and LiveCompositor server is succesfully established.
   """
   @type input_registered_msg :: {:input_registered, Pad.ref(), Context.t()}
 
   @typedoc """
-  Notification sent to parent after LiveCompositor starts producing streams
-  and in ready to link output pad.
-
-  See "Output streams" section in doc for more information.
+  Notification sent to the parent after output is sucesfully registered and TCP connection between
+  pipeline and LiveCompositor server is succesfully established.
   """
-  @type new_output_stream_msg :: {:new_output_stream, output_id(), Context.t()}
+  @type output_registered_msg :: {:output_registered, Pad.ref(), Context.t()}
 
   @typedoc """
   Range of ports.
@@ -196,7 +223,8 @@ defmodule Membrane.LiveCompositor do
               stream_fallback_timeout: [
                 spec: Membrane.Time.t(),
                 description: """
-                Timeout that defines when the LiveCompositor should switch to fallback on the input stream that stopped sending frames.
+                Timeout that defines when the LiveCompositor should switch to fallback on
+                the input stream that stopped sending frames.
                 """,
                 default: Membrane.Time.seconds(2)
               ],
@@ -221,17 +249,30 @@ defmodule Membrane.LiveCompositor do
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
                 Available options:
-                - :start_locally - LC server is automatically started.
-                - :already_started - LiveCompositor bin assumes, that LC server is already started and is available on a specified port.
-                When this option is selected, the `api_port` option need to specify an exact port number (not a range).
+                - `:start_locally` - LC server is automatically started.
+                - `{:start_locally, path}` - LC server is automatically started, but different binary
+                is used to spawn the process.
+                - `:already_started` - LiveCompositor bin assumes, that LC server is already started
+                and is available on a specified port. When this option is selected, the `api_port`
+                option need to specify an exact port number (not a range).
                 """,
                 default: :start_locally
               ],
               init_requests: [
-                spec: list(any()),
+                spec: list(lc_request()),
                 description: """
                 Request that will send on startup to the LC server. It's main use case is to
-                register renderers that will be needed in scene.
+                register renderers that will be needed in the scene from the very begining.
+
+                Example:
+                ```
+                [%{
+                  type: :register,
+                  entity_type: :shader,
+                  shader_id: "example_shader_1",
+                  source: "<shader sources>"
+                }]
+                ```
                 """,
                 default: []
               ]
@@ -245,10 +286,9 @@ defmodule Membrane.LiveCompositor do
         default: false,
         description: """
         If stream is marked required the LiveCompositor will delay processing new frames until
-        frames are available.
-        In particular, if there is at least one required input stream and the encoder is not able
-        to produce frames on time, the output stream will also be delayed. This delay will happen
-        regardless of whether required input stream was on time or not.
+        frames are available. In particular, if there is at least one required input stream and the
+        encoder is not able to produce frames on time, the output stream will also be delayed. This
+        delay will happen regardless of whether required input stream was on time or not.
         """
       ],
       offset: [
@@ -286,10 +326,9 @@ defmodule Membrane.LiveCompositor do
         default: false,
         description: """
         If stream is marked required the LiveCompositor will delay processing new frames until
-        frames are available.
-        In particular, if there is at least one required input stream and the encoder is not able
-        to produce frames on time, the output stream will also be delayed. This delay will happen
-        regardless of whether required input stream was on time or not.
+        frames are available. In particular, if there is at least one required input stream and the
+        encoder is not able to produce frames on time, the output stream will also be delayed. This
+        delay will happen regardless of whether required input stream was on time or not.
         """
       ],
       offset: [
@@ -310,9 +349,6 @@ defmodule Membrane.LiveCompositor do
         This value defines which TCP ports will be used.
         """,
         default: {10_000, 60_000}
-      ],
-      channels: [
-        spec: :stereo | :mono
       ]
     ]
 
@@ -341,7 +377,25 @@ defmodule Membrane.LiveCompositor do
         default: :fast
       ],
       initial: [
-        spec: any()
+        spec: any(),
+        description: """
+        Initial scene that will be rendered on this output.
+
+        Example:
+        ```
+        %{
+          type: :view,
+          children: [
+            %{ type: :input_stream, input_id: "input_0" }
+          ]
+        }
+        ```
+
+        To change the scene after the registration you can send
+        `{ :lc_request, %{ type: "update_output", output_id: "output_0", video: new_scene } }`
+
+        Format of this field is documented [here](https://compositor.live/docs/concept/component).
+        """
       ]
     ]
 
@@ -367,7 +421,25 @@ defmodule Membrane.LiveCompositor do
         default: :voip
       ],
       initial: [
-        spec: any()
+        spec: any(),
+        desrciption: """
+        Initial audio mixer configuration that will be produced on this output.
+
+        Example:
+        ```
+        %{
+          inputs: [
+            %{ input_id: "input_0" },
+            %{ input_id: "input_0", volume: 0.5 }
+          ]
+        }
+        ```
+
+        To change the scene after the registration you can send
+        `{ :lc_request, %{ type: "update_output", output_id: "output_0", audio: new_audio_config } }`
+
+        Format of this field is documented [here](https://compositor.live/docs/concept/component).
+        """
       ]
     ]
 
