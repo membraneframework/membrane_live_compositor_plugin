@@ -86,12 +86,11 @@ defmodule Membrane.LiveCompositor do
 
   alias Membrane.LiveCompositor.{
     Context,
+    Request,
     ServerRunner,
     State,
     StreamsHandler
   }
-
-  alias Membrane.LiveCompositor.Request
 
   @typedoc """
   Video encoder preset. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset)
@@ -126,7 +125,7 @@ defmodule Membrane.LiveCompositor do
 
   @typedoc """
   Raw request that will be translated to JSON format and
-  sent directlly to the LiveCompositor server.
+  sent directly to the LiveCompositor server.
 
   For example, sending this message to the LiveCompositor bin
   ```
@@ -163,32 +162,32 @@ defmodule Membrane.LiveCompositor do
   }
   ```
 
-  User of this plugin should only use:
+  Users of this plugin should only use:
   - `update_output` to configure output scene or audio mixer configurations.
-  - `register` to register renderers (reigstering inputs and outputs is already handled by the bin).
-  - `unregister` to unregister renderers, inputs or outputs. Note that bin is already handling
-  unregistering inputs andoutputs when pads are unlinkned, but if you want to schedule that event
-  to a specific timestamp (with `schedule_time_ms` field) you need to send it manulally.
+  - `register` to register renderers (registering inputs and outputs is already handled by the bin).
+  - `unregister` to unregister renderers, inputs or outputs. Note that the bin is already handling
+  the unregistering of inputs and outputs when pads are unlinked, but if you want to schedule that event
+  for a specific timestamp (with the `schedule_time_ms` field) you need to send it manually.
 
   API reference can be found [here](https://compositor.live/docs/category/api-reference).
   """
   @type lc_request() :: map()
 
   @typedoc """
-  LiveCompositor request response. This message will be sent to the parrent process in response
+  LiveCompositor's response. This message will be sent to the parent process in response
   to the `{:lc_request, request}` where request is of type `t:lc_request/0`.
   """
   @type lc_request_response :: {:lc_request_response, lc_request(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification sent to the parent after input is sucesfully registered and TCP connection between
-  pipeline and LiveCompositor server is succesfully established.
+  Notification sent to the parent after input is successfully registered and TCP connection between
+  pipeline and LiveCompositor server is successfully established.
   """
   @type input_registered_msg :: {:input_registered, Pad.ref(), Context.t()}
 
   @typedoc """
-  Notification sent to the parent after output is sucesfully registered and TCP connection between
-  pipeline and LiveCompositor server is succesfully established.
+  Notification sent to the parent after output is successfully registered and TCP connection between
+  pipeline and LiveCompositor server is successfully established.
   """
   @type output_registered_msg :: {:output_registered, Pad.ref(), Context.t()}
 
@@ -198,7 +197,7 @@ defmodule Membrane.LiveCompositor do
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
 
   @typedoc """
-  Supported output sample rates
+  Supported output sample rates.
   """
   @type output_sample_rate :: 8_000 | 12_000 | 16_000 | 24_000 | 48_000
 
@@ -232,7 +231,7 @@ defmodule Membrane.LiveCompositor do
                 spec: :real_time_auto_init | :real_time | :ahead_of_time,
                 description: """
                 Specifies LiveCompositor mode for composing frames:
-                - `:real_time` - Frames are produced in a rate dictaed by real time clock. Parrent
+                - `:real_time` - Frames are produced in a rate dictated by real time clock. Parent
                 process has to sent `:start_composing` message to start.
                 - `:real_time_auto_init` - The same as `:real_time`, but pipeline starts
                 automatically and sending `:start_composing` message is not necessary.
@@ -262,7 +261,7 @@ defmodule Membrane.LiveCompositor do
                 spec: list(lc_request()),
                 description: """
                 Request that will send on startup to the LC server. It's main use case is to
-                register renderers that will be needed in the scene from the very begining.
+                register renderers that will be needed in the scene from the very beginning.
 
                 Example:
                 ```
@@ -295,7 +294,7 @@ defmodule Membrane.LiveCompositor do
         spec: Membrane.Time.t() | nil,
         default: nil,
         description: """
-        Optonal offset used for stream synchronization. This value represents how PTS values of the
+        An optional offset used for stream synchronization. This value represents how PTS values of the
         stream are shifted relative to the start request. If not defined streams are synchronized
         based on the delivery times of initial frames.
         """
@@ -335,7 +334,7 @@ defmodule Membrane.LiveCompositor do
         spec: Membrane.Time.t() | nil,
         default: nil,
         description: """
-        Optonal offset used for stream synchronization. This value represents how PTS values of the
+        An optional offset used for stream synchronization. This value represents how PTS values of the
         stream are shifted relative to the start request. If not defined streams are synchronized
         based on the delivery times of initial frames.
         """
@@ -422,7 +421,7 @@ defmodule Membrane.LiveCompositor do
       ],
       initial: [
         spec: any(),
-        desrciption: """
+        description: """
         Initial audio mixer configuration that will be produced on this output.
 
         Example:
@@ -576,8 +575,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
-      when input_type == :audio_input or
-             input_type == :video_input do
+      when input_type in [:audio_input, :video_input] do
     {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
     state = %State{state | context: Context.remove_input(pad_id, state.context)}
     {[remove_children: input_group_id(pad_id)], state}

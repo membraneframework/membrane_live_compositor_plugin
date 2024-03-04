@@ -122,7 +122,7 @@ defmodule DynamicOutputsPipeline do
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
       |> child({:realtimer, input_id}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:video_input, input_id), options: [])
+      |> via_in(Pad.ref(:video_input, input_id))
       |> get_child(:video_compositor)
 
     {[spec: spec], state}

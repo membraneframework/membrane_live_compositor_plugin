@@ -28,7 +28,7 @@ defmodule LayoutWithShaderPipeline do
         generate_best_effort_timestamps: %{framerate: {30, 1}}
       })
       |> child({:realtimer, 0}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:video_input, "video_input_0"), options: [])
+      |> via_in(Pad.ref(:video_input, "video_input_0"))
       |> child(:video_compositor, %Membrane.LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup,
@@ -148,7 +148,7 @@ defmodule LayoutWithShaderPipeline do
         generate_best_effort_timestamps?: true
       })
       |> child({:realtimer_audio, id}, Membrane.Realtimer)
-      |> via_in(Pad.ref(:audio_input, "audio_input_#{id}"), options: [channels: :stereo])
+      |> via_in(Pad.ref(:audio_input, "audio_input_#{id}"))
       |> get_child(:video_compositor)
 
     {[spec: spec], state}
@@ -175,9 +175,7 @@ defmodule LayoutWithShaderPipeline do
           generate_best_effort_timestamps: %{framerate: {30, 1}}
         })
         |> child({:realtimer, videos_count}, Membrane.Realtimer)
-        |> via_in(Pad.ref(:video_input, "video_input_#{videos_count}"),
-          options: []
-        )
+        |> via_in(Pad.ref(:video_input, "video_input_#{videos_count}"))
         |> get_child(:video_compositor),
         child({:audio_src, videos_count}, %Membrane.File.Source{location: state.audio_sample_path})
         |> child({:audio_demuxer, videos_count}, Membrane.Ogg.Demuxer)
