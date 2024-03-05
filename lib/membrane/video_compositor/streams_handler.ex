@@ -1,65 +1,140 @@
-defmodule Membrane.VideoCompositor.StreamsHandler do
+defmodule Membrane.LiveCompositor.StreamsHandler do
   @moduledoc false
 
-  alias Membrane.VideoCompositor
-  alias Membrane.VideoCompositor.{OutputOptions, Request, State}
+  alias Membrane.LiveCompositor.{Request, State}
 
-  @spec register_input_stream(VideoCompositor.input_id(), State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  def register_input_stream(input_id, state) do
-    try_register = fn input_port ->
-      Request.register_input_stream(input_id, input_port, state.vc_port)
-    end
-
-    pick_port(try_register, state)
-  end
-
-  @spec register_output_stream(OutputOptions.t(), Membrane.VideoCompositor.State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  def register_output_stream(output_opt, state) do
-    try_register = fn output_port ->
-      Request.register_output_stream(
-        output_opt,
-        output_port,
-        state.vc_port
-      )
-    end
-
-    pick_port(try_register, state)
-  end
-
-  @spec pick_port((:inet.port_number() -> Request.request_result()), State.t()) ::
-          {:ok, :inet.port_number()} | :error
-  defp pick_port(try_register, state) do
-    {port_lower_bound, port_upper_bound} = state.port_range
-    used_ports = state |> State.used_ports() |> MapSet.new()
-
-    port_lower_bound..port_upper_bound
-    |> Enum.shuffle()
-    |> Enum.reduce_while(:error, fn port, _acc -> try_port(try_register, port, used_ports) end)
-  end
-
-  @spec try_port(
-          (:inet.port_number() -> Request.request_result()),
-          :inet.port_number(),
-          MapSet.t()
-        ) ::
-          {:halt, {:ok, :inet.port_number()}} | {:cont, :error}
-  defp try_port(try_register, port, used_ports) do
-    # FFmpeg reserves additional ports for RTP streams.
-    if [port - 1, port, port] |> Enum.any?(fn port -> MapSet.member?(used_ports, port) end) do
-      {:cont, :error}
-    else
-      case try_register.(port) do
-        {:ok, _resp} ->
-          {:halt, {:ok, port}}
-
-        {:error_response_code, _resp} ->
-          {:cont, :error}
-
-        _other ->
-          raise "Register input failed"
+  @spec register_video_input_stream(String.t(), map(), State.t()) ::
+          {:ok, :inet.port_number()} | {:error, any()}
+  def register_video_input_stream(pad_id, input_pad_opts, state) do
+    port =
+      case input_pad_opts.port do
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
       end
+
+    response =
+      %{
+        type: :register,
+        entity_type: :rtp_input_stream,
+        input_id: pad_id,
+        transport_protocol: :tcp_server,
+        port: port,
+        video: %{
+          codec: :h264
+        },
+        required: input_pad_opts.required,
+        offset_ms:
+          case input_pad_opts.offset do
+            nil -> nil
+            offset -> Membrane.Time.as_milliseconds(offset, :round)
+          end
+      }
+      |> Request.send_request(state.lc_port)
+
+    case response do
+      {:ok, response} -> {:ok, response.body["port"]}
+      {:error_response_code, err} -> {:error, err}
+      {:error, err} -> {:error, err}
+    end
+  end
+
+  @spec register_audio_input_stream(String.t(), map(), State.t()) ::
+          {:ok, :inet.port_number()} | {:error, any()}
+  def register_audio_input_stream(pad_id, input_pad_opts, state) do
+    port =
+      case input_pad_opts.port do
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
+      end
+
+    response =
+      %{
+        type: :register,
+        entity_type: :rtp_input_stream,
+        input_id: pad_id,
+        transport_protocol: :tcp_server,
+        port: port,
+        audio: %{
+          codec: :opus
+        },
+        required: input_pad_opts.required,
+        offset_ms:
+          case input_pad_opts.offset do
+            nil -> nil
+            offset -> Membrane.Time.as_milliseconds(offset, :round)
+          end
+      }
+      |> Request.send_request(state.lc_port)
+
+    case response do
+      {:ok, response} -> {:ok, response.body["port"]}
+      {:error_response_code, err} -> {:error, err}
+      {:error, err} -> {:error, err}
+    end
+  end
+
+  @spec register_video_output_stream(String.t(), map(), State.t()) ::
+          {:ok, :inet.port_number()} | {:error, any()}
+  def register_video_output_stream(pad_id, output_pad_opts, state) do
+    requested_port =
+      case output_pad_opts.port do
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
+      end
+
+    result =
+      %{
+        type: :register,
+        entity_type: :output_stream,
+        output_id: pad_id,
+        transport_protocol: :tcp_server,
+        port: requested_port,
+        video: %{
+          resolution: %{
+            width: output_pad_opts.width,
+            height: output_pad_opts.height
+          },
+          encoder_preset: output_pad_opts.encoder_preset,
+          initial: output_pad_opts.initial
+        }
+      }
+      |> Request.send_request(state.lc_port)
+
+    case result do
+      {:ok, response} -> {:ok, response.body["port"]}
+      {:error_response_code, err} -> {:error, err}
+      {:error, err} -> {:error, err}
+    end
+  end
+
+  @spec register_audio_output_stream(String.t(), map(), State.t()) ::
+          {:ok, :inet.port_number()} | {:error, any()}
+  def register_audio_output_stream(pad_id, output_pad_opts, state) do
+    requested_port =
+      case output_pad_opts.port do
+        {start, endd} -> "#{start}:#{endd}"
+        exact_port -> exact_port
+      end
+
+    result =
+      %{
+        type: :register,
+        entity_type: :output_stream,
+        output_id: pad_id,
+        transport_protocol: :tcp_server,
+        port: requested_port,
+        audio: %{
+          channels: output_pad_opts.channels,
+          encoder_preset: output_pad_opts.encoder_preset,
+          initial: output_pad_opts.initial
+        }
+      }
+      |> Request.send_request(state.lc_port)
+
+    case result do
+      {:ok, response} -> {:ok, response.body["port"]}
+      {:error_response_code, err} -> {:error, err}
+      {:error, err} -> {:error, err}
     end
   end
 end

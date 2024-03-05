@@ -1,4 +1,4 @@
-# Video Compositor binaries
+# Live Compositor binaries
 priv
 
 # Video samples
@@ -186,3 +186,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/c,vim,linux,macos,elixir,windows,visualstudiocode
+
+samples
