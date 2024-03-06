@@ -47,7 +47,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
     {port_lower_bound, port_upper_bound} =
       case port_or_port_range do
         {start, endd} -> {start, endd}
-        exact -> {exact, exact + 1}
+        exact -> {exact, exact}
       end
 
     port_lower_bound..port_upper_bound
