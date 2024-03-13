@@ -375,6 +375,21 @@ defmodule Membrane.LiveCompositor do
         spec: video_encoder_preset(),
         default: :fast
       ],
+      send_eos_when: [
+        spec: StreamsHandler.send_eos_condition(),
+        default: nil,
+        description: """
+        Condition for automatically finishing output stream in response to end of input streams.
+
+        - `{:any_of, input_ids}` - End the output stream if any of the inputs from the list finished
+        or if they don't exist.
+        - `{:all_of, input_ids}` - End the output stream if all of the inputs from the list finished
+        or if they don't exist.
+        - `:any_input` - End the output stream when any input stream finishes.
+        - `:all_inputs` - End the output stream when all of the input streams have finished. This
+        also includes a case where no inputs are were ever connected.
+        """
+      ],
       initial: [
         spec: any(),
         description: """
@@ -419,6 +434,21 @@ defmodule Membrane.LiveCompositor do
         spec: audio_encoder_preset(),
         default: :voip
       ],
+      send_eos_when: [
+        spec: StreamsHandler.send_eos_condition(),
+        default: nil,
+        description: """
+        Condition for automatically finishing output stream in response to end of input streams.
+
+        - `{:any_of, input_ids}` - End the output stream if any of the inputs from the list finished
+        or if they don't exist.
+        - `{:all_of, input_ids}` - End the output stream if all of the inputs from the list finished
+        or if they don't exist.
+        - `:any_input` - End the output stream when any input stream finishes.
+        - `:all_inputs` - End the output stream when all of the input streams have finished. This
+        also includes a case where no inputs are were ever connected.
+        """
+      ],
       initial: [
         spec: any(),
         description: """
@@ -448,9 +478,15 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_setup(_ctx, opt) do
+  def handle_setup(ctx, opt) do
     {:ok, lc_port, server_pid} =
       ServerRunner.ensure_server_started(opt)
+
+    Membrane.ResourceGuard.register(
+      ctx.resource_guard,
+      fn -> Process.exit(server_pid, :kill) end,
+      tag: :live_compositor_server
+    )
 
     if opt.composing_strategy == :real_time_auto_init do
       {:ok, _resp} = Request.start_composing(lc_port)
@@ -463,7 +499,6 @@ defmodule Membrane.LiveCompositor do
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
        lc_port: lc_port,
-       server_pid: server_pid,
        context: %Context{}
      }}
   end
@@ -574,10 +609,19 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
+  def handle_pad_removed(input_ref = Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
-    state = %State{state | context: Context.remove_input(pad_id, state.context)}
+    # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
+    if MapSet.member?(state.tcp_sink_eos, input_ref) do
+      {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+    end
+
+    state = %State{
+      state
+      | tcp_sink_eos: MapSet.delete(state.tcp_sink_eos, input_ref),
+        context: Context.remove_input(pad_id, state.context)
+    }
+
     {[remove_children: input_group_id(pad_id)], state}
   end
 
@@ -699,12 +743,26 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_terminate_request(_ctx, state) do
-    if state.server_pid do
-      Process.exit(state.server_pid, :kill)
-    end
+  def handle_element_end_of_stream(
+        {:tcp_sink, input_ref = Pad.ref(_pad_type, pad_id)},
+        _pad,
+        ctx,
+        state
+      ) do
+    state =
+      if Map.has_key?(ctx.pads, input_ref) do
+        %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
+      else
+        {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+        state
+      end
 
-    {[terminate: :normal], state}
+    {[], state}
+  end
+
+  @impl true
+  def handle_element_end_of_stream(_child, _pad, _ctx, state) do
+    {[], state}
   end
 
   @spec input_group_id(input_id()) :: String.t()
