@@ -1,15 +1,8 @@
 defmodule Membrane.LiveCompositor.StreamsHandler do
   @moduledoc false
 
+  alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.{Request, State}
-
-  @type input_id :: Membrane.LiveCompositor.input_id()
-  @type send_eos_condition ::
-          nil
-          | :any_input
-          | :all_inputs
-          | {:any_of, list(input_id())}
-          | {:all_of, list(input_id())}
 
   @spec register_video_input_stream(String.t(), map(), State.t()) ::
           {:ok, :inet.port_number()} | {:error, any()}
@@ -148,7 +141,7 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
     end
   end
 
-  @spec map_eos_cond(send_eos_condition()) :: any()
+  @spec map_eos_cond(LiveCompositor.send_eos_condition()) :: any()
   defp map_eos_cond(cond) do
     case cond do
       nil -> nil

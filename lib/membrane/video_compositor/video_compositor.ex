@@ -201,6 +201,13 @@ defmodule Membrane.LiveCompositor do
   """
   @type output_sample_rate :: 8_000 | 12_000 | 16_000 | 24_000 | 48_000
 
+  @type send_eos_condition ::
+          nil
+          | :any_input
+          | :all_inputs
+          | {:any_of, list(input_id())}
+          | {:all_of, list(input_id())}
+
   @local_host {127, 0, 0, 1}
 
   def_options framerate: [
@@ -376,7 +383,7 @@ defmodule Membrane.LiveCompositor do
         default: :fast
       ],
       send_eos_when: [
-        spec: StreamsHandler.send_eos_condition(),
+        spec: send_eos_condition(),
         default: nil,
         description: """
         Condition for automatically finishing output stream in response to end of input streams.
@@ -435,7 +442,7 @@ defmodule Membrane.LiveCompositor do
         default: :voip
       ],
       send_eos_when: [
-        spec: StreamsHandler.send_eos_condition(),
+        spec: send_eos_condition(),
         default: nil,
         description: """
         Condition for automatically finishing output stream in response to end of input streams.
