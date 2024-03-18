@@ -1,6 +1,7 @@
 defmodule Membrane.LiveCompositor.StreamsHandler do
   @moduledoc false
 
+  alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.{Request, State}
 
   @spec register_video_input_stream(String.t(), map(), State.t()) ::
@@ -90,6 +91,7 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
         transport_protocol: :tcp_server,
         port: requested_port,
         video: %{
+          send_eos_when: map_eos_cond(output_pad_opts.send_eos_when),
           resolution: %{
             width: output_pad_opts.width,
             height: output_pad_opts.height
@@ -124,6 +126,7 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
         transport_protocol: :tcp_server,
         port: requested_port,
         audio: %{
+          send_eos_when: map_eos_cond(output_pad_opts.send_eos_when),
           channels: output_pad_opts.channels,
           encoder_preset: output_pad_opts.encoder_preset,
           initial: output_pad_opts.initial
@@ -135,6 +138,17 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
       {:ok, response} -> {:ok, response.body["port"]}
       {:error_response_code, err} -> {:error, err}
       {:error, err} -> {:error, err}
+    end
+  end
+
+  @spec map_eos_cond(LiveCompositor.send_eos_condition()) :: any()
+  defp map_eos_cond(cond) do
+    case cond do
+      nil -> nil
+      :any_input -> %{any_input: true}
+      :all_inputs -> %{all_inputs: true}
+      {:any_of, input_ids} -> %{any_of: input_ids}
+      {:all_of, input_ids} -> %{all_of: input_ids}
     end
   end
 end
