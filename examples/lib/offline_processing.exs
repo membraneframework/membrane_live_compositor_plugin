@@ -175,13 +175,12 @@ defmodule OfflineProcessing do
             |> via_in(Pad.ref(:audio_input, "audio_input_0"),
               options: [
                 offset: Membrane.Time.seconds(5),
-                required: true,
+                required: true
               ]
             )
             |> get_child(:video_compositor)
         end
       end)
-
 
     {[spec: spec], state}
   end
