@@ -74,7 +74,7 @@ defmodule DynamicOutputsPipeline do
           %{
             type: :update_output,
             output_id: output_id,
-            video: scene(lc_ctx, output_id),
+            video: scene(lc_ctx, output_id)
           }
         }
 
@@ -164,7 +164,9 @@ defmodule DynamicOutputsPipeline do
       },
       children:
         ctx.video_inputs
-          |> Enum.map(fn input_id -> %{type: :input_stream, input_id: input_id, id: "#{output_id}_#{input_id}"} end)
+        |> Enum.map(fn input_id ->
+          %{type: :input_stream, input_id: input_id, id: "#{output_id}_#{input_id}"}
+        end)
     }
   end
 
