@@ -84,6 +84,8 @@ defmodule Membrane.LiveCompositor do
 
   alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
+  alias Membrane.LiveCompositor
+
   alias Membrane.LiveCompositor.{
     Context,
     Request,
@@ -489,6 +491,11 @@ defmodule Membrane.LiveCompositor do
     {:ok, lc_port, server_pid} =
       ServerRunner.ensure_server_started(opt)
 
+    Membrane.UtilitySupervisor.start_link_child(
+      ctx.utility_supervisor,
+      {LiveCompositor.EventHandler, {lc_port, self()}}
+    )
+
     Membrane.ResourceGuard.register(
       ctx.resource_guard,
       fn -> Process.exit(server_pid, :kill) end,
@@ -501,7 +508,7 @@ defmodule Membrane.LiveCompositor do
 
     opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
 
-    {[],
+    {[setup: :incomplete],
      %State{
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
@@ -740,6 +747,16 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
+  end
+
+  @impl true
+  def handle_info(:websocket_connected, _ctx, state) do
+    {[setup: :complete], state}
+  end
+
+  @impl true
+  def handle_info({:websocket_message, {event_type, event_data}}, _ctx, state) do
+    {[notify_parent: {event_type, event_data, state.context}], state}
   end
 
   @impl true
