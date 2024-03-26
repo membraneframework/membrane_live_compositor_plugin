@@ -35,6 +35,11 @@ defmodule Membrane.LiveCompositor.EventHandler do
     {:ok, state}
   end
 
+  @impl true
+  def handle_cast(_message, state) do
+    {:ok, state}
+  end
+
   @spec msg_to_event(any()) :: any()
   defp msg_to_event(msg) do
     case msg do
