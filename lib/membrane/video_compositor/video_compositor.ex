@@ -84,10 +84,9 @@ defmodule Membrane.LiveCompositor do
 
   alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
-  alias Membrane.LiveCompositor
-
   alias Membrane.LiveCompositor.{
     Context,
+    EventHandler,
     Request,
     ServerRunner,
     State,
@@ -501,7 +500,7 @@ defmodule Membrane.LiveCompositor do
 
     Membrane.UtilitySupervisor.start_link_child(
       ctx.utility_supervisor,
-      {LiveCompositor.EventHandler, {lc_port, self()}}
+      {EventHandler, {lc_port, self()}}
     )
 
     {[setup: :incomplete],
