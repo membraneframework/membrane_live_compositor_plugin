@@ -187,12 +187,28 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {msg_type, Pad.ref(pad_type, pad_id), ctx},
+        {:input_delivered, Pad.ref(pad_type, pad_id), ctx},
         :video_compositor,
         _membrane_ctx,
         state
-      )
-      when msg_type == :output_registered or msg_type == :input_registered do
+      ) do
+    state = %{state | registered_compositor_streams: state.registered_compositor_streams + 1}
+
+    if state.registered_compositor_streams == 4 do
+      # send start when all inputs are connected
+      {[notify_child: {:video_compositor, :start_composing}], state}
+    else
+      {[], state}
+    end
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:output_registered, Pad.ref(pad_type, pad_id), ctx},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
     state = %{state | registered_compositor_streams: state.registered_compositor_streams + 1}
 
     if state.registered_compositor_streams == 4 do

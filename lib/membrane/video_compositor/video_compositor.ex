@@ -86,6 +86,7 @@ defmodule Membrane.LiveCompositor do
 
   alias Membrane.LiveCompositor.{
     Context,
+    EventHandler,
     Request,
     ServerRunner,
     State,
@@ -495,16 +496,18 @@ defmodule Membrane.LiveCompositor do
       tag: :live_compositor_server
     )
 
-    if opt.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = Request.start_composing(lc_port)
-    end
-
     opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
 
-    {[],
+    Membrane.UtilitySupervisor.start_link_child(
+      ctx.utility_supervisor,
+      {EventHandler, {lc_port, self()}}
+    )
+
+    {[setup: :incomplete],
      %State{
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
+       composing_strategy: opt.composing_strategy,
        lc_port: lc_port,
        context: %Context{}
      }}
@@ -740,6 +743,20 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
+  end
+
+  @impl true
+  def handle_info(:websocket_connected, _ctx, state) do
+    if state.composing_strategy == :real_time_auto_init do
+      {:ok, _resp} = Request.start_composing(state.lc_port)
+    end
+
+    {[setup: :complete], state}
+  end
+
+  @impl true
+  def handle_info({:websocket_message, {event_type, event_data}}, _ctx, state) do
+    {[notify_parent: {event_type, event_data, state.context}], state}
   end
 
   @impl true
