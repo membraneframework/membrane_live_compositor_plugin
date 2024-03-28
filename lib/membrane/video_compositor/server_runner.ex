@@ -24,7 +24,19 @@ defmodule Membrane.LiveCompositor.ServerRunner do
 
     case opt.server_setup do
       :start_locally ->
-        path = Mix.Tasks.Compile.DownloadCompositor.lc_app_path()
+        path =
+          case Mix.Tasks.Compile.DownloadCompositor.lc_app_path() do
+            {:ok, path} ->
+              path
+
+            :error ->
+              raise """
+              Live Compositor prebuilds are not available for this platform. Start LiveCompositor bin
+              with "server_setup: {:start_locally, compositor_binary_path}" to provide your own
+              executable.
+              """
+          end
+
         {:ok, lc_port, server_pid} = start_server(path, opt.api_port, env, instance_id)
         {:ok, lc_port, server_pid}
 
@@ -57,6 +69,10 @@ defmodule Membrane.LiveCompositor.ServerRunner do
         exact -> {exact, exact}
       end
 
+    unless File.exists?(bin_path) do
+      raise "Live Compositor binary is not available under search path: \"#{bin_path}\"."
+    end
+
     port_lower_bound..port_upper_bound
     |> Enum.shuffle()
     |> Enum.reduce_while(
@@ -78,10 +94,6 @@ defmodule Membrane.LiveCompositor.ServerRunner do
 
   @spec start_on_port(:inet.port_number(), map(), String.t(), String.t()) :: {:ok, pid()} | :error
   defp start_on_port(lc_port, env, bin_path, instance_id) do
-    unless File.exists?(bin_path) do
-      raise "Live Compositor binary is not available under search path: \"#{bin_path}\"."
-    end
-
     pid =
       spawn(fn ->
         bin_path
