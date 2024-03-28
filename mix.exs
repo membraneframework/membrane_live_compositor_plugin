@@ -47,14 +47,15 @@ defmodule Membrane.LiveCompositor.Mixfile do
       ## RTP
       {:membrane_rtp_plugin, "~> 0.27.0"},
       {:membrane_rtp_h264_plugin, "~> 0.19.0"},
-      {:membrane_udp_plugin, "~> 0.12.0"},
-      {:membrane_tcp_plugin, "~> 0.2.0"},
+      {:membrane_tcp_plugin, "~> 0.3.0"},
       {:membrane_opus_plugin, "~> 0.20.0"},
       {:membrane_rtp_opus_plugin, "~> 0.9.0"},
       # VC server start
       {:muontrap, "~> 1.0"},
-      # VC API requests
+      # VC API
       {:req, "~> 0.4.0"},
+      {:websockex, "~> 0.4.3"},
+      {:jason, "~> 1.4"},
       # Dev
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

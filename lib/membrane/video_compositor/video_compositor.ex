@@ -86,6 +86,7 @@ defmodule Membrane.LiveCompositor do
 
   alias Membrane.LiveCompositor.{
     Context,
+    EventHandler,
     Request,
     ServerRunner,
     State,
@@ -180,18 +181,6 @@ defmodule Membrane.LiveCompositor do
   @type lc_request_response :: {:lc_request_response, lc_request(), Req.Response.t(), Context.t()}
 
   @typedoc """
-  Notification sent to the parent after input is successfully registered and TCP connection between
-  pipeline and LiveCompositor server is successfully established.
-  """
-  @type input_registered_msg :: {:input_registered, Pad.ref(), Context.t()}
-
-  @typedoc """
-  Notification sent to the parent after output is successfully registered and TCP connection between
-  pipeline and LiveCompositor server is successfully established.
-  """
-  @type output_registered_msg :: {:output_registered, Pad.ref(), Context.t()}
-
-  @typedoc """
   Range of ports.
   """
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
@@ -200,6 +189,13 @@ defmodule Membrane.LiveCompositor do
   Supported output sample rates.
   """
   @type output_sample_rate :: 8_000 | 12_000 | 16_000 | 24_000 | 48_000
+
+  @type send_eos_condition ::
+          nil
+          | :any_input
+          | :all_inputs
+          | {:any_of, list(input_id())}
+          | {:all_of, list(input_id())}
 
   @local_host {127, 0, 0, 1}
 
@@ -228,17 +224,21 @@ defmodule Membrane.LiveCompositor do
                 default: Membrane.Time.seconds(2)
               ],
               composing_strategy: [
-                spec: :real_time_auto_init | :real_time | :ahead_of_time,
+                spec: :real_time_auto_init | :real_time | :offline_processing,
                 description: """
                 Specifies LiveCompositor mode for composing frames:
                 - `:real_time` - Frames are produced at a rate dictated by real time clock. The parent
                 process has to send `:start_composing` message to start.
                 - `:real_time_auto_init` - The same as `:real_time`, but the pipeline starts
                 automatically and sending `:start_composing` message is not necessary.
-                - `:ahead_of_time` - Output streams will be produced faster than in real time
-                if input streams are ready. When using this option, make sure to register the output
-                stream before starting; otherwise, the compositor will run in a busy loop processing
-                data far into the future.
+                - `:offline_processing`
+                  - Output streams will be produced faster than in real time if input streams are
+                  ready.
+                  - Never drop output frames, even if the encoder or rendering process is not able to
+                  process data in real time.
+
+                    When using this option, make sure to register the output stream before starting;
+                    otherwise, the compositor will run in a busy loop processing data far into the future.
                 """,
                 default: :real_time_auto_init
               ],
@@ -375,6 +375,28 @@ defmodule Membrane.LiveCompositor do
         spec: video_encoder_preset(),
         default: :fast
       ],
+      ffmpeg_options: [
+        spec: %{(String.t() | atom()) => String.t()} | nil,
+        default: nil,
+        description: """
+        Raw FFmpeg encoder options. See [docs](https://ffmpeg.org/ffmpeg-codecs.html) for more.
+        """
+      ],
+      send_eos_when: [
+        spec: send_eos_condition(),
+        default: nil,
+        description: """
+        Condition for automatically finishing output stream in response to end of input streams.
+
+        - `{:any_of, input_ids}` - End the output stream if any of the inputs from the list finished
+        or if they don't exist.
+        - `{:all_of, input_ids}` - End the output stream if all of the inputs from the list finished
+        or if they don't exist.
+        - `:any_input` - End the output stream when any input stream finishes.
+        - `:all_inputs` - End the output stream when all of the input streams have finished. This
+        also includes a case where no inputs are were ever connected.
+        """
+      ],
       initial: [
         spec: any(),
         description: """
@@ -419,6 +441,21 @@ defmodule Membrane.LiveCompositor do
         spec: audio_encoder_preset(),
         default: :voip
       ],
+      send_eos_when: [
+        spec: send_eos_condition(),
+        default: nil,
+        description: """
+        Condition for automatically finishing output stream in response to end of input streams.
+
+        - `{:any_of, input_ids}` - End the output stream if any of the inputs from the list finished
+        or if they don't exist.
+        - `{:all_of, input_ids}` - End the output stream if all of the inputs from the list finished
+        or if they don't exist.
+        - `:any_input` - End the output stream when any input stream finishes.
+        - `:all_inputs` - End the output stream when all of the input streams have finished. This
+        also includes a case where no inputs are were ever connected.
+        """
+      ],
       initial: [
         spec: any(),
         description: """
@@ -448,22 +485,29 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_setup(_ctx, opt) do
+  def handle_setup(ctx, opt) do
     {:ok, lc_port, server_pid} =
       ServerRunner.ensure_server_started(opt)
 
-    if opt.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = Request.start_composing(lc_port)
-    end
+    Membrane.ResourceGuard.register(
+      ctx.resource_guard,
+      fn -> Process.exit(server_pid, :kill) end,
+      tag: :live_compositor_server
+    )
 
     opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
 
-    {[],
+    Membrane.UtilitySupervisor.start_link_child(
+      ctx.utility_supervisor,
+      {EventHandler, {lc_port, self()}}
+    )
+
+    {[setup: :incomplete],
      %State{
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
+       composing_strategy: opt.composing_strategy,
        lc_port: lc_port,
-       server_pid: server_pid,
        context: %Context{}
      }}
   end
@@ -574,10 +618,19 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
+  def handle_pad_removed(input_ref = Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
-    state = %State{state | context: Context.remove_input(pad_id, state.context)}
+    # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
+    if MapSet.member?(state.tcp_sink_eos, input_ref) do
+      {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+    end
+
+    state = %State{
+      state
+      | tcp_sink_eos: MapSet.delete(state.tcp_sink_eos, input_ref),
+        context: Context.remove_input(pad_id, state.context)
+    }
+
     {[remove_children: input_group_id(pad_id)], state}
   end
 
@@ -692,6 +745,20 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
+  def handle_info(:websocket_connected, _ctx, state) do
+    if state.composing_strategy == :real_time_auto_init do
+      {:ok, _resp} = Request.start_composing(state.lc_port)
+    end
+
+    {[setup: :complete], state}
+  end
+
+  @impl true
+  def handle_info({:websocket_message, {event_type, event_data}}, _ctx, state) do
+    {[notify_parent: {event_type, event_data, state.context}], state}
+  end
+
+  @impl true
   def handle_info(msg, _ctx, state) do
     Membrane.Logger.debug("Unknown msg received: #{inspect(msg)}")
 
@@ -699,12 +766,26 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_terminate_request(_ctx, state) do
-    if state.server_pid do
-      Process.exit(state.server_pid, :kill)
-    end
+  def handle_element_end_of_stream(
+        {:tcp_sink, input_ref = Pad.ref(_pad_type, pad_id)},
+        _pad,
+        ctx,
+        state
+      ) do
+    state =
+      if Map.has_key?(ctx.pads, input_ref) do
+        %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
+      else
+        {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+        state
+      end
 
-    {[terminate: :normal], state}
+    {[], state}
+  end
+
+  @impl true
+  def handle_element_end_of_stream(_child, _pad, _ctx, state) do
+    {[], state}
   end
 
   @spec input_group_id(input_id()) :: String.t()

@@ -23,7 +23,7 @@ defmodule OfflineProcessing do
       child(:video_compositor, %LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup,
-        composing_strategy: :ahead_of_time,
+        composing_strategy: :offline_processing,
         init_requests: [
           register_shader_request_body()
         ]
@@ -33,6 +33,7 @@ defmodule OfflineProcessing do
           encoder_preset: :ultrafast,
           width: @output_width,
           height: @output_height,
+          send_eos_when: :all_inputs,
           initial:
             scene([
               %{type: :input_stream, input_id: "video_input_0", id: "child_0"}
@@ -49,6 +50,7 @@ defmodule OfflineProcessing do
       |> via_out(Pad.ref(:audio_output, @audio_output_id),
         options: [
           channels: :stereo,
+          send_eos_when: :all_inputs,
           initial: %{
             inputs: [
               %{input_id: "audio_input_0", volume: 0.2}
@@ -65,26 +67,6 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_setup(_ctx, state) do
-    schedule_unregister_output = {
-      :lc_request,
-      %{
-        type: :unregister,
-        entity_type: :output_stream,
-        output_id: @video_output_id,
-        schedule_time_ms: 60_000
-      }
-    }
-
-    schedule_unregister_audio_output = {
-      :lc_request,
-      %{
-        type: :unregister,
-        entity_type: :output_stream,
-        output_id: @audio_output_id,
-        schedule_time_ms: 60_000
-      }
-    }
-
     schedule_scene_update_1 = {
       :lc_request,
       %{
@@ -129,8 +111,6 @@ defmodule OfflineProcessing do
     }
 
     {[
-       notify_child: {:video_compositor, schedule_unregister_output},
-       notify_child: {:video_compositor, schedule_unregister_audio_output},
        notify_child: {:video_compositor, schedule_scene_update_1},
        notify_child: {:video_compositor, schedule_scene_update_2},
        notify_child: {:video_compositor, schedule_audio_update}
@@ -195,7 +175,7 @@ defmodule OfflineProcessing do
             |> via_in(Pad.ref(:audio_input, "audio_input_0"),
               options: [
                 offset: Membrane.Time.seconds(5),
-                required: true,
+                required: true
               ]
             )
             |> get_child(:video_compositor)
@@ -207,12 +187,28 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {msg_type, Pad.ref(pad_type, pad_id), ctx},
+        {:input_delivered, Pad.ref(pad_type, pad_id), ctx},
         :video_compositor,
         _membrane_ctx,
         state
-      )
-      when msg_type == :output_registered or msg_type == :input_registered do
+      ) do
+    state = %{state | registered_compositor_streams: state.registered_compositor_streams + 1}
+
+    if state.registered_compositor_streams == 4 do
+      # send start when all inputs are connected
+      {[notify_child: {:video_compositor, :start_composing}], state}
+    else
+      {[], state}
+    end
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:output_registered, Pad.ref(pad_type, pad_id), ctx},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
     state = %{state | registered_compositor_streams: state.registered_compositor_streams + 1}
 
     if state.registered_compositor_streams == 4 do
@@ -258,7 +254,7 @@ defmodule OfflineProcessing do
   end
 
   @impl true
-  def handle_element_end_of_stream(_element, _pad_ref, _context, state) do
+  def handle_element_end_of_stream(element, pad_ref, _context, state) do
     {[], state}
   end
 
