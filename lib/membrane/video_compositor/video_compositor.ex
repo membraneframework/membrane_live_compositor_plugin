@@ -384,7 +384,7 @@ defmodule Membrane.LiveCompositor do
         default: :fast
       ],
       ffmpeg_options: [
-        spec: map() | nil,
+        spec: %{(String.t() | atom()) => String.t()} | nil,
         default: nil,
         description: """
         Raw FFmpeg encoder options. See [docs](https://ffmpeg.org/ffmpeg-codecs.html) for more.
