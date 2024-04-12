@@ -6,6 +6,7 @@ defmodule OfflineProcessing do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.Action
 
   @video_output_id "video_output_1"
   @audio_output_id "audio_output_1"
@@ -30,14 +31,18 @@ defmodule OfflineProcessing do
       })
       |> via_out(Pad.ref(:video_output, @video_output_id),
         options: [
-          encoder_preset: :ultrafast,
+          encoder: %LiveCompositor.Encoder.FFmpegH264{
+            preset: :ultrafast
+          },
           width: @output_width,
           height: @output_height,
           send_eos_when: :all_inputs,
-          initial:
-            scene([
-              %{type: :input_stream, input_id: "video_input_0", id: "child_0"}
-            ])
+          initial: %{
+            root:
+              scene([
+                %{type: :input_stream, input_id: "video_input_0", id: "child_0"}
+              ])
+          }
         ]
       )
       |> child(:output_parser, %Membrane.H264.Parser{
@@ -49,7 +54,9 @@ defmodule OfflineProcessing do
       get_child(:video_compositor)
       |> via_out(Pad.ref(:audio_output, @audio_output_id),
         options: [
-          channels: :stereo,
+          encoder: %LiveCompositor.Encoder.Opus{
+            channels: :stereo
+          },
           send_eos_when: :all_inputs,
           initial: %{
             inputs: [
@@ -67,47 +74,34 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_setup(_ctx, state) do
-    schedule_scene_update_1 = {
-      :lc_request,
-      %{
-        type: :update_output,
+    schedule_scene_update_1 =
+      %Action.UpdateVideoOutput{
         output_id: @video_output_id,
-        video:
+        root:
           scene([
             %{type: :input_stream, input_id: "video_input_0", id: "child_0"},
             %{type: :input_stream, input_id: "video_input_0", id: "child_2"}
           ]),
-        schedule_time_ms: 10_000
+        schedule_time: Membrane.Time.seconds(10)
       }
+
+    schedule_scene_update_2 = %Action.UpdateVideoOutput{
+      output_id: @video_output_id,
+      root:
+        scene([
+          %{type: :input_stream, input_id: "video_input_0", id: "child_0"},
+          %{type: :input_stream, input_id: "video_input_0", id: "child_1"},
+          %{type: :input_stream, input_id: "video_input_0", id: "child_2"}
+        ]),
+      schedule_time: Membrane.Time.seconds(20)
     }
 
-    schedule_scene_update_2 = {
-      :lc_request,
-      %{
-        type: :update_output,
-        output_id: @video_output_id,
-        video:
-          scene([
-            %{type: :input_stream, input_id: "video_input_0", id: "child_0"},
-            %{type: :input_stream, input_id: "video_input_0", id: "child_1"},
-            %{type: :input_stream, input_id: "video_input_0", id: "child_2"}
-          ]),
-        schedule_time_ms: 20_000
-      }
-    }
-
-    schedule_audio_update = {
-      :lc_request,
-      %{
-        type: :update_output,
-        output_id: @audio_output_id,
-        audio: %{
-          inputs: [
-            %{input_id: "audio_input_0"}
-          ]
-        },
-        schedule_time_ms: 30_000
-      }
+    schedule_audio_update = %Action.UpdateAudioOutput{
+      output_id: @audio_output_id,
+      inputs: [
+        %{input_id: "audio_input_0"}
+      ],
+      schedule_time: Membrane.Time.seconds(30)
     }
 
     {[
@@ -221,16 +215,30 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _lc_ctx},
-        _child,
+        {:action_result, action, {:ok, result}},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
+    Membrane.Logger.debug(
+      "LiveCompositor action succeeded\nAction: #{inspect(action)}\nResult: #{inspect(result)}"
+    )
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:action_result, action,
+         {:error, %Req.Response{status: response_code, body: response_body}}},
+        :video_compositor,
         _membrane_ctx,
         state
       ) do
     if response_code != 200 do
       raise """
-      Request failed.
-      Request: `#{inspect(req)}.
+      LiveCompositor action failed:
+      Action: `#{inspect(action)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """
@@ -285,9 +293,7 @@ defmodule OfflineProcessing do
   end
 
   defp register_shader_request_body() do
-    %{
-      type: :register,
-      entity_type: :shader,
+    %Action.RegisterShader{
       shader_id: @shader_id,
       source: File.read!(@shader_path)
     }

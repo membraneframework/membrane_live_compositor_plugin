@@ -9,7 +9,7 @@ defmodule DynamicOutputsPipeline do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.{Context, OutputOptions}
+  alias Membrane.LiveCompositor.{Action, Context, Encoder, OutputOptions}
 
   @output_width 1920
   @output_height 1080
@@ -69,14 +69,11 @@ defmodule DynamicOutputsPipeline do
     actions =
       lc_ctx.video_outputs
       |> Enum.map(fn output_id ->
-        request = {
-          :lc_request,
-          %{
-            type: :update_output,
+        request =
+          %Action.UpdateVideoOutput{
             output_id: output_id,
-            video: scene(lc_ctx, output_id)
+            root: scene(lc_ctx, output_id)
           }
-        }
 
         {:notify_child, {:video_compositor, request}}
       end)
@@ -86,16 +83,30 @@ defmodule DynamicOutputsPipeline do
 
   @impl true
   def handle_child_notification(
-        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _lc_ctx},
+        {:action_result, action, {:ok, result}},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
+    Membrane.Logger.debug(
+      "LiveCompositor action succeeded\nAction: #{inspect(action)}\nResult: #{inspect(result)}"
+    )
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:action_result, action,
+         {:error, %Req.Response{status: response_code, body: response_body}}},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
     if response_code != 200 do
       raise """
-      Request failed.
-      Request: `#{inspect(req)}.
+      LiveCompositor action failed:
+      Action: `#{inspect(action)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """
@@ -134,9 +145,14 @@ defmodule DynamicOutputsPipeline do
       get_child(:video_compositor)
       |> via_out(Pad.ref(:video_output, output_id),
         options: [
+          encoder: %Encoder.FFmpegH264{
+            preset: :ultrafast
+          },
           width: @output_width,
           height: @output_height,
-          initial: scene(state.lc_ctx, output_id)
+          initial: %{
+            root: scene(state.lc_ctx, output_id)
+          }
         ]
       )
       |> child({:output_parser, output_id}, Membrane.H264.Parser)

@@ -82,37 +82,21 @@ defmodule Membrane.LiveCompositor do
 
   require Membrane.Logger
 
+  alias Jason.Encoder
+
   alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
   alias Membrane.LiveCompositor.{
+    Action,
+    ApiClient,
+    ApiClient.IntoRequest,
     Context,
+    Encoder,
     EventHandler,
-    Request,
     ServerRunner,
     State,
     StreamsHandler
   }
-
-  @typedoc """
-  Video encoder preset. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset)
-  to learn more.
-  """
-  @type video_encoder_preset ::
-          :ultrafast
-          | :superfast
-          | :veryfast
-          | :faster
-          | :fast
-          | :medium
-          | :slow
-          | :slower
-          | :veryslow
-          | :placebo
-
-  @typedoc """
-  Audio encoder preset.
-  """
-  @type audio_encoder_preset :: :quality | :voip | :lowest_latency
 
   @typedoc """
   Input stream id, uniquely identifies an input pad.
@@ -371,16 +355,8 @@ defmodule Membrane.LiveCompositor do
       height: [
         spec: non_neg_integer()
       ],
-      encoder_preset: [
-        spec: video_encoder_preset(),
-        default: :fast
-      ],
-      ffmpeg_options: [
-        spec: %{(String.t() | atom()) => String.t()} | nil,
-        default: nil,
-        description: """
-        Raw FFmpeg encoder options. See [docs](https://ffmpeg.org/ffmpeg-codecs.html) for more.
-        """
+      encoder: [
+        spec: Encoder.FFmpegH264.t()
       ],
       send_eos_when: [
         spec: send_eos_condition(),
@@ -434,12 +410,8 @@ defmodule Membrane.LiveCompositor do
         """,
         default: {10_000, 60_000}
       ],
-      channels: [
-        spec: :stereo | :mono
-      ],
-      encoder_preset: [
-        spec: audio_encoder_preset(),
-        default: :voip
+      encoder: [
+        spec: Encoder.Opus.t()
       ],
       send_eos_when: [
         spec: send_eos_condition(),
@@ -495,7 +467,11 @@ defmodule Membrane.LiveCompositor do
       tag: :live_compositor_server
     )
 
-    opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
+    opt.init_requests
+    |> Enum.each(fn request ->
+      IntoRequest.into_request(request)
+      |> ApiClient.send_request(lc_port)
+    end)
 
     Membrane.UtilitySupervisor.start_link_child(
       ctx.utility_supervisor,
@@ -622,7 +598,10 @@ defmodule Membrane.LiveCompositor do
       when input_type in [:audio_input, :video_input] do
     # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
     if MapSet.member?(state.tcp_sink_eos, input_ref) do
-      {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+      {:ok, _resp} =
+        %Action.UnregisterInput{input_id: pad_id}
+        |> IntoRequest.into_request()
+        |> ApiClient.send_request(state.lc_port)
     end
 
     state = %State{
@@ -636,38 +615,46 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_pad_removed(Pad.ref(:video_output, pad_id), _ctx, state) do
-    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    {:ok, _resp} =
+      %Action.UnregisterOutput{output_id: pad_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(state.lc_port)
+
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
   end
 
   @impl true
   def handle_pad_removed(Pad.ref(:audio_output, pad_id), _ctx, state) do
-    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    {:ok, _resp} =
+      %Action.UnregisterOutput{output_id: pad_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(state.lc_port)
+
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
   end
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state) do
-    {:ok, _resp} = Request.start_composing(state.lc_port)
-    {[], state}
+    ApiClient.start_composing(state.lc_port) |> handle_action_result(:start_composing, state)
   end
 
   @impl true
-  def handle_parent_notification({:lc_request, request_body}, _ctx, state) do
-    case Request.send_request(request_body, state.lc_port) do
-      {res, response} when res == :ok or res == :error_response_code ->
-        response_msg = {:lc_request_response, request_body, response, state.context}
-        {[notify_parent: response_msg], state}
-
-      {:error, exception} ->
-        Membrane.Logger.error(
-          "LiveCompositor failed to send a request: #{request_body}.\nException: #{exception}."
-        )
-
-        {[], state}
-    end
+  def handle_parent_notification(req = %module{}, _ctx, state)
+      when module in [
+             Action.RegisterImage,
+             Action.RegisterShader,
+             Action.UnregisterImage,
+             Action.UnregisterShader,
+             Action.UnregisterInput,
+             Action.UnregisterOutput,
+             Action.UpdateVideoOutput,
+             Action.UpdateAudioOutput
+           ] do
+    IntoRequest.into_request(req)
+    |> ApiClient.send_request(state.lc_port)
+    |> handle_action_result(req, state)
   end
 
   @impl true
@@ -677,6 +664,20 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
+  end
+
+  defp handle_action_result(response, request, state) do
+    case response do
+      {:error, exception} ->
+        Membrane.Logger.error(
+          "LiveCompositor failed to send a request: #{inspect(request)}.\nException: #{inspect(exception)}."
+        )
+
+      {:ok, _result} ->
+        nil
+    end
+
+    {[notify_parent: {:action_result, request, response}], state}
   end
 
   @impl true
@@ -747,7 +748,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_info(:websocket_connected, _ctx, state) do
     if state.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = Request.start_composing(state.lc_port)
+      {:ok, _resp} = ApiClient.start_composing(state.lc_port)
     end
 
     {[setup: :complete], state}
@@ -776,7 +777,11 @@ defmodule Membrane.LiveCompositor do
       if Map.has_key?(ctx.pads, input_ref) do
         %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
       else
-        {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+        {:ok, _resp} =
+          %Action.UnregisterInput{input_id: pad_id}
+          |> IntoRequest.into_request()
+          |> ApiClient.send_request(state.lc_port)
+
         state
       end
 
