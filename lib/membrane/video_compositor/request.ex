@@ -1,11 +1,11 @@
-defmodule Membrane.LiveCompositor.Action do
+defmodule Membrane.LiveCompositor.Request do
   @moduledoc false
 
   alias Membrane.LiveCompositor.ApiClient
 
   defmodule RegisterImage do
     @moduledoc """
-    Action to register an image.
+    Request to register an image.
     """
 
     @typedoc """
@@ -31,22 +31,22 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: RegisterImage do
     @spec into_request(RegisterImage.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
-        asset_type: action.asset_type,
-        path: action.path,
-        url: action.url,
-        resolution: action.resolution
+        asset_type: request.asset_type,
+        path: request.path,
+        url: request.url,
+        resolution: request.resolution
       }
 
-      encoded_id = URI.encode_www_form(action.image_id)
+      encoded_id = URI.encode_www_form(request.image_id)
       {:post, "/api/image/#{encoded_id}/register", body}
     end
   end
 
   defmodule RegisterShader do
     @moduledoc """
-    Action to register a shader instance.
+    Request to register a shader instance.
     """
 
     @enforce_keys [:shader_id, :source]
@@ -65,19 +65,19 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: RegisterShader do
     @spec into_request(RegisterShader.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
-        source: action.source
+        source: request.source
       }
 
-      encoded_id = URI.encode_www_form(action.shader_id)
+      encoded_id = URI.encode_www_form(request.shader_id)
       {:post, "/api/shader/#{encoded_id}/register", body}
     end
   end
 
   defmodule UnregisterImage do
     @moduledoc """
-    Action to unregister an image.
+    Request to unregister an image.
     """
 
     @enforce_keys [:image_id]
@@ -90,15 +90,15 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UnregisterImage do
     @spec into_request(UnregisterImage.t()) :: ApiClient.request()
-    def into_request(action) do
-      encoded_id = URI.encode_www_form(action.image_id)
+    def into_request(request) do
+      encoded_id = URI.encode_www_form(request.image_id)
       {:post, "/api/image/#{encoded_id}/unregister", %{}}
     end
   end
 
   defmodule UnregisterShader do
     @moduledoc """
-    Action to unregister a shader instance.
+    Request to unregister a shader instance.
     """
 
     @enforce_keys [:shader_id]
@@ -111,15 +111,15 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UnregisterShader do
     @spec into_request(UnregisterShader.t()) :: ApiClient.request()
-    def into_request(action) do
-      encoded_id = URI.encode_www_form(action.shader_id)
+    def into_request(request) do
+      encoded_id = URI.encode_www_form(request.shader_id)
       {:post, "/api/shader/#{encoded_id}/unregister", %{}}
     end
   end
 
   defmodule UnregisterInput do
     @moduledoc """
-    Action to unregister an input stream. Unregister will happen automatically when you unlink the
+    Request to unregister an input stream. Unregister will happen automatically when you unlink the
     pads.
     """
 
@@ -136,23 +136,23 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UnregisterInput do
     @spec into_request(UnregisterInput.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
         schedule_time_ms:
-          case action.schedule_time do
+          case request.schedule_time do
             nil -> nil
             offset -> Membrane.Time.as_milliseconds(offset, :round)
           end
       }
 
-      encoded_id = URI.encode_www_form(action.input_id)
+      encoded_id = URI.encode_www_form(request.input_id)
       {:post, "/api/input/#{encoded_id}/unregister", body}
     end
   end
 
   defmodule UnregisterOutput do
     @moduledoc """
-    Action to unregister an output stream. Unregister will happen automatically when you unlink the
+    Request to unregister an output stream. Unregister will happen automatically when you unlink the
     pads.
     """
 
@@ -169,23 +169,23 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UnregisterOutput do
     @spec into_request(UnregisterOutput.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
         schedule_time_ms:
-          case action.schedule_time do
+          case request.schedule_time do
             nil -> nil
             offset -> Membrane.Time.as_milliseconds(offset, :round)
           end
       }
 
-      encoded_id = URI.encode_www_form(action.output_id)
+      encoded_id = URI.encode_www_form(request.output_id)
       {:post, "/api/output/#{encoded_id}/unregister", body}
     end
   end
 
   defmodule UpdateVideoOutput do
     @moduledoc """
-    Action to update the scene definition that describes what should be rendered on a specified output.
+    Request to update the scene definition that describes what should be rendered on a specified output.
     """
 
     alias Membrane.LiveCompositor
@@ -207,26 +207,26 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UpdateVideoOutput do
     @spec into_request(UpdateVideoOutput.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
         video: %{
-          root: action.root
+          root: request.root
         },
         schedule_time_ms:
-          case action.schedule_time do
+          case request.schedule_time do
             nil -> nil
             offset -> Membrane.Time.as_milliseconds(offset, :round)
           end
       }
 
-      encoded_id = URI.encode_www_form(action.output_id)
+      encoded_id = URI.encode_www_form(request.output_id)
       {:post, "/api/output/#{encoded_id}/update", body}
     end
   end
 
   defmodule UpdateAudioOutput do
     @moduledoc """
-    Action to update configuration of an audio output. You can define what inputs and volume should
+    Request to update configuration of an audio output. You can define what inputs and volume should
     be used to produce the output.
     """
 
@@ -250,17 +250,17 @@ defmodule Membrane.LiveCompositor.Action do
 
   defimpl ApiClient.IntoRequest, for: UpdateAudioOutput do
     @spec into_request(UpdateAudioOutput.t()) :: ApiClient.request()
-    def into_request(action) do
+    def into_request(request) do
       body = %{
-        audio: action.inputs,
+        audio: request.inputs,
         schedule_time_ms:
-          case action.schedule_time do
+          case request.schedule_time do
             nil -> nil
             offset -> Membrane.Time.as_milliseconds(offset, :round)
           end
       }
 
-      encoded_id = URI.encode_www_form(action.output_id)
+      encoded_id = URI.encode_www_form(request.output_id)
       {:post, "/api/output/#{encoded_id}/update", body}
     end
   end

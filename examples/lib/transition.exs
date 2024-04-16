@@ -6,7 +6,7 @@ defmodule TransitionPipeline do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.{Action, Context, Encoder, OutputOptions}
+  alias Membrane.LiveCompositor.{Context, Encoder, OutputOptions, Request}
 
   @output_width 1280
   @output_height 720
@@ -55,13 +55,13 @@ defmodule TransitionPipeline do
     request =
       case input_id do
         "input_0" ->
-          %Action.UpdateVideoOutput{
+          %Request.UpdateVideoOutput{
             output_id: @output_id,
             root: single_input_scene("input_0")
           }
 
         "input_1" ->
-          %Action.UpdateVideoOutput{
+          %Request.UpdateVideoOutput{
             output_id: @output_id,
             root: double_inputs_scene("input_0", "input_1")
           }
@@ -74,13 +74,13 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action, {:ok, result}},
+        {:request_result, request, {:ok, result}},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
     Membrane.Logger.debug(
-      "LiveCompositor action succeeded\nAction: #{inspect(action)}\nResult: #{inspect(result)}"
+      "LiveCompositor request succeeded\nRequest: #{inspect(request)}\nResult: #{inspect(result)}"
     )
 
     {[], state}
@@ -88,7 +88,7 @@ defmodule TransitionPipeline do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action,
+        {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
         :video_compositor,
         _membrane_ctx,
@@ -96,8 +96,8 @@ defmodule TransitionPipeline do
       ) do
     if response_code != 200 do
       raise """
-      LiveCompositor action failed:
-      Action: `#{inspect(action)}.
+      LiveCompositor request failed:
+      Request: `#{inspect(request)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """

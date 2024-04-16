@@ -6,7 +6,7 @@ defmodule OfflineProcessing do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.Action
+  alias Membrane.LiveCompositor.Request
 
   @video_output_id "video_output_1"
   @audio_output_id "audio_output_1"
@@ -75,7 +75,7 @@ defmodule OfflineProcessing do
   @impl true
   def handle_setup(_ctx, state) do
     schedule_scene_update_1 =
-      %Action.UpdateVideoOutput{
+      %Request.UpdateVideoOutput{
         output_id: @video_output_id,
         root:
           scene([
@@ -85,7 +85,7 @@ defmodule OfflineProcessing do
         schedule_time: Membrane.Time.seconds(10)
       }
 
-    schedule_scene_update_2 = %Action.UpdateVideoOutput{
+    schedule_scene_update_2 = %Request.UpdateVideoOutput{
       output_id: @video_output_id,
       root:
         scene([
@@ -96,7 +96,7 @@ defmodule OfflineProcessing do
       schedule_time: Membrane.Time.seconds(20)
     }
 
-    schedule_audio_update = %Action.UpdateAudioOutput{
+    schedule_audio_update = %Request.UpdateAudioOutput{
       output_id: @audio_output_id,
       inputs: [
         %{input_id: "audio_input_0"}
@@ -215,13 +215,13 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action, {:ok, result}},
+        {:request_result, request, {:ok, result}},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
     Membrane.Logger.debug(
-      "LiveCompositor action succeeded\nAction: #{inspect(action)}\nResult: #{inspect(result)}"
+      "LiveCompositor request succeeded\nRequest: #{inspect(request)}\nResult: #{inspect(result)}"
     )
 
     {[], state}
@@ -229,7 +229,7 @@ defmodule OfflineProcessing do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action,
+        {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
         :video_compositor,
         _membrane_ctx,
@@ -237,8 +237,8 @@ defmodule OfflineProcessing do
       ) do
     if response_code != 200 do
       raise """
-      LiveCompositor action failed:
-      Action: `#{inspect(action)}.
+      LiveCompositor request failed:
+      Request: #{inspect(request)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """
@@ -293,7 +293,7 @@ defmodule OfflineProcessing do
   end
 
   defp register_shader_request_body() do
-    %Action.RegisterShader{
+    %Request.RegisterShader{
       shader_id: @shader_id,
       source: File.read!(@shader_path)
     }

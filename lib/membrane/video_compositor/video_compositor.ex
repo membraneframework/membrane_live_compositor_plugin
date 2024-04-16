@@ -22,12 +22,12 @@ defmodule Membrane.LiveCompositor do
   - Define `initial` option on `:video_output` pad.
   - Send `{:lc_request, request}` from parent where `request` is of type`t:lc_request/0`.
 
-  For example, if have two input pads `Pad.ref(:video_input, "input_0")` and
+  For example, if you have two input pads `Pad.ref(:video_input, "input_0")` and
   `Pad.ref(:video_input, "input_1")` and a single output pad `Pad.ref(:video_output, "output_0")`,
-  sending such `update_output` request would result in receiving inputs merged in layout on output:
+  sending such message would result in receiving inputs merged in layout on output:
 
   ```
-  scene_update_request =  %{
+  scene_update_request =  %LiveCompositor.Request.UpdateVideoOutput {
     type: "update_output",
     output_id: "output_0"
     video: %{
@@ -87,12 +87,12 @@ defmodule Membrane.LiveCompositor do
   alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
   alias Membrane.LiveCompositor.{
-    Action,
     ApiClient,
     ApiClient.IntoRequest,
     Context,
     Encoder,
     EventHandler,
+    Request,
     ServerRunner,
     State,
     StreamsHandler
@@ -599,7 +599,7 @@ defmodule Membrane.LiveCompositor do
     # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
     if MapSet.member?(state.tcp_sink_eos, input_ref) do
       {:ok, _resp} =
-        %Action.UnregisterInput{input_id: pad_id}
+        %Request.UnregisterInput{input_id: pad_id}
         |> IntoRequest.into_request()
         |> ApiClient.send_request(state.lc_port)
     end
@@ -616,7 +616,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(:video_output, pad_id), _ctx, state) do
     {:ok, _resp} =
-      %Action.UnregisterOutput{output_id: pad_id}
+      %Request.UnregisterOutput{output_id: pad_id}
       |> IntoRequest.into_request()
       |> ApiClient.send_request(state.lc_port)
 
@@ -627,7 +627,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(:audio_output, pad_id), _ctx, state) do
     {:ok, _resp} =
-      %Action.UnregisterOutput{output_id: pad_id}
+      %Request.UnregisterOutput{output_id: pad_id}
       |> IntoRequest.into_request()
       |> ApiClient.send_request(state.lc_port)
 
@@ -637,24 +637,39 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state) do
-    ApiClient.start_composing(state.lc_port) |> handle_action_result(:start_composing, state)
+    {:ok, _response} =
+      ApiClient.start_composing(state.lc_port)
+
+    {[], state}
   end
 
   @impl true
   def handle_parent_notification(req = %module{}, _ctx, state)
       when module in [
-             Action.RegisterImage,
-             Action.RegisterShader,
-             Action.UnregisterImage,
-             Action.UnregisterShader,
-             Action.UnregisterInput,
-             Action.UnregisterOutput,
-             Action.UpdateVideoOutput,
-             Action.UpdateAudioOutput
+             Request.RegisterImage,
+             Request.RegisterShader,
+             Request.UnregisterImage,
+             Request.UnregisterShader,
+             Request.UnregisterInput,
+             Request.UnregisterOutput,
+             Request.UpdateVideoOutput,
+             Request.UpdateAudioOutput
            ] do
-    IntoRequest.into_request(req)
-    |> ApiClient.send_request(state.lc_port)
-    |> handle_action_result(req, state)
+    response =
+      IntoRequest.into_request(req)
+      |> ApiClient.send_request(state.lc_port)
+
+    case response do
+      {:error, exception} ->
+        Membrane.Logger.error(
+          "LiveCompositor failed to send a request: #{inspect(req)}.\nException: #{inspect(exception)}."
+        )
+
+      {:ok, _result} ->
+        nil
+    end
+
+    {[notify_parent: {:request_result, req, response}], state}
   end
 
   @impl true
@@ -664,20 +679,6 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
-  end
-
-  defp handle_action_result(response, request, state) do
-    case response do
-      {:error, exception} ->
-        Membrane.Logger.error(
-          "LiveCompositor failed to send a request: #{inspect(request)}.\nException: #{inspect(exception)}."
-        )
-
-      {:ok, _result} ->
-        nil
-    end
-
-    {[notify_parent: {:action_result, request, response}], state}
   end
 
   @impl true
@@ -778,7 +779,7 @@ defmodule Membrane.LiveCompositor do
         %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
       else
         {:ok, _resp} =
-          %Action.UnregisterInput{input_id: pad_id}
+          %Request.UnregisterInput{input_id: pad_id}
           |> IntoRequest.into_request()
           |> ApiClient.send_request(state.lc_port)
 

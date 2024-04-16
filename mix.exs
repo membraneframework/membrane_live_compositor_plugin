@@ -94,13 +94,13 @@ defmodule Membrane.LiveCompositor.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.LiveCompositor, Membrane.LiveCompositor.Action],
+      nest_modules_by_prefix: [Membrane.LiveCompositor, Membrane.LiveCompositor.Request],
       groups_for_modules: [
         Encoders: [
           ~r/^Membrane\.LiveCompositor\.Encoder($|\.)/
         ],
-        Actions: [
-          ~r/^Membrane\.LiveCompositor\.Action($|\.)/
+        Requests: [
+          ~r/^Membrane\.LiveCompositor\.Request($|\.)/
         ]
       ]
     ]

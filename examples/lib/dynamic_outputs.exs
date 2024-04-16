@@ -9,7 +9,7 @@ defmodule DynamicOutputsPipeline do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.{Action, Context, Encoder, OutputOptions}
+  alias Membrane.LiveCompositor.{Context, Encoder, OutputOptions, Request}
 
   @output_width 1920
   @output_height 1080
@@ -70,7 +70,7 @@ defmodule DynamicOutputsPipeline do
       lc_ctx.video_outputs
       |> Enum.map(fn output_id ->
         request =
-          %Action.UpdateVideoOutput{
+          %Request.UpdateVideoOutput{
             output_id: output_id,
             root: scene(lc_ctx, output_id)
           }
@@ -83,13 +83,13 @@ defmodule DynamicOutputsPipeline do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action, {:ok, result}},
+        {:request_result, request, {:ok, result}},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
     Membrane.Logger.debug(
-      "LiveCompositor action succeeded\nAction: #{inspect(action)}\nResult: #{inspect(result)}"
+      "LiveCompositor request succeeded\nRequest: #{inspect(request)}\nResult: #{inspect(result)}"
     )
 
     {[], state}
@@ -97,7 +97,7 @@ defmodule DynamicOutputsPipeline do
 
   @impl true
   def handle_child_notification(
-        {:action_result, action,
+        {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
         :video_compositor,
         _membrane_ctx,
@@ -105,8 +105,8 @@ defmodule DynamicOutputsPipeline do
       ) do
     if response_code != 200 do
       raise """
-      LiveCompositor action failed:
-      Action: `#{inspect(action)}.
+      LiveCompositor request failed:
+      Request: `#{inspect(request)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """
