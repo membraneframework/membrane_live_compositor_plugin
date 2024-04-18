@@ -16,26 +16,26 @@ defmodule Membrane.LiveCompositor.Lifecycle do
   ### Notifications
 
   `t:notification/0` defines notifications that will be sent to the parent process at the specific
-  moments of t stream lifecycle.
+  moments of the stream lifecycle.
   """
 
   alias Membrane.LiveCompositor.Context
   alias Membrane.Pad
 
   @typedoc """
-  The output pad was connected and the TCP connection was established between pipeline and
-  the LiveCompositor server.
+  The output pad was linked and the TCP connection was established between pipeline and
+  the compositor instance.
   """
   @type output_registered :: :output_registered
 
   @typedoc """
-  The input pad was connected and the TCP connection was established between pipeline and
-  the LiveCompositor server.
+  The input pad was linked and the TCP connection was established between pipeline and
+  the compositor instance.
   """
   @type input_registered :: :input_registered
 
   @typedoc """
-  The compositor instance received the input, and the first frames/samples of that input are
+  The compositor instance received the input. The first frames/samples of that input are
   ready to be used.
 
   For example, if you want to ensure that some inputs are ready before you send the
@@ -57,7 +57,8 @@ defmodule Membrane.LiveCompositor.Lifecycle do
   @type input_playing :: :input_playing
 
   @typedoc """
-  Input finished processing and it is safe to unlink pads.
+  Input finished processing. After this notification you can unregister without drooping any
+  frames/samples
   """
   @type input_eos :: :input_eos
 

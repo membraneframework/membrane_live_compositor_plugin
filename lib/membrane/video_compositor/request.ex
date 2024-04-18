@@ -1,5 +1,10 @@
 defmodule Membrane.LiveCompositor.Request do
-  @moduledoc false
+  @moduledoc """
+  Notifications that can be sent to LiveCompositor to trigger certain actions.
+
+  After request is handled (but not necessarily completed e.g. if you schedule some action) the bin will
+  respond with `t:result/0`.
+  """
 
   alias Membrane.LiveCompositor.ApiClient
 
@@ -194,13 +199,14 @@ defmodule Membrane.LiveCompositor.Request do
     defstruct @enforce_keys ++ [schedule_time: nil]
 
     @typedoc """
-    Root of a component tree/scene that should be rendered for the output. [Learn more](https://compositor.live/docs/concept/component)
+    - `:output_id` - Id of the output that should be updated.
+    - `:root` - Root of a component tree/scene that should be rendered for the output. [Learn more](https://compositor.live/docs/concept/component)
+    - `:schedule_time` - Schedule this update at a specific time. Time is measured from compositor
+    start. If not defined, update will be applied immediately.
     """
-    @type scene_root :: any()
-
     @type t :: %__MODULE__{
             output_id: LiveCompositor.output_id(),
-            root: scene_root(),
+            root: any(),
             schedule_time: Membrane.Time | nil
           }
   end
@@ -241,6 +247,12 @@ defmodule Membrane.LiveCompositor.Request do
     """
     @type input :: %{input_id: LiveCompositor.input_id(), volume: float() | nil}
 
+    @typedoc """
+    - `:output_id` - Id of the output that should be updated.
+    - `:inputs` - Inputs and their configuration that should be mixed to produce the output audio.
+    - `:schedule_time` - Schedule this update at a specific time. Time is measured from compositor
+    start. If not defined, update will be applied immediately.
+    """
     @type t :: %__MODULE__{
             output_id: LiveCompositor.output_id(),
             inputs: list(input()),
@@ -264,4 +276,16 @@ defmodule Membrane.LiveCompositor.Request do
       {:post, "/api/output/#{encoded_id}/update", body}
     end
   end
+
+  @type t ::
+          RegisterImage.t()
+          | RegisterShader.t()
+          | UnregisterImage.t()
+          | UnregisterShader.t()
+          | UnregisterInput.t()
+          | UnregisterOutput.t()
+          | UpdateVideoOutput.t()
+          | UpdateAudioOutput.t()
+
+  @type result :: {:request_result, t(), {:ok, any()} | {:error, any()}}
 end
