@@ -460,7 +460,7 @@ defmodule Membrane.LiveCompositor do
     links =
       bin_input(input_ref)
       |> via_in(Pad.ref(:input, ssrc),
-        options: [payloader: RTP.H264.Payloader]
+        options: [payloader: %RTP.H264.Payloader{mode: :single_nalu}]
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 96])
