@@ -201,7 +201,7 @@ defmodule Membrane.LiveCompositor do
               init_requests: [
                 spec: list(Request.t()),
                 description: """
-                Request that will send on startup to the LC server. It's main use case is to
+                Requests that will be sent on startup to the LC server. It's main use case is to
                 register renderers that will be needed in the scene from the very beginning.
 
                 Example:

@@ -264,7 +264,9 @@ defmodule Membrane.LiveCompositor.Request do
     @spec into_request(UpdateAudioOutput.t()) :: ApiClient.request()
     def into_request(request) do
       body = %{
-        audio: request.inputs,
+        audio: %{
+          inputs: request.inputs
+        },
         schedule_time_ms:
           case request.schedule_time do
             nil -> nil

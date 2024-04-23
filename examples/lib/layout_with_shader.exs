@@ -136,15 +136,6 @@ defmodule LayoutWithShaderPipeline do
   end
 
   @impl true
-  def handle_child_notification(notification, child, _ctx, state) do
-    Membrane.Logger.debug(
-      "Received notification: #{inspect(notification)} from child: #{inspect(child)}."
-    )
-
-    {[], state}
-  end
-
-  @impl true
   def handle_child_notification(
         {:new_track, {track_id, _track_type}},
         {:audio_demuxer, id},
