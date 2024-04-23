@@ -37,12 +37,19 @@ defmodule Membrane.LiveCompositor.Request do
   defimpl ApiClient.IntoRequest, for: RegisterImage do
     @spec into_request(RegisterImage.t()) :: ApiClient.request()
     def into_request(request) do
-      body = %{
-        asset_type: request.asset_type,
-        path: request.path,
-        url: request.url,
-        resolution: request.resolution
-      }
+      maybe_resolution =
+        case request.asset_type do
+          :svg -> %{resolution: request.resolution}
+          _type -> %{}
+        end
+
+      body =
+        %{
+          asset_type: request.asset_type,
+          path: request.path,
+          url: request.url
+        }
+        |> Map.merge(maybe_resolution)
 
       encoded_id = URI.encode_www_form(request.image_id)
       {:post, "/api/image/#{encoded_id}/register", body}
