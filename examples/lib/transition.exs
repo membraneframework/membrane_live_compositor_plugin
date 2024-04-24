@@ -6,7 +6,7 @@ defmodule TransitionPipeline do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.{Context, OutputOptions}
+  alias Membrane.LiveCompositor.{Context, Encoder, OutputOptions, Request}
 
   @output_width 1280
   @output_height 720
@@ -22,10 +22,12 @@ defmodule TransitionPipeline do
       })
       |> via_out(Pad.ref(:video_output, @output_id),
         options: [
-          encoder_preset: :ultrafast,
+          encoder: %Encoder.FFmpegH264{
+            preset: :ultrafast
+          },
           width: @output_width,
           height: @output_height,
-          initial: %{type: :view}
+          initial: %{root: %{type: :view}}
         ]
       )
       |> child(:output_parser, Membrane.H264.Parser)
@@ -53,37 +55,49 @@ defmodule TransitionPipeline do
     request =
       case input_id do
         "input_0" ->
-          %{
-            type: :update_output,
+          %Request.UpdateVideoOutput{
             output_id: @output_id,
-            video: single_input_scene("input_0")
+            root: single_input_scene("input_0")
           }
 
         "input_1" ->
-          %{
-            type: :update_output,
+          %Request.UpdateVideoOutput{
             output_id: @output_id,
-            video: double_inputs_scene("input_0", "input_1")
+            root: double_inputs_scene("input_0", "input_1")
           }
       end
 
     {[
-       {:notify_child, {:video_compositor, {:lc_request, request}}}
+       {:notify_child, {:video_compositor, request}}
      ], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _lc_ctx},
+        {:request_result, request, {:ok, result}},
+        :video_compositor,
+        _membrane_ctx,
+        state
+      ) do
+    Membrane.Logger.debug(
+      "LiveCompositor request succeeded\nRequest: #{inspect(request)}\nResult: #{inspect(result)}"
+    )
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_child_notification(
+        {:request_result, request,
+         {:error, %Req.Response{status: response_code, body: response_body}}},
         :video_compositor,
         _membrane_ctx,
         state
       ) do
     if response_code != 200 do
       raise """
-      Request failed.
-      Request: `#{inspect(req)}.
+      LiveCompositor request failed:
+      Request: `#{inspect(request)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """

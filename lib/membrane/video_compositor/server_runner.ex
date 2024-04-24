@@ -4,7 +4,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
-  alias Membrane.LiveCompositor.Request
+  alias Membrane.LiveCompositor.ApiClient
 
   @spec ensure_server_started(LiveCompositor.t()) ::
           {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
@@ -127,7 +127,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
       Process.sleep(100)
 
       with {:is_alive, true} <- {:is_alive, Process.alive?(pid)},
-           {:ok, response} <- Request.get_status(lc_port) do
+           {:ok, response} <- ApiClient.get_status(lc_port) do
         if response.body["instance_id"] == instance_id do
           {:halt, :started}
         else

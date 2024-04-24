@@ -6,31 +6,34 @@ defmodule Membrane.LiveCompositor do
 
   Each input pad has a format `Pad.ref(:video_input, input_id)` or `Pad.ref(:audio_input, input_id)`,
   where `input_id` is a string. `input_id` needs to be unique for all input pads, in particular
-  you can't have audio and video input pads with the same id. After registering and linking an input
-  stream the LiveCompositor will notify the parent with `t:input_registered_msg/0`.
+  you can't have audio and video input pads with the same id.
+
+  See `Membrane.LiveCompositor.Lifecycle` for input stream lifecycle notifications.
 
   ## Output streams
 
   Each output pad has a format `Pad.ref(:video_output, output_id)` or `Pad.ref(:audio_output, output_id)`,
   where `output_id` is a string. `output_id` needs to be unique for all output pads, in particular
-  you can't have audio and video output pads with the same id. After registering and linking an
-  output stream the LiveCompositor will notify the parent with `t:output_registered_msg/0`.
+  you can't have audio and video output pads with the same id.
+
+  After registering and linking an output stream the LiveCompositor will notify the parent with
+  [`output_registered/0`](`t:Membrane.LiveCompositor.Lifecycle.output_registered/0`).
 
   ## Composition specification - `video`
 
   To specify what LiveCompositor should render you can:
-  - Define `initial` option on `:video_output` pad.
-  - Send `{:lc_request, request}` from parent where `request` is of type`t:lc_request/0`.
+  - Define `initial` option when connecting `:video_output` pad.
+  - Send [`Request.UpdateVideoOutput`](`Membrane.LiveCompositor.Request.UpdateVideoOutput`)
+  notification to update a scene on an already connected pad.
 
-  For example, if have two input pads `Pad.ref(:video_input, "input_0")` and
-  `Pad.ref(:video_input, "input_1")` and a single output pad `Pad.ref(:video_output, "output_0")`,
-  sending such `update_output` request would result in receiving inputs merged in layout on output:
+  For example, code snippet bellow will update content of a stream from `Pad.ref(:video_output, "output_0")`
+  to include streams from `Pad.ref(:video_input, "input_0")` and `Pad.ref(:video_input, "input_1")`
+  side by side using [`Tiles`](https://compositor.live/docs/api/components/Tiles) component.
 
   ```
-  scene_update_request =  %{
-    type: "update_output",
+  scene_update_request =  %Request.UpdateVideoOutput{
     output_id: "output_0"
-    video: %{
+    root: %{
       type: :tiles,
       children: [
         { type: "input_stream", input_id: "input_0" },
@@ -39,80 +42,70 @@ defmodule Membrane.LiveCompositor do
     }
   }
 
-  {[notify_child: {:video_compositor, {:lc_request, scene_update_request}}]}
+  {[notify_child: {:video_compositor, scene_update_request}]}
   ```
 
-  LiveCompositor will notify parent with `t:lc_request_response/0`.
+  `:root` option specifies root component of a scene that will be rendered on the output stream.
+  Concept of a component is explained [here](https://compositor.live/docs/concept/component). For
+  actual component definitions see LiveCompositor documentation e.g.
+  [`View`](https://compositor.live/docs/api/components/View),
+  [`Tiles`](https://compositor.live/docs/api/components/Tiles), ...
 
   ## Composition specification - `audio`
 
-  To specify what LiveCompositor should render you can:
-  - Define `initial` option on `:audio_output` pad.
-  - Send `{:lc_request, request}` from parent where `request` is of type`t:lc_request/0`.
+  - Define `initial` option when connecting `:audio_output` pad.
+  - Send [`Request.UpdateAudioOutput`](`Membrane.LiveCompositor.Request.UpdateAudioOutput`)
+  notification to audio composition on an already connected pad.
 
-  For example, if have two input pads `Pad.ref(:audio_input, "input_0")` and
-  `Pad.ref(:audio_input, "input_1")` and a single output pad `Pad.ref(:audio_output, "output_0")`,
-  sending such `update_output` request would produce audio mixed from those 2 inputs where `input_0`
-  volume is lowered.
+  For example, code snippet bellow will update content of a stream from `Pad.ref(:video_output, "output_0")`
+  to include streams from `Pad.ref(:video_input, "input_0")` and `Pad.ref(:video_input, "input_1")`
+  mixed together, where `"input_0"` is mixed at half volume.
 
   ```
-  audio_update_request =  %{
+  audio_update_request =  %Request.UpdateAudioOutput{
+    output_id: "output_0"
     inputs: [
       { input_id: "input_0", volume: 0.5 },
       { input_id: "input_1" }
     ]
   }
 
-  {[notify_child: {:video_compositor, {:lc_request, audio_update_request}}]}
+  {[notify_child: {:video_compositor, audio_update_request}]}
   ```
 
-  LiveCompositor will notify parent with `t:lc_request_response/0`.
+  ## Notifications
 
-  ## API reference
-  You can find more detailed API reference [here](https://compositor.live/docs/api/routes).
+  LiveCompositor bin can send following notifications to the parent process.
+  - [`Lifecycle.notification/0`](`t:Membrane.LiveCompositor.Lifecycle.notification/0`) -
+  Notification about lifecycle of input/output streams.
+  - [`Request.result/0`](`t:Membrane.LiveCompositor.Request.result/0`) - Result of a
+  `Membrane.LiveCompositor.Request` sent from the parent process.
 
-  ## General concepts
-  General concepts of scene are explained [here](https://compositor.live/docs/concept/component).
+  ## LiveCompositor documentation
 
-  ## Examples
-  Examples can be found in `examples` directory of Membrane LiveCompositor Plugin.
+  This documentation covers mostly Elixr/Membrane specific API. For platform/language independent topics
+  that are not covered here check [LiveCompositor documentation](https://compositor.live/docs/category/api-reference).
   """
 
   use Membrane.Bin
 
   require Membrane.Logger
 
+  alias Jason.Encoder
+
   alias Membrane.{Opus, Pad, RemoteStream, RTP, TCP}
 
   alias Membrane.LiveCompositor.{
+    ApiClient,
+    ApiClient.IntoRequest,
     Context,
+    Encoder,
     EventHandler,
     Request,
     ServerRunner,
     State,
     StreamsHandler
   }
-
-  @typedoc """
-  Video encoder preset. See [FFmpeg docs](https://trac.ffmpeg.org/wiki/Encode/H.264#Preset)
-  to learn more.
-  """
-  @type video_encoder_preset ::
-          :ultrafast
-          | :superfast
-          | :veryfast
-          | :faster
-          | :fast
-          | :medium
-          | :slow
-          | :slower
-          | :veryslow
-          | :placebo
-
-  @typedoc """
-  Audio encoder preset.
-  """
-  @type audio_encoder_preset :: :quality | :voip | :lowest_latency
 
   @typedoc """
   Input stream id, uniquely identifies an input pad.
@@ -125,62 +118,6 @@ defmodule Membrane.LiveCompositor do
   @type output_id :: String.t()
 
   @typedoc """
-  Raw request that will be translated to JSON format and
-  sent directly to the LiveCompositor server.
-
-  For example, sending this message to the LiveCompositor bin
-  ```
-  {
-    :lc_request
-    %{
-      type: "update_output",
-      output_id: "output_0",
-      video: %{
-        type: :tiles
-        children: [
-          { type: "input_stream", input_id: "input_0" },
-          { type: "input_stream", input_id: "input_1" }
-        ]
-      }
-    }
-  }
-  ```
-  will result in bellow HTTP request to be sent to the LiveCompositor server
-  ```http
-  POST http://localhost:8081/--/api
-  Content-Type: application/json
-
-  {
-    "type": "update_output",
-    "output_id": "output_0",
-    "video": {
-      "type": "tiles",
-      "children": [
-        { "type": "input_stream", "input_id": "input_0" },
-        { "type": "input_stream", "input_id": "input_1" }
-      ]
-    }
-  }
-  ```
-
-  Users of this plugin should only use:
-  - `update_output` to configure output scene or audio mixer configurations.
-  - `register` to register renderers (registering inputs and outputs is already handled by the bin).
-  - `unregister` to unregister renderers, inputs or outputs. Note that the bin is already handling
-  the unregistering of inputs and outputs when pads are unlinked, but if you want to schedule that event
-  for a specific timestamp (with the `schedule_time_ms` field) you need to send it manually.
-
-  API reference can be found [here](https://compositor.live/docs/category/api-reference).
-  """
-  @type lc_request() :: map()
-
-  @typedoc """
-  LiveCompositor's response. This message will be sent to the parent process in response
-  to the `{:lc_request, request}` where request is of type `t:lc_request/0`.
-  """
-  @type lc_request_response :: {:lc_request_response, lc_request(), Req.Response.t(), Context.t()}
-
-  @typedoc """
   Range of ports.
   """
   @type port_range :: {lower_bound :: :inet.port_number(), upper_bound :: :inet.port_number()}
@@ -190,6 +127,10 @@ defmodule Membrane.LiveCompositor do
   """
   @type output_sample_rate :: 8_000 | 12_000 | 16_000 | 24_000 | 48_000
 
+  @typedoc """
+  Condition that defines when output stream should end depending on the
+  EOS received on inputs.
+  """
   @type send_eos_condition ::
           nil
           | :any_input
@@ -258,16 +199,14 @@ defmodule Membrane.LiveCompositor do
                 default: :start_locally
               ],
               init_requests: [
-                spec: list(lc_request()),
+                spec: list(Request.t()),
                 description: """
-                Request that will send on startup to the LC server. It's main use case is to
+                Requests that will be sent on startup to the LC server. It's main use case is to
                 register renderers that will be needed in the scene from the very beginning.
 
                 Example:
                 ```
-                [%{
-                  type: :register,
-                  entity_type: :shader,
+                [%Request.RegisterShader{
                   shader_id: "example_shader_1",
                   source: "<shader sources>"
                 }]
@@ -371,16 +310,8 @@ defmodule Membrane.LiveCompositor do
       height: [
         spec: non_neg_integer()
       ],
-      encoder_preset: [
-        spec: video_encoder_preset(),
-        default: :fast
-      ],
-      ffmpeg_options: [
-        spec: %{(String.t() | atom()) => String.t()} | nil,
-        default: nil,
-        description: """
-        Raw FFmpeg encoder options. See [docs](https://ffmpeg.org/ffmpeg-codecs.html) for more.
-        """
+      encoder: [
+        spec: Encoder.FFmpegH264.t()
       ],
       send_eos_when: [
         spec: send_eos_condition(),
@@ -405,17 +336,22 @@ defmodule Membrane.LiveCompositor do
         Example:
         ```
         %{
-          type: :view,
-          children: [
-            %{ type: :input_stream, input_id: "input_0" }
-          ]
+          root: %{
+            type: :view,
+            children: [
+              %{ type: :input_stream, input_id: "input_0" }
+            ]
+          }
         }
         ```
 
-        To change the scene after the registration you can send
-        `{ :lc_request, %{ type: "update_output", output_id: "output_0", video: new_scene } }`
+        To change the scene after the registration you can send `%Request.UpdateVideoOutput{}`
+        notification.
 
-        Format of this field is documented [here](https://compositor.live/docs/concept/component).
+        Format of the `:root` field is documented [here](https://compositor.live/docs/concept/component).
+        For specific options see documentation pages for each component e.g.
+        [`View`](https://compositor.live/docs/api/components/View),
+        [`Tiles`](https://compositor.live/docs/api/components/Tiles), ...
         """
       ]
     ]
@@ -434,12 +370,8 @@ defmodule Membrane.LiveCompositor do
         """,
         default: {10_000, 60_000}
       ],
-      channels: [
-        spec: :stereo | :mono
-      ],
-      encoder_preset: [
-        spec: audio_encoder_preset(),
-        default: :voip
+      encoder: [
+        spec: Encoder.Opus.t()
       ],
       send_eos_when: [
         spec: send_eos_condition(),
@@ -471,10 +403,8 @@ defmodule Membrane.LiveCompositor do
         }
         ```
 
-        To change the scene after the registration you can send
-        `{ :lc_request, %{ type: "update_output", output_id: "output_0", audio: new_audio_config } }`
-
-        Format of this field is documented [here](https://compositor.live/docs/concept/component).
+        To change the scene after the registration you can send `%Request.UpdateAudioOutput{}`
+        notification.
         """
       ]
     ]
@@ -495,7 +425,11 @@ defmodule Membrane.LiveCompositor do
       tag: :live_compositor_server
     )
 
-    opt.init_requests |> Enum.each(fn request -> Request.send_request(request, lc_port) end)
+    opt.init_requests
+    |> Enum.each(fn request ->
+      IntoRequest.into_request(request)
+      |> ApiClient.send_request(lc_port)
+    end)
 
     Membrane.UtilitySupervisor.start_link_child(
       ctx.utility_supervisor,
@@ -622,7 +556,10 @@ defmodule Membrane.LiveCompositor do
       when input_type in [:audio_input, :video_input] do
     # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
     if MapSet.member?(state.tcp_sink_eos, input_ref) do
-      {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+      {:ok, _resp} =
+        %Request.UnregisterInput{input_id: pad_id}
+        |> IntoRequest.into_request()
+        |> ApiClient.send_request(state.lc_port)
     end
 
     state = %State{
@@ -636,38 +573,61 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_pad_removed(Pad.ref(:video_output, pad_id), _ctx, state) do
-    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    {:ok, _resp} =
+      %Request.UnregisterOutput{output_id: pad_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(state.lc_port)
+
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
   end
 
   @impl true
   def handle_pad_removed(Pad.ref(:audio_output, pad_id), _ctx, state) do
-    {:ok, _resp} = Request.unregister_output_stream(pad_id, state.lc_port)
+    {:ok, _resp} =
+      %Request.UnregisterOutput{output_id: pad_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(state.lc_port)
+
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
   end
 
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state) do
-    {:ok, _resp} = Request.start_composing(state.lc_port)
+    {:ok, _response} =
+      ApiClient.start_composing(state.lc_port)
+
     {[], state}
   end
 
   @impl true
-  def handle_parent_notification({:lc_request, request_body}, _ctx, state) do
-    case Request.send_request(request_body, state.lc_port) do
-      {res, response} when res == :ok or res == :error_response_code ->
-        response_msg = {:lc_request_response, request_body, response, state.context}
-        {[notify_parent: response_msg], state}
+  def handle_parent_notification(req = %module{}, _ctx, state)
+      when module in [
+             Request.RegisterImage,
+             Request.RegisterShader,
+             Request.UnregisterImage,
+             Request.UnregisterShader,
+             Request.UnregisterInput,
+             Request.UnregisterOutput,
+             Request.UpdateVideoOutput,
+             Request.UpdateAudioOutput
+           ] do
+    response =
+      IntoRequest.into_request(req)
+      |> ApiClient.send_request(state.lc_port)
 
+    case response do
       {:error, exception} ->
         Membrane.Logger.error(
-          "LiveCompositor failed to send a request: #{request_body}.\nException: #{exception}."
+          "LiveCompositor failed to send a request: #{inspect(req)}.\nException: #{inspect(exception)}."
         )
 
-        {[], state}
+      {:ok, _result} ->
+        nil
     end
+
+    {[notify_parent: {:request_result, req, response}], state}
   end
 
   @impl true
@@ -747,7 +707,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_info(:websocket_connected, _ctx, state) do
     if state.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = Request.start_composing(state.lc_port)
+      {:ok, _resp} = ApiClient.start_composing(state.lc_port)
     end
 
     {[setup: :complete], state}
@@ -776,7 +736,11 @@ defmodule Membrane.LiveCompositor do
       if Map.has_key?(ctx.pads, input_ref) do
         %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
       else
-        {:ok, _resp} = Request.unregister_input_stream(pad_id, state.lc_port)
+        {:ok, _resp} =
+          %Request.UnregisterInput{input_id: pad_id}
+          |> IntoRequest.into_request()
+          |> ApiClient.send_request(state.lc_port)
+
         state
       end
 
