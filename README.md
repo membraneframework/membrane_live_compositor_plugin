@@ -49,3 +49,9 @@ The example presents dynamic transition of input videos. Transitions are used fo
 The example presents dynamic outputs linking.
 Multiple outputs are useful for live-streaming for multiple platforms (e.g. different layout for mobile devices), target resolutions
 or any other case, when user want to process input videos differently.
+
+### Offline processing example
+
+Example of processing that does not need to be real time. Multiple offline sources (mp4 files) are composed together and
+produce output mp4 file. To simplify the example the same input file is read multiple times as a separate inputs. Depending
+on hardware capabilities this example can run faster or slower than real time.

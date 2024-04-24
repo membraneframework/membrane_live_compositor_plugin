@@ -6,6 +6,7 @@ defmodule LayoutWithShaderPipeline do
   require Membrane.Logger
 
   alias Membrane.LiveCompositor
+  alias Membrane.LiveCompositor.{Encoder, Request}
   alias Membrane.PortAudio
 
   @output_width 1920
@@ -40,10 +41,12 @@ defmodule LayoutWithShaderPipeline do
         options: [
           width: @output_width,
           height: @output_height,
-          initial:
-            scene([
-              "video_input_0"
-            ])
+          encoder: %Encoder.FFmpegH264{
+            preset: :ultrafast
+          },
+          initial: %{
+            root: scene(["video_input_0"])
+          }
         ]
       )
       |> child(:output_parser, Membrane.H264.Parser)
@@ -54,7 +57,9 @@ defmodule LayoutWithShaderPipeline do
       get_child(:video_compositor)
       |> via_out(Pad.ref(:audio_output, @audio_output_id),
         options: [
-          channels: :stereo,
+          encoder: %Encoder.Opus{
+            channels: :stereo
+          },
           initial: %{
             inputs: [
               %{input_id: "audio_input_0"}
@@ -87,13 +92,12 @@ defmodule LayoutWithShaderPipeline do
         _ctx,
         state
       ) do
-    update_scene_request = %{
-      type: :update_output,
+    update_scene_request = %Request.UpdateVideoOutput{
       output_id: @video_output_id,
-      video: scene(ctx.video_inputs)
+      root: scene(ctx.video_inputs)
     }
 
-    {[{:notify_child, {:video_compositor, {:lc_request, update_scene_request}}}], state}
+    {[{:notify_child, {:video_compositor, update_scene_request}}], state}
   end
 
   @impl true
@@ -103,29 +107,26 @@ defmodule LayoutWithShaderPipeline do
         _ctx,
         state
       ) do
-    update_audio_request = %{
-      type: :update_output,
+    update_audio_request = %Request.UpdateAudioOutput{
       output_id: @audio_output_id,
-      audio: %{
-        inputs: ctx.audio_inputs |> Enum.map(fn input_id -> %{input_id: input_id} end)
-      }
+      inputs: ctx.audio_inputs |> Enum.map(fn input_id -> %{input_id: input_id} end)
     }
 
-    {[{:notify_child, {:video_compositor, {:lc_request, update_audio_request}}}], state}
+    {[{:notify_child, {:video_compositor, update_audio_request}}], state}
   end
 
   @impl true
   def handle_child_notification(
-        {:lc_request_response, req, %Req.Response{status: response_code, body: response_body},
-         _lc_ctx},
-        _child,
+        {:request_result, request,
+         {:error, %Req.Response{status: response_code, body: response_body}}},
+        :video_compositor,
         _membrane_ctx,
         state
       ) do
     if response_code != 200 do
       raise """
-      Request failed.
-      Request: `#{inspect(req)}.
+      LiveCompositor request failed:
+      Request: `#{inspect(request)}.
       Response code: #{response_code}.
       Response body: #{inspect(response_body)}.
       """
@@ -215,9 +216,7 @@ defmodule LayoutWithShaderPipeline do
   end
 
   defp register_shader_request_body() do
-    %{
-      type: :register,
-      entity_type: :shader,
+    %Request.RegisterShader{
       shader_id: @shader_id,
       source: File.read!(@shader_path)
     }
