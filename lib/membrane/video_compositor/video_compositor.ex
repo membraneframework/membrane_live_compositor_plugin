@@ -427,8 +427,9 @@ defmodule Membrane.LiveCompositor do
 
     opt.init_requests
     |> Enum.each(fn request ->
-      IntoRequest.into_request(request)
-      |> ApiClient.send_request(lc_port)
+      {:ok, _} =
+        IntoRequest.into_request(request)
+        |> ApiClient.send_request(lc_port)
     end)
 
     Membrane.UtilitySupervisor.start_link_child(
