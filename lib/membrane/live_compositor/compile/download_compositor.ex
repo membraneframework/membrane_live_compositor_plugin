@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       File.mkdir_p!(app_directory)
       Membrane.Logger.info("Downloading LiveCompositor binary")
 
-      tmp_path = :code.priv_dir(:membrane_video_compositor_plugin) |> Path.join("tmp")
+      tmp_path = :code.priv_dir(:membrane_live_compositor_plugin) |> Path.join("tmp")
       File.mkdir_p!(tmp_path)
 
       wget_res_path = Path.join(tmp_path, "video_compositor")
@@ -51,11 +51,11 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
 
   @spec lc_app_url(String.t()) :: String.t()
   def lc_app_url(architecture) do
-    "https://github.com/membraneframework/video_compositor/releases/download/#{@lc_version}/video_compositor_#{architecture}.tar.gz"
+    "https://github.com/membraneframework/live_compositor/releases/download/#{@lc_version}/video_compositor_#{architecture}.tar.gz"
   end
 
   defp lc_app_directory(architecture) do
-    :code.priv_dir(:membrane_video_compositor_plugin)
+    :code.priv_dir(:membrane_live_compositor_plugin)
     |> Path.join("#{@lc_version}/#{architecture}")
   end
 
