@@ -2,11 +2,11 @@ defmodule Membrane.LiveCompositor.Mixfile do
   use Mix.Project
 
   @version "0.8.0"
-  @github_url "https://github.com/membraneframework/membrane_video_compositor_plugin"
+  @github_url "https://github.com/membraneframework/membrane_live_compositor_plugin"
 
   def project do
     [
-      app: :membrane_video_compositor_plugin,
+      app: :membrane_live_compositor_plugin,
       version: @version,
       compilers: compilers(),
       elixir: "~> 1.13",
