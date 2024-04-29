@@ -21,7 +21,7 @@ defmodule OfflineProcessing do
     spec = [
       child(:file_source, %Membrane.File.Source{location: sample_path})
       |> child(:mp4_demuxer, Membrane.MP4.Demuxer.ISOM),
-      child(:video_compositor, %LiveCompositor{
+      child(:live_compositor, %LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup,
         composing_strategy: :offline_processing,
@@ -51,7 +51,7 @@ defmodule OfflineProcessing do
       })
       |> child(:muxer, Membrane.MP4.Muxer.ISOM)
       |> child(:sink, %Membrane.File.Sink{location: @output_file}),
-      get_child(:video_compositor)
+      get_child(:live_compositor)
       |> via_out(Pad.ref(:audio_output, @audio_output_id),
         options: [
           encoder: %LiveCompositor.Encoder.Opus{
@@ -105,9 +105,9 @@ defmodule OfflineProcessing do
     }
 
     {[
-       notify_child: {:video_compositor, schedule_scene_update_1},
-       notify_child: {:video_compositor, schedule_scene_update_2},
-       notify_child: {:video_compositor, schedule_audio_update}
+       notify_child: {:live_compositor, schedule_scene_update_1},
+       notify_child: {:live_compositor, schedule_scene_update_2},
+       notify_child: {:live_compositor, schedule_audio_update}
      ], state}
   end
 
@@ -136,7 +136,7 @@ defmodule OfflineProcessing do
                 required: true
               ]
             )
-            |> get_child(:video_compositor)
+            |> get_child(:live_compositor)
 
           %Membrane.AAC{sample_rate: sample_rate, channels: channels} ->
             get_child(:mp4_demuxer)
@@ -172,7 +172,7 @@ defmodule OfflineProcessing do
                 required: true
               ]
             )
-            |> get_child(:video_compositor)
+            |> get_child(:live_compositor)
         end
       end)
 
@@ -182,7 +182,7 @@ defmodule OfflineProcessing do
   @impl true
   def handle_child_notification(
         {:input_delivered, Pad.ref(pad_type, pad_id), ctx},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -190,7 +190,7 @@ defmodule OfflineProcessing do
 
     if state.registered_compositor_streams == 4 do
       # send start when all inputs are connected
-      {[notify_child: {:video_compositor, :start_composing}], state}
+      {[notify_child: {:live_compositor, :start_composing}], state}
     else
       {[], state}
     end
@@ -199,7 +199,7 @@ defmodule OfflineProcessing do
   @impl true
   def handle_child_notification(
         {:output_registered, Pad.ref(pad_type, pad_id), ctx},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -207,7 +207,7 @@ defmodule OfflineProcessing do
 
     if state.registered_compositor_streams == 4 do
       # send start when all inputs are connected
-      {[notify_child: {:video_compositor, :start_composing}], state}
+      {[notify_child: {:live_compositor, :start_composing}], state}
     else
       {[], state}
     end
@@ -216,7 +216,7 @@ defmodule OfflineProcessing do
   @impl true
   def handle_child_notification(
         {:request_result, request, {:ok, result}},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -231,7 +231,7 @@ defmodule OfflineProcessing do
   def handle_child_notification(
         {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do

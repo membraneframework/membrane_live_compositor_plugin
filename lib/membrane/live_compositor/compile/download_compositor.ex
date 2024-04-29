@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
   use Mix.Task
   require Membrane.Logger
 
-  @lc_version "v0.2.0-rc.5"
+  @lc_version "v0.2.0-rc.6"
 
   @impl Mix.Task
   def run(_args) do
@@ -30,7 +30,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
       tmp_path = :code.priv_dir(:membrane_live_compositor_plugin) |> Path.join("tmp")
       File.mkdir_p!(tmp_path)
 
-      wget_res_path = Path.join(tmp_path, "video_compositor")
+      wget_res_path = Path.join(tmp_path, "live_compositor")
       MuonTrap.cmd("wget", ["-O", wget_res_path, url])
       MuonTrap.cmd("tar", ["-xvf", wget_res_path, "-C", app_directory])
       File.rm_rf!(wget_res_path)
@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
   def lc_app_path() do
     case system_architecture() do
       {:ok, arch} ->
-        {:ok, Path.join(lc_app_directory(arch), "video_compositor/video_compositor")}
+        {:ok, Path.join(lc_app_directory(arch), "live_compositor/live_compositor")}
 
       :error ->
         :error
@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
 
   @spec lc_app_url(String.t()) :: String.t()
   def lc_app_url(architecture) do
-    "https://github.com/membraneframework/live_compositor/releases/download/#{@lc_version}/video_compositor_#{architecture}.tar.gz"
+    "https://github.com/membraneframework/live_compositor/releases/download/#{@lc_version}/live_compositor_#{architecture}.tar.gz"
   end
 
   defp lc_app_directory(architecture) do

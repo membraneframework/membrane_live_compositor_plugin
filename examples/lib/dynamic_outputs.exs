@@ -18,7 +18,7 @@ defmodule DynamicOutputsPipeline do
   @impl true
   def handle_init(_ctx, %{sample_path: sample_path, server_setup: server_setup}) do
     spec =
-      child(:video_compositor, %Membrane.LiveCompositor{
+      child(:live_compositor, %Membrane.LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup
       })
@@ -51,7 +51,7 @@ defmodule DynamicOutputsPipeline do
   @impl true
   def handle_child_notification(
         {:output_registered, Pad.ref(_pad_type, output_id), lc_ctx},
-        :video_compositor,
+        :live_compositor,
         _ctx,
         state
       ) do
@@ -62,7 +62,7 @@ defmodule DynamicOutputsPipeline do
   @impl true
   def handle_child_notification(
         {:input_registered, input_id, lc_ctx},
-        :video_compositor,
+        :live_compositor,
         _ctx,
         state
       ) do
@@ -75,7 +75,7 @@ defmodule DynamicOutputsPipeline do
             root: scene(lc_ctx, output_id)
           }
 
-        {:notify_child, {:video_compositor, request}}
+        {:notify_child, {:live_compositor, request}}
       end)
 
     {actions, %{state | lc_ctx: lc_ctx}}
@@ -84,7 +84,7 @@ defmodule DynamicOutputsPipeline do
   @impl true
   def handle_child_notification(
         {:request_result, request, {:ok, result}},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -99,7 +99,7 @@ defmodule DynamicOutputsPipeline do
   def handle_child_notification(
         {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -134,7 +134,7 @@ defmodule DynamicOutputsPipeline do
       })
       |> child({:realtimer, input_id}, Membrane.Realtimer)
       |> via_in(Pad.ref(:video_input, input_id))
-      |> get_child(:video_compositor)
+      |> get_child(:live_compositor)
 
     {[spec: spec], state}
   end
@@ -142,7 +142,7 @@ defmodule DynamicOutputsPipeline do
   @impl true
   def handle_info({:register_output, output_id}, _ctx, state) do
     links =
-      get_child(:video_compositor)
+      get_child(:live_compositor)
       |> via_out(Pad.ref(:video_output, output_id),
         options: [
           encoder: %Encoder.FFmpegH264{

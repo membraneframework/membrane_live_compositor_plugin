@@ -30,7 +30,7 @@ defmodule LayoutWithShaderPipeline do
       })
       |> child({:realtimer, 0}, Membrane.Realtimer)
       |> via_in(Pad.ref(:video_input, "video_input_0"))
-      |> child(:video_compositor, %Membrane.LiveCompositor{
+      |> child(:live_compositor, %Membrane.LiveCompositor{
         framerate: {30, 1},
         server_setup: server_setup,
         init_requests: [
@@ -54,7 +54,7 @@ defmodule LayoutWithShaderPipeline do
       |> child(:sdl_player, Membrane.SDL.Player),
       child({:audio_src, 0}, %Membrane.File.Source{location: audio_sample_path})
       |> child({:audio_demuxer, 0}, Membrane.Ogg.Demuxer),
-      get_child(:video_compositor)
+      get_child(:live_compositor)
       |> via_out(Pad.ref(:audio_output, @audio_output_id),
         options: [
           encoder: %Encoder.Opus{
@@ -88,7 +88,7 @@ defmodule LayoutWithShaderPipeline do
   @impl true
   def handle_child_notification(
         {:input_registered, Pad.ref(:video_input, _input_id), ctx},
-        :video_compositor,
+        :live_compositor,
         _ctx,
         state
       ) do
@@ -97,13 +97,13 @@ defmodule LayoutWithShaderPipeline do
       root: scene(ctx.video_inputs)
     }
 
-    {[{:notify_child, {:video_compositor, update_scene_request}}], state}
+    {[{:notify_child, {:live_compositor, update_scene_request}}], state}
   end
 
   @impl true
   def handle_child_notification(
         {:input_registered, Pad.ref(:audio_input, _input_id), ctx},
-        :video_compositor,
+        :live_compositor,
         _ctx,
         state
       ) do
@@ -112,14 +112,14 @@ defmodule LayoutWithShaderPipeline do
       inputs: ctx.audio_inputs |> Enum.map(fn input_id -> %{input_id: input_id} end)
     }
 
-    {[{:notify_child, {:video_compositor, update_audio_request}}], state}
+    {[{:notify_child, {:live_compositor, update_audio_request}}], state}
   end
 
   @impl true
   def handle_child_notification(
         {:request_result, request,
          {:error, %Req.Response{status: response_code, body: response_body}}},
-        :video_compositor,
+        :live_compositor,
         _membrane_ctx,
         state
       ) do
@@ -150,7 +150,7 @@ defmodule LayoutWithShaderPipeline do
       })
       |> child({:realtimer_audio, id}, Membrane.Realtimer)
       |> via_in(Pad.ref(:audio_input, "audio_input_#{id}"))
-      |> get_child(:video_compositor)
+      |> get_child(:live_compositor)
 
     {[spec: spec], state}
   end
@@ -177,7 +177,7 @@ defmodule LayoutWithShaderPipeline do
         })
         |> child({:realtimer, videos_count}, Membrane.Realtimer)
         |> via_in(Pad.ref(:video_input, "video_input_#{videos_count}"))
-        |> get_child(:video_compositor),
+        |> get_child(:live_compositor),
         child({:audio_src, videos_count}, %Membrane.File.Source{location: state.audio_sample_path})
         |> child({:audio_demuxer, videos_count}, Membrane.Ogg.Demuxer)
       ]

@@ -42,7 +42,7 @@ defmodule Membrane.LiveCompositor do
     }
   }
 
-  {[notify_child: {:video_compositor, scene_update_request}]}
+  {[notify_child: {:live_compositor, scene_update_request}]}
   ```
 
   `:root` option specifies root component of a scene that will be rendered on the output stream.
@@ -70,7 +70,7 @@ defmodule Membrane.LiveCompositor do
     ]
   }
 
-  {[notify_child: {:video_compositor, audio_update_request}]}
+  {[notify_child: {:live_compositor, audio_update_request}]}
   ```
 
   ## Notifications
