@@ -468,7 +468,8 @@ defmodule Membrane.LiveCompositor do
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
         connection_side: {:client, @local_host, port},
-        close_on_eos: false
+        close_on_eos: false,
+        on_connection_closed: :drop_buffers
       })
 
     spec = {links, group: input_group_id(pad_id)}
@@ -496,7 +497,8 @@ defmodule Membrane.LiveCompositor do
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
         connection_side: {:client, @local_host, port},
-        close_on_eos: false
+        close_on_eos: false,
+        on_connection_closed: :drop_buffers
       })
 
     spec = {links, group: input_group_id(pad_id)}
@@ -558,38 +560,21 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_pad_removed(input_ref = Pad.ref(input_type, pad_id), _ctx, state)
+  def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    # If EOS was not received yet, unregister will be called in `handle_element_end_of_stream/4`
-    if MapSet.member?(state.tcp_sink_eos, input_ref) do
-      {:ok, _resp} =
-        %Request.UnregisterInput{input_id: pad_id}
-        |> IntoRequest.into_request()
-        |> ApiClient.send_request(state.lc_port)
-    end
+    {:ok, _resp} =
+      %Request.UnregisterInput{input_id: pad_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(state.lc_port)
 
-    state = %State{
-      state
-      | tcp_sink_eos: MapSet.delete(state.tcp_sink_eos, input_ref),
-        context: Context.remove_input(pad_id, state.context)
-    }
+    state = %State{state | context: Context.remove_input(pad_id, state.context)}
 
     {[remove_children: input_group_id(pad_id)], state}
   end
 
   @impl true
-  def handle_pad_removed(Pad.ref(:video_output, pad_id), _ctx, state) do
-    {:ok, _resp} =
-      %Request.UnregisterOutput{output_id: pad_id}
-      |> IntoRequest.into_request()
-      |> ApiClient.send_request(state.lc_port)
-
-    state = %State{state | context: Context.remove_output(pad_id, state.context)}
-    {[remove_children: output_group_id(pad_id)], state}
-  end
-
-  @impl true
-  def handle_pad_removed(Pad.ref(:audio_output, pad_id), _ctx, state) do
+  def handle_pad_removed(Pad.ref(output_type, pad_id), _ctx, state)
+      when output_type in [:audio_output, :video_output] do
     {:ok, _resp} =
       %Request.UnregisterOutput{output_id: pad_id}
       |> IntoRequest.into_request()
@@ -727,28 +712,6 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_info(msg, _ctx, state) do
     Membrane.Logger.debug("Unknown msg received: #{inspect(msg)}")
-
-    {[], state}
-  end
-
-  @impl true
-  def handle_element_end_of_stream(
-        {:tcp_sink, input_ref = Pad.ref(_pad_type, pad_id)},
-        _pad,
-        ctx,
-        state
-      ) do
-    state =
-      if Map.has_key?(ctx.pads, input_ref) do
-        %State{state | tcp_sink_eos: MapSet.put(state.tcp_sink_eos, input_ref)}
-      else
-        {:ok, _resp} =
-          %Request.UnregisterInput{input_id: pad_id}
-          |> IntoRequest.into_request()
-          |> ApiClient.send_request(state.lc_port)
-
-        state
-      end
 
     {[], state}
   end
