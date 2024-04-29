@@ -44,7 +44,7 @@ defmodule Utils.LcServer do
         "--manifest-path",
         Path.join(lc_directory_path, "Cargo.toml"),
         "--bin",
-        "video_compositor"
+        "live_compositor"
       ])
 
     {framerate_num, framerate_den} = framerate
@@ -61,7 +61,7 @@ defmodule Utils.LcServer do
            "--manifest-path",
            Path.join(lc_directory_path, "Cargo.toml"),
            "--bin",
-           "video_compositor"
+           "live_compositor"
          ],
          [
            env: %{
