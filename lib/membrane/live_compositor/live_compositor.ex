@@ -491,7 +491,8 @@ defmodule Membrane.LiveCompositor do
       |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 97, clock_rate: 48_000])
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
-        connection_side: {:client, @local_host, port}
+        connection_side: {:client, @local_host, port},
+        socket_options: [sndbuf: 65_535]
       })
 
     spec = {links, group: input_group_id(pad_id)}
