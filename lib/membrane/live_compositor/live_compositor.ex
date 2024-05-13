@@ -102,6 +102,7 @@ defmodule Membrane.LiveCompositor do
     Encoder,
     EventHandler,
     Request,
+    RtcpByeSender,
     ServerRunner,
     State,
     StreamsHandler
@@ -463,9 +464,11 @@ defmodule Membrane.LiveCompositor do
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 96])
+      |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
-        connection_side: {:client, @local_host, port}
+        connection_side: {:client, @local_host, port},
+        close_on_eos: false
       })
 
     spec = {links, group: input_group_id(pad_id)}
@@ -489,9 +492,11 @@ defmodule Membrane.LiveCompositor do
       )
       |> child({:rtp_sender, pad_id}, RTP.SessionBin)
       |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 97, clock_rate: 48_000])
+      |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
-        connection_side: {:client, @local_host, port}
+        connection_side: {:client, @local_host, port},
+        close_on_eos: false
       })
 
     spec = {links, group: input_group_id(pad_id)}
