@@ -47,7 +47,7 @@ defmodule Membrane.LiveCompositor.Mixfile do
       ## RTP
       {:membrane_rtp_plugin, "~> 0.27.1"},
       {:membrane_rtp_h264_plugin, "~> 0.19.1"},
-      {:membrane_tcp_plugin, "~> 0.3.0"},
+      {:membrane_tcp_plugin, "~> 0.4.0"},
       {:membrane_opus_plugin, "~> 0.20.1"},
       {:membrane_rtp_opus_plugin, "~> 0.9.0"},
       # VC server start
