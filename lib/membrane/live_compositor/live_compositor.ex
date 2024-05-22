@@ -163,7 +163,7 @@ defmodule Membrane.LiveCompositor do
                 Timeout that defines when the LiveCompositor should switch to fallback on
                 the input stream that stopped sending frames.
                 """,
-                default: Membrane.Time.seconds(2)
+                default: Membrane.Time.milliseconds(500)
               ],
               composing_strategy: [
                 spec: :real_time_auto_init | :real_time | :offline_processing,
