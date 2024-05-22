@@ -562,23 +562,16 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    {:ok, _resp} =
-      %Request.UnregisterInput{input_id: pad_id}
-      |> IntoRequest.into_request()
-      |> ApiClient.send_request(state.lc_port)
+    ensure_input_unregistered(pad_id, state.lc_port)
 
     state = %State{state | context: Context.remove_input(pad_id, state.context)}
-
     {[remove_children: input_group_id(pad_id)], state}
   end
 
   @impl true
   def handle_pad_removed(Pad.ref(output_type, pad_id), _ctx, state)
       when output_type in [:audio_output, :video_output] do
-    {:ok, _resp} =
-      %Request.UnregisterOutput{output_id: pad_id}
-      |> IntoRequest.into_request()
-      |> ApiClient.send_request(state.lc_port)
+    ensure_output_unregistered(pad_id, state.lc_port)
 
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
@@ -719,6 +712,44 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_element_end_of_stream(_child, _pad, _ctx, state) do
     {[], state}
+  end
+
+  @spec ensure_input_unregistered(input_id(), :inet.port_number()) :: :ok
+  defp ensure_input_unregistered(input_id, lc_port) do
+    response =
+      %Request.UnregisterInput{input_id: input_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(lc_port)
+
+    case response do
+      {:ok, _response} ->
+        :ok
+
+      {:error, {:response, %Req.Response{body: %{"error_code" => "INPUT_STREAM_NOT_FOUND"}}}} ->
+        :ok
+
+      {:error, error} ->
+        raise "Input unregister failed. #{inspect(error)}"
+    end
+  end
+
+  @spec ensure_output_unregistered(output_id(), :inet.port_number()) :: :ok
+  defp ensure_output_unregistered(output_id, lc_port) do
+    response =
+      %Request.UnregisterOutput{output_id: output_id}
+      |> IntoRequest.into_request()
+      |> ApiClient.send_request(lc_port)
+
+    case response do
+      {:ok, _response} ->
+        :ok
+
+      {:error, {:response, %Req.Response{body: %{"error_code" => "OUTPUT_STREAM_NOT_FOUND"}}}} ->
+        :ok
+
+      {:error, error} ->
+        raise "Output unregister failed. #{inspect(error)}"
+    end
   end
 
   @spec input_group_id(input_id()) :: String.t()
