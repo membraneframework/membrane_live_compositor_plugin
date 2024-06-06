@@ -1,3 +1,21 @@
+defmodule StreamFormatEraser do
+  use Membrane.Filter
+  def_input_pad :input, accepted_format: _any
+  def_output_pad :output, accepted_format: _any
+
+  @impl true
+  def handle_buffer(:input, buf, _ctx, state) do
+    {[buffer: {:output, buf}], state}
+  end
+
+
+  @impl true
+  def handle_stream_format(:input, _sf, _ctx, state) do
+    {[stream_format: {:output, %Membrane.RemoteStream{}}], state}
+  end
+
+end
+
 defmodule Membrane.LiveCompositor do
   @moduledoc """
   Membrane SDK for [LiveCompositor](https://github.com/membraneframework/live_compositor).
@@ -633,8 +651,11 @@ defmodule Membrane.LiveCompositor do
     links =
       get_child({:rtp_receiver, ref})
       |> via_out(Pad.ref(:output, ssrc),
-        options: [depayloader: RTP.H264.Depayloader, clock_rate: 90_000]
+        options: [depayloader: nil, clock_rate: 90_000]
       )
+      |> child(RTP.H264.Depayloader)
+      |> child(StreamFormatEraser)
+      |> child(%Membrane.H264.Parser{generate_best_effort_timestamps: %{framerate: state.output_framerate}, output_alignment: :nalu})
       |> get_child({:output_processor, pad_id})
 
     actions = [spec: {links, group: output_group_id(pad_id)}]
