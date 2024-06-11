@@ -654,8 +654,10 @@ defmodule Membrane.LiveCompositor do
     links =
       get_child({:rtp_receiver, ref})
       |> via_out(Pad.ref(:output, ssrc),
-        options: [depayloader: RTP.Opus.Depayloader, clock_rate: 48_000]
+        options: [depayloader: nil, clock_rate: 48_000]
       )
+      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 48_000})
+      |> child(RTP.Opus.Depayloader)
       |> get_child({:output_processor, pad_id})
 
     {[spec: {links, group: output_group_id(pad_id)}], state}
