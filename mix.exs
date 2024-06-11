@@ -80,9 +80,10 @@ defmodule Membrane.LiveCompositor.Mixfile do
   defp package do
     [
       maintainers: ["Membrane Team"],
-      licenses: ["Apache-2.0"],
+      licenses: ["BUSL-1.1"],
       links: %{
         "GitHub" => @github_url,
+        "Live Compositor Homepage" => "https://compositor.live",
         "Membrane Framework Homepage" => "https://membrane.stream"
       }
     ]

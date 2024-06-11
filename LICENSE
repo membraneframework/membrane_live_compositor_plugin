@@ -1,3 +1,14 @@
+Membrane Live Compositor plugin is using Live Compositor that is licensed
+under Business Source License 1.1.
+
+See https://github.com/membraneframework/live_compositor/blob/master/LICENSE
+to learn more.
+
+-----------------------------------------------------------------------------
+
+Membrane Live Compositor plugin on its own is licensed under Apache-2.0 license
+included below.
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
