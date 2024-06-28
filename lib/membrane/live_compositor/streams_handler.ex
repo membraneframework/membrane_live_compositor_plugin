@@ -22,7 +22,9 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
         end
     }
 
-    {:post, "/api/input/#{pad_id}/register", body}
+    encoded_id = URI.encode_www_form(pad_id)
+
+    {:post, "/api/input/#{encoded_id}/register", body}
     |> ApiClient.send_request(state.lc_port)
     |> map_response
   end
@@ -45,7 +47,9 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
         end
     }
 
-    {:post, "/api/input/#{pad_id}/register", body}
+    encoded_id = URI.encode_www_form(pad_id)
+
+    {:post, "/api/input/#{encoded_id}/register", body}
     |> ApiClient.send_request(state.lc_port)
     |> map_response
   end
@@ -68,7 +72,9 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
       }
     }
 
-    {:post, "/api/output/#{pad_id}/register", body}
+    encoded_id = URI.encode_www_form(pad_id)
+
+    {:post, "/api/output/#{encoded_id}/register", body}
     |> ApiClient.send_request(state.lc_port)
     |> map_response
   end
@@ -87,7 +93,9 @@ defmodule Membrane.LiveCompositor.StreamsHandler do
       }
     }
 
-    {:post, "/api/output/#{pad_id}/register", body}
+    encoded_id = URI.encode_www_form(pad_id)
+
+    {:post, "/api/output/#{encoded_id}/register", body}
     |> ApiClient.send_request(state.lc_port)
     |> map_response
   end
