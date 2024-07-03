@@ -420,11 +420,13 @@ defmodule Membrane.LiveCompositor do
     {:ok, lc_port, server_pid} =
       ServerRunner.ensure_server_started(opt)
 
-    Membrane.ResourceGuard.register(
-      ctx.resource_guard,
-      fn -> Process.exit(server_pid, :kill) end,
-      tag: :live_compositor_server
-    )
+    if opt.server_setup != :already_started do
+      Membrane.ResourceGuard.register(
+        ctx.resource_guard,
+        fn -> Process.exit(server_pid, :kill) end,
+        tag: :live_compositor_server
+      )
+    end
 
     opt.init_requests
     |> Enum.each(fn request ->
