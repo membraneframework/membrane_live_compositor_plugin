@@ -15,7 +15,7 @@ The package can be installed by adding `membrane_live_compositor_plugin` to your
 ```elixir
 def deps do
   [
-    {:membrane_live_compositor_plugin, "~> 0.9.0"}
+    {:membrane_live_compositor_plugin, "~> 0.9.1"}
   ]
 end
 ```
