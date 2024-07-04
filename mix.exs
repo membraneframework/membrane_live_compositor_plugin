@@ -1,7 +1,7 @@
 defmodule Membrane.LiveCompositor.Mixfile do
   use Mix.Project
 
-  @version "0.9.0"
+  @version "0.9.1"
   @github_url "https://github.com/membraneframework/membrane_live_compositor_plugin"
 
   def project do
