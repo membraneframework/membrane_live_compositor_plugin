@@ -509,9 +509,9 @@ defmodule Membrane.LiveCompositor do
   end
 
   @impl true
-  def handle_pad_added(output_ref = Pad.ref(:video_output, pad_id), ctx, state) do
+  def handle_pad_added(output_ref = Pad.ref(:video_output, output_id), ctx, state) do
     state = %State{state | context: Context.add_stream(output_ref, state.context)}
-    {:ok, port} = StreamsHandler.register_video_output_stream(pad_id, ctx.pad_options, state)
+    {:ok, port} = StreamsHandler.register_video_output_stream(output_id, ctx.pad_options, state)
 
     output_stream_format = %Membrane.H264{
       framerate: state.output_framerate,
@@ -526,16 +526,17 @@ defmodule Membrane.LiveCompositor do
         child({:tcp_source, output_ref}, %TCP.Source{
           connection_side: {:client, @local_host, port}
         })
-        |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
-        |> via_in(Pad.ref(:rtp_input, pad_id))
+        |> child({:tcp_decapsulator, output_id}, RTP.TCP.Decapsulator)
+        |> via_in(Pad.ref(:rtp_input, output_id))
         |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
-        child({:output_processor, pad_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
-          output_stream_format: output_stream_format
+        child({:output_processor, output_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
+          output_stream_format: output_stream_format,
+          output_id: output_id
         })
-        |> bin_output(Pad.ref(:video_output, pad_id))
+        |> bin_output(Pad.ref(:video_output, output_id))
       ]
 
-    spec = {links, group: output_group_id(pad_id)}
+    spec = {links, group: output_group_id(output_id)}
 
     {[spec: spec], state}
   end

@@ -3,6 +3,8 @@ defmodule Membrane.LiveCompositor.ApiClient do
 
   require Membrane.Logger
 
+  alias Membrane.LiveCompositor
+
   @type http_method :: :post | :get
   @type request :: {http_method(), path :: String.t(), body :: any()}
 
@@ -29,6 +31,11 @@ defmodule Membrane.LiveCompositor.ApiClient do
   @spec get_status(:inet.port_number()) :: request_result()
   def get_status(lc_port) do
     {:get, "/status", nil} |> send_request(lc_port)
+  end
+
+  @spec request_keyframe(:inet.port_number(), LiveCompositor.output_id()) :: request_result()
+  def request_keyframe(lc_port, output_id) do
+    {:post, "/api/output/#{output_id}/request_keyframe", %{}} |> send_request(lc_port)
   end
 
   @spec send_request(request(), :inet.port_number()) :: request_result()

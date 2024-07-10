@@ -2,10 +2,15 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @moduledoc false
   # Forwards buffers and send specified output stream format.
 
+  alias Membrane.LiveCompositor.ApiClient
+
   use Membrane.Filter
 
   def_options output_stream_format: [
                 spec: Membrane.H264.t()
+              ],
+              output_id: [
+                spec: Membrane.LiveCompositor.output_id()
               ]
 
   def_input_pad :input,
@@ -19,7 +24,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    {[], %{output_stream_format: opt.output_stream_format}}
+    {[], %{output_stream_format: opt.output_stream_format, output_id: opt.output_id}}
   end
 
   @impl true
@@ -30,6 +35,21 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @impl true
   def handle_stream_format(_pad, _stream_format, _ctx, state) do
     {[stream_format: {:output, state.output_stream_format}], state}
+  end
+
+  @impl true
+  def handle_event(:output, %Membrane.KeyframeRequestEvent{}, _ctx, state) do
+    ApiClient.request_keyframe(state.lc_port, state.output_id)
+
+    {[], state}
+  end
+
+  @impl true
+  def handle_event(pad, event, _ctx, state) do
+    Membrane.Logger.debug(
+      "Unknown event received: #{inspect(event)}, pad: #{inspect(pad)}"
+    )
+    {[], state}
   end
 end
 
