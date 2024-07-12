@@ -38,18 +38,20 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   end
 
   @impl true
+  def handle_event(:input, event, _ctx, state) do
+    {[event: {:output, event}], state}
+  end
+
+  @impl true
   def handle_event(:output, %Membrane.KeyframeRequestEvent{}, _ctx, state) do
-    ApiClient.request_keyframe(state.lc_port, state.output_id)
+    {:ok, _resp} = ApiClient.request_keyframe(state.lc_port, state.output_id)
 
     {[], state}
   end
 
   @impl true
-  def handle_event(pad, event, _ctx, state) do
-    Membrane.Logger.debug(
-      "Unknown event received: #{inspect(event)}, pad: #{inspect(pad)}"
-    )
-    {[], state}
+  def handle_event(:output, event, _ctx, state) do
+    {[event: {:input, event}], state}
   end
 end
 
