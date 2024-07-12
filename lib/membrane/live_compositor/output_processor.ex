@@ -2,10 +2,11 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @moduledoc false
   # Forwards buffers and send specified output stream format.
 
-  require Membrane.Logger
-  alias Membrane.LiveCompositor.ApiClient
-
   use Membrane.Filter
+
+  require Membrane.Logger
+
+  alias Membrane.LiveCompositor.ApiClient
 
   def_options output_stream_format: [
                 spec: Membrane.H264.t()
@@ -57,7 +58,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
       {:ok, _resp} ->
         {[], state}
 
-      _ ->
+      _other ->
         Membrane.Logger.error("Failed to request a keyframe for LiveCompositor output.")
         {[], state}
     end
