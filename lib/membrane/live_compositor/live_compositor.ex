@@ -531,7 +531,8 @@ defmodule Membrane.LiveCompositor do
         |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
         child({:output_processor, output_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
           output_stream_format: output_stream_format,
-          output_id: output_id
+          output_id: output_id,
+          lc_port: state.lc_port
         })
         |> bin_output(Pad.ref(:video_output, output_id))
       ]

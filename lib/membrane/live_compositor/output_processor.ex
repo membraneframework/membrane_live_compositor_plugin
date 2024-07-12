@@ -2,6 +2,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @moduledoc false
   # Forwards buffers and send specified output stream format.
 
+  require Membrane.Logger
   alias Membrane.LiveCompositor.ApiClient
 
   use Membrane.Filter
@@ -11,6 +12,9 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
               ],
               output_id: [
                 spec: Membrane.LiveCompositor.output_id()
+              ],
+              lc_port: [
+                spec: :inet.port_number()
               ]
 
   def_input_pad :input,
@@ -24,7 +28,12 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    {[], %{output_stream_format: opt.output_stream_format, output_id: opt.output_id}}
+    {[],
+     %{
+       output_stream_format: opt.output_stream_format,
+       output_id: opt.output_id,
+       lc_port: opt.lc_port
+     }}
   end
 
   @impl true
@@ -44,9 +53,13 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   @impl true
   def handle_event(:output, %Membrane.KeyframeRequestEvent{}, _ctx, state) do
-    {:ok, _resp} = ApiClient.request_keyframe(state.lc_port, state.output_id)
-
-    {[], state}
+    case ApiClient.request_keyframe(state.lc_port, state.output_id) do
+      {:ok, _resp} ->
+        {[], state}
+      _ ->
+        Membrane.Logger.error("Failed to request a keyframe for LiveCompositor output.")
+        {[], state}
+    end
   end
 
   @impl true
