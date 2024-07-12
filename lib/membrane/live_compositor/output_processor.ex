@@ -56,6 +56,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
     case ApiClient.request_keyframe(state.lc_port, state.output_id) do
       {:ok, _resp} ->
         {[], state}
+
       _ ->
         Membrane.Logger.error("Failed to request a keyframe for LiveCompositor output.")
         {[], state}
