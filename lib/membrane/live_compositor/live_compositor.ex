@@ -600,19 +600,7 @@ defmodule Membrane.LiveCompositor do
              Request.UpdateAudioOutput,
              Request.KeyframeRequest
            ] do
-    response =
-      IntoRequest.into_request(req)
-      |> ApiClient.send_request(state.lc_port)
-
-    case response do
-      {:error, exception} ->
-        Membrane.Logger.error(
-          "LiveCompositor failed to send a request: #{inspect(req)}.\nException: #{inspect(exception)}."
-        )
-
-      {:ok, _result} ->
-        nil
-    end
+    response = send_req(req, state.lc_port)
 
     {[notify_parent: {:request_result, req, response}], state}
   end
@@ -688,7 +676,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_child_notification(:keyframe_request, {:output_processor, pad_id}, _ctx, state) do
-    request_keyframe(pad_id, state.lc_port)
+    send_req(%Request.KeyframeRequest{output_id: pad_id}, state.lc_port)
 
     {[], state}
   end
@@ -776,21 +764,22 @@ defmodule Membrane.LiveCompositor do
     "output_group_#{output_id}"
   end
 
-  @spec request_keyframe(output_id(), :inet.port_number()) :: nil
-  defp request_keyframe(output_id, lc_port) do
+  @spec send_req(Request.t(), :inet.port_number()) :: ApiClient.request_result()
+  defp send_req(req, lc_port) do
     response =
-      %Request.KeyframeRequest{output_id: output_id}
-      |> IntoRequest.into_request()
+      IntoRequest.into_request(req)
       |> ApiClient.send_request(lc_port)
 
     case response do
-      {:ok, _resp} ->
-        nil
-
-      {:error, error} ->
+      {:error, exception} ->
         Membrane.Logger.error(
-          "Failed to request a keyframe for LiveCompositor output. #{inspect(error)}"
+          "LiveCompositor failed to send a request: #{inspect(req)}.\nException: #{inspect(exception)}."
         )
+
+      {:ok, _result} ->
+        nil
     end
+
+    response
   end
 end
