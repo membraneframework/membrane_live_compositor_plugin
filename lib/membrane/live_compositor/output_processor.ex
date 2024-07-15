@@ -4,8 +4,6 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   use Membrane.Filter
 
-  require Membrane.Logger
-
   def_options output_stream_format: [
                 spec: Membrane.H264.t()
               ]

@@ -600,7 +600,7 @@ defmodule Membrane.LiveCompositor do
              Request.UpdateAudioOutput,
              Request.KeyframeRequest
            ] do
-    response = send_req(req, state.lc_port)
+    response = handle_request(req, state.lc_port)
 
     {[notify_parent: {:request_result, req, response}], state}
   end
@@ -676,7 +676,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_child_notification(:keyframe_request, {:output_processor, pad_id}, _ctx, state) do
-    send_req(%Request.KeyframeRequest{output_id: pad_id}, state.lc_port)
+    handle_request(%Request.KeyframeRequest{output_id: pad_id}, state.lc_port)
 
     {[], state}
   end
@@ -764,8 +764,8 @@ defmodule Membrane.LiveCompositor do
     "output_group_#{output_id}"
   end
 
-  @spec send_req(Request.t(), :inet.port_number()) :: ApiClient.request_result()
-  defp send_req(req, lc_port) do
+  @spec handle_request(Request.t(), :inet.port_number()) :: ApiClient.request_result()
+  defp handle_request(req, lc_port) do
     response =
       IntoRequest.into_request(req)
       |> ApiClient.send_request(lc_port)
