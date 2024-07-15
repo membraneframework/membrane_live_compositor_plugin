@@ -6,16 +6,8 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   require Membrane.Logger
 
-  alias Membrane.LiveCompositor.ApiClient
-
   def_options output_stream_format: [
                 spec: Membrane.H264.t()
-              ],
-              output_id: [
-                spec: Membrane.LiveCompositor.output_id()
-              ],
-              lc_port: [
-                spec: :inet.port_number()
               ]
 
   def_input_pad :input,
@@ -32,8 +24,6 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
     {[],
      %{
        output_stream_format: opt.output_stream_format,
-       output_id: opt.output_id,
-       lc_port: opt.lc_port
      }}
   end
 
@@ -54,14 +44,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   @impl true
   def handle_event(:output, %Membrane.KeyframeRequestEvent{}, _ctx, state) do
-    case ApiClient.request_keyframe(state.lc_port, state.output_id) do
-      {:ok, _resp} ->
-        {[], state}
-
-      _other ->
-        Membrane.Logger.error("Failed to request a keyframe for LiveCompositor output.")
-        {[], state}
-    end
+    {[notify_parent: :keyframe_request], state}
   end
 
   @impl true
