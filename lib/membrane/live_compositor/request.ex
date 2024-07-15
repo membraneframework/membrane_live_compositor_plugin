@@ -287,11 +287,16 @@ defmodule Membrane.LiveCompositor.Request do
   end
 
   defmodule KeyframeRequest do
-    @moduledoc false
+    @moduledoc """
+    Request to trigger additional keyframe generation for a specified output.
+    """
 
     @enforce_keys [:output_id]
     defstruct @enforce_keys
 
+    @typedoc """
+    - `:output_id` - Id of the output for which additional keyframe should be generated.
+    """
     @type t :: %__MODULE__{
             output_id: Membrane.LiveCompositor.output_id()
           }
@@ -314,6 +319,7 @@ defmodule Membrane.LiveCompositor.Request do
           | UnregisterOutput.t()
           | UpdateVideoOutput.t()
           | UpdateAudioOutput.t()
+          | KeyframeRequest.t()
 
   @type result :: {:request_result, t(), {:ok, any()} | {:error, any()}}
 end

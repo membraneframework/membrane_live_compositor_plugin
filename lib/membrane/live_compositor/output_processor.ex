@@ -23,7 +23,7 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   def handle_init(_ctx, opt) do
     {[],
      %{
-       output_stream_format: opt.output_stream_format,
+       output_stream_format: opt.output_stream_format
      }}
   end
 
