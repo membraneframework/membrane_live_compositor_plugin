@@ -632,6 +632,9 @@ defmodule Membrane.LiveCompositor do
         _ctx,
         state = %State{}
       ) do
+
+    require Logger
+    Logger.warning("new_rtp_stream123")
     links =
       get_child({:rtp_receiver, ref})
       |> via_out(Pad.ref(:output, ssrc),
