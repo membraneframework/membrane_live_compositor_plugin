@@ -794,7 +794,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_child_playing(child, _ctx, state) do
   require Logger
-  Logger.warning("child: #{inspect(child} playing123")
+  Logger.warning("child: #{inspect(child)} playing123")
   {[], state}
   end
 end
