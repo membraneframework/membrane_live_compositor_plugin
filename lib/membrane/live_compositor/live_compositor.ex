@@ -640,8 +640,8 @@ defmodule Membrane.LiveCompositor do
       |> via_out(Pad.ref(:output, ssrc),
         options: [depayloader: nil, clock_rate: 90_000]
       )
-      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 90_000})
-      |> child(RTP.H264.Depayloader)
+      |> child(:jitter_buffer, %Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 90_000})
+      |> child(:depayloader, RTP.H264.Depayloader)
       |> get_child({:output_processor, pad_id})
 
     actions = [spec: {links, group: output_group_id(pad_id)}]
@@ -769,5 +769,25 @@ defmodule Membrane.LiveCompositor do
   @spec output_group_id(output_id()) :: String.t()
   defp output_group_id(output_id) do
     "output_group_#{output_id}"
+  end
+
+
+  @impl true
+  def handle_element_start_of_stream(:jitter_buffer, _pad, _ctx, state) do
+    require Logger
+    Logger.warning("Start of stream jitter123")
+    {[], state}
+  end
+
+  @impl true
+  def handle_element_start_of_stream(:depayloader, _pad, _ctx, state) do
+    require Logger
+    Logger.warning("Start of stream depayloader123")
+    {[], state}
+  end
+
+  @impl true
+  def handle_element_start_of_stream(_element, _pad, _ctx, state) do
+    {[], state}
   end
 end
