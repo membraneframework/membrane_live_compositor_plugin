@@ -790,4 +790,11 @@ defmodule Membrane.LiveCompositor do
   def handle_element_start_of_stream(_element, _pad, _ctx, state) do
     {[], state}
   end
+
+  @impl true
+  def handle_child_playing(child, _ctx, state) do
+  require Logger
+  Logger.warning("child: #{inspect(child} playing123")
+  {[], state}
+  end
 end
