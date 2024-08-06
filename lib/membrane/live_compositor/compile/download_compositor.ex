@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Compile.DownloadCompositor do
 
   @spec lc_app_url(String.t()) :: String.t()
   def lc_app_url(architecture) do
-    "https://github.com/membraneframework/live_compositor/releases/download/#{@lc_version}/live_compositor_#{architecture}.tar.gz"
+    "https://github.com/software-mansion/live-compositor/releases/download/#{@lc_version}/live_compositor_#{architecture}.tar.gz"
   end
 
   defp lc_app_directory(architecture) do
