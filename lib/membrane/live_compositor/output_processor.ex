@@ -19,7 +19,10 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
 
   @impl true
   def handle_init(_ctx, opt) do
-    {[], %{output_stream_format: opt.output_stream_format}}
+    {[],
+     %{
+       output_stream_format: opt.output_stream_format
+     }}
   end
 
   @impl true
@@ -30,6 +33,21 @@ defmodule Membrane.LiveCompositor.VideoOutputProcessor do
   @impl true
   def handle_stream_format(_pad, _stream_format, _ctx, state) do
     {[stream_format: {:output, state.output_stream_format}], state}
+  end
+
+  @impl true
+  def handle_event(:input, event, _ctx, state) do
+    {[event: {:output, event}], state}
+  end
+
+  @impl true
+  def handle_event(:output, %Membrane.KeyframeRequestEvent{}, _ctx, state) do
+    {[notify_parent: :keyframe_request], state}
+  end
+
+  @impl true
+  def handle_event(:output, event, _ctx, state) do
+    {[event: {:input, event}], state}
   end
 end
 

@@ -286,6 +286,30 @@ defmodule Membrane.LiveCompositor.Request do
     end
   end
 
+  defmodule KeyframeRequest do
+    @moduledoc """
+    Request to trigger additional keyframe generation for a specified output.
+    """
+
+    @enforce_keys [:output_id]
+    defstruct @enforce_keys
+
+    @typedoc """
+    - `:output_id` - Id of the output for which additional keyframe should be generated.
+    """
+    @type t :: %__MODULE__{
+            output_id: Membrane.LiveCompositor.output_id()
+          }
+  end
+
+  defimpl ApiClient.IntoRequest, for: KeyframeRequest do
+    @spec into_request(KeyframeRequest.t()) :: ApiClient.request()
+    def into_request(request) do
+      encoded_id = URI.encode_www_form(request.output_id)
+      {:post, "/api/output/#{encoded_id}/request_keyframe", %{}}
+    end
+  end
+
   @type t ::
           RegisterImage.t()
           | RegisterShader.t()
@@ -295,6 +319,7 @@ defmodule Membrane.LiveCompositor.Request do
           | UnregisterOutput.t()
           | UpdateVideoOutput.t()
           | UpdateAudioOutput.t()
+          | KeyframeRequest.t()
 
   @type result :: {:request_result, t(), {:ok, any()} | {:error, any()}}
 end
