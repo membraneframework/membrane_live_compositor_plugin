@@ -79,7 +79,7 @@ defmodule Membrane.LiveCompositor.Mixfile do
 
   defp package do
     [
-      maintainers: ["Membrane Team"],
+      maintainers: ["Software Mansion"],
       licenses: ["BUSL-1.1"],
       links: %{
         "GitHub" => @github_url,
