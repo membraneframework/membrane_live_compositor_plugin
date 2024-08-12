@@ -1,6 +1,6 @@
 defmodule Membrane.LiveCompositor do
   @moduledoc """
-  Membrane SDK for [LiveCompositor](https://github.com/membraneframework/live_compositor).
+  Membrane SDK for [LiveCompositor](https://github.com/software-mansion/live-compositor).
 
   ## Input streams
 
