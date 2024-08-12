@@ -63,10 +63,11 @@ defmodule Membrane.LiveCompositor.Lifecycle do
   @type input_eos :: :input_eos
 
   @type notification :: {
-          output_registered()
-          | input_registered()
+          input_registered()
           | input_delivered()
-          | input_eos(),
+          | input_playing()
+          | input_eos()
+          | output_registered(),
           Pad.ref(),
           Context.t()
         }
