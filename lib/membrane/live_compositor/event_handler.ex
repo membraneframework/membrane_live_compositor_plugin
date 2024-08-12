@@ -73,7 +73,7 @@ defmodule Membrane.LiveCompositor.EventHandler do
       %{"type" => "OUTPUT_DONE", "output_id" => _output_id} ->
         nil
 
-      msg ->
+      _other ->
         nil
     end
   end
