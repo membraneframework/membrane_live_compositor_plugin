@@ -6,7 +6,6 @@ defmodule Membrane.LiveCompositor.EventHandler do
   require Membrane.Logger
   require Membrane.Pad
 
-  alias Membrane.LiveCompositor
   alias Membrane.Pad
 
   @spec start_link({:inet.port_number(), pid()}) :: {:ok, pid} | {:error, term}
@@ -46,7 +45,7 @@ defmodule Membrane.LiveCompositor.EventHandler do
     {:ok, state}
   end
 
-  @spec msg_to_event(any()) :: {LiveCompositor.Lifecycle.event(), Pad.ref()} | nil
+  @spec msg_to_event(any()) :: {any(), Pad.ref()} | nil
   defp msg_to_event(msg) do
     case msg do
       %{"type" => "VIDEO_INPUT_DELIVERED", "input_id" => input_id} ->
