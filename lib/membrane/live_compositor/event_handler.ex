@@ -25,7 +25,7 @@ defmodule Membrane.LiveCompositor.EventHandler do
 
     case msg_to_event(msg) do
       nil -> :ok
-      event -> send(state.parent_pid, event)
+      event -> send(state.parent_pid, {:websocket_message, event})
     end
 
     {:ok, state}
