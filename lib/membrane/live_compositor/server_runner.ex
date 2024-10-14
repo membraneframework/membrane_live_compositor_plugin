@@ -94,21 +94,22 @@ defmodule Membrane.LiveCompositor.ServerRunner do
 
   @spec start_on_port(:inet.port_number(), map(), String.t(), String.t()) :: {:ok, pid()} | :error
   defp start_on_port(lc_port, env, bin_path, instance_id) do
-    pid =
-      spawn(fn ->
-        bin_path
-        |> MuonTrap.cmd([],
-          into: IO.stream(),
-          env:
-            Map.merge(
-              %{
-                "LIVE_COMPOSITOR_API_PORT" => "#{lc_port}",
-                "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
-              },
-              env
-            )
-        )
-      end)
+    env =
+      Map.merge(env, %{
+        "LIVE_COMPOSITOR_API_PORT" => to_string(lc_port),
+        "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
+      })
+
+    spec =
+      Supervisor.child_spec(
+        {MuonTrap.Daemon, [bin_path, _args = [], [env: env, log_output: :info]]},
+        # TODO: make the caller pass this in, so they can use an atom pool if they're
+        # concerned about atom exhaustion
+        id: String.to_atom(instance_id),
+        restart: :transient
+      )
+
+    {:ok, pid} = DynamicSupervisor.start_child(Membrane.LiveCompositor.ServerSupervisor, spec)
 
     case wait_for_lc_startup(lc_port, pid, instance_id) do
       :started ->
