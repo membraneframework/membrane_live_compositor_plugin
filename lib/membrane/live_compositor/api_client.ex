@@ -34,14 +34,15 @@ defmodule Membrane.LiveCompositor.ApiClient do
   @spec send_request(request(), :inet.port_number()) :: request_result()
   def send_request(request, lc_port) do
     {method, route, body} = request
-    url = lc_url(lc_port, route)
-
     {:ok, _} = Application.ensure_all_started(:req)
+
+    retry_delay_ms = fn retry_count -> retry_count * 100 end
+    req = Req.new(base_url: "http://#{@local_host_url}:#{lc_port}", retry_delay: retry_delay_ms)
 
     response =
       case method do
-        :post -> Req.post(url, json: body)
-        :get -> Req.get(url)
+        :post -> Req.post(req, url: route, json: body)
+        :get -> Req.get(req, url: route)
       end
 
     handle_request_result(response)
@@ -55,9 +56,5 @@ defmodule Membrane.LiveCompositor.ApiClient do
       {:ok, resp} -> {:error, {:response, resp}}
       {:error, exception} -> {:error, exception}
     end
-  end
-
-  defp lc_url(lc_server_port, route) do
-    "http://#{@local_host_url}:#{lc_server_port}#{route}"
   end
 end
