@@ -106,7 +106,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
         # TODO: make the caller pass this in, so they can use an atom pool if they're
         # concerned about atom exhaustion
         id: String.to_atom(instance_id),
-        restart: :transient
+        restart: :temporary
       )
 
     {:ok, pid} = DynamicSupervisor.start_child(Membrane.LiveCompositor.ServerSupervisor, spec)
