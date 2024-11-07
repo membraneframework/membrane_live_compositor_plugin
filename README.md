@@ -1,5 +1,6 @@
 # Membrane Live Compositor Plugin
 
+
 [![Hex.pm](https://img.shields.io/hexpm/v/membrane_live_compositor_plugin.svg)](https://hex.pm/packages/membrane_live_compositor_plugin)
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_live_compositor_plugin)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/membraneframework/membrane_live_compositor_plugin/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/membraneframework/membrane_live_compositor_plugin/tree/master)
