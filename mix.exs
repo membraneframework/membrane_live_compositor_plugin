@@ -28,6 +28,7 @@ defmodule Membrane.LiveCompositor.Mixfile do
 
   def application do
     [
+      mod: {Membrane.LiveCompositor.Application, []},
       extra_applications: []
     ]
   end
