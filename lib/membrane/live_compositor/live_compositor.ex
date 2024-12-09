@@ -185,7 +185,11 @@ defmodule Membrane.LiveCompositor do
                 default: :real_time_auto_init
               ],
               server_setup: [
-                spec: :already_started | {:already_started, ip :: :inet.ip_adress()} | :start_locally | {:start_locally, path :: String.t()},
+                spec:
+                  :already_started
+                  | {:already_started, ip :: :inet.ip_adress()}
+                  | :start_locally
+                  | {:start_locally, path :: String.t()},
                 description: """
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
@@ -777,7 +781,8 @@ defmodule Membrane.LiveCompositor do
     "output_group_#{output_id}"
   end
 
-  @spec handle_request(Request.t(), {String.t(), :inet.port_number()}) :: ApiClient.request_result()
+  @spec handle_request(Request.t(), {String.t(), :inet.port_number()}) ::
+          ApiClient.request_result()
   defp handle_request(req, lc_socket) do
     response =
       IntoRequest.into_request(req)

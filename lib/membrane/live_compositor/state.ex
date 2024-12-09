@@ -5,7 +5,13 @@ defmodule Membrane.LiveCompositor.State do
   alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.Context
 
-  @enforce_keys [:output_framerate, :output_sample_rate, :lc_socket, :context, :composing_strategy]
+  @enforce_keys [
+    :output_framerate,
+    :output_sample_rate,
+    :lc_socket,
+    :context,
+    :composing_strategy
+  ]
   defstruct @enforce_keys ++ [server_pid: nil, last_ssrc: 0]
 
   @type t :: %__MODULE__{
