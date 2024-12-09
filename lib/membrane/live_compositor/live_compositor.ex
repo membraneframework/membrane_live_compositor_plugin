@@ -185,7 +185,7 @@ defmodule Membrane.LiveCompositor do
                 default: :real_time_auto_init
               ],
               server_setup: [
-                spec: :already_started | :start_locally | {:start_locally, path :: String.t()},
+                spec: :already_started | {:already_started, ip :: :inet.ip_adress()} | :start_locally | {:start_locally, path :: String.t()},
                 description: """
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
@@ -194,8 +194,11 @@ defmodule Membrane.LiveCompositor do
                 - `{:start_locally, path}` - LC server is automatically started, but different binary
                 is used to spawn the process.
                 - `:already_started` - LiveCompositor bin assumes, that LC server is already started
-                and is available on a specified port. When this option is selected, the `api_port`
-                option need to specify an exact port number (not a range).
+                and is available on a localhost on a specified port. When this option is selected, the
+                `api_port` option need to specify an exact port number (not a range).
+                - `{:already_started, ip}` - LiveCompositor bin assumes, that LC server is already
+                started and is available on a specified `ip` on a specified port. When this option is
+                selected, the `api_port` option need to specify an exact port number (not a range).
                 """,
                 default: :start_locally
               ],
@@ -428,16 +431,26 @@ defmodule Membrane.LiveCompositor do
       )
     end
 
+    ip =
+      case opt.server_setup do
+        {:already_started, ip} -> ip
+        _not_specified -> {127, 0, 0, 1}
+      end
+      |> Tuple.to_list()
+      |> Enum.map_join(".", &inspect/1)
+
+    lc_socket = {ip, lc_port}
+
     opt.init_requests
     |> Enum.each(fn request ->
       {:ok, _} =
         IntoRequest.into_request(request)
-        |> ApiClient.send_request(lc_port)
+        |> ApiClient.send_request(lc_socket)
     end)
 
     Membrane.UtilitySupervisor.start_link_child(
       ctx.utility_supervisor,
-      {EventHandler, {lc_port, self()}}
+      {EventHandler, {lc_socket, self()}}
     )
 
     {[setup: :incomplete],
@@ -445,7 +458,7 @@ defmodule Membrane.LiveCompositor do
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
        composing_strategy: opt.composing_strategy,
-       lc_port: lc_port,
+       lc_socket: lc_socket,
        context: %Context{}
      }}
   end
@@ -564,7 +577,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    ensure_input_unregistered(pad_id, state.lc_port)
+    ensure_input_unregistered(pad_id, state.lc_socket)
 
     state = %State{state | context: Context.remove_input(pad_id, state.context)}
     {[remove_children: input_group_id(pad_id)], state}
@@ -573,7 +586,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(output_type, pad_id), _ctx, state)
       when output_type in [:audio_output, :video_output] do
-    ensure_output_unregistered(pad_id, state.lc_port)
+    ensure_output_unregistered(pad_id, state.lc_socket)
 
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
@@ -582,7 +595,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state) do
     {:ok, _response} =
-      ApiClient.start_composing(state.lc_port)
+      ApiClient.start_composing(state.lc_socket)
 
     {[], state}
   end
@@ -600,7 +613,7 @@ defmodule Membrane.LiveCompositor do
              Request.UpdateAudioOutput,
              Request.KeyframeRequest
            ] do
-    response = handle_request(req, state.lc_port)
+    response = handle_request(req, state.lc_socket)
 
     {[notify_parent: {:request_result, req, response}], state}
   end
@@ -676,7 +689,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_child_notification(:keyframe_request, {:output_processor, pad_id}, _ctx, state) do
-    handle_request(%Request.KeyframeRequest{output_id: pad_id}, state.lc_port)
+    handle_request(%Request.KeyframeRequest{output_id: pad_id}, state.lc_socket)
 
     {[], state}
   end
@@ -693,7 +706,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_info(:websocket_connected, _ctx, state) do
     if state.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = ApiClient.start_composing(state.lc_port)
+      {:ok, _resp} = ApiClient.start_composing(state.lc_socket)
     end
 
     {[setup: :complete], state}
@@ -716,12 +729,12 @@ defmodule Membrane.LiveCompositor do
     {[], state}
   end
 
-  @spec ensure_input_unregistered(input_id(), :inet.port_number()) :: :ok
-  defp ensure_input_unregistered(input_id, lc_port) do
+  @spec ensure_input_unregistered(input_id(), {String.t(), :inet.port_number()}) :: :ok
+  defp ensure_input_unregistered(input_id, lc_socket) do
     response =
       %Request.UnregisterInput{input_id: input_id}
       |> IntoRequest.into_request()
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_socket)
 
     case response do
       {:ok, _response} ->
@@ -735,12 +748,12 @@ defmodule Membrane.LiveCompositor do
     end
   end
 
-  @spec ensure_output_unregistered(output_id(), :inet.port_number()) :: :ok
-  defp ensure_output_unregistered(output_id, lc_port) do
+  @spec ensure_output_unregistered(output_id(), {String.t(), :inet.port_number()}) :: :ok
+  defp ensure_output_unregistered(output_id, lc_socket) do
     response =
       %Request.UnregisterOutput{output_id: output_id}
       |> IntoRequest.into_request()
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_socket)
 
     case response do
       {:ok, _response} ->
@@ -764,11 +777,11 @@ defmodule Membrane.LiveCompositor do
     "output_group_#{output_id}"
   end
 
-  @spec handle_request(Request.t(), :inet.port_number()) :: ApiClient.request_result()
-  defp handle_request(req, lc_port) do
+  @spec handle_request(Request.t(), {String.t(), :inet.port_number()}) :: ApiClient.request_result()
+  defp handle_request(req, lc_socket) do
     response =
       IntoRequest.into_request(req)
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_socket)
 
     case response do
       {:error, exception} ->
