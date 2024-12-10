@@ -6,7 +6,6 @@ defmodule Membrane.LiveCompositor.ApiClient do
   @type http_method :: :post | :get
   @type request :: {http_method(), path :: String.t(), body :: any()}
 
-  @local_host_url "127.0.0.1"
   @type request_result ::
           {:ok, Req.Response.t()}
           | {:error, {:response, Req.Response.t()}}

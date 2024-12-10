@@ -187,7 +187,7 @@ defmodule Membrane.LiveCompositor do
               server_setup: [
                 spec:
                   :already_started
-                  | {:already_started, ip :: :inet.ip_adress()}
+                  | {:already_started, ip :: :inet.ip_address()}
                   | :start_locally
                   | {:start_locally, path :: String.t()},
                 description: """
