@@ -437,11 +437,9 @@ defmodule Membrane.LiveCompositor do
 
     ip =
       case opt.server_setup do
-        {:already_started, ip} -> ip
-        _not_specified -> {127, 0, 0, 1}
+        {:already_started, ip} -> ip |> Tuple.to_list() |> Enum.join(".")
+        _not_specified -> "127.0.0.1"
       end
-      |> Tuple.to_list()
-      |> Enum.map_join(".", &inspect/1)
 
     lc_socket = {ip, lc_port}
 
