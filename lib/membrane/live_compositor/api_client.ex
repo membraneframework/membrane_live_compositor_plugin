@@ -21,18 +21,18 @@ defmodule Membrane.LiveCompositor.ApiClient do
   end
 
   @spec start_composing({:inet.ip_address(), :inet.port_number()}) :: request_result()
-  def start_composing(lc_socket) do
-    {:post, "/api/start", %{}} |> send_request(lc_socket)
+  def start_composing(lc_address) do
+    {:post, "/api/start", %{}} |> send_request(lc_address)
   end
 
   @spec get_status({:inet.ip_address(), :inet.port_number()}) :: request_result()
-  def get_status(lc_socket) do
-    {:get, "/status", nil} |> send_request(lc_socket)
+  def get_status(lc_address) do
+    {:get, "/status", nil} |> send_request(lc_address)
   end
 
   @spec send_request(request(), {:inet.ip_address(), :inet.port_number()}) :: request_result()
-  def send_request(request, lc_socket) do
-    {lc_ip, lc_port} = lc_socket
+  def send_request(request, lc_address) do
+    {lc_ip, lc_port} = lc_address
     lc_ip = lc_ip |> Tuple.to_list() |> Enum.join(".")
 
     {method, route, body} = request
