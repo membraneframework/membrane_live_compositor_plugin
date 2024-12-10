@@ -103,9 +103,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
     spec =
       Supervisor.child_spec(
         {MuonTrap.Daemon, [bin_path, _args = [], [env: env, log_output: :info]]},
-        # TODO: make the caller pass this in, so they can use an atom pool if they're
-        # concerned about atom exhaustion
-        id: String.to_atom(instance_id),
+        id: instance_id,
         restart: :temporary
       )
 
