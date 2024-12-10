@@ -19,7 +19,7 @@ defmodule Membrane.LiveCompositor.State do
           output_framerate: Membrane.RawVideo.framerate_t(),
           output_sample_rate: LiveCompositor.output_sample_rate(),
           composing_strategy: :real_time_auto_init | :real_time | :offline_processing,
-          lc_socket: {ip :: String.t(), :inet.port_number()},
+          lc_socket: {ip :: :inet.ip_address(), :inet.port_number()},
           server_pid: pid() | nil
         }
 

@@ -8,9 +8,12 @@ defmodule Membrane.LiveCompositor.EventHandler do
 
   alias Membrane.Pad
 
-  @spec start_link({{String.t(), :inet.port_number()}, pid()}) :: {:ok, pid} | {:error, term}
+  @spec start_link({{:inet.ip_address(), :inet.port_number()}, pid()}) ::
+          {:ok, pid} | {:error, term}
   def start_link({lc_socket, parent_pid}) do
     {lc_ip, lc_port} = lc_socket
+    lc_ip = lc_ip |> Tuple.to_list() |> Enum.join(".")
+
     WebSockex.start_link("ws://#{lc_ip}:#{lc_port}/ws", __MODULE__, %{parent_pid: parent_pid})
   end
 

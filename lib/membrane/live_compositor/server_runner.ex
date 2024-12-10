@@ -6,7 +6,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.ApiClient
 
-  @local_ip "127.0.0.1"
+  @local_host {127, 0, 0, 1}
 
   @spec ensure_server_started(LiveCompositor.t()) ::
           {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
@@ -129,7 +129,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
       Process.sleep(100)
 
       with {:is_alive, true} <- {:is_alive, Process.alive?(pid)},
-           {:ok, response} <- ApiClient.get_status({@local_ip, lc_port}) do
+           {:ok, response} <- ApiClient.get_status({@local_host, lc_port}) do
         if response.body["instance_id"] == instance_id do
           {:halt, :started}
         else
