@@ -9,7 +9,8 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   @local_host {127, 0, 0, 1}
 
   @spec ensure_server_started(LiveCompositor.t()) ::
-          {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
+          {:ok, {:inet.ip_address(), :inet.port_number()}, pid() | nil}
+          | {:error, err :: String.t()}
   def ensure_server_started(opt) do
     {framerate_num, framerate_den} = opt.framerate
     framerate_str = "#{framerate_num}/#{framerate_den}"
@@ -40,20 +41,29 @@ defmodule Membrane.LiveCompositor.ServerRunner do
           end
 
         {:ok, lc_port, server_pid} = start_server(path, opt.api_port, env, instance_id)
-        {:ok, lc_port, server_pid}
+        lc_address = {@local_host, lc_port}
+        {:ok, lc_address, server_pid}
 
       {:start_locally, path} ->
         {:ok, lc_port, server_pid} = start_server(path, opt.api_port, env, instance_id)
-        {:ok, lc_port, server_pid}
+        lc_address = {@local_host, lc_port}
+        {:ok, lc_address, server_pid}
 
       :already_started ->
-        case opt.api_port do
-          {_start, _end} ->
-            raise "Exact api_port is required when server_setup is set to :already_started"
-
-          exact ->
-            {:ok, exact, nil}
+        with {_start_, _end} <- opt.api_port do
+          raise "Exact api_port is required when server_setup is set to :already_started"
         end
+
+        lc_address = {@local_host, opt.api_port}
+        {:ok, lc_address, nil}
+
+      {:already_started, ip_address} ->
+        with {_start_, _end} <- opt.api_port do
+          raise "Exact api_port is required when server_setup is set to {:already_started, ip}"
+        end
+
+        lc_address = {ip_address, opt.api_port}
+        {:ok, lc_address, nil}
     end
   end
 

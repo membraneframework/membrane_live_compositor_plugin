@@ -422,7 +422,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_setup(ctx, opt) do
-    {:ok, lc_port, server_pid} =
+    {:ok, lc_address, server_pid} =
       ServerRunner.ensure_server_started(opt)
 
     if opt.server_setup != :already_started do
@@ -432,14 +432,6 @@ defmodule Membrane.LiveCompositor do
         tag: :live_compositor_server
       )
     end
-
-    lc_ip =
-      case opt.server_setup do
-        {:already_started, ip} -> ip
-        _not_specified -> {127, 0, 0, 1}
-      end
-
-    lc_address = {lc_ip, lc_port}
 
     opt.init_requests
     |> Enum.each(fn request ->
