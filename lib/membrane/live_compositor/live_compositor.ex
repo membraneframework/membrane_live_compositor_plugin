@@ -423,7 +423,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_setup(ctx, opt) do
     {:ok, lc_address, server_pid} =
-      ServerRunner.ensure_server_started(opt)
+      ServerRunner.ensure_server_started(opt, ctx.utility_supervisor)
 
     if opt.server_setup != :already_started do
       Membrane.ResourceGuard.register(
