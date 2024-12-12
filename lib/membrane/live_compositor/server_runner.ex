@@ -6,9 +6,9 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.ApiClient
 
-  @spec ensure_server_started(LiveCompositor.t()) ::
+  @spec ensure_server_started(LiveCompositor.t(), Membrane.UtilitySupervisor.t()) ::
           {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
-  def ensure_server_started(opt) do
+  def ensure_server_started(opt, utility_supervisor) do
     {framerate_num, framerate_den} = opt.framerate
     framerate_str = "#{framerate_num}/#{framerate_den}"
     instance_id = "live_compositor_#{:rand.uniform(1_000_000_000)}"
@@ -37,11 +37,15 @@ defmodule Membrane.LiveCompositor.ServerRunner do
               """
           end
 
-        {:ok, lc_port, server_pid} = start_server(path, opt.api_port, env, instance_id)
+        {:ok, lc_port, server_pid} =
+          start_server(path, opt.api_port, env, instance_id, utility_supervisor)
+
         {:ok, lc_port, server_pid}
 
       {:start_locally, path} ->
-        {:ok, lc_port, server_pid} = start_server(path, opt.api_port, env, instance_id)
+        {:ok, lc_port, server_pid} =
+          start_server(path, opt.api_port, env, instance_id, utility_supervisor)
+
         {:ok, lc_port, server_pid}
 
       :already_started ->
@@ -59,10 +63,11 @@ defmodule Membrane.LiveCompositor.ServerRunner do
           String.t(),
           :inet.port_number() | LiveCompositor.port_range(),
           map(),
-          String.t()
+          String.t(),
+          Membrane.UtilitySupervisor.t()
         ) ::
           {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
-  defp start_server(bin_path, port_or_port_range, env, instance_id) do
+  defp start_server(bin_path, port_or_port_range, env, instance_id, utility_supervisor) do
     {port_lower_bound, port_upper_bound} =
       case port_or_port_range do
         {start, endd} -> {start, endd}
@@ -77,38 +82,52 @@ defmodule Membrane.LiveCompositor.ServerRunner do
     |> Enum.shuffle()
     |> Enum.reduce_while(
       {:error, "Failed to start a LiveCompositor server on any of the ports."},
-      fn port, err -> try_starting_on_port(port, err, env, bin_path, instance_id) end
+      fn port, err ->
+        try_starting_on_port(port, err, env, bin_path, instance_id, utility_supervisor)
+      end
     )
   end
 
-  @spec try_starting_on_port(:inet.port_number(), String.t(), map(), String.t(), String.t()) ::
+  @spec try_starting_on_port(
+          :inet.port_number(),
+          String.t(),
+          map(),
+          String.t(),
+          String.t(),
+          Membrane.UtilitySupervisor.t()
+        ) ::
           {:halt, {:ok, :inet.port_number()}} | {:cont, err :: String.t()}
-  defp try_starting_on_port(port, err, env, bin_path, instance_id) do
+  defp try_starting_on_port(port, err, env, bin_path, instance_id, utility_supervisor) do
     Membrane.Logger.debug("Trying to launch LiveCompositor on port: #{port}")
 
-    case start_on_port(port, env, bin_path, instance_id) do
+    case start_on_port(port, env, bin_path, instance_id, utility_supervisor) do
       {:ok, pid} -> {:halt, {:ok, port, pid}}
       :error -> {:cont, err}
     end
   end
 
-  @spec start_on_port(:inet.port_number(), map(), String.t(), String.t()) :: {:ok, pid()} | :error
-  defp start_on_port(lc_port, env, bin_path, instance_id) do
-    pid =
-      spawn(fn ->
-        bin_path
-        |> MuonTrap.cmd([],
-          into: IO.stream(),
-          env:
-            Map.merge(
-              %{
-                "LIVE_COMPOSITOR_API_PORT" => "#{lc_port}",
-                "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
-              },
-              env
-            )
-        )
-      end)
+  @spec start_on_port(
+          :inet.port_number(),
+          map(),
+          String.t(),
+          String.t(),
+          Membrane.UtilitySupervisor.t()
+        ) :: {:ok, pid()} | :error
+  defp start_on_port(lc_port, env, bin_path, instance_id, utility_supervisor) do
+    env =
+      Map.merge(env, %{
+        "LIVE_COMPOSITOR_API_PORT" => to_string(lc_port),
+        "LIVE_COMPOSITOR_WEB_RENDERER_ENABLE" => "false"
+      })
+
+    spec =
+      Supervisor.child_spec(
+        {MuonTrap.Daemon, [bin_path, _args = [], [env: env, log_output: :info]]},
+        id: instance_id,
+        restart: :temporary
+      )
+
+    {:ok, pid} = Membrane.UtilitySupervisor.start_child(utility_supervisor, spec)
 
     case wait_for_lc_startup(lc_port, pid, instance_id) do
       :started ->
