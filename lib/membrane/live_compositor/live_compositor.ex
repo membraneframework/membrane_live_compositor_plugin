@@ -142,7 +142,7 @@ defmodule Membrane.LiveCompositor do
   @local_host {127, 0, 0, 1}
 
   def_options framerate: [
-                spec: Membrane.RawVideo.framerate_t(),
+                spec: Membrane.RawVideo.framerate(),
                 description: "Framerate of LiveCompositor outputs."
               ],
               output_sample_rate: [

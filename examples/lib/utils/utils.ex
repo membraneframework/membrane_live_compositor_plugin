@@ -8,7 +8,7 @@ defmodule Utils.LcServer do
   If LIVE_COMPOSITOR_PATH env var exists start video compositor instance.
   Returns server_setup
   """
-  @spec server_setup(Membrane.RawVideo.framerate_t()) ::
+  @spec server_setup(Membrane.RawVideo.framerate()) ::
           {:start_locally, String.t()} | :already_started
   def server_setup(framerate) do
     case System.get_env("LIVE_COMPOSITOR_PATH") do
