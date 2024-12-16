@@ -16,7 +16,7 @@ defmodule Membrane.LiveCompositor.State do
 
   @type t :: %__MODULE__{
           context: Context.t(),
-          output_framerate: Membrane.RawVideo.framerate_t(),
+          output_framerate: Membrane.RawVideo.framerate(),
           output_sample_rate: LiveCompositor.output_sample_rate(),
           composing_strategy: :real_time_auto_init | :real_time | :offline_processing,
           lc_address: {ip :: :inet.ip_address(), :inet.port_number()},

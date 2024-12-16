@@ -140,7 +140,7 @@ defmodule Membrane.LiveCompositor do
           | {:all_of, list(input_id())}
 
   def_options framerate: [
-                spec: Membrane.RawVideo.framerate_t(),
+                spec: Membrane.RawVideo.framerate(),
                 description: "Framerate of LiveCompositor outputs."
               ],
               output_sample_rate: [
