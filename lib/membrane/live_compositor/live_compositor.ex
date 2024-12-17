@@ -185,7 +185,7 @@ defmodule Membrane.LiveCompositor do
               server_setup: [
                 spec:
                   :already_started
-                  | {:already_started, ip :: :inet.ip_address()}
+                  | {:already_started, :inet.ip_address() | String.t() | atom()}
                   | :start_locally
                   | {:start_locally, path :: String.t()},
                 description: """
@@ -198,9 +198,11 @@ defmodule Membrane.LiveCompositor do
                 - `:already_started` - LiveCompositor bin assumes, that LC server is already started
                 and is available on a localhost on a specified port. When this option is selected, the
                 `api_port` option need to specify an exact port number (not a range).
-                - `{:already_started, ip}` - LiveCompositor bin assumes, that LC server is already
-                started and is available on a specified `ip` on a specified port. When this option is
-                selected, the `api_port` option need to specify an exact port number (not a range).
+                - `{:already_started, ip_or_hostname}` - LiveCompositor bin assumes, that LC server is already
+                started and is available on a specified IP or name on a specified port. When this option is
+                selected, the `api_port` option need to specify an exact port number (not a range). If
+                `ip_or_hostname` is a string or an atom, it will be resolved to `:inet.ip_address()` using
+                `:inet.gethostbyname/1`.
                 """,
                 default: :start_locally
               ],

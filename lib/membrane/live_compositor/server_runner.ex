@@ -60,13 +60,42 @@ defmodule Membrane.LiveCompositor.ServerRunner do
         lc_address = {@local_host, opt.api_port}
         {:ok, lc_address, nil}
 
-      {:already_started, ip_address} ->
+      {:already_started, ip_or_hostname} ->
         with {_start_, _end} <- opt.api_port do
           raise "Exact api_port is required when server_setup is set to {:already_started, ip}"
         end
 
+        ip_address =
+          cond do
+            :inet.is_ipv4_address(ip_or_hostname) ->
+              ip_or_hostname
+
+            is_atom(ip_or_hostname) ->
+              ip_or_hostname |> get_host_by_name!()
+
+            is_binary(ip_or_hostname) ->
+              ip_or_hostname |> to_charlist() |> get_host_by_name!()
+          end
+
         lc_address = {ip_address, opt.api_port}
         {:ok, lc_address, nil}
+    end
+  end
+
+  defp get_host_by_name!(hostname) do
+    with {:ok, ip} <- :inet.gethostbyname(hostname) do
+      if not :inet.is_ipv4_address(ip) do
+        raise """
+        Hostname #{inspect(hostname)} was resolved to #{inspect(ip)} but it has to be resolved to IPv4.
+        """
+      end
+
+      ip
+    else
+      {:error, _reason} = error ->
+        raise """
+        :inet.gethostbyname(#{inspect(hostname)}) returned #{inspect(error)} instead of {:ok, ip_address} tuple.
+        """
     end
   end
 
