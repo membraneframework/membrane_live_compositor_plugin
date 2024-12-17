@@ -85,18 +85,20 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   end
 
   defp get_host_by_name!(hostname) do
-    with {:ok, ip} <- :inet.gethostbyname(hostname) do
-      if not :inet.is_ipv4_address(ip) do
-        raise """
-        Hostname #{inspect(hostname)} was resolved to #{inspect(ip)} but it has to be resolved to IPv4.
-        """
-      end
-
-      ip
+    with {:ok, {:hostent, _, _, :inet, 4, ips}} <- :inet.gethostname(hostname, :inet),
+         ipv4 when ipv4 != nil <- Enum.find(ips, &:inet.is_ipv4_address/1) do
+      ipv4
     else
+      nil ->
+        raise """
+        :inet.gethostbyname(#{inspect(hostname)}) didn't return any IPv4 address. \
+        Retuned addresses are: #{:inet.gethostname(hostname, :inet) |> elem(1) |> elem(5) |> inspect()}
+        """
+
       {:error, _reason} = error ->
         raise """
-        :inet.gethostbyname(#{inspect(hostname)}) returned #{inspect(error)} instead of {:ok, ip_address} tuple.
+        :inet.gethostbyname(#{inspect(hostname)}) returned #{inspect(error)} instead of \
+        {:ok, hostnet_record} tuple.
         """
     end
   end
