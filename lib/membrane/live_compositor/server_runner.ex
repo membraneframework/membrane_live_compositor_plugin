@@ -65,20 +65,22 @@ defmodule Membrane.LiveCompositor.ServerRunner do
           raise "Exact api_port is required when server_setup is set to {:already_started, ip}"
         end
 
-        ip_address =
-          cond do
-            :inet.is_ipv4_address(ip_or_hostname) ->
-              ip_or_hostname
-
-            is_atom(ip_or_hostname) ->
-              ip_or_hostname |> get_host_by_name!()
-
-            is_binary(ip_or_hostname) ->
-              ip_or_hostname |> to_charlist() |> get_host_by_name!()
-          end
-
+        ip_address = ensure_ip_address_resolved(ip_or_hostname)
         lc_address = {ip_address, opt.api_port}
         {:ok, lc_address, nil}
+    end
+  end
+
+  defp ensure_ip_address_resolved(ip_or_hostname) do
+    cond do
+      :inet.is_ipv4_address(ip_or_hostname) ->
+        ip_or_hostname
+
+      is_atom(ip_or_hostname) ->
+        ip_or_hostname |> get_host_by_name!()
+
+      is_binary(ip_or_hostname) ->
+        ip_or_hostname |> to_charlist() |> get_host_by_name!()
     end
   end
 
