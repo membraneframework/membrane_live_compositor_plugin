@@ -461,11 +461,11 @@ defmodule Membrane.LiveCompositor do
 
     links =
       bin_input(input_ref)
-      |> via_in(Pad.ref(:input, ssrc),
-        options: [payloader: RTP.H264.Payloader]
+      |> child({:rtp_h264_payloader, pad_id}, RTP.H264.Payloader)
+      |> via_in(:input,
+        options: [ssrc: ssrc, encoding: :H264, payload_type: 96]
       )
-      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
-      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 96])
+      |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
@@ -490,11 +490,11 @@ defmodule Membrane.LiveCompositor do
 
     links =
       bin_input(input_ref)
-      |> via_in(Pad.ref(:input, ssrc),
-        options: [payloader: RTP.Opus.Payloader]
+      |> child({:rtp_opus_payloader, pad_id}, RTP.Opus.Payloader)
+      |> via_in(:input,
+        options: [ssrc: ssrc, encoding: :Opus, payload_type: 97, clock_rate: 48_000]
       )
-      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
-      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 97, clock_rate: 48_000])
+      |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
