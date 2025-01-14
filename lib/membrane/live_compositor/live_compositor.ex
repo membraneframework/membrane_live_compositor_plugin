@@ -430,7 +430,7 @@ defmodule Membrane.LiveCompositor do
 
     opt.init_requests
     |> Enum.each(fn request ->
-      {:ok, _} =
+      {:ok, _response} =
         IntoRequest.into_request(request)
         |> ApiClient.send_request(lc_port)
     end)
@@ -463,7 +463,7 @@ defmodule Membrane.LiveCompositor do
       bin_input(input_ref)
       |> child({:rtp_h264_payloader, pad_id}, RTP.H264.Payloader)
       |> via_in(:input,
-        options: [ssrc: ssrc, encoding: :H264, payload_type: 96]
+        options: [ssrc: ssrc, payload_type: 96, clock_rate: 90_000]
       )
       |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
@@ -492,7 +492,7 @@ defmodule Membrane.LiveCompositor do
       bin_input(input_ref)
       |> child({:rtp_opus_payloader, pad_id}, RTP.Opus.Payloader)
       |> via_in(:input,
-        options: [ssrc: ssrc, encoding: :Opus, payload_type: 97, clock_rate: 48_000]
+        options: [ssrc: ssrc, payload_type: 97, clock_rate: 48_000]
       )
       |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
