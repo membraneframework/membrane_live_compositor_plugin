@@ -34,8 +34,7 @@ defmodule Membrane.LiveCompositor.Examples.Mixfile do
       # Examples
       {:membrane_file_plugin, "~> 0.17.0"},
       {:membrane_realtimer_plugin, "~> 0.9.0"},
-      #{:membrane_sdl_plugin, "~> 0.18.2"},
-      {:membrane_sdl_plugin, path: "../../membrane_sdl_plugin/"},
+      {:membrane_sdl_plugin, "~> 0.18.5"},
       {:membrane_h26x_plugin, "~> 0.10.1"},
       {:membrane_h264_ffmpeg_plugin, "~> 0.32.0"},
       {:membrane_hackney_plugin, "~> 0.11.0"},
