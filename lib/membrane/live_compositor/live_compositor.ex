@@ -430,7 +430,7 @@ defmodule Membrane.LiveCompositor do
 
     opt.init_requests
     |> Enum.each(fn request ->
-      {:ok, _} =
+      {:ok, _response} =
         IntoRequest.into_request(request)
         |> ApiClient.send_request(lc_port)
     end)
@@ -461,11 +461,11 @@ defmodule Membrane.LiveCompositor do
 
     links =
       bin_input(input_ref)
-      |> via_in(Pad.ref(:input, ssrc),
-        options: [payloader: RTP.H264.Payloader]
+      |> child({:rtp_h264_payloader, pad_id}, RTP.H264.Payloader)
+      |> via_in(:input,
+        options: [ssrc: ssrc, payload_type: 96, clock_rate: 90_000]
       )
-      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
-      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 96])
+      |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
@@ -490,11 +490,11 @@ defmodule Membrane.LiveCompositor do
 
     links =
       bin_input(input_ref)
-      |> via_in(Pad.ref(:input, ssrc),
-        options: [payloader: RTP.Opus.Payloader]
+      |> child({:rtp_opus_payloader, pad_id}, RTP.Opus.Payloader)
+      |> via_in(:input,
+        options: [ssrc: ssrc, payload_type: 97, clock_rate: 48_000]
       )
-      |> child({:rtp_sender, pad_id}, RTP.SessionBin)
-      |> via_out(Pad.ref(:rtp_output, ssrc), options: [payload_type: 97, clock_rate: 48_000])
+      |> child({:rtp_sender, pad_id}, RTP.Muxer)
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
@@ -527,9 +527,11 @@ defmodule Membrane.LiveCompositor do
           connection_side: {:client, @local_host, port}
         })
         |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
-        |> via_in(Pad.ref(:rtp_input, pad_id))
-        |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
-        child({:output_processor, pad_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
+        |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
+        |> via_out(:output, options: [stream_id: {:payload_type, 96}])
+        |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 90_000})
+        |> child(RTP.H264.Depayloader)
+        |> child({:output_processor, pad_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
           output_stream_format: output_stream_format
         })
         |> bin_output(Pad.ref(:video_output, pad_id))
@@ -550,9 +552,11 @@ defmodule Membrane.LiveCompositor do
         connection_side: {:client, @local_host, port}
       })
       |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
-      |> via_in(Pad.ref(:rtp_input, pad_id))
-      |> child({:rtp_receiver, output_ref}, RTP.SessionBin),
-      child({:output_processor, pad_id}, Membrane.LiveCompositor.AudioOutputProcessor)
+      |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
+      |> via_out(:output, options: [stream_id: {:payload_type, 97}])
+      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 48_000})
+      |> child(RTP.Opus.Depayloader)
+      |> child({:output_processor, pad_id}, Membrane.LiveCompositor.AudioOutputProcessor)
       |> bin_output(Pad.ref(:audio_output, pad_id))
     ]
 
@@ -612,46 +616,6 @@ defmodule Membrane.LiveCompositor do
     )
 
     {[], state}
-  end
-
-  @impl true
-  def handle_child_notification(
-        {:new_rtp_stream, ssrc, _payload_type, _extensions},
-        {:rtp_receiver, ref = Pad.ref(:video_output, pad_id)},
-        _ctx,
-        state = %State{}
-      ) do
-    links =
-      get_child({:rtp_receiver, ref})
-      |> via_out(Pad.ref(:output, ssrc),
-        options: [depayloader: nil, clock_rate: 90_000]
-      )
-      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 90_000})
-      |> child(RTP.H264.Depayloader)
-      |> get_child({:output_processor, pad_id})
-
-    actions = [spec: {links, group: output_group_id(pad_id)}]
-
-    {actions, state}
-  end
-
-  @impl true
-  def handle_child_notification(
-        {:new_rtp_stream, ssrc, _payload_type, _extensions},
-        {:rtp_receiver, ref = Pad.ref(:audio_output, pad_id)},
-        _ctx,
-        state = %State{}
-      ) do
-    links =
-      get_child({:rtp_receiver, ref})
-      |> via_out(Pad.ref(:output, ssrc),
-        options: [depayloader: nil, clock_rate: 48_000]
-      )
-      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 48_000})
-      |> child(RTP.Opus.Depayloader)
-      |> get_child({:output_processor, pad_id})
-
-    {[spec: {links, group: output_group_id(pad_id)}], state}
   end
 
   @impl true

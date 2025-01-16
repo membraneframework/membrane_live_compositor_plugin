@@ -34,7 +34,7 @@ defmodule Membrane.LiveCompositor.ApiClient do
   @spec send_request(request(), :inet.port_number()) :: request_result()
   def send_request(request, lc_port) do
     {method, route, body} = request
-    {:ok, _} = Application.ensure_all_started(:req)
+    {:ok, _apps} = Application.ensure_all_started(:req)
 
     retry_delay_ms = fn retry_count -> retry_count * 100 end
     req = Req.new(base_url: "http://#{@local_host_url}:#{lc_port}", retry_delay: retry_delay_ms)
