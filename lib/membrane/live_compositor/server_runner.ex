@@ -85,7 +85,8 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   end
 
   defp get_host_by_name!(hostname) do
-    with {:ok, {:hostent, _, _, :inet, 4, ips}} <- :inet.gethostbyname(hostname, :inet),
+    with {:ok, {:hostent, _hostname, _aliases, :inet, 4, ips}} <-
+           :inet.gethostbyname(hostname, :inet),
          ipv4 when ipv4 != nil <- Enum.find(ips, &:inet.is_ipv4_address/1) do
       ipv4
     else
