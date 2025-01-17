@@ -36,7 +36,7 @@ defmodule Membrane.LiveCompositor.ApiClient do
     lc_ip = lc_ip |> Tuple.to_list() |> Enum.join(".")
 
     {method, route, body} = request
-    {:ok, _} = Application.ensure_all_started(:req)
+    {:ok, _apps} = Application.ensure_all_started(:req)
 
     retry_delay_ms = fn retry_count -> retry_count * 100 end
     req = Req.new(base_url: "http://#{lc_ip}:#{lc_port}", retry_delay: retry_delay_ms)
