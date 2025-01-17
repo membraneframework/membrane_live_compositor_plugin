@@ -6,8 +6,10 @@ defmodule Membrane.LiveCompositor.ServerRunner do
   alias Membrane.LiveCompositor
   alias Membrane.LiveCompositor.ApiClient
 
+  @local_host {127, 0, 0, 1}
+
   @spec ensure_server_started(LiveCompositor.t(), Membrane.UtilitySupervisor.t()) ::
-          {:ok, :inet.port_number(), pid()} | {:error, err :: String.t()}
+          {:ok, {:inet.ip_address(), :inet.port_number()}, pid() | nil}
   def ensure_server_started(opt, utility_supervisor) do
     {framerate_num, framerate_den} = opt.framerate
     framerate_str = "#{framerate_num}/#{framerate_den}"
@@ -40,22 +42,65 @@ defmodule Membrane.LiveCompositor.ServerRunner do
         {:ok, lc_port, server_pid} =
           start_server(path, opt.api_port, env, instance_id, utility_supervisor)
 
-        {:ok, lc_port, server_pid}
+        lc_address = {@local_host, lc_port}
+        {:ok, lc_address, server_pid}
 
       {:start_locally, path} ->
         {:ok, lc_port, server_pid} =
           start_server(path, opt.api_port, env, instance_id, utility_supervisor)
 
-        {:ok, lc_port, server_pid}
+        lc_address = {@local_host, lc_port}
+        {:ok, lc_address, server_pid}
 
       :already_started ->
-        case opt.api_port do
-          {_start, _end} ->
-            raise "Exact api_port is required when server_setup is set to :already_started"
-
-          exact ->
-            {:ok, exact, nil}
+        with {_start_, _end} <- opt.api_port do
+          raise "Exact api_port is required when server_setup is set to :already_started"
         end
+
+        lc_address = {@local_host, opt.api_port}
+        {:ok, lc_address, nil}
+
+      {:already_started, ip_or_hostname} ->
+        with {_start_, _end} <- opt.api_port do
+          raise "Exact api_port is required when server_setup is set to {:already_started, ip}"
+        end
+
+        ip_address = ensure_ip_address_resolved(ip_or_hostname)
+        lc_address = {ip_address, opt.api_port}
+        {:ok, lc_address, nil}
+    end
+  end
+
+  defp ensure_ip_address_resolved(ip_or_hostname) do
+    cond do
+      :inet.is_ipv4_address(ip_or_hostname) ->
+        ip_or_hostname
+
+      is_atom(ip_or_hostname) ->
+        ip_or_hostname |> get_host_by_name!()
+
+      is_binary(ip_or_hostname) ->
+        ip_or_hostname |> to_charlist() |> get_host_by_name!()
+    end
+  end
+
+  defp get_host_by_name!(hostname) do
+    with {:ok, {:hostent, _hostname, _aliases, :inet, 4, ips}} <-
+           :inet.gethostbyname(hostname, :inet),
+         ipv4 when ipv4 != nil <- Enum.find(ips, &:inet.is_ipv4_address/1) do
+      ipv4
+    else
+      nil ->
+        raise """
+        :inet.gethostbyname(#{inspect(hostname)}) didn't return any IPv4 address. \
+        Retuned addresses are: #{:inet.gethostbyname(hostname, :inet) |> elem(1) |> elem(5) |> inspect()}
+        """
+
+      {:error, _reason} = error ->
+        raise """
+        :inet.gethostbyname(#{inspect(hostname)}) returned #{inspect(error)} instead of \
+        {:ok, hostnet_record} tuple.
+        """
     end
   end
 
@@ -146,7 +191,7 @@ defmodule Membrane.LiveCompositor.ServerRunner do
       Process.sleep(100)
 
       with {:is_alive, true} <- {:is_alive, Process.alive?(pid)},
-           {:ok, response} <- ApiClient.get_status(lc_port) do
+           {:ok, response} <- ApiClient.get_status({@local_host, lc_port}) do
         if response.body["instance_id"] == instance_id do
           {:halt, :started}
         else

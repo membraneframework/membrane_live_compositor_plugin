@@ -139,8 +139,6 @@ defmodule Membrane.LiveCompositor do
           | {:any_of, list(input_id())}
           | {:all_of, list(input_id())}
 
-  @local_host {127, 0, 0, 1}
-
   def_options framerate: [
                 spec: Membrane.RawVideo.framerate(),
                 description: "Framerate of LiveCompositor outputs."
@@ -185,7 +183,11 @@ defmodule Membrane.LiveCompositor do
                 default: :real_time_auto_init
               ],
               server_setup: [
-                spec: :already_started | :start_locally | {:start_locally, path :: String.t()},
+                spec:
+                  :already_started
+                  | {:already_started, :inet.ip_address() | String.t() | atom()}
+                  | :start_locally
+                  | {:start_locally, path :: String.t()},
                 description: """
                 Defines how the LiveCompositor bin should start-up a LiveCompositor server.
 
@@ -194,8 +196,13 @@ defmodule Membrane.LiveCompositor do
                 - `{:start_locally, path}` - LC server is automatically started, but different binary
                 is used to spawn the process.
                 - `:already_started` - LiveCompositor bin assumes, that LC server is already started
-                and is available on a specified port. When this option is selected, the `api_port`
-                option need to specify an exact port number (not a range).
+                and is available on a localhost on a specified port. When this option is selected, the
+                `api_port` option need to specify an exact port number (not a range).
+                - `{:already_started, ip_or_hostname}` - LiveCompositor bin assumes, that LC server is already
+                started and is available on a specified IP or name on a specified port. When this option is
+                selected, the `api_port` option need to specify an exact port number (not a range). If
+                `ip_or_hostname` is a string or an atom, it will be resolved to `:inet.ip_address()` using
+                `:inet.gethostbyname/1`.
                 """,
                 default: :start_locally
               ],
@@ -417,7 +424,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_setup(ctx, opt) do
-    {:ok, lc_port, server_pid} =
+    {:ok, lc_address, server_pid} =
       ServerRunner.ensure_server_started(opt, ctx.utility_supervisor)
 
     if opt.server_setup != :already_started do
@@ -432,12 +439,12 @@ defmodule Membrane.LiveCompositor do
     |> Enum.each(fn request ->
       {:ok, _response} =
         IntoRequest.into_request(request)
-        |> ApiClient.send_request(lc_port)
+        |> ApiClient.send_request(lc_address)
     end)
 
     Membrane.UtilitySupervisor.start_link_child(
       ctx.utility_supervisor,
-      {EventHandler, {lc_port, self()}}
+      {EventHandler, {lc_address, self()}}
     )
 
     {[setup: :incomplete],
@@ -445,7 +452,7 @@ defmodule Membrane.LiveCompositor do
        output_framerate: opt.framerate,
        output_sample_rate: opt.output_sample_rate,
        composing_strategy: opt.composing_strategy,
-       lc_port: lc_port,
+       lc_address: lc_address,
        context: %Context{}
      }}
   end
@@ -458,6 +465,7 @@ defmodule Membrane.LiveCompositor do
       StreamsHandler.register_video_input_stream(pad_id, ctx.pad_options, state)
 
     {state, ssrc} = State.next_ssrc(state)
+    {lc_ip, _lc_port} = state.lc_address
 
     links =
       bin_input(input_ref)
@@ -469,7 +477,7 @@ defmodule Membrane.LiveCompositor do
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
-        connection_side: {:client, @local_host, port},
+        connection_side: {:client, lc_ip, port},
         close_on_eos: false,
         on_connection_closed: :drop_buffers
       })
@@ -487,6 +495,7 @@ defmodule Membrane.LiveCompositor do
       StreamsHandler.register_audio_input_stream(pad_id, ctx.pad_options, state)
 
     {state, ssrc} = State.next_ssrc(state)
+    {lc_ip, _lc_port} = state.lc_address
 
     links =
       bin_input(input_ref)
@@ -498,7 +507,7 @@ defmodule Membrane.LiveCompositor do
       |> child({:bye_sender, pad_id}, %RtcpByeSender{ssrc: ssrc})
       |> child({:tcp_encapsulator, pad_id}, RTP.TCP.Encapsulator)
       |> child({:tcp_sink, input_ref}, %TCP.Sink{
-        connection_side: {:client, @local_host, port},
+        connection_side: {:client, lc_ip, port},
         close_on_eos: false,
         on_connection_closed: :drop_buffers
       })
@@ -512,6 +521,7 @@ defmodule Membrane.LiveCompositor do
   def handle_pad_added(output_ref = Pad.ref(:video_output, pad_id), ctx, state) do
     state = %State{state | context: Context.add_stream(output_ref, state.context)}
     {:ok, port} = StreamsHandler.register_video_output_stream(pad_id, ctx.pad_options, state)
+    {lc_ip, _lc_port} = state.lc_address
 
     output_stream_format = %Membrane.H264{
       framerate: state.output_framerate,
@@ -524,7 +534,7 @@ defmodule Membrane.LiveCompositor do
     links =
       [
         child({:tcp_source, output_ref}, %TCP.Source{
-          connection_side: {:client, @local_host, port}
+          connection_side: {:client, lc_ip, port}
         })
         |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
         |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
@@ -546,10 +556,11 @@ defmodule Membrane.LiveCompositor do
   def handle_pad_added(output_ref = Pad.ref(:audio_output, pad_id), ctx, state) do
     state = %State{state | context: Context.add_stream(output_ref, state.context)}
     {:ok, port} = StreamsHandler.register_audio_output_stream(pad_id, ctx.pad_options, state)
+    {lc_ip, _lc_port} = state.lc_address
 
     links = [
       child({:tcp_source, output_ref}, %TCP.Source{
-        connection_side: {:client, @local_host, port}
+        connection_side: {:client, lc_ip, port}
       })
       |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
       |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
@@ -568,7 +579,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(input_type, pad_id), _ctx, state)
       when input_type in [:audio_input, :video_input] do
-    ensure_input_unregistered(pad_id, state.lc_port)
+    ensure_input_unregistered(pad_id, state.lc_address)
 
     state = %State{state | context: Context.remove_input(pad_id, state.context)}
     {[remove_children: input_group_id(pad_id)], state}
@@ -577,7 +588,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_pad_removed(Pad.ref(output_type, pad_id), _ctx, state)
       when output_type in [:audio_output, :video_output] do
-    ensure_output_unregistered(pad_id, state.lc_port)
+    ensure_output_unregistered(pad_id, state.lc_address)
 
     state = %State{state | context: Context.remove_output(pad_id, state.context)}
     {[remove_children: output_group_id(pad_id)], state}
@@ -586,7 +597,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_parent_notification(:start_composing, _ctx, state) do
     {:ok, _response} =
-      ApiClient.start_composing(state.lc_port)
+      ApiClient.start_composing(state.lc_address)
 
     {[], state}
   end
@@ -604,7 +615,7 @@ defmodule Membrane.LiveCompositor do
              Request.UpdateAudioOutput,
              Request.KeyframeRequest
            ] do
-    response = handle_request(req, state.lc_port)
+    response = handle_request(req, state.lc_address)
 
     {[notify_parent: {:request_result, req, response}], state}
   end
@@ -640,7 +651,7 @@ defmodule Membrane.LiveCompositor do
 
   @impl true
   def handle_child_notification(:keyframe_request, {:output_processor, pad_id}, _ctx, state) do
-    handle_request(%Request.KeyframeRequest{output_id: pad_id}, state.lc_port)
+    handle_request(%Request.KeyframeRequest{output_id: pad_id}, state.lc_address)
 
     {[], state}
   end
@@ -657,7 +668,7 @@ defmodule Membrane.LiveCompositor do
   @impl true
   def handle_info(:websocket_connected, _ctx, state) do
     if state.composing_strategy == :real_time_auto_init do
-      {:ok, _resp} = ApiClient.start_composing(state.lc_port)
+      {:ok, _resp} = ApiClient.start_composing(state.lc_address)
     end
 
     {[setup: :complete], state}
@@ -680,12 +691,12 @@ defmodule Membrane.LiveCompositor do
     {[], state}
   end
 
-  @spec ensure_input_unregistered(input_id(), :inet.port_number()) :: :ok
-  defp ensure_input_unregistered(input_id, lc_port) do
+  @spec ensure_input_unregistered(input_id(), {:inet.ip_address(), :inet.port_number()}) :: :ok
+  defp ensure_input_unregistered(input_id, lc_address) do
     response =
       %Request.UnregisterInput{input_id: input_id}
       |> IntoRequest.into_request()
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_address)
 
     case response do
       {:ok, _response} ->
@@ -699,12 +710,12 @@ defmodule Membrane.LiveCompositor do
     end
   end
 
-  @spec ensure_output_unregistered(output_id(), :inet.port_number()) :: :ok
-  defp ensure_output_unregistered(output_id, lc_port) do
+  @spec ensure_output_unregistered(output_id(), {:inet.ip_address(), :inet.port_number()}) :: :ok
+  defp ensure_output_unregistered(output_id, lc_address) do
     response =
       %Request.UnregisterOutput{output_id: output_id}
       |> IntoRequest.into_request()
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_address)
 
     case response do
       {:ok, _response} ->
@@ -728,11 +739,12 @@ defmodule Membrane.LiveCompositor do
     "output_group_#{output_id}"
   end
 
-  @spec handle_request(Request.t(), :inet.port_number()) :: ApiClient.request_result()
-  defp handle_request(req, lc_port) do
+  @spec handle_request(Request.t(), {:inet.ip_address(), :inet.port_number()}) ::
+          ApiClient.request_result()
+  defp handle_request(req, lc_address) do
     response =
       IntoRequest.into_request(req)
-      |> ApiClient.send_request(lc_port)
+      |> ApiClient.send_request(lc_address)
 
     case response do
       {:error, exception} ->

@@ -44,11 +44,11 @@ defmodule Membrane.LiveCompositor.Mixfile do
       # Membrane
       {:membrane_core, "~> 1.0"},
       {:membrane_raw_video_format, "~> 0.4.0"},
+      {:membrane_opus_plugin, "~> 0.20.4"},
       ## RTP
       {:membrane_rtp_plugin, "~> 0.30.0"},
       {:membrane_rtp_h264_plugin, "~> 0.20.0"},
       {:membrane_tcp_plugin, "~> 0.6.0"},
-      {:membrane_opus_plugin, "~> 0.20.1"},
       {:membrane_rtp_opus_plugin, "~> 0.10.0"},
       # VC server start
       {:muontrap, "~> 1.0"},

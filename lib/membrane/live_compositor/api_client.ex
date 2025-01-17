@@ -6,7 +6,6 @@ defmodule Membrane.LiveCompositor.ApiClient do
   @type http_method :: :post | :get
   @type request :: {http_method(), path :: String.t(), body :: any()}
 
-  @local_host_url "127.0.0.1"
   @type request_result ::
           {:ok, Req.Response.t()}
           | {:error, {:response, Req.Response.t()}}
@@ -21,23 +20,26 @@ defmodule Membrane.LiveCompositor.ApiClient do
     def into_request(data)
   end
 
-  @spec start_composing(:inet.port_number()) :: request_result()
-  def start_composing(lc_port) do
-    {:post, "/api/start", %{}} |> send_request(lc_port)
+  @spec start_composing({:inet.ip_address(), :inet.port_number()}) :: request_result()
+  def start_composing(lc_address) do
+    {:post, "/api/start", %{}} |> send_request(lc_address)
   end
 
-  @spec get_status(:inet.port_number()) :: request_result()
-  def get_status(lc_port) do
-    {:get, "/status", nil} |> send_request(lc_port)
+  @spec get_status({:inet.ip_address(), :inet.port_number()}) :: request_result()
+  def get_status(lc_address) do
+    {:get, "/status", nil} |> send_request(lc_address)
   end
 
-  @spec send_request(request(), :inet.port_number()) :: request_result()
-  def send_request(request, lc_port) do
+  @spec send_request(request(), {:inet.ip_address(), :inet.port_number()}) :: request_result()
+  def send_request(request, lc_address) do
+    {lc_ip, lc_port} = lc_address
+    lc_ip = lc_ip |> Tuple.to_list() |> Enum.join(".")
+
     {method, route, body} = request
     {:ok, _apps} = Application.ensure_all_started(:req)
 
     retry_delay_ms = fn retry_count -> retry_count * 100 end
-    req = Req.new(base_url: "http://#{@local_host_url}:#{lc_port}", retry_delay: retry_delay_ms)
+    req = Req.new(base_url: "http://#{lc_ip}:#{lc_port}", retry_delay: retry_delay_ms)
 
     response =
       case method do
