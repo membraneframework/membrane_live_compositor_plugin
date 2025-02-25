@@ -758,4 +758,20 @@ defmodule Membrane.LiveCompositor do
 
     response
   end
+
+  @impl true
+  def handle_terminate_request(ctx, state) do
+    Enum.each(ctx.pads, fn
+      Pad.ref(input, pad_id) when input in [:audio_input, :video_input] ->
+        ensure_input_unregistered(pad_id, state.lc_address)
+
+      Pad.ref(output, pad_id) when input in [:audio_output, :video_output] ->
+        ensure_output_unregistered(pad_id, state.lc_address)
+
+      _other ->
+        :ok
+    end)
+
+    {[terminate: :normal], state}
+  end
 end
