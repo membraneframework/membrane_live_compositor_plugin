@@ -528,8 +528,9 @@ defmodule Membrane.LiveCompositor do
         })
         |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
         |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
-        |> via_out(:output, options: [stream_id: {:payload_type, 96}])
-        |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 90_000})
+        |> via_out(:output,
+          options: [stream_id: {:payload_type, 96}, clock_rate: 90_000, use_jitter_buffer: false]
+        )
         |> child(RTP.H264.Depayloader)
         |> child({:output_processor, pad_id}, %Membrane.LiveCompositor.VideoOutputProcessor{
           output_stream_format: output_stream_format
@@ -553,8 +554,9 @@ defmodule Membrane.LiveCompositor do
       })
       |> child({:tcp_decapsulator, pad_id}, RTP.TCP.Decapsulator)
       |> child({:rtp_receiver, output_ref}, RTP.Demuxer)
-      |> via_out(:output, options: [stream_id: {:payload_type, 97}])
-      |> child(%Membrane.RTP.JitterBuffer{latency: 0, clock_rate: 48_000})
+      |> via_out(:output,
+        options: [stream_id: {:payload_type, 97}, clock_rate: 48_000, use_jitter_buffer: false]
+      )
       |> child(RTP.Opus.Depayloader)
       |> child({:output_processor, pad_id}, Membrane.LiveCompositor.AudioOutputProcessor)
       |> bin_output(Pad.ref(:audio_output, pad_id))
