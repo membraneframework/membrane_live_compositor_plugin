@@ -80,7 +80,7 @@ defmodule Membrane.Smelter.Mixfile do
   defp package do
     [
       maintainers: ["Software Mansion"],
-      licenses: ["CustomLicense"],
+      licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => @github_url,
         "Smelter Homepage" => "https://smelter.dev",
